@@ -1,0 +1,13 @@
+{
+  "home": {
+    "title": "Boilerplate FE da duoc setup",
+    "switchLanguage": "Switch to English",
+    "formTitle": "Dang ky tai khoan",
+    "email": "Email",
+    "password": "Mat khau",
+    "submit": "Dang ky",
+    "submitting": "Dang gui...",
+    "zustandCount": "Zustand count: {count}",
+    "increment": "Tang +1"
+  }
+}

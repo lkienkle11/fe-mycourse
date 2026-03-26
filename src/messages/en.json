@@ -1,0 +1,13 @@
+{
+  "home": {
+    "title": "FE boilerplate is ready",
+    "switchLanguage": "Switch to Vietnamese",
+    "formTitle": "Register account",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Register",
+    "submitting": "Submitting...",
+    "zustandCount": "Zustand count: {count}",
+    "increment": "Increment +1"
+  }
+}
