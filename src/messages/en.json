@@ -9,5 +9,63 @@
     "submitting": "Submitting...",
     "zustandCount": "Zustand count: {count}",
     "increment": "Increment +1"
+  },
+  "homepage": {
+    "hero": {
+      "title1": "Unlock Your Potential with Our",
+      "title2": "Diverse Courses",
+      "description": "Discover World-Class Courses Taught By Industry Experts. Elevate your skills, advance your career, and achieve your goals with our comprehensive learning platform.",
+      "exploreCourses": "Explore Courses",
+      "watchDemo": "Watch Demo",
+      "joinText": "Join over 10,000+ students",
+      "illustration": "Hero Illustration",
+      "studentRating": "Student Rating",
+      "expertTutors": "Expert Tutors"
+    },
+    "search": {
+      "placeholder": "What do you want to learn today?",
+      "button": "Search",
+      "popularCategories": "Popular Categories"
+    },
+    "topCourses": {
+      "title": "Our Top Rated Courses",
+      "description": "Explore our highest-rated courses, carefully selected by our experts and loved by thousands of students worldwide.",
+      "viewAll": "View All Courses"
+    },
+    "trending": {
+      "badge": "Hot & Trending",
+      "title": "Trending This Week",
+      "description": "Join the buzz. Check out the courses that everyone is talking about and taking right now."
+    },
+    "promo": {
+      "title1": "Advance your career with",
+      "title2": "certified",
+      "title3": "skills",
+      "description": "We provide the highest quality learning experience with the world's leading experts. Flexible, engaging, and practical learning that gets you results.",
+      "list1": "Learn from industry experts and renowned universities",
+      "list2": "Earn an accredited certificate upon completion",
+      "list3": "Get lifetime access to course materials and updates",
+      "list4": "Join a global community of interactive learners",
+      "learnMore": "Learn More About Us"
+    },
+    "webinar": {
+      "title": "Upcoming Live Webinars",
+      "description": "Join our free live masterclasses taught by top industry professionals.",
+      "allWebinars": "All Webinars",
+      "hostedBy": "Hosted by",
+      "registerFree": "Register for Free"
+    },
+    "cta": {
+      "title": "Ready to start your learning journey?",
+      "description": "Join thousands of students and start your path to success today. Get unlimited access to 10,000+ top courses.",
+      "getStartedFree": "Get Started for Free",
+      "viewPricing": "View Pricing Plans"
+    },
+    "courseCard": {
+      "image": "Course Image",
+      "byAuthor": "By",
+      "lessons": "Lessons",
+      "enrollNow": "Enroll Now"
+    }
   }
 }

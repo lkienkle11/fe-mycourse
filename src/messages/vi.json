@@ -9,5 +9,63 @@
     "submitting": "Dang gui...",
     "zustandCount": "Zustand count: {count}",
     "increment": "Tang +1"
+  },
+  "homepage": {
+    "hero": {
+      "title1": "Khơi phá tiềm năng với các",
+      "title2": "Khóa học đa dạng",
+      "description": "Khám phá các khóa học đẳng cấp thế giới do các chuyên gia đầu ngành giảng dạy. Nâng cao kỹ năng, thăng tiến sự nghiệp và đạt mục tiêu cùng nền tảng học tập toàn diện của chúng tôi.",
+      "exploreCourses": "Khám phá khóa học",
+      "watchDemo": "Xem Demo",
+      "joinText": "Tham gia cùng hơn 10.000+ học viên",
+      "illustration": "Hình ảnh minh họa",
+      "studentRating": "Đánh giá học viên",
+      "expertTutors": "Chuyên gia giảng dạy"
+    },
+    "search": {
+      "placeholder": "Bạn muốn học gì hôm nay?",
+      "button": "Tìm kiếm",
+      "popularCategories": "Danh mục phổ biến"
+    },
+    "topCourses": {
+      "title": "Khóa học được đánh giá cao nhất",
+      "description": "Khám phá các khóa học được đánh giá cao nhất, do chuyên gia lựa chọn và được hàng ngàn học viên vô cùng yêu thích.",
+      "viewAll": "Xem tất cả khóa học"
+    },
+    "trending": {
+      "badge": "Nổi bật & Thịnh hành",
+      "title": "Thịnh hành tuần này",
+      "description": "Cập nhật xu hướng. Hãy xem những khóa học mọi người đang thảo luận và tham gia ngay lúc này."
+    },
+    "promo": {
+      "title1": "Thăng tiến sự nghiệp với các kỹ năng",
+      "title2": "chứng nhận",
+      "title3": "chất lượng",
+      "description": "Chúng tôi cung cấp trải nghiệm học tập chất lượng cao với các chuyên gia hàng đầu. Linh hoạt, hấp dẫn và thực tế - mang lại kết quả như mong đợi.",
+      "list1": "Học từ các chuyên gia trong ngành và các trường đại học uy tín",
+      "list2": "Nhận chứng chỉ được công nhận sau khi hoành thành khóa học",
+      "list3": "Truy cập trọn đời vào tài liệu khóa học và các bản cập nhật",
+      "list4": "Tham gia cộng đồng học tập trực tuyến toàn cầu",
+      "learnMore": "Tìm hiểu thêm về chúng tôi"
+    },
+    "webinar": {
+      "title": "Hội thảo trực tuyến sắp tới",
+      "description": "Tham gia các lớp học miễn phí do chuyên gia chuyên ngành uy tín giảng dạy.",
+      "allWebinars": "Tất cả Hội thảo",
+      "hostedBy": "Được tổ chức bởi",
+      "registerFree": "Đăng ký miễn phí"
+    },
+    "cta": {
+      "title": "Sẵn sàng bắt đầu hành trình học tập?",
+      "description": "Hãy tham gia cùng hàng ngàn học viên và bắt đầu lộ trình thành công ngay hôm nay. Xem không giới hạn hơn 10.000+ khóa học.",
+      "getStartedFree": "Bắt đầu miễn phí",
+      "viewPricing": "Xem Bảng giá"
+    },
+    "courseCard": {
+      "image": "Hình ảnh Khóa học",
+      "byAuthor": "Bởi",
+      "lessons": "Bài học",
+      "enrollNow": "Đăng ký ngay"
+    }
   }
 }
