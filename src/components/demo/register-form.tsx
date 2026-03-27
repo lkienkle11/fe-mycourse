@@ -1,9 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
+import useSWRMutation from "swr/mutation";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,18 +32,19 @@ export function RegisterForm() {
     },
   });
 
-  const submitMutation = useMutation({
-    mutationFn: async (payload: RegisterInput) => {
+  const { trigger, isMutating } = useSWRMutation(
+    "register-form-submit",
+    async (_key: string, { arg }: { arg: RegisterInput }) => {
       // Keep axios instance wired and ready for real API integration.
       return Promise.resolve({
-        ...payload,
+        ...arg,
         apiBaseUrl: http.defaults.baseURL ?? "",
       });
     },
-  });
+  );
 
   const onSubmit = async (values: RegisterInput) => {
-    await submitMutation.mutateAsync(values);
+    await trigger(values);
   };
 
   return (
@@ -80,9 +81,9 @@ export function RegisterForm() {
           <Button
             className="w-full"
             type="submit"
-            disabled={submitMutation.isPending}
+            disabled={isMutating}
           >
-            {submitMutation.isPending ? t("submitting") : t("submit")}
+            {isMutating ? t("submitting") : t("submit")}
           </Button>
         </form>
 
