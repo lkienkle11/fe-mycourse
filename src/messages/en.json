@@ -8,7 +8,29 @@
     "submit": "Register",
     "submitting": "Submitting...",
     "zustandCount": "Zustand count: {count}",
-    "increment": "Increment +1"
+    "increment": "Increment +1",
+    "promoTitle1": "Advance your career with",
+    "promoTitle2": "certified",
+    "promoTitle3": "skills",
+    "promoDesc": "We provide the highest quality learning experience with the world's leading experts. Flexible, engaging, and practical learning that gets you results.",
+    "promo": {
+      "list": {
+        "item1": "Learn from industry experts and renowned universities",
+        "item2": "Earn an accredited certificate upon completion",
+        "item3": "Get lifetime access to course materials and updates"
+      }
+    },
+    "learnMore": "Learn More About Us",
+    "header": {
+      "title": "MyCourses.io"
+    },
+    "search": {
+      "placeholder": "What do you want to learn today?"
+    }
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Sign Up"
   },
   "homepage": {
     "hero": {

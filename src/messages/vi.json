@@ -1,14 +1,36 @@
 {
   "home": {
     "title": "Boilerplate FE da duoc setup",
-    "switchLanguage": "Switch to English",
-    "formTitle": "Dang ky tai khoan",
+    "switchLanguage": "Chuyển sang Tiếng Anh",
+    "formTitle": "Đăng ký tài khoản",
     "email": "Email",
     "password": "Mat khau",
     "submit": "Dang ky",
     "submitting": "Dang gui...",
     "zustandCount": "Zustand count: {count}",
-    "increment": "Tang +1"
+    "increment": "Tăng +1",
+    "promoTitle1": "Thăng tiến sự nghiệp với các kỹ năng",
+    "promoTitle2": "chứng nhận",
+    "promoTitle3": "chất lượng",
+    "promoDesc": "Chúng tôi cung cấp trải nghiệm học tập chất lượng cao với các chuyên gia hàng đầu. Linh hoạt, hấp dẫn và thực tế - mang lại kết quả như mong đợi.",
+    "promo": {
+      "list": {
+        "item1": "Học từ các chuyên gia trong ngành và các trường đại học uy tín",
+        "item2": "Nhận chứng chỉ được công nhận sau khi hoành thành khóa học",
+        "item3": "Truy cập trọn đời vào tài liệu khóa học và các bản cập nhật"
+      }
+    },
+    "learnMore": "Tìm hiểu thêm về chúng tôi",
+    "header": {
+      "title": "MyCourses.io"
+    },
+    "search": {
+      "placeholder": "Bạn muốn học gì hôm nay?"
+    }
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "register": "Đăng ký"
   },
   "homepage": {
     "hero": {
