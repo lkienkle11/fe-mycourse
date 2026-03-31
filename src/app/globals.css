@@ -2,12 +2,15 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@import './utils.css';
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
+  --font-gilroy: var(--font-gilroy);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -46,6 +49,12 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --font-roboto: var(--font-sans);
+
+  --color-object-black: var(--object-black);
+  --color-base-primary: var(--base-primary);
+  --color-alert-error: var(--alert-error);
 }
 
 :root {
@@ -81,6 +90,10 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  --object-black: #1B1B1B;
+  --base-primary: #3DCBB1;
+  --alert-error: #FE416D;
 }
 
 .dark {
@@ -115,6 +128,10 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  --object-black: #1B1B1B;
+  --base-primary: #3DCBB1;
+  --alert-error: #FE416D;
 }
 
 @layer base {

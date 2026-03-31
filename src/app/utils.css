@@ -1,0 +1,21 @@
+/**
+ * Custom utilities (Tailwind v4 @utility).
+ * Loaded via globals.css so PostCSS/Tailwind sees them; same bundle as shadcn theme.
+ *
+ * Usage: class names become utilities, e.g. @utility frosted-glass -> frosted-glass
+ */
+
+@utility frosted-glass {
+  background-color: color-mix(in oklch, var(--background) 72%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+@utility text-balance-safe {
+  text-wrap: balance;
+}
+
+@utility container-wrap {
+  @media (width >= 80rem) {
+    max-width: 1200px;
+  }
+}
