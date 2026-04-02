@@ -34,3 +34,22 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Project Constants (`src/constants/`)
+
+| File | Description |
+|------|-------------|
+| `common.ts` | Shared UI constants — `HEADER_DROPDOWN_ITEMS`, `LANGUAGE_OPTIONS`, and related types (`UserMenuItem`, `UserMenuGroup`). |
+| `route.ts` | Application route paths — `ROUTES` object containing all named route strings (home, login, signup, …). |
+
+## Auth Context (`src/context/auth/useAuthContext.tsx`)
+
+The auth modal flow is managed by a single global state:
+
+- `authAction: AuthActions` where `AuthActions = "none" | "login" | "signup" | "logout"`.
+- `setAuthAction(action)` to switch auth state globally.
+- `openLoginModal(nextPath?)` sets `authAction` to `"login"`.
+- `openSignupModal(nextPath?)` sets `authAction` to `"signup"`.
+- `closeAllModals()` resets state to `"none"` and clears `nextLink`.
+
+Use `authAction === "login"` / `authAction === "signup"` when deciding which auth modal to render.

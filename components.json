@@ -21,7 +21,9 @@
     "screen": "@/screen",
     "store": "@/store",
     "api": "@/api",
-    "type": "@/type",
+    "types": "@/types",
+    "services": "@/services",
+    "context": "@/context",
     "public": "@public"
   },
   "menuColor": "default",

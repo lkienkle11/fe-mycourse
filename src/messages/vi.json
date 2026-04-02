@@ -30,7 +30,32 @@
   },
   "auth": {
     "login": "Đăng nhập",
-    "register": "Đăng ký"
+    "register": "Đăng ký",
+    "title": "Tham gia để nhận thêm quyền lợi. Dữ liệu của bạn luôn được bảo mật an toàn.",
+    "socialLogin": {
+      "title": "hoặc bạn có thể",
+      "googleLogin": "Tiếp tục với Google",
+      "xLogin": "Tiếp tục với X",
+      "googleSignup": "Đăng ký với Google",
+      "xSignup": "Đăng ký với X"
+    },
+    "email": "Địa chỉ email",
+    "password": "Mật khẩu",
+    "fullName": "Họ và tên",
+    "rememberMe": "Ghi nhớ đăng nhập",
+    "forgotPassword": "Quên mật khẩu?",
+    "noAccount": "Chưa có tài khoản?",
+    "alreadyHaveAccount": "Đã có tài khoản?",
+    "contentBonus": {
+      "firstPerson": {
+        "name": "Jane MyCourse",
+        "role": "Graphic Designer"
+      },
+      "secondPerson": {
+        "name": "Joe Kitanoe",
+        "role": "Software Developer"
+      }
+    }
   },
   "homepage": {
     "hero": {

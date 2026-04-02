@@ -53,6 +53,7 @@
   --font-roboto: var(--font-sans);
 
   --color-object-black: var(--object-black);
+  --color-object-white: var(--object-white);
   --color-base-primary: var(--base-primary);
   --color-alert-error: var(--alert-error);
 }
@@ -92,6 +93,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   --object-black: #1B1B1B;
+  --object-white: #F9F9F9;
   --base-primary: #3DCBB1;
   --alert-error: #FE416D;
 }
@@ -130,6 +132,7 @@
   --sidebar-ring: oklch(0.556 0 0);
 
   --object-black: #1B1B1B;
+  --object-white: #F9F9F9;
   --base-primary: #3DCBB1;
   --alert-error: #FE416D;
 }
