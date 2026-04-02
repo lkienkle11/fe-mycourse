@@ -21,7 +21,7 @@ export const Header = async ({
   return (
     <header className="w-full">
       <div className="container container-wrap mx-auto xl:px-4 flex w-full items-center justify-between py-4">
-        <div className="flex items-center justify-center gap-1.5">
+        <div className="flex items-center justify-center gap-1.5 cursor-pointer select-none">
           <MainLogo />
           <h1 className="text-xl font-bold bg-black bg-clip-text text-transparent">
             {t("header.title")}
@@ -29,7 +29,7 @@ export const Header = async ({
         </div>
         <SearchBar
           placeholderText={t("search.placeholder")}
-          wrapClassName="lg:w-100"
+          wrapClassName="max-lg:hidden lg:w-100"
           inputClassName="text-object-black/60 placeholder:text-object-black/60"
         />
         <div className="flex items-center justify-center gap-4">

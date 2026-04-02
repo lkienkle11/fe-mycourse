@@ -30,7 +30,32 @@
   },
   "auth": {
     "login": "Login",
-    "register": "Sign Up"
+    "register": "Sign Up",
+    "title": "Join us and get more benefits. We promise to keep your data safely.",
+    "socialLogin": {
+      "title": "or you can",
+      "googleLogin": "Continue with Google",
+      "xLogin": "Continue with X",
+      "googleSignup": "Sign up with Google",
+      "xSignup": "Sign up with X"
+    },
+    "email": "Email Address",
+    "password": "Password",
+    "fullName": "Full Name",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Need an Account?",
+    "alreadyHaveAccount": "Already have an account?",
+    "contentBonus": {
+      "firstPerson": {
+        "name": "Jane MyCourse",
+        "role": "Graphic Designer"
+      },
+      "secondPerson": {
+        "name": "Joe Kitanoe",
+        "role": "Software Developer"
+      }
+    }
   },
   "homepage": {
     "hero": {
