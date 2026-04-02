@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { SWRConfig } from "swr";
+import { AuthProvider } from "@/context";
 
 type AppProvidersProps = {
   children: ReactNode;
@@ -15,7 +16,7 @@ export function AppProviders({ children }: AppProvidersProps) {
         dedupingInterval: 30 * 1000,
       }}
     >
-      {children}
+      <AuthProvider>{children}</AuthProvider>
     </SWRConfig>
   );
 }
