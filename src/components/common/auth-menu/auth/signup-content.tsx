@@ -1,18 +1,14 @@
 "use client";
 
 import { LockKeyhole, LockKeyholeOpen, Mail, User } from "lucide-react";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Field } from "@/components/ui/field";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { Label } from "@/components/ui/label";
 import { useAuthContext } from "@/context";
 import { cn } from "@/lib/utils";
 import { AuthSocialLogin } from "../auth-social-login";
