@@ -1,5 +1,7 @@
 export const PUBLIC_ROUTES = {
   home: "/",
-  login: "/login",
-  signup: "/signup",
+  auth: {
+    login: "/auth/login",
+    signup: "/auth/signup",
+  },
 } as const;
