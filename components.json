@@ -23,6 +23,7 @@
     "api": "@/api",
     "types": "@/types",
     "services": "@/services",
+    "schema": "@/schema",
     "context": "@/context",
     "public": "@public"
   },

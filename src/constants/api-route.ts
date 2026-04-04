@@ -1,14 +1,14 @@
+// Public routes
 export const API_PUBLIC_ROUTES = {
   auth: {
-    login: "/auth/login",
-    signup: "/auth/signup",
+    login: "/api/v1/auth/login",
+    signup: "/api/v1/auth/signup",
   },
 } as const;
 
+// Required authentication
 export const API_PRIVATE_ROUTES = {
   user: {
-    get: "/user/get",
-    update: "/user/update",
-    delete: "/user/delete",
+    getMe: "/api/v1/me",
   },
 } as const;

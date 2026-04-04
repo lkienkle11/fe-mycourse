@@ -3,7 +3,7 @@
 import { TimelapseIcon } from "@public/assets";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { useAuthContext } from "@/context";
+import { useAuthContext } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 export const AuthButton = ({ className }: { className?: string }) => {

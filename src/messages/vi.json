@@ -1,13 +1,13 @@
 {
   "home": {
-    "title": "Boilerplate FE da duoc setup",
+    "title": "Boilerplate FE đã sẵn sàng",
     "switchLanguage": "Chuyển sang Tiếng Anh",
     "formTitle": "Đăng ký tài khoản",
     "email": "Email",
-    "password": "Mat khau",
-    "submit": "Dang ky",
-    "submitting": "Dang gui...",
-    "zustandCount": "Zustand count: {count}",
+    "password": "Mật khẩu",
+    "submit": "Đăng ký",
+    "submitting": "Đang gửi...",
+    "zustandCount": "Số đếm Zustand: {count}",
     "increment": "Tăng +1",
     "promoTitle1": "Thăng tiến sự nghiệp với các kỹ năng",
     "promoTitle2": "chứng nhận",
@@ -16,7 +16,7 @@
     "promo": {
       "list": {
         "item1": "Học từ các chuyên gia trong ngành và các trường đại học uy tín",
-        "item2": "Nhận chứng chỉ được công nhận sau khi hoành thành khóa học",
+        "item2": "Nhận chứng chỉ được công nhận sau khi hoàn thành khóa học",
         "item3": "Truy cập trọn đời vào tài liệu khóa học và các bản cập nhật"
       }
     },
@@ -33,7 +33,7 @@
     "register": "Đăng ký",
     "title": "Tham gia để nhận thêm quyền lợi. Dữ liệu của bạn luôn được bảo mật an toàn.",
     "socialLogin": {
-      "title": "hoặc bạn có thể",
+      "title": "Hoặc bạn có thể",
       "googleLogin": "Tiếp tục với Google",
       "xLogin": "Tiếp tục với X",
       "googleSignup": "Đăng ký với Google",
@@ -49,12 +49,17 @@
     "contentBonus": {
       "firstPerson": {
         "name": "Jane MyCourse",
-        "role": "Graphic Designer"
+        "role": "Thiết kế đồ họa"
       },
       "secondPerson": {
         "name": "Joe Kitanoe",
-        "role": "Software Developer"
+        "role": "Lập trình viên phần mềm"
       }
+    },
+    "validation": {
+      "email": "Vui lòng nhập địa chỉ email hợp lệ",
+      "password": "Vui lòng nhập mật khẩu hợp lệ",
+      "fullName": "Vui lòng nhập họ và tên hợp lệ"
     }
   },
   "homepage": {
@@ -90,7 +95,7 @@
       "title3": "chất lượng",
       "description": "Chúng tôi cung cấp trải nghiệm học tập chất lượng cao với các chuyên gia hàng đầu. Linh hoạt, hấp dẫn và thực tế - mang lại kết quả như mong đợi.",
       "list1": "Học từ các chuyên gia trong ngành và các trường đại học uy tín",
-      "list2": "Nhận chứng chỉ được công nhận sau khi hoành thành khóa học",
+      "list2": "Nhận chứng chỉ được công nhận sau khi hoàn thành khóa học",
       "list3": "Truy cập trọn đời vào tài liệu khóa học và các bản cập nhật",
       "list4": "Tham gia cộng đồng học tập trực tuyến toàn cầu",
       "learnMore": "Tìm hiểu thêm về chúng tôi"

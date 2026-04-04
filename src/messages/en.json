@@ -55,6 +55,11 @@
         "name": "Joe Kitanoe",
         "role": "Software Developer"
       }
+    },
+    "validation": {
+      "email": "Please enter a valid email address",
+      "password": "Please enter a valid password",
+      "fullName": "Please enter a valid full name"
     }
   },
   "homepage": {
