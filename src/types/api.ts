@@ -133,10 +133,16 @@ export interface ApiHealthResponse {
  *
  * `data`       – the parsed response body (generic T).
  * `statusCode` – HTTP status code (e.g. 200, 201, 204, 404, 500 …).
+ * `headers`    – response headers normalised to `Record<string, string>`.
+ *                `set-cookie` is excluded here; use `cookies` instead.
+ * `cookies`    – cookies parsed from the `Set-Cookie` response header,
+ *                keyed by cookie name with the raw value (attributes stripped).
  */
 export interface ApiResult<T = unknown> {
   data: T;
   statusCode: number;
+  headers: Record<string, string>;
+  cookies: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------
