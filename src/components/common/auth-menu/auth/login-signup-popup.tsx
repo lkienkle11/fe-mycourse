@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui";
-import { useAuthContext } from "@/context/auth";
+import { useAuthContext } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { LoginContent } from "./login-content";
 import { LoginSignupLayout } from "./login-signup-layout";
@@ -13,7 +13,7 @@ export function LoginSignupPopup({
 }: {
   contentClassName?: string;
 }) {
-  const { authAction, closeAllModals, nextLink } = useAuthContext();
+  const { authAction, closeAllModals } = useAuthContext();
 
   const isOpen = useMemo(
     () => authAction === "login" || authAction === "signup",

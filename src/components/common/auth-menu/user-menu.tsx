@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@/i18n/navigation";
+import Image from "next/image";
 import { HEADER_DROPDOWN_ITEMS } from "@/constants";
 import {
   DropdownMenu,
@@ -9,19 +9,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Link } from "@/i18n/navigation";
 import { cn, pickCharacter } from "@/lib/utils";
-import Image from "next/image";
+import type { MeResponse } from "@/types/auth";
 
-const DEFAULT_USER = {
-  username: "Jonathan Doe",
-  email: "doe.jonathan@email.com",
-  avatarUrl: "",
-};
+interface UserMenuProps {
+  me: MeResponse;
+}
 
-export const UserMenu = () => {
-  const { label, color, backgroundColor } = pickCharacter(
-    DEFAULT_USER.username,
-  );
+export const UserMenu = ({ me }: UserMenuProps) => {
+  const { label, color, backgroundColor } = pickCharacter(me.display_name);
 
   return (
     <DropdownMenu>
@@ -29,10 +26,10 @@ export const UserMenu = () => {
         className="size-10 rounded-full border border-object-black/10 bg-white/95 hover:cursor-pointer"
         aria-label="Open user menu"
       >
-        {DEFAULT_USER.avatarUrl ? (
+        {me.avatar_url ? (
           <Image
-            src={DEFAULT_USER.avatarUrl}
-            alt={`${DEFAULT_USER.username} avatar`}
+            src={me.avatar_url}
+            alt={`${me.display_name} avatar`}
             width={40}
             height={40}
             className="size-full rounded-full object-cover"
@@ -60,9 +57,9 @@ export const UserMenu = () => {
 
         <div className="mb-2 px-2">
           <p className="text-base font-medium text-object-black/90">
-            {DEFAULT_USER.username}
+            {me.display_name}
           </p>
-          <p className="text-base text-object-black/60">{DEFAULT_USER.email}</p>
+          <p className="text-base text-object-black/60">{me.email}</p>
         </div>
 
         {HEADER_DROPDOWN_ITEMS.map((group) => (
