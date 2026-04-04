@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { getMeEndpointKey, getMeService } from "@/services/auth";
+import { getMeEndpointKey, getMeService } from "@/api/callers/auth";
 import type { MeResponse } from "@/types/auth";
 
 export interface UseAuthReturn {
