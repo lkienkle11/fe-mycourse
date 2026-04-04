@@ -14,10 +14,10 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
-import { useAuthContext } from "@/hooks";
+import { useAuthContext, useGetMe } from "@/hooks";
 import { Link, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { loginSchema, type LoginFormValues } from "@/schema/auth";
+import { type LoginFormValues, loginSchema } from "@/schema/auth";
 import { AuthSocialLogin } from "../auth-social-login";
 import { handleAuthSubmit } from "./auth-form-handler";
 
@@ -25,6 +25,7 @@ export function LoginContent({ className }: { className?: string }) {
   const t = useTranslations("auth");
   const router = useRouter();
   const { openSignupModal, closeAllModals, nextLink } = useAuthContext();
+  const { mutateMe } = useGetMe();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -49,6 +50,7 @@ export function LoginContent({ className }: { className?: string }) {
     setServerError(null);
     const result = await handleAuthSubmit("login", values);
     if (result.success) {
+      mutateMe();
       closeAllModals();
       if (nextLink) {
         router.push(nextLink);

@@ -1,12 +1,9 @@
 "use client";
 
-import {
-  createContext,
-  useState,
-  useCallback,
-  type ReactNode,
-} from "react";
+import { createContext, type ReactNode, useCallback, useState } from "react";
+import { useAuth } from "@/api/hooks/auth";
 import type { AuthActions } from "@/types";
+import type { MeResponse } from "@/types/auth";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -81,5 +78,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
     >
       {children}
     </AuthContext.Provider>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Me Context
+// ---------------------------------------------------------------------------
+
+export type MeContextValue = {
+  me: MeResponse | null;
+  isLoading: boolean;
+  isError: unknown;
+  mutateMe: () => void;
+};
+
+export const MeContext = createContext<MeContextValue | null>(null);
+
+export function MeProvider({ children }: { children: ReactNode }) {
+  const { me, isLoading, error, mutate } = useAuth();
+
+  return (
+    <MeContext.Provider
+      value={{ me, isLoading, isError: error, mutateMe: mutate }}
+    >
+      {children}
+    </MeContext.Provider>
   );
 }
