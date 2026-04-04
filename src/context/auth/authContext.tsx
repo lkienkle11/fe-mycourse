@@ -2,7 +2,6 @@
 
 import {
   createContext,
-  useContext,
   useState,
   useCallback,
   type ReactNode,
@@ -13,7 +12,7 @@ import type { AuthActions } from "@/types";
 // Types
 // ---------------------------------------------------------------------------
 
-type AuthContextValue = {
+export type AuthContextValue = {
   /** Global auth action state (none/login/signup/logout). */
   authAction: AuthActions;
   setAuthAction: (action: AuthActions) => void;
@@ -39,7 +38,7 @@ type AuthContextValue = {
 // Context
 // ---------------------------------------------------------------------------
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 // ---------------------------------------------------------------------------
 // Provider
@@ -83,16 +82,4 @@ export function AuthProvider({ children }: AuthProviderProps) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
-
-export function useAuthContext(): AuthContextValue {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuthContext must be used within an <AuthProvider>.");
-  }
-  return context;
 }
