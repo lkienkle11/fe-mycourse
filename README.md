@@ -49,26 +49,26 @@ The Axios instance at `src/api/instance.ts` reads `NEXT_PUBLIC_API_URL` as its `
 
 ## Low-level API Helpers (`src/api/methods.ts`)
 
-Bốn hàm bọc Axios — `apiFetch`, `apiPost`, `apiPut`, `apiDelete` — đều trả về kiểu `ApiResult<T>` (định nghĩa trong `src/types/api.ts`):
+Four Axios wrapper functions — `apiFetch`, `apiPost`, `apiPut`, `apiDelete` — all return `ApiResult<T>` (defined in `src/types/api.ts`):
 
 ```ts
 interface ApiResult<T = unknown> {
   data: T;                          // parsed response body
   statusCode: number;               // HTTP status code (200, 201, 401, …)
   headers: Record<string, string>;  // response headers (set-cookie excluded)
-  cookies: Record<string, string>;  // cookies parsed từ Set-Cookie header (name → raw value, attributes stripped)
+  cookies: Record<string, string>;  // cookies parsed from Set-Cookie header (name → raw value, attributes stripped)
 }
 ```
 
 ### `headers`
 
-Toàn bộ response header được flatten về `Record<string, string>`. Header có nhiều giá trị (array) được join bằng `", "`. `set-cookie` bị loại ra khỏi `headers` — truy cập qua `cookies` thay thế.
+All response headers are flattened to `Record<string, string>`. Multi-value headers (arrays) are joined with `", "`. `set-cookie` is excluded from `headers` — access it via `cookies` instead.
 
 ### `cookies`
 
-Parse từ `Set-Cookie` response header. Mỗi entry `name=value; Path=/; HttpOnly` → `{ name: "value" }` (attributes bị strip). Hữu ích khi chạy trong Server Action / SSR — nơi browser không tự nhận `Set-Cookie` từ Axios mà cần relay thủ công.
+Parsed from the `Set-Cookie` response header. Each entry `name=value; Path=/; HttpOnly` becomes `{ name: "value" }` (attributes are stripped). Useful when running inside a Server Action / SSR context — where the browser does not automatically receive `Set-Cookie` from Axios and the cookie must be relayed manually.
 
-### Ví dụ
+### Example
 
 ```ts
 const { data, statusCode, headers, cookies } = await apiPost<ApiResponse<null>>(
@@ -76,11 +76,11 @@ const { data, statusCode, headers, cookies } = await apiPost<ApiResponse<null>>(
   payload,
 );
 
-// cookies["access_token"] → raw token value từ Set-Cookie
-// headers["x-request-id"] → trace ID từ server
+// cookies["access_token"] → raw token value from Set-Cookie
+// headers["x-request-id"] → trace ID from the server
 ```
 
-> Caller không cần dùng `headers` / `cookies` thì destructure bình thường:
+> If you don't need `headers` / `cookies`, destructure as usual:
 > ```ts
 > const { data } = await apiFetch<ApiResponse<MeResponse>>("/me");
 > ```
@@ -139,32 +139,34 @@ Components call `t(error.message)` which resolves the key via `next-intl` agains
 
 ```
 AuthLayout (client)
-  → useAuth()                           [src/hooks/swr/auth/useAuth.ts — SWR]
-    → getMeService()                    [src/services/auth/auth.ts]
-      → apiFetch(getMeEndpointKey)      [GET /api/v1/me — cookie auth]
+  → useGetMe()                          [src/hooks/auth/useAuthContext.tsx]
+    → useAuth()                         [src/api/hooks/auth/useAuth.ts — SWR]
+      → getMeService()                  [src/api/callers/auth — apiFetch wrapper]
+        → apiFetch(getMeEndpointKey)    [GET /api/v1/me — cookie auth]
 ```
 
-- **Cookie-based auth**: `withCredentials: true` trên Axios instance → cookie `access_token` được gửi tự động.
-- **Transparent token refresh**: BE middleware tự gia hạn access_token nếu hết hạn (dùng refresh_token + session_id cookie), FE không cần xử lý thêm.
-- **401 = chưa đăng nhập**: `getMeService` bắt lỗi 401 và trả về `null` thay vì throw, để SWR không báo lỗi.
+- **Cookie-based auth**: `withCredentials: true` on the Axios instance — the `access_token` cookie is sent automatically.
+- **Transparent token refresh**: The BE middleware silently renews the access token when it expires (using `refresh_token` + `session_id` cookies); no extra handling is needed on the FE.
+- **401 = not authenticated**: `getMeService` catches 401 and returns `null` instead of throwing, so SWR does not treat it as an error.
 
-### Conditional rendering trong `AuthLayout`
+### Conditional Rendering in `AuthLayout`
 
-| Trạng thái | Hiển thị |
-|-----------|---------|
-| `isLoading = true` | Skeleton tròn 40×40 px animate-pulse |
-| `me != null` | `<UserMenu me={me} />` với dữ liệu thật |
-| `me == null` | `<AuthButton />` (nút đăng nhập / đăng ký) |
+| State | Rendered |
+|-------|----------|
+| `isLoading = true` | Circular 40×40 px skeleton with `animate-pulse` |
+| `me != null` | `<UserMenu me={me} />` with real user data |
+| `me == null` | `<AuthButton />` (login / sign-up button) |
 
 ### Files Added / Modified
 
-| File | Thay đổi |
-|------|---------|
-| `src/types/auth/auth.ts` | Thêm `MeResponse` interface (mirror BE dto/auth.go) |
-| `src/services/auth/auth.ts` | Thêm `getMeEndpointKey` + `getMeService()` |
-| `src/hooks/swr/auth/useAuth.ts` | Hook SWR trả về `{ me, isLoading, error, mutate }` |
-| `src/components/…/auth-layout.tsx` | Logic hiển thị dựa trên state từ `useAuth` |
-| `src/components/…/user-menu.tsx` | Nhận `me: MeResponse` props thay vì dùng DEFAULT_USER hardcoded |
+| File | Change |
+|------|--------|
+| `src/types/auth/auth.ts` | Added `MeResponse` interface (mirrors `be/dto/auth.go`) |
+| `src/api/callers/auth.ts` | `getMeEndpointKey` + `getMeService()` |
+| `src/api/hooks/auth/useAuth.ts` | SWR hook returning `{ me, isLoading, error, mutate }` |
+| `src/hooks/auth/useAuthContext.tsx` | `useGetMe()` — thin wrapper over `useAuth()`, normalises the return type |
+| `src/components/…/auth-layout.tsx` | Rendering logic driven by state from `useGetMe` |
+| `src/components/…/user-menu.tsx` | Accepts `me: MeResponse` prop instead of the hardcoded `DEFAULT_USER` |
 
 ### `MeResponse` type
 
@@ -184,14 +186,67 @@ interface MeResponse {
 }
 ```
 
-### `useAuth` hook usage
+### `useGetMe` hook usage
 
 ```ts
-const { me, isLoading, error, mutate } = useAuth();
+// Recommended — use via the convenience hook:
+import { useGetMe } from "@/hooks/auth/useAuthContext";
 
-// Sau khi login thành công — revalidate ngay lập tức:
+const { me, isLoading, isError, mutateMe } = useGetMe();
+
+// After a successful login — revalidate immediately:
 await loginAction(payload);
-mutate();
+mutateMe();
+```
+
+> To use the SWR hook directly (e.g. inside other API hooks):
+> ```ts
+> import { useAuth } from "@/api/hooks/auth";
+> const { me, isLoading, error, mutate } = useAuth();
+> ```
+
+---
+
+## Zustand Stores (`src/store/`)
+
+The project uses [Zustand](https://zustand-demo.pmnd.rs/) instead of React Context for global state management. All stores are **provider-free** — import the hook directly into any component without wrapping a Provider.
+
+| Store file | Hook export | Purpose |
+|---|---|---|
+| `src/store/auth/auth.ts` | `useAuthStore` | Auth modal state (`authAction`, `openLoginModal`, `closeAllModals`, `nextLink`) |
+| `src/store/api-error-store.ts` | `useApiError` | Accumulates API errors from the Axios interceptor (max 20 entries) |
+| `src/store/use-app-store.ts` | `useAppStore` | App-level state (counter placeholder, extend as needed) |
+
+### `useApiError` — Global API Error Store
+
+Populated automatically by the Axios response interceptor in `src/api/instance.ts`. Components can subscribe to display toast notifications or error banners:
+
+```ts
+import { useApiError } from "@/store/api-error-store";
+
+const { lastError, errors, clear, remove } = useApiError();
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `lastError` | `ApiErrorEntry \| null` | Most recent error, `null` when the store is empty |
+| `errors` | `ApiErrorEntry[]` | All retained errors (max 20), oldest-first |
+| `push(error)` | `fn` | Add a new entry (id and timestamp are auto-generated) |
+| `remove(id)` | `fn` | Remove a single entry by id |
+| `clear()` | `fn` | Clear all errors |
+
+### `ApiErrorEntry` type
+
+```ts
+interface ApiErrorEntry {
+  id: string;          // crypto.randomUUID()
+  statusCode: number;  // HTTP status (0 = network error)
+  appCode: number;     // BE app-level code (mirrors be/pkg/errcode/codes.go), fallback 9999
+  message: string;     // Human-readable error message
+  url: string;         // Request path, e.g. "/auth/login"
+  method: string;      // "GET" | "POST" | "PUT" | "DELETE" | …
+  timestamp: number;   // Date.now() when recorded
+}
 ```
 
 ---
@@ -203,14 +258,43 @@ mutate();
 | `common.ts` | Shared UI constants — `HEADER_DROPDOWN_ITEMS`, `LANGUAGE_OPTIONS`, and related types (`UserMenuItem`, `UserMenuGroup`). |
 | `route.ts` | Application route paths — `ROUTES` object containing all named route strings (home, login, signup, …). |
 
-## Auth Context (`src/context/auth/useAuthContext.tsx`)
+## Auth Store (`src/store/auth/auth.ts`)
 
-The auth modal flow is managed by a single global state:
+The auth modal flow is managed by a **Zustand store** (previously React Context — `src/context/auth/` has been removed).
 
-- `authAction: AuthActions` where `AuthActions = "none" | "login" | "signup" | "logout"`.
-- `setAuthAction(action)` to switch auth state globally.
-- `openLoginModal(nextPath?)` sets `authAction` to `"login"`.
-- `openSignupModal(nextPath?)` sets `authAction` to `"signup"`.
-- `closeAllModals()` resets state to `"none"` and clears `nextLink`.
+### `AuthStoreState`
+
+| Field / Method | Type | Description |
+|---|---|---|
+| `authAction` | `AuthActions` | Global auth state: `"none" \| "login" \| "signup" \| "logout"` |
+| `setAuthAction(action)` | `fn` | Directly set `authAction` |
+| `nextLink` | `string \| null` | Post-auth redirect path, cleared on `closeAllModals` |
+| `setNextLink(link)` | `fn` | Manually set redirect path |
+| `openLoginModal(nextPath?)` | `fn` | Sets `authAction` to `"login"`, optionally stores `nextPath` |
+| `openSignupModal(nextPath?)` | `fn` | Sets `authAction` to `"signup"`, optionally stores `nextPath` |
+| `closeAllModals()` | `fn` | Resets `authAction` to `"none"` and clears `nextLink` |
 
 Use `authAction === "login"` / `authAction === "signup"` when deciding which auth modal to render.
+
+```ts
+// In any client component (no Provider needed):
+import { useAuthStore } from "@/store/auth";
+
+const { openLoginModal, closeAllModals } = useAuthStore();
+```
+
+### `useAuthContext` and `useGetMe` hooks (`src/hooks/auth/useAuthContext.tsx`)
+
+Two convenience hooks bridge the store and the SWR data layer:
+
+```ts
+import { useAuthContext, useGetMe } from "@/hooks/auth/useAuthContext";
+
+// Auth modal state (thin wrapper around useAuthStore):
+const { openLoginModal, authAction } = useAuthContext();
+
+// Current user from GET /api/v1/me (via SWR):
+const { me, isLoading, isError, mutateMe } = useGetMe();
+```
+
+> **Migration note**: `AppProviders` no longer wraps an `AuthContextProvider` — Zustand stores are provider-free. Consuming components can import `useAuthStore` directly or use the `useAuthContext` / `useGetMe` hooks.

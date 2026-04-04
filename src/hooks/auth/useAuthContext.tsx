@@ -1,25 +1,13 @@
 "use client";
 
-import { useContext } from "react";
-import {
-  AuthContext,
-  type AuthContextValue,
-  MeContext,
-  type MeContextValue,
-} from "@/context/auth";
+import { useAuth } from "@/api/hooks/auth";
+import { useAuthStore, type AuthStoreState, type MeStoreState } from "@/store/auth";
 
-export function useAuthContext(): AuthContextValue {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuthContext must be used within an <AuthProvider>.");
-  }
-  return context;
+export function useAuthContext(): AuthStoreState {
+  return useAuthStore();
 }
 
-export function useGetMe(): MeContextValue {
-  const context = useContext(MeContext);
-  if (!context) {
-    throw new Error("useGetMe must be used within a <MeProvider>.");
-  }
-  return context;
+export function useGetMe(): MeStoreState {
+  const { me, isLoading, error, mutate } = useAuth();
+  return { me, isLoading, isError: error, mutateMe: mutate };
 }
