@@ -1,8 +1,8 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { loginService } from "@/services/auth";
-import type { LoginPayload, SignupPayload } from "@/services/auth/auth";
+import { loginService } from "@/api/callers/auth";
+import type { LoginPayload, SignupPayload } from "@/api/callers/auth";
 import { ApiErrorCode } from "@/types/api";
 
 export interface AuthActionResult {

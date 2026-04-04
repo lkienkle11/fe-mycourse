@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks";
+import { useAuth } from "@/api/hooks";
 import { LoginSignupPopup } from "./auth/login-signup-popup";
 import { AuthButton } from "./auth-button";
 import { UserMenu } from "./user-menu";
