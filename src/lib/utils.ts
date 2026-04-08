@@ -65,6 +65,42 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export type CookieSameSite = "strict" | "lax" | "none";
+
+export interface BuildHttpOnlyCookieOptionsInput {
+  sameSite: CookieSameSite;
+  isProduction: boolean;
+  maxAge?: number;
+  domain?: string;
+}
+
+/**
+ * Domain cha cho cookie (vd. `mycoursesdev.xyz`) khi FE và API là hai subdomain.
+ * Localhost: trả về undefined để không set `domain` trên cookie.
+ */
+export function getCookieDomain(rawDomain?: string): string | undefined {
+  const normalized = rawDomain?.trim();
+  if (!normalized || normalized === "localhost") return undefined;
+  return normalized.startsWith(".") ? normalized.slice(1) : normalized;
+}
+
+/**
+ * Build HttpOnly cookie options dùng chung cho Server Actions.
+ */
+export function buildHttpOnlyCookieOptions(
+  input: BuildHttpOnlyCookieOptionsInput,
+) {
+  const { sameSite, isProduction, maxAge, domain } = input;
+  return {
+    httpOnly: true as const,
+    sameSite,
+    secure: isProduction,
+    path: "/" as const,
+    ...(domain ? { domain } : {}),
+    ...(maxAge !== undefined ? { maxAge } : {}),
+  };
+}
+
 type PickCharacterResult = {
   label: string;
   color: string;
