@@ -19,4 +19,11 @@ export interface MeResponse {
 export interface LoginResponse {
   access_token: string;
   refresh_token: string;
+  session_id: string;
+}
+
+export interface RefreshTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  session_id: string;
 }
