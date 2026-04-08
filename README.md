@@ -1,6 +1,8 @@
 # MyCourse — Frontend (`fe`)
 
-Next.js **16** (App Router) client for **MyCourse**: React **19**, **Tailwind CSS 4**, **next-intl** (`en` / `vi`), **SWR**, **Axios**, **Zustand**, **react-hook-form** + **Zod**. The UI talks to the Go API via `NEXT_PUBLIC_API_URL` (see below).
+Next.js **16.2** (App Router) client for **MyCourse**: React **19**, **Tailwind CSS 4**, **next-intl** (`en` / `vi`), **SWR**, **Axios**, **Zustand**, **react-hook-form** + **Zod**. The UI communicates with the Go API via `NEXT_PUBLIC_API_URL`.
+
+> **Important — middleware filename:** The project ships `src/proxy.ts` with the `next-intl` locale middleware. Before deploying to production, rename it to `src/middleware.ts` so Next.js actually executes it. See [`docs/deploy.md` Appendix C](docs/deploy.md#appendix-c--middleware-locale-routing-fix) for details.
 
 ## Getting started
 
@@ -22,22 +24,24 @@ Open the URL Next.js prints (default [http://localhost:3000](http://localhost:30
 
 | Doc | Contents |
 |-----|----------|
-| [`docs/architecture.md`](docs/architecture.md) | Stack, folders, GitNexus clusters (Ui / Api / Auth), i18n, API integration |
-| [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — same runbook style as [`../be/docs/deploy.md`](../be/docs/deploy.md): Nginx, Certbot, PM2, env vars, CI notes |
-| [`docs/flow.md`](docs/flow.md) | Auth and API execution flows (login, signup, `/me`, token refresh) |
-| [`docs/screens.md`](docs/screens.md) | Routes, layouts, home sections, auth shell |
+| [`docs/architecture.md`](docs/architecture.md) | Full tech stack, directory map, functional clusters (Ui / Api / Auth), design decisions, env vars, i18n, caching layer |
+| [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — Nginx, Certbot, PM2, env vars (`NEXT_PUBLIC_API_URL`, `AUTH_COOKIE_DOMAIN`), go-live checklist, rollback, troubleshooting, CI/CD |
+| [`docs/flow.md`](docs/flow.md) | Auth and API execution flows — login, signup (placeholder), `/me`, token refresh, cookie strategy, error handling, Zustand store interactions |
+| [`docs/screens.md`](docs/screens.md) | App Router routes, layout hierarchy, home sections, auth shell component trees, UI primitives, route constants |
 
-For **full-stack** VPS setup (API + Postgres + Redis + joint Nginx), follow the **backend** guide; use `docs/deploy.md` here for frontend-specific steps and `NEXT_PUBLIC_API_URL`.
+For **full-stack** VPS setup (Go API + Postgres + Redis + joint Nginx), follow [`../be/docs/deploy.md`](../be/docs/deploy.md) first; use this repo's `docs/deploy.md` for frontend-specific steps.
 
 ## Environment Variables
 
-Create a `.env` file at the project root (already included, gitignored):
+Create a `.env` file at the project root (gitignored). In production use `.env.production.local` on the server — see [`docs/deploy.md`](docs/deploy.md) for details.
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_API_URL` | Base URL for the backend API | `http://localhost:8080` |
+| Variable | Required | Scope | Description | Example |
+|----------|----------|-------|-------------|---------|
+| `NEXT_PUBLIC_API_URL` | **Yes** | Build + client + server | Base URL for the backend API. **Inlined at `next build`** — rebuild required after changing. | `http://localhost:8080` |
+| `AUTH_COOKIE_DOMAIN` | Prod only | Server only | Parent domain for auth cookies when FE and API are on separate subdomains. Leave unset on localhost. | `yourdomain.net` |
+| `API_URL` | No | Server only | Server-side fallback for `NEXT_PUBLIC_API_URL`. Not exposed to the client bundle. | `http://localhost:8080` |
 
-The Axios instance at `src/api/instance.ts` reads `NEXT_PUBLIC_API_URL` as its `baseURL`.
+The Axios instance at `src/api/instance.ts` reads `NEXT_PUBLIC_API_URL` (or `API_URL` as a server-side fallback) as its `baseURL`. `AUTH_COOKIE_DOMAIN` is read by `loginAction` via `getCookieDomain()` to scope cookies for cross-subdomain auth.
 
 ---
 
