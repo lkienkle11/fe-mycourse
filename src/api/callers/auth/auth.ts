@@ -3,18 +3,21 @@ import { apiFetch, apiPost } from "@/api/methods";
 import { API_PRIVATE_ROUTES, API_PUBLIC_ROUTES } from "@/constants/api-route";
 import { buildQueryParams } from "@/lib/utils";
 import type { ApiResponse } from "@/types/api";
-import type { LoginResponse, MeResponse, RefreshTokenResponse } from "@/types/auth";
+import type {
+	LoginResponse,
+	MeResponse,
+} from "@/types/auth";
 
 export interface LoginPayload {
-  email: string;
-  password: string;
-  remember_me: boolean;
+	email: string;
+	password: string;
+	remember_me: boolean;
 }
 
 export interface SignupPayload {
-  email: string;
-  password: string;
-  display_name: string;
+	email: string;
+	password: string;
+	display_name: string;
 }
 
 /**
@@ -22,10 +25,10 @@ export interface SignupPayload {
  * Export để useAuth hook dùng làm key — đảm bảo một chỗ duy nhất định nghĩa URL này.
  */
 export const getMeEndpointKey = buildQueryParams(
-  API_PRIVATE_ROUTES.user.getMe,
-  undefined,
-  undefined,
-  undefined,
+	API_PRIVATE_ROUTES.user.getMe,
+	undefined,
+	undefined,
+	undefined,
 );
 
 /**
@@ -39,17 +42,17 @@ export const getMeEndpointKey = buildQueryParams(
  * - Throw error với các lỗi khác (network, 5xx, v.v.)
  */
 export async function getMeService(): Promise<MeResponse | null> {
-  const endpointKey = getMeEndpointKey;
-  if (!endpointKey) return null;
+	const endpointKey = getMeEndpointKey;
+	if (!endpointKey) return null;
 
-  try {
-    const { data } = await apiFetch<ApiResponse<MeResponse>>(endpointKey);
-    return data.data;
-  } catch (err) {
-    const status = (err as AxiosError)?.response?.status;
-    if (status === 401) return null;
-    throw err;
-  }
+	try {
+		const { data } = await apiFetch<ApiResponse<MeResponse>>(endpointKey);
+		return data.data;
+	} catch (err) {
+		const status = (err as AxiosError)?.response?.status;
+		if (status === 401) return null;
+		throw err;
+	}
 }
 
 /**
@@ -66,14 +69,14 @@ export async function getMeService(): Promise<MeResponse | null> {
  *   Record<cookieName, value> parse từ Set-Cookie header của BE response.
  */
 export async function loginService(payload: LoginPayload): Promise<{
-  data: ApiResponse<LoginResponse>;
-  cookies: Record<string, string>;
+	data: ApiResponse<LoginResponse>;
+	cookies: Record<string, string>;
 }> {
-  const { data, cookies } = await apiPost<ApiResponse<LoginResponse>, LoginPayload>(
-    API_PUBLIC_ROUTES.auth.login,
-    payload,
-  );
-  return { data, cookies };
+	const { data, cookies } = await apiPost<
+		ApiResponse<LoginResponse>,
+		LoginPayload
+	>(API_PUBLIC_ROUTES.auth.login, payload);
+	return { data, cookies };
 }
 
 /**
@@ -86,19 +89,19 @@ export async function loginService(payload: LoginPayload): Promise<{
  * Hàm này dùng `apiPost` thông thường — interceptor trong instance.ts sẽ tự
  * gọi hàm này khi phát hiện lỗi 401/403 + header X-Token-Expired.
  */
-export async function refreshTokenService(
-  refreshToken: string,
-  sessionId: string,
-): Promise<ApiResponse<RefreshTokenResponse>> {
-  const { data } = await apiPost<ApiResponse<RefreshTokenResponse>>(
-    API_PUBLIC_ROUTES.auth.refresh,
-    null,
-    {
-      headers: {
-        "X-Refresh-Token": refreshToken,
-        "X-Session-Id": sessionId,
-      },
-    },
-  );
-  return data;
-}
+// export async function refreshTokenService(
+//   refreshToken: string,
+//   sessionId: string,
+// ): Promise<ApiResponse<RefreshTokenResponse>> {
+//   const { data } = await apiPost<ApiResponse<RefreshTokenResponse>>(
+//     API_PUBLIC_ROUTES.auth.refresh,
+//     null,
+//     {
+//       headers: {
+//         "X-Refresh-Token": refreshToken,
+//         "X-Session-Id": sessionId,
+//       },
+//     },
+//   );
+//   return data;
+// }
