@@ -1,27 +1,50 @@
 # Deploying MyCourse Frontend on Ubuntu 24.04
 
-This guide is the **frontend** counterpart to **[`be/docs/deploy.md`](../../be/docs/deploy.md)** (backend + full-stack VPS). It uses the **same layout and runbook style**: ordered steps, Nginx + TLS + PM2, and CI/CD appendix material—**scoped to the Next.js app** in the **`fe`** tree.
+This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be/docs/deploy.md`](../../be/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.
 
-**Full stack on one VPS:** Follow the backend runbook first (DNS, Nginx split, Certbot, PM2 for API + web, `CORS_ALLOWED_ORIGINS`, etc.). Use this document for **frontend-only** env vars, `next build` / `next start`, and the **web** go-live checklist.
+**Scope of this document:** Next.js-specific steps — environment variables, `next build` / `next start`, Nginx vhost for the web app, PM2 config, and the frontend go-live checklist.
 
-**Replace `yourdomain.net`** with your real domain. Paths assume a monorepo checkout with **`fe/`** at e.g. `/opt/mycourse/fe`; adjust if the frontend is a standalone repo.
+**Replace `yourdomain.net`** with your real domain throughout. Paths assume the monorepo is checked out at `/opt/mycourse` so `fe/` lives at `/opt/mycourse/fe`.
 
 ---
 
-## Deployment runbook (do these in order)
+## Quick Reference
+
+| Item | Value |
+|------|-------|
+| App port | `3000` (Next.js production server) |
+| PM2 process name | `mycourse-web` |
+| Deploy path | `/opt/mycourse/fe` |
+| Nginx vhost | `yourdomain.net` / `www.yourdomain.net` → `127.0.0.1:3000` |
+| Required env var | `NEXT_PUBLIC_API_URL` (must be set **before** `npm run build`) |
+| Optional env var | `AUTH_COOKIE_DOMAIN` (needed when FE and API are on different subdomains) |
+| Node.js version | 22 LTS (match `be/docs/deploy.md`) |
+
+---
+
+## Deployment Runbook
+
+Run steps **in order**. Each step notes whether it can be skipped if you already completed the backend guide on the same host.
+
+---
 
 ### Step 1 — Prerequisites
 
-1. **Server:** Ubuntu 24.04 LTS (or the same host as in `be/docs/deploy.md`) with sudo.
-2. **DNS:** Apex / `www` hostnames point to this server **before** TLS (same as backend guide).
-3. **API URL:** Know the **public** base URL of the Go API (e.g. `https://api.yourdomain.net`). The browser and server actions will call this origin; it must match **HTTPS** in production and **`CORS_ALLOWED_ORIGINS`** on the backend.
-4. **Node.js:** Install a version that satisfies Next.js **16** and React **19** (the backend guide suggests **Node 22 LTS**—use the same on a shared VPS).
+1. **Server:** Ubuntu 24.04 LTS with `sudo` access (same host as the backend, or a dedicated web server).
+2. **DNS:** `yourdomain.net` and `www.yourdomain.net` must resolve to this server's IP **before** requesting TLS certificates.
+3. **API URL:** Obtain the public HTTPS base URL of the Go API (e.g. `https://api.yourdomain.net`). This is the value for `NEXT_PUBLIC_API_URL`.
+4. **Backend CORS:** Ensure `CORS_ALLOWED_ORIGINS` in the backend includes `https://yourdomain.net` and `https://www.yourdomain.net` (no trailing slashes).
+5. **Middleware filename:** The project ships `src/proxy.ts` with the `next-intl` middleware. **Rename it before deploying:**
+   ```bash
+   mv /opt/mycourse/fe/src/proxy.ts /opt/mycourse/fe/src/middleware.ts
+   ```
+   Next.js only loads middleware from `src/middleware.ts` (or `middleware.ts` at project root). Without this rename, locale-prefix redirects (`/vi`, `/en`) will **not** work in production.
 
 ---
 
-### Step 2 — Update the system and install core packages
+### Step 2 — System update and core packages
 
-If you **already** completed Step 2 in `be/docs/deploy.md`, skip duplicates and ensure these are present:
+Skip if already done in `be/docs/deploy.md` Step 2. Verify at minimum these packages are present:
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -35,30 +58,33 @@ sudo apt install -y \
 
 | Package | Purpose |
 |---------|---------|
-| `nginx`, `certbot`, `python3-certbot-nginx` | Reverse proxy + Let’s Encrypt (same pattern as backend guide) |
-| `ufw`, `fail2ban` | Firewall and SSH hardening |
-| `git`, `rsync` | Code sync; CI deploy over SSH |
+| `nginx` + `certbot` + `python3-certbot-nginx` | Reverse proxy + Let's Encrypt TLS |
+| `ufw` + `fail2ban` | Firewall and SSH brute-force protection |
+| `git` + `rsync` | Code sync; CI/CD deploy over SSH |
 
-You **do not** need Go or PostgreSQL client **on this machine** for frontend-only work unless you also run the API here.
+You do **not** need Go or PostgreSQL client here if the frontend is on a dedicated server.
 
 ---
 
-### Step 3 — Install Node.js (match CI / backend guide)
+### Step 3 — Install Node.js 22 LTS
 
-**Option A — NodeSource (example: Node 22 LTS):**
+**Option A — NodeSource (recommended for VPS):**
 
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
-node -v && npm -v
+node -v   # should print v22.x.x
+npm -v
 ```
 
-**Option B — nvm:**
+**Option B — nvm (easier for multi-version management):**
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-# new shell
-nvm install 22 && nvm use 22
+source ~/.bashrc   # or open a new shell
+nvm install 22
+nvm use 22
+nvm alias default 22
 ```
 
 ---
@@ -68,212 +94,501 @@ nvm install 22 && nvm use 22
 ```bash
 sudo npm install -g pm2
 pm2 startup systemd -u "$USER" --hp "$HOME"
-# Run once the `sudo env PATH=...` command PM2 prints
+# Copy and run the sudo command PM2 prints — it registers a systemd unit.
 ```
 
-Use PM2 to run **`npm run start`** (production Next.js server), typically on **port 3000**, behind Nginx—same integration as **`mycourse-web`** in `be/docs/deploy.md` Step 16.
+PM2 will run `npm run start` (which calls `next start -p 3000`) and restart it automatically on crash or server reboot.
 
 ---
 
 ### Step 5 — Configure the firewall
 
-If not already done (`be/docs/deploy.md` Step 7):
+Skip if done in `be/docs/deploy.md` Step 7. Confirm the rules are active:
 
 ```bash
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow OpenSSH
-sudo ufw allow 'Nginx Full'
+sudo ufw allow 'Nginx Full'   # opens ports 80 and 443
 sudo ufw enable
 sudo ufw status verbose
 ```
 
+> **Important:** Allow `OpenSSH` **before** enabling UFW to avoid locking yourself out.
+
 ---
 
-### Step 6 — Deploy path and application code
+### Step 6 — Deploy application code
 
-Example layout (consistent with backend):
+Create the deploy directory and check out the repository:
 
-```text
-/opt/mycourse/fe
+```bash
+sudo mkdir -p /opt/mycourse
+sudo chown "$USER":"$USER" /opt/mycourse
+cd /opt/mycourse
+git clone https://github.com/your-org/mycourse.git .
+# Or for a monorepo structure:
+# git clone ... && cd mycourse
 ```
 
-Clone or `rsync` the repository so **`fe/package.json`** and **`fe/package-lock.json`** exist. Production workflow is usually:
+Confirm the frontend source is at `/opt/mycourse/fe/package.json`.
 
-- **On server:** `git pull` (or CI `rsync`) → `npm ci` → `npm run build` → `pm2 reload mycourse-web`.
-
-Building on the server avoids shipping a partial `.next` without matching `node_modules` (this project does **not** enable `output: 'standalone'` in `next.config.ts`).
+**Subsequent deploys:** `git pull` or `rsync` from CI, then rebuild (see [Step 8](#step-8--install-dependencies-and-build)).
 
 ---
 
-### Step 7 — Environment variables (build time + runtime)
+### Step 7 — Environment variables
 
-Create **non-committed** env files at **`fe/`** root (e.g. `.env.production.local` or a single `.env` used only on the server).
+Create a **non-committed** env file at the `fe/` root. This file is read by `next build` and `next start`:
 
-| Variable | Required | Notes |
-|----------|----------|--------|
-| `NEXT_PUBLIC_API_URL` | **Yes** | Public base URL of the API **without** a trailing slash, e.g. `https://api.yourdomain.net`. |
+```bash
+nano /opt/mycourse/fe/.env.production.local
+```
 
-**Critical:** `NEXT_PUBLIC_*` variables are inlined at **`next build`**. Changing them **after** build without rebuilding can leave stale API URLs in the client bundle. Set them **before** `npm run build` in each environment.
+#### Required variables
 
-The Axios instance reads `NEXT_PUBLIC_API_URL` as `baseURL` in `src/api/instance.ts`. Login/signup use Server Actions; cookies and CORS must still align with the API (see root **`README.md`** and backend deploy doc).
+```ini
+# Public base URL of the Go API — used by the browser AND by Server Actions.
+# Must be HTTPS in production. Set this BEFORE running npm run build.
+NEXT_PUBLIC_API_URL=https://api.yourdomain.net
+```
+
+#### Optional but important in production
+
+```ini
+# Parent domain for auth cookies when FE and API are on different subdomains.
+# Example: FE on yourdomain.net, API on api.yourdomain.net
+#   → set AUTH_COOKIE_DOMAIN=yourdomain.net
+# Localhost: leave unset (getCookieDomain returns undefined, no domain attribute is set).
+AUTH_COOKIE_DOMAIN=yourdomain.net
+
+# Server-side-only fallback for NEXT_PUBLIC_API_URL (not inlined into client bundle).
+# Useful if you want the Node.js server to use an internal address while the browser
+# uses the public HTTPS URL. Usually set to the same value as NEXT_PUBLIC_API_URL.
+API_URL=https://api.yourdomain.net
+```
+
+#### Variable reference table
+
+| Variable | Required | Scope | Description |
+|----------|----------|-------|-------------|
+| `NEXT_PUBLIC_API_URL` | **Yes** | Build + client + server | Base URL for all API calls. `NEXT_PUBLIC_*` variables are **inlined at `next build`** — you **must** rebuild after changing this. |
+| `AUTH_COOKIE_DOMAIN` | Prod recommended | Server only | Parent domain for `access_token`, `refresh_token`, `session_id` cookies. Passed to `getCookieDomain()` → included in `buildCookieOptions()` via `loginAction`. Without this on a multi-subdomain setup, cookies may not be sent to the API. |
+| `API_URL` | No | Server only | Server-side fallback API URL. Not exposed to the client bundle. Useful for private/internal network routing. |
+
+> **`NEXT_PUBLIC_*` warning:** These values are **baked into the JS bundle** at build time. If you change `NEXT_PUBLIC_API_URL` without rebuilding, old client code will still call the previous URL. Always rebuild after changing any `NEXT_PUBLIC_*` variable.
 
 ---
 
-### Step 8 — Install dependencies and production build
+### Step 8 — Install dependencies and build
 
 ```bash
 cd /opt/mycourse/fe
+
+# Ensure .env.production.local is in place with correct NEXT_PUBLIC_API_URL
+
+# Install exact versions from lockfile (reproducible)
 npm ci
-# Ensure NEXT_PUBLIC_API_URL is set in the environment or in .env.production.local
+
+# Production build — NEXT_PUBLIC_* variables are read from env/file here
 npm run build
 ```
 
-Smoke-test locally on the server (optional):
+Smoke-test the build locally on the server (optional):
 
 ```bash
-NODE_ENV=production PORT=3000 npm run start
-# curl -I http://127.0.0.1:3000
+NODE_ENV=production PORT=3000 npm run start &
+sleep 3
+curl -sS -o /dev/null -w "HTTP %{http_code}\n" http://127.0.0.1:3000
+# Expected: HTTP 307 (locale redirect to /vi) or HTTP 200
+kill %1
 ```
+
+> **Note:** The project does **not** enable `output: 'standalone'` in `next.config.ts`. Build on the server so `.next` and `node_modules` are always in sync.
 
 ---
 
-### Step 9 — Nginx: reverse proxy to Next.js (HTTP first)
+### Step 9 — Nginx: reverse proxy (HTTP first)
 
-Use the **same** `mycourse-web` vhost as in **`be/docs/deploy.md` Step 13** — frontend hostnames → **`127.0.0.1:3000`**.
+Create the vhost file:
+
+```bash
+sudo nano /etc/nginx/sites-available/mycourse-web
+```
+
+Paste the following:
 
 ```nginx
 server {
     listen 80;
     server_name yourdomain.net www.yourdomain.net;
 
+    # Security headers (HTTPS equivalents added automatically by Certbot)
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Next.js static assets — long cache, content-addressed filenames
+    location /_next/static/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_cache_valid 200 365d;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        proxy_set_header Host $host;
+    }
+
+    # Everything else → Next.js app
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        "upgrade";
         proxy_read_timeout 90s;
+        proxy_buffering off;    # Required for Next.js streaming / SSE
     }
 }
 ```
 
-Enable the site and reload (`be/docs/deploy.md` Step 13, enable + `nginx -t`).
+Enable and test:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/mycourse-web \
+           /etc/nginx/sites-enabled/mycourse-web
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Verify HTTP is reachable:
+
+```bash
+curl -I http://yourdomain.net
+# Expected: 200 or 307 (locale redirect), served by nginx
+```
 
 ---
 
 ### Step 10 — TLS with Certbot
 
-Request certificates together with the API hostname so one cert covers apex, `www`, and `api` (see **`be/docs/deploy.md` Step 14**):
+Request certificates covering all public hostnames at once. If the API vhost is on the same server, include its hostname here too (only one cert needed):
 
 ```bash
 sudo certbot --nginx \
   -d yourdomain.net \
   -d www.yourdomain.net \
-  -d api.yourdomain.net
+  -d api.yourdomain.net   # include only if API is on same server
 ```
 
-After HTTPS is active, **`NEXT_PUBLIC_API_URL`** should use **`https://api.yourdomain.net`** and the site should be served over **`https://`** for `yourdomain.net` / `www`.
+Certbot automatically:
+- Obtains and installs the Let's Encrypt certificate.
+- Modifies your Nginx vhosts to listen on 443 with TLS.
+- Sets up an HTTP → HTTPS redirect on port 80.
+- Configures a cron/systemd timer for automatic renewal.
+
+Verify auto-renewal works:
+
+```bash
+sudo certbot renew --dry-run
+```
+
+After TLS is active, update `NEXT_PUBLIC_API_URL` to use `https://api.yourdomain.net` if you haven't already, and rebuild.
 
 ---
 
 ### Step 11 — Run Next.js under PM2
 
-Add or merge the **`mycourse-web`** app into the same `ecosystem.config.cjs` as the backend (`be/docs/deploy.md` Step 16). Example:
+Create or update the PM2 ecosystem file. If you already have one from the backend guide at `/opt/mycourse/ecosystem.config.cjs`, add the `mycourse-web` entry:
 
 ```javascript
-{
-  name: 'mycourse-web',
-  cwd: '/opt/mycourse/fe',
-  script: 'npm',
-  args: 'run start',
-  instances: 1,
-  autorestart: true,
-  env: {
-    NODE_ENV: 'production',
-    PORT: 3000,
-    NEXT_PUBLIC_API_URL: 'https://api.yourdomain.net',
-  },
-},
+// /opt/mycourse/ecosystem.config.cjs
+module.exports = {
+  apps: [
+    // --- Go API (from be/docs/deploy.md) ---
+    {
+      name: 'mycourse-api',
+      cwd: '/opt/mycourse/be',
+      script: './mycourse-api',   // compiled Go binary
+      instances: 1,
+      autorestart: true,
+      env: { /* ... API env vars ... */ },
+    },
+
+    // --- Next.js frontend ---
+    {
+      name: 'mycourse-web',
+      cwd: '/opt/mycourse/fe',
+      script: 'npm',
+      args: 'run start',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '512M',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3000,
+        // Runtime env vars for Server Actions and token refresh
+        NEXT_PUBLIC_API_URL: 'https://api.yourdomain.net',
+        AUTH_COOKIE_DOMAIN: 'yourdomain.net',
+        API_URL: 'https://api.yourdomain.net',
+      },
+    },
+  ],
+};
 ```
 
-**Important:** If you rely on a **file** for `NEXT_PUBLIC_*`, run **`npm run build`** with that file present, then keep the same values in PM2 `env` for consistency. If PM2 cannot load `.env` files, use **`env`** / **`env_production`** or systemd `EnvironmentFile=`.
+> **Note on `NEXT_PUBLIC_*` in PM2:** `NEXT_PUBLIC_API_URL` is baked into the bundle during `npm run build`. Setting it in PM2 `env` provides it for server-side reads at runtime but does **not** change the client bundle. Always ensure the same value is present when building.
+
+Start PM2 and persist the process list:
 
 ```bash
+cd /opt/mycourse
 pm2 start ecosystem.config.cjs
 pm2 save
+```
+
+Check the web process is running:
+
+```bash
+pm2 list
+pm2 logs mycourse-web --lines 50
 ```
 
 ---
 
 ### Step 12 — Verify end-to-end
 
-1. Open **`https://yourdomain.net`** (or `www`) — Next.js should load through Nginx.
-2. Confirm locale routing: with **`next-intl`** and `localePrefix: "always"`, expect paths like **`/vi`** or **`/en`** (see `src/i18n/routing.ts`).
-3. Exercise **login** and **GET /api/v1/me** from the UI; confirm `CORS` and cookies work against **`https://api.yourdomain.net`**.
+```bash
+# HTTPS loads with locale redirect
+curl -sS -o /dev/null -w "%{http_code} %{redirect_url}\n" https://yourdomain.net
+# Expected: 307 https://yourdomain.net/vi   (or 200 if middleware redirect happens in Next.js)
 
-Optional:
+# Vietnamese home page
+curl -sS -o /dev/null -w "%{http_code}\n" https://yourdomain.net/vi
+
+# English home page
+curl -sS -o /dev/null -w "%{http_code}\n" https://yourdomain.net/en
+```
+
+**Manual checks:**
+1. Open `https://yourdomain.net` in a browser — should redirect to `/vi` and render the home page.
+2. Click the locale switcher — should navigate to `/en` (or vice versa).
+3. Open the login modal, enter credentials — should set cookies and show `UserMenu` (avatar).
+4. Hard-refresh — `UserMenu` should still be visible (SWR refetches `GET /api/v1/me`).
+5. Open DevTools → Application → Cookies — verify `access_token`, `refresh_token`, `session_id` are present with `SameSite=Lax`, `Domain=.yourdomain.net`, and are **not** `HttpOnly`.
+
+---
+
+### Step 13 — Go-live checklist
+
+```
+Frontend
+  [ ] NEXT_PUBLIC_API_URL is the HTTPS API URL used at build time for this release.
+  [ ] AUTH_COOKIE_DOMAIN is set to the parent domain (e.g. yourdomain.net).
+  [ ] src/proxy.ts has been renamed to src/middleware.ts — locale routing is enforced.
+  [ ] npm run build completed without errors.
+  [ ] PM2 mycourse-web is running and autorestart is enabled.
+  [ ] pm2 save was run; PM2 startup unit was installed (pm2 startup systemd).
+
+Nginx + TLS
+  [ ] Nginx vhost for apex + www proxies to 127.0.0.1:3000 with X-Forwarded-Proto.
+  [ ] TLS certificate covers all public hostnames (certbot --dry-run passes).
+  [ ] HTTP → HTTPS redirect is active (curl -I http://yourdomain.net shows 301).
+  [ ] Security headers (X-Frame-Options, X-Content-Type-Options) are present.
+
+Integration
+  [ ] Backend CORS_ALLOWED_ORIGINS includes https://yourdomain.net and https://www.yourdomain.net.
+  [ ] Login flow sets cookies visible in browser DevTools.
+  [ ] Token refresh works (auth stays valid after 15 min without re-login).
+  [ ] GET /api/v1/me returns the authenticated user after login.
+  [ ] Locale switcher navigates between /vi and /en correctly.
+```
+
+---
+
+## Appendix A — Target Architecture
+
+```
+                           ┌─────────────────────────────────────────┐
+Browser  ──────────────►  │  Nginx (TLS: yourdomain.net + www)       │
+                           │  port 443 / 80                           │
+                           │  ┌─────────────────────────────────────┐ │
+                           │  │  Location /  →  127.0.0.1:3000      │ │
+                           │  │  (next start — PM2: mycourse-web)    │ │
+                           │  │                                     │ │
+                           │  │  Server Actions → API_URL / NEXT_    │ │
+                           │  │  PUBLIC_API_URL                     │ │
+                           │  └────────────────────┬────────────────┘ │
+                           └───────────────────────┼─────────────────┘
+                                                   │
+                           ┌───────────────────────▼─────────────────┐
+                           │  Nginx (TLS: api.yourdomain.net)        │
+                           │  port 443                               │
+                           │  Location /  →  127.0.0.1:8080         │
+                           │  (Go API — PM2: mycourse-api)           │
+                           └─────────────────────────────────────────┘
+```
+
+---
+
+## Appendix B — Environment Variables Reference
+
+| Variable | Required | Build-time | Runtime | Description |
+|----------|----------|-----------|---------|-------------|
+| `NEXT_PUBLIC_API_URL` | **Yes** | ✅ baked into bundle | ✅ also read server-side | Public Go API base URL. No trailing slash. Must match `CORS_ALLOWED_ORIGINS` on the backend. |
+| `AUTH_COOKIE_DOMAIN` | Prod recommended | ❌ | ✅ Server Actions only | Parent domain for auth cookies. Without this, cookies set on `yourdomain.net` may not be sent to `api.yourdomain.net`. |
+| `API_URL` | No | ❌ | ✅ Server only | Server-side fallback for API base URL. Not exposed to browser. Useful for private network routing. |
+
+---
+
+## Appendix C — Middleware (Locale Routing) Fix
+
+`src/proxy.ts` contains a valid `next-intl` middleware:
+
+```ts
+// src/proxy.ts  (current, incorrect filename)
+import createMiddleware from "next-intl/middleware";
+import { routing } from "@/i18n/routing";
+
+export default createMiddleware(routing);
+
+export const config = {
+  matcher: ["/((?!api|trpc|_next|_vercel|.*\\..*).*)"],
+};
+```
+
+**Problem:** Next.js only executes middleware from `src/middleware.ts` or `middleware.ts` at the project root. The filename `proxy.ts` is not recognized.
+
+**Fix (Option 1 — rename):**
 
 ```bash
-curl -sS -o /dev/null -w "%{http_code}" https://yourdomain.net/vi
+git mv src/proxy.ts src/middleware.ts
+git commit -m "fix: rename proxy.ts → middleware.ts so Next.js runs locale middleware"
+```
+
+**Fix (Option 2 — re-export bridge, keeps proxy.ts intact):**
+
+```ts
+// src/middleware.ts
+export { default, config } from "./proxy";
+```
+
+After either fix, verify with:
+
+```bash
+curl -sS -o /dev/null -w "%{http_code} %{redirect_url}\n" http://127.0.0.1:3000/
+# Expected: 307  http://127.0.0.1:3000/vi
 ```
 
 ---
 
-### Step 13 — Go-live checklist (frontend)
+## Appendix D — Full Deployment Update Procedure (Zero-Downtime)
 
-- [ ] `NEXT_PUBLIC_API_URL` is the **HTTPS** API URL used at **build** time for this release.
-- [ ] Backend **`CORS_ALLOWED_ORIGINS`** includes `https://yourdomain.net` and `https://www.yourdomain.net` (no trailing slashes).
-- [ ] Nginx proxies **`/`** to **`127.0.0.1:3000`** with `X-Forwarded-Proto` so Next sees HTTPS where relevant.
-- [ ] PM2 **`mycourse-web`** restarts on reboot (`pm2 startup` + `pm2 save`).
-- [ ] TLS covers all public hostnames you use.
-- [ ] Auth: login, refresh (`X-Token-Expired`), logged-out `/me`, and i18n (`src/messages/*.json`) verified.
-- [ ] **Locale middleware:** Next.js only loads middleware from a file named **`middleware.ts`** at the project root or under **`src/`**. The project currently ships **`src/proxy.ts`** with `next-intl` middleware—**rename or re-export** so Next actually runs it (see Appendix C).
+Use this procedure for each new release:
+
+```bash
+cd /opt/mycourse
+
+# 1. Pull latest code
+git pull origin main
+
+# 2. (Optional) Install new dependencies
+cd fe && npm ci
+
+# 3. Re-build (NEXT_PUBLIC_* must be present in env or .env.production.local)
+npm run build
+
+# 4. Reload PM2 with zero downtime (graceful reload, not restart)
+pm2 reload mycourse-web
+
+# 5. Confirm the new process is healthy
+pm2 list
+curl -sS -o /dev/null -w "%{http_code}\n" https://yourdomain.net/vi
+```
+
+> `pm2 reload` sends a SIGINT, waits for the process to exit cleanly, then starts the new instance. The old instance keeps serving requests during startup of the new one.
 
 ---
 
-## Appendix A — Target architecture (frontend)
+## Appendix E — Rollback Procedure
 
-```text
-Browser → DNS → Nginx (TLS, server_name apex + www) → 127.0.0.1:3000 (next start via PM2)
-                ↘ separate server block → 127.0.0.1:8080 (Go API)  [see be/docs/deploy.md]
+If the new release is broken, roll back immediately:
+
+```bash
+cd /opt/mycourse
+
+# 1. Revert code to the previous working commit
+git log --oneline -5   # identify the last good commit hash
+git checkout <good-commit-hash> -- fe/
+
+# 2. Re-install (if package-lock.json changed)
+cd fe && npm ci
+
+# 3. Rebuild from the previous state
+npm run build
+
+# 4. Reload PM2
+pm2 reload mycourse-web
+
+# 5. Verify
+curl -sS -o /dev/null -w "%{http_code}\n" https://yourdomain.net/vi
+```
+
+Alternatively, keep the previous `.next/` build in a versioned directory and swap symlinks:
+
+```bash
+# Recommended pattern for fast rollbacks:
+/opt/mycourse/fe/releases/
+    v1.2.0/    ← current
+    v1.1.9/    ← previous (keep 2-3 releases)
+/opt/mycourse/fe/current  → ./releases/v1.2.0  (symlink)
+```
+
+Update the PM2 `cwd` to point to `/opt/mycourse/fe/current`.
+
+---
+
+## Appendix F — Log Management
+
+**PM2 logs:**
+
+```bash
+pm2 logs mycourse-web          # tail live
+pm2 logs mycourse-web --lines 200   # last 200 lines
+pm2 flush                      # clear all PM2 log files
+```
+
+PM2 log files are at `~/.pm2/logs/mycourse-web-out.log` and `mycourse-web-error.log`.
+
+**Rotate PM2 logs automatically:**
+
+```bash
+pm2 install pm2-logrotate
+pm2 set pm2-logrotate:max_size 50M
+pm2 set pm2-logrotate:retain 7
+```
+
+**Nginx logs:**
+
+```bash
+tail -f /var/log/nginx/access.log
+tail -f /var/log/nginx/error.log
 ```
 
 ---
 
-## Appendix B — Behaviour tied to the backend
+## Appendix G — CI/CD (GitHub Actions)
 
-| Topic | Where to read |
-|--------|----------------|
-| Server Actions + cookies for login/signup | Root **`README.md`** |
-| Axios, refresh, `ApiResult`, error store | **`README.md`**, `src/api/instance.ts` |
-| API paths | `src/constants/api-route.ts` |
-| Full-stack VPS, API env, DB, Redis | **`be/docs/deploy.md`** |
+Align with the `deploy` job pattern in `be/docs/deploy.md`. Typical job structure:
 
----
+| Job | Steps |
+|-----|-------|
+| `lint` | `npm ci` → `npm run lint` + `npm run lint:biome` |
+| `build` | `npm ci` → `npm run build` (with `NEXT_PUBLIC_API_URL` from GitHub Secrets) |
+| `deploy` | SSH to VPS → `git pull` or `rsync` → `npm ci` → `npm run build` → `pm2 reload mycourse-web` |
 
-## Appendix C — Internationalization middleware
-
-`src/proxy.ts` defines **`createMiddleware`** from `next-intl` and an export **`config.matcher`**. Next.js expects **`middleware.ts`** (or `src/middleware.ts`). Until the file is renamed or bridged, locale-prefix redirects may not run in production—verify **`/vi`** and **`/en`** behaviour after deploy.
-
----
-
-## Appendix D — CI/CD (GitHub Actions, frontend)
-
-Align with **`be/docs/deploy.md` Appendix C**. Typical split:
-
-| Job | Responsibility |
-|-----|----------------|
-| `lint-frontend` | `npm ci` in `fe`, `npm run lint` / `lint:biome` |
-| `build-frontend` | `npm ci` + `npm run build` with `NEXT_PUBLIC_API_URL` from GitHub **Secrets** / **Variables** for the target environment |
-| `deploy-frontend` | SSH + `git pull` or `rsync`, then on server: `npm ci`, `npm run build`, `pm2 reload mycourse-web` |
-
-Store **`NEXT_PUBLIC_API_URL`** per environment (preview vs production). **Rebuild** when it changes.
-
-Example build step (monorepo):
+**Example build step (monorepo with `fe/` subfolder):**
 
 ```yaml
 - uses: actions/setup-node@v4
@@ -281,43 +596,126 @@ Example build step (monorepo):
     node-version: "22"
     cache: "npm"
     cache-dependency-path: fe/package-lock.json
-- name: Install and build
+
+- name: Install and build frontend
   working-directory: fe
   env:
     NEXT_PUBLIC_API_URL: ${{ vars.PUBLIC_API_URL }}
+    # AUTH_COOKIE_DOMAIN is a runtime-only var — set it on the server, not in CI
   run: |
     npm ci
     npm run build
 ```
 
-Deploy can upload **source** and run **`npm ci && npm run build`** on the VPS so the **server** is the single place that bakes `NEXT_PUBLIC_*` for production—or build in CI and rsync **`fe/`** including `.next` **and** `node_modules` (heavier). Prefer **build on server** unless you add **`output: 'standalone'`** later.
+**Example deploy step:**
+
+```yaml
+- name: Deploy frontend to VPS
+  uses: appleboy/ssh-action@v1
+  with:
+    host: ${{ secrets.VPS_HOST }}
+    username: ${{ secrets.VPS_USER }}
+    key: ${{ secrets.VPS_SSH_KEY }}
+    script: |
+      cd /opt/mycourse
+      git pull origin main
+      cd fe
+      npm ci
+      NEXT_PUBLIC_API_URL=${{ vars.PUBLIC_API_URL }} npm run build
+      pm2 reload mycourse-web
+```
+
+> Prefer **build on server** (as above) over shipping the `.next` folder from CI unless you later enable `output: 'standalone'`. Building on the server ensures the Node.js version and native module binaries match the production environment.
 
 ---
 
-## Appendix E — Key files in repo `fe`
+## Appendix H — Troubleshooting
 
-| Area | Path |
-|------|------|
-| Next config + i18n plugin | `next.config.ts` |
-| Entry layouts | `src/app/layout.tsx`, `src/app/[locale]/layout.tsx` |
-| Routes / home | `src/app/[locale]/(web)/`, `src/screen/` |
-| API client | `src/api/instance.ts`, `src/api/methods.ts` |
-| Auth actions | `src/actions/auth/auth.ts` |
-| i18n | `src/i18n/routing.ts`, `src/i18n/request.ts` |
-| Docs | `docs/architecture.md`, `docs/flow.md`, `docs/screens.md`, **this file** |
-
----
-
-## Appendix F — GitNexus index
-
-After large merges, refresh the **`fe`** graph (see **`AGENTS.md`**):
+### Next.js app is not reachable
 
 ```bash
-cd /opt/mycourse/fe   # or your checkout
-npx gitnexus analyze
-# If embeddings were used: npx gitnexus analyze --embeddings
+pm2 list                     # is mycourse-web running?
+pm2 logs mycourse-web        # any startup errors?
+curl http://127.0.0.1:3000   # bypass Nginx — is Next.js up?
+sudo nginx -t                # Nginx config syntax OK?
+sudo systemctl status nginx  # Nginx service running?
+```
+
+### 502 Bad Gateway from Nginx
+
+Usually means the Next.js process is down or not listening on port 3000.
+
+```bash
+pm2 list                     # check status
+pm2 restart mycourse-web     # force restart
+ss -tlnp | grep 3000         # is port 3000 bound?
+```
+
+### Locale redirects not working (`/vi`, `/en` not enforced)
+
+The middleware file is not registered. See [Appendix C](#appendix-c--middleware-locale-routing-fix).
+
+```bash
+ls /opt/mycourse/fe/src/middleware.ts   # must exist
+# If missing:
+mv /opt/mycourse/fe/src/proxy.ts /opt/mycourse/fe/src/middleware.ts
+npm run build && pm2 reload mycourse-web
+```
+
+### Login works but cookies are not sent to the API
+
+Check `AUTH_COOKIE_DOMAIN`. If FE is at `yourdomain.net` and API is at `api.yourdomain.net`, the parent domain must be set so the cookie is scoped to `.yourdomain.net`:
+
+```bash
+# In .env.production.local or PM2 env:
+AUTH_COOKIE_DOMAIN=yourdomain.net
+# Then rebuild + reload
+npm run build && pm2 reload mycourse-web
+```
+
+### Auth tokens expire and the app does not recover
+
+The token refresh interceptor (`doTokenRefresh` in `src/api/instance.ts`) requires the `refresh_token` and `session_id` cookies. Verify they are present in the browser after login. Also ensure the backend's `/api/v1/auth/refresh` endpoint is reachable at `NEXT_PUBLIC_API_URL`.
+
+### `NEXT_PUBLIC_API_URL` is wrong after deploy
+
+This variable is **baked in at build time**. Changing it in PM2 `env` does not update the client bundle. You must:
+
+```bash
+NEXT_PUBLIC_API_URL=https://api.yourdomain.net npm run build
+pm2 reload mycourse-web
+```
+
+### TLS certificate renewal fails
+
+```bash
+sudo certbot renew --dry-run   # simulate renewal
+sudo systemctl status certbot.timer   # is the timer active?
+sudo nginx -t                  # valid config after certbot edits?
 ```
 
 ---
 
-*Adjust domains, paths, and secrets to match your environment. For API + DB + Redis + joint Nginx, always keep **`be/docs/deploy.md`** as the source of truth for the full stack.*
+## Appendix I — Key Files Reference
+
+| Area | Path | Notes |
+|------|------|-------|
+| Next.js config + i18n plugin | `next.config.ts` | `createNextIntlPlugin("./src/i18n/request.ts")` |
+| Middleware (locale routing) | `src/proxy.ts` → must be `src/middleware.ts` | See Appendix C |
+| Root layout | `src/app/layout.tsx` | Fonts (Roboto, Gilroy, GeistMono), Toaster |
+| Locale layout | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider` + `AppProviders` (SWR) |
+| Web shell layout | `src/app/[locale]/(web)/layout.tsx` | `Header` + `<main>` |
+| Home screen | `src/screen/home/page.tsx` | Assembles 7 marketing sections |
+| API client instance | `src/api/instance.ts` | Axios + token attach + token refresh interceptors |
+| API helpers | `src/api/methods.ts` | `apiFetch`, `apiPost`, `apiPut`, `apiDelete` → `ApiResult<T>` |
+| Auth server actions | `src/actions/auth/auth.ts` | `loginAction`, `signupAction` (`"use server"`) |
+| Cookie utilities | `src/lib/utils.ts` | `buildCookieOptions`, `getCookieDomain`, `getCookieValue`, `setCookieValue` |
+| i18n routing | `src/i18n/routing.ts` | `locales: ["en","vi"]`, `defaultLocale: "vi"`, `localePrefix: "always"` |
+| API route constants | `src/constants/api-route.ts` | All API endpoint paths |
+| Auth modal store | `src/store/auth/auth.ts` | `useAuthStore` (Zustand) |
+| Global error store | `src/store/api-error-store.ts` | `useApiError` (Zustand, max 20 entries) |
+| Translation files | `src/messages/en.json` / `vi.json` | English and Vietnamese copy |
+
+---
+
+*For the full-stack VPS setup (Go API, Postgres, Redis, joint Nginx, CI/CD), always use **`be/docs/deploy.md`** as the primary reference. Use this document for frontend-specific concerns only.*
