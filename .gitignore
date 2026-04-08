@@ -47,3 +47,7 @@ next-env.d.ts
 .windsurf/skills/
 .cursor/mcp.json
 .gitnexus
+
+AGENTS.md
+CLAUDE.md
+
