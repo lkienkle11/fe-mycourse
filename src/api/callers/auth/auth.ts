@@ -3,7 +3,7 @@ import { apiFetch, apiPost } from "@/api/methods";
 import { API_PRIVATE_ROUTES, API_PUBLIC_ROUTES } from "@/constants/api-route";
 import { buildQueryParams } from "@/lib/utils";
 import type { ApiResponse } from "@/types/api";
-import type { LoginResponse, MeResponse } from "@/types/auth";
+import type { LoginResponse, MeResponse, RefreshTokenResponse } from "@/types/auth";
 
 export interface LoginPayload {
   email: string;
@@ -74,4 +74,31 @@ export async function loginService(payload: LoginPayload): Promise<{
     payload,
   );
   return { data, cookies };
+}
+
+/**
+ * Gọi API refresh token.
+ *
+ * Truyền refresh token qua header X-Refresh-Token và session ID qua header
+ * X-Session-Id.  BE trả về access_token mới, refresh_token mới và session_id
+ * (không đổi) trong JSON body.
+ *
+ * Hàm này dùng `apiPost` thông thường — interceptor trong instance.ts sẽ tự
+ * gọi hàm này khi phát hiện lỗi 401/403 + header X-Token-Expired.
+ */
+export async function refreshTokenService(
+  refreshToken: string,
+  sessionId: string,
+): Promise<ApiResponse<RefreshTokenResponse>> {
+  const { data } = await apiPost<ApiResponse<RefreshTokenResponse>>(
+    API_PUBLIC_ROUTES.auth.refresh,
+    null,
+    {
+      headers: {
+        "X-Refresh-Token": refreshToken,
+        "X-Session-Id": sessionId,
+      },
+    },
+  );
+  return data;
 }

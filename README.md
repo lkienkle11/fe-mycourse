@@ -95,13 +95,14 @@ const { data, statusCode, headers, cookies } = await apiPost<ApiResponse<null>>(
 LoginContent (client)
   → handleAuthSubmit("login", values)   [auth-form-handler.ts]
     → loginAction(payload)              [src/actions/auth/auth.ts — "use server"]
-      → loginService(payload)           [src/services/auth/auth.ts]
+      → loginService(payload)           [src/api/callers/auth/auth.ts]
         → apiPost(API_PUBLIC_ROUTES.auth.login, payload)
 ```
 
 - **No API endpoint is exposed in the browser network tab** — the call goes through a Next.js Server Action (`"use server"`).
-- **Tokens are never stored in JS**: BE sets `access_token`, `refresh_token`, `session_id` as `HttpOnly` cookies.
-- **`data` in the response is always `null` on login success** — only `code` and `message` matter.
+- **Tokens are set as non-HttpOnly cookies** so that client-side JS can read them and attach them to outgoing requests as `Authorization` / `X-Refresh-Token` / `X-Session-Id` headers.
+- The Server Action reads `access_token`, `refresh_token`, and `session_id` from the **JSON response body** (all three are returned by the BE) and sets them as `SameSite=Lax` non-HttpOnly cookies via `next/headers`.
+- **`buildCookieOptions`** (in `src/lib/utils.ts`) is used to build cookie options with `httpOnly: false`.
 
 ### Files Added / Modified
 
@@ -109,27 +110,24 @@ LoginContent (client)
 |------|------|
 | `.env` | `NEXT_PUBLIC_API_URL=http://localhost:8080` |
 | `src/schema/auth/auth.ts` | Zod schemas: `loginSchema`, `signupSchema` + inferred types |
-| `src/services/auth/auth.ts` | `loginService(payload)` — wraps `apiPost` |
-| `src/actions/auth/auth.ts` | `loginAction(payload)` Server Action — calls loginService safely server-side |
-| `src/components/…/auth-form-handler.ts` | `handleAuthSubmit(type, payload)` — single function used by both LoginContent & SignupContent |
-| `src/components/…/login-content.tsx` | react-hook-form + zodResolver + loginAction wired up |
-| `src/components/…/signup-content.tsx` | react-hook-form + zodResolver + signupAction wired up |
+| `src/api/callers/auth/auth.ts` | `loginService(payload)` — wraps `apiPost` |
+| `src/actions/auth/auth.ts` | `loginAction(payload)` Server Action — reads tokens from JSON body, sets non-HttpOnly cookies |
+| `src/lib/utils.ts` | `buildCookieOptions` — non-HttpOnly cookie options factory |
+| `src/components/…/auth-form-handler.ts` | `handleAuthSubmit(type, payload)` — shared by LoginContent & SignupContent |
+| `src/components/…/login-content.tsx` | react-hook-form + zodResolver + loginAction |
+| `src/components/…/signup-content.tsx` | react-hook-form + zodResolver + signupAction |
 
 ### Shared `handleAuthSubmit`
-
-Both `LoginContent` and `SignupContent` call the same function:
 
 ```ts
 handleAuthSubmit("login", loginValues)   // → loginAction
 handleAuthSubmit("signup", signupValues) // → signupAction
 ```
 
-The `type` discriminator determines which Server Action to invoke.
-
 ### Validation Messages (i18n)
 
 Schema error messages use i18n keys (e.g. `"validation.email"`).  
-Components call `t(error.message)` which resolves the key via `next-intl` against `src/messages/vi.json` / `en.json`.
+Components call `t(error.message)` which resolves the key via `next-intl`.
 
 ---
 
@@ -142,11 +140,12 @@ AuthLayout (client)
   → useGetMe()                          [src/hooks/auth/useAuthContext.tsx]
     → useAuth()                         [src/api/hooks/auth/useAuth.ts — SWR]
       → getMeService()                  [src/api/callers/auth — apiFetch wrapper]
-        → apiFetch(getMeEndpointKey)    [GET /api/v1/me — cookie auth]
+        → apiFetch(getMeEndpointKey)    [GET /api/v1/me]
+          ↑ Authorization: Bearer <access_token>   (added by Axios interceptor)
 ```
 
-- **Cookie-based auth**: `withCredentials: true` on the Axios instance — the `access_token` cookie is sent automatically.
-- **Transparent token refresh**: The BE middleware silently renews the access token when it expires (using `refresh_token` + `session_id` cookies); no extra handling is needed on the FE.
+- **Header-based auth**: the Axios request interceptor in `src/api/instance.ts` reads the `access_token` cookie and attaches it as `Authorization: Bearer <token>` on every request.
+- **Automatic token refresh**: if a request returns `401` / `403` with `X-Token-Expired: true`, the response interceptor calls `POST /api/v1/auth/refresh` and retries the original request transparently (see below).
 - **401 = not authenticated**: `getMeService` catches 401 and returns `null` instead of throwing, so SWR does not treat it as an error.
 
 ### Conditional Rendering in `AuthLayout`
@@ -161,12 +160,12 @@ AuthLayout (client)
 
 | File | Change |
 |------|--------|
-| `src/types/auth/auth.ts` | Added `MeResponse` interface (mirrors `be/dto/auth.go`) |
-| `src/api/callers/auth.ts` | `getMeEndpointKey` + `getMeService()` |
+| `src/types/auth/auth.ts` | `MeResponse`, `LoginResponse` (+ `session_id`), `RefreshTokenResponse` |
+| `src/api/callers/auth/auth.ts` | `getMeEndpointKey`, `getMeService()`, `loginService()`, `refreshTokenService()` |
 | `src/api/hooks/auth/useAuth.ts` | SWR hook returning `{ me, isLoading, error, mutate }` |
-| `src/hooks/auth/useAuthContext.tsx` | `useGetMe()` — thin wrapper over `useAuth()`, normalises the return type |
+| `src/hooks/auth/useAuthContext.tsx` | `useGetMe()` — thin wrapper over `useAuth()` |
 | `src/components/…/auth-layout.tsx` | Rendering logic driven by state from `useGetMe` |
-| `src/components/…/user-menu.tsx` | Accepts `me: MeResponse` prop instead of the hardcoded `DEFAULT_USER` |
+| `src/components/…/user-menu.tsx` | Accepts `me: MeResponse` prop |
 
 ### `MeResponse` type
 
@@ -186,10 +185,25 @@ interface MeResponse {
 }
 ```
 
+### `LoginResponse` / `RefreshTokenResponse` types
+
+```ts
+interface LoginResponse {
+  access_token: string;
+  refresh_token: string;
+  session_id: string;
+}
+
+interface RefreshTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  session_id: string;   // unchanged across rotations
+}
+```
+
 ### `useGetMe` hook usage
 
 ```ts
-// Recommended — use via the convenience hook:
 import { useGetMe } from "@/hooks/auth/useAuthContext";
 
 const { me, isLoading, isError, mutateMe } = useGetMe();
@@ -199,11 +213,70 @@ await loginAction(payload);
 mutateMe();
 ```
 
-> To use the SWR hook directly (e.g. inside other API hooks):
+> To use the SWR hook directly:
 > ```ts
 > import { useAuth } from "@/api/hooks/auth";
 > const { me, isLoading, error, mutate } = useAuth();
 > ```
+
+---
+
+## Token Refresh Interceptor (`src/api/instance.ts`)
+
+### How it works
+
+Every response that is `401` or `403` **and** carries `X-Token-Expired: true` triggers an automatic token rotation before the error is surfaced to the caller.
+
+```
+Request → BE → 401 + X-Token-Expired: true
+  │
+  ├─ [first attempt, no _retry flag]
+  │     Read refresh_token + session_id from cookies
+  │     POST /api/v1/auth/refresh
+  │       X-Refresh-Token: <refresh_jwt>
+  │       X-Session-Id:    <session_id>
+  │     ├─ [success] Update cookies → retry original request → return response
+  │     └─ [failure] Report error → reject promise
+  │
+  └─ [second attempt, _retry flag set] → Report error → reject promise
+
+Any other error (non-401/403, or missing X-Token-Expired) → report + reject immediately
+```
+
+### Mutex (client-side only)
+
+If multiple requests expire simultaneously, only **one** refresh call is made. All other requests are queued and receive the new token once the refresh completes. This is implemented with a module-level `isRefreshing` flag and a `pendingResolvers` array.
+
+The mutex is **not used server-side** — server requests are isolated per user, so a shared flag would incorrectly block or mix tokens across different users.
+
+### Cookie helpers (`src/lib/utils.ts`)
+
+| Function | Description |
+|---|---|
+| `isServer` | `typeof window === "undefined"` |
+| `getCookieValue(name)` | Reads a cookie. Client: `js-cookie`. Server: `next/headers` (requires a Next.js request context). |
+| `setCookieValue(name, value, options?)` | Writes a cookie. Client: `js-cookie`. Server: `next/headers` (writable only inside Server Actions / Route Handlers — silently skipped in pure RSC). |
+
+### `refreshTokenService`
+
+Low-level caller for the refresh endpoint. The interceptor calls this directly — application code should not need to call it manually.
+
+```ts
+import { refreshTokenService } from "@/api/callers/auth";
+
+const response = await refreshTokenService(refreshToken, sessionId);
+// response.data → { access_token, refresh_token, session_id }
+```
+
+### API route constants
+
+```ts
+// src/constants/api-route.ts
+API_PUBLIC_ROUTES.auth.login    // POST /api/v1/auth/login
+API_PUBLIC_ROUTES.auth.signup   // POST /api/v1/auth/signup
+API_PUBLIC_ROUTES.auth.refresh  // POST /api/v1/auth/refresh
+API_PRIVATE_ROUTES.user.getMe   // GET  /api/v1/me
+```
 
 ---
 

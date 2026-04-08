@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { loginService } from "@/api/callers/auth";
 import type { LoginPayload, SignupPayload } from "@/api/callers/auth";
-import { buildHttpOnlyCookieOptions, getCookieDomain } from "@/lib/utils";
+import { buildCookieOptions, getCookieDomain } from "@/lib/utils";
 import { ApiErrorCode } from "@/types/api";
 
 export interface AuthActionResult {
@@ -31,13 +31,10 @@ export async function loginAction(
   payload: LoginPayload,
 ): Promise<AuthActionResult> {
   try {
-    const { data: response, cookies: responseCookies } = await loginService(payload);
-
-    console.info("responseCookies", responseCookies);
+    const { data: response } = await loginService(payload);
 
     if (response.code === ApiErrorCode.Success && response.data) {
-      const { access_token, refresh_token } = response.data;
-      const session_id = responseCookies.session_id;
+      const { access_token, refresh_token, session_id } = response.data;
       const refreshMaxAge = payload.remember_me ? REMEMBER_ME_MAX_AGE : undefined;
       const isProduction = process.env.NODE_ENV === "production";
       const domain = getCookieDomain(process.env.AUTH_COOKIE_DOMAIN);
@@ -45,16 +42,18 @@ export async function loginAction(
 
       const cookieStore = await cookies();
 
+      // Cookies are non-HttpOnly so that client-side JS can read them and attach
+      // them as Authorization / X-Refresh-Token / X-Session-Id headers.
       cookieStore.set(
         "access_token",
         access_token,
-        buildHttpOnlyCookieOptions({ sameSite, isProduction, domain }),
+        buildCookieOptions({ sameSite, isProduction, domain }),
       );
 
       cookieStore.set(
         "refresh_token",
         refresh_token,
-        buildHttpOnlyCookieOptions({
+        buildCookieOptions({
           sameSite,
           isProduction,
           domain,
@@ -66,7 +65,7 @@ export async function loginAction(
         cookieStore.set(
           "session_id",
           session_id,
-          buildHttpOnlyCookieOptions({
+          buildCookieOptions({
             sameSite,
             isProduction,
             domain,
