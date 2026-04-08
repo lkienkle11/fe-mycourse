@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { loginService } from "@/api/callers/auth";
 import type { LoginPayload, SignupPayload } from "@/api/callers/auth";
+import { buildHttpOnlyCookieOptions, getCookieDomain } from "@/lib/utils";
 import { ApiErrorCode } from "@/types/api";
 
 export interface AuthActionResult {
@@ -32,37 +33,46 @@ export async function loginAction(
   try {
     const { data: response, cookies: responseCookies } = await loginService(payload);
 
+    console.info("responseCookies", responseCookies);
+
     if (response.code === ApiErrorCode.Success && response.data) {
       const { access_token, refresh_token } = response.data;
       const session_id = responseCookies.session_id;
-      const isProduction = process.env.NODE_ENV === "production";
       const refreshMaxAge = payload.remember_me ? REMEMBER_ME_MAX_AGE : undefined;
+      const isProduction = process.env.NODE_ENV === "production";
+      const domain = getCookieDomain(process.env.AUTH_COOKIE_DOMAIN);
+      const sameSite = "lax";
 
       const cookieStore = await cookies();
 
-      cookieStore.set("access_token", access_token, {
-        httpOnly: true,
-        sameSite: "strict",
-        secure: isProduction,
-        path: "/",
-      });
+      cookieStore.set(
+        "access_token",
+        access_token,
+        buildHttpOnlyCookieOptions({ sameSite, isProduction, domain }),
+      );
 
-      cookieStore.set("refresh_token", refresh_token, {
-        httpOnly: true,
-        sameSite: "strict",
-        secure: isProduction,
-        path: "/",
-        maxAge: refreshMaxAge,
-      });
+      cookieStore.set(
+        "refresh_token",
+        refresh_token,
+        buildHttpOnlyCookieOptions({
+          sameSite,
+          isProduction,
+          domain,
+          maxAge: refreshMaxAge,
+        }),
+      );
 
       if (session_id) {
-        cookieStore.set("session_id", session_id, {
-          httpOnly: true,
-          sameSite: "strict",
-          secure: isProduction,
-          path: "/",
-          maxAge: refreshMaxAge,
-        });
+        cookieStore.set(
+          "session_id",
+          session_id,
+          buildHttpOnlyCookieOptions({
+            sameSite,
+            isProduction,
+            domain,
+            maxAge: refreshMaxAge,
+          }),
+        );
       }
 
       return { success: true, message: response.message, code: response.code };
