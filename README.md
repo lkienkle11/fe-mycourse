@@ -1,39 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MyCourse — Frontend (`fe`)
 
-## Getting Started
+Next.js **16** (App Router) client for **MyCourse**: React **19**, **Tailwind CSS 4**, **next-intl** (`en` / `vi`), **SWR**, **Axios**, **Zustand**, **react-hook-form** + **Zod**. The UI talks to the Go API via `NEXT_PUBLIC_API_URL` (see below).
 
-First, run the development server:
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open the URL Next.js prints (default [http://localhost:3000](http://localhost:3000)). The root route redirects into the default locale (`vi`); localized paths look like `/vi` or `/en`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Script | Purpose |
+|--------|---------|
+| `npm run dev` | Development server |
+| `npm run build` / `npm run start` | Production build / server |
+| `npm run lint` | ESLint |
+| `npm run lint:biome` / `npm run format:biome` | Biome check / format |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Documentation in this repo
 
-## Learn More
+| Doc | Contents |
+|-----|----------|
+| [`docs/architecture.md`](docs/architecture.md) | Stack, folders, GitNexus clusters (Ui / Api / Auth), i18n, API integration |
+| [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — same runbook style as [`../be/docs/deploy.md`](../be/docs/deploy.md): Nginx, Certbot, PM2, env vars, CI notes |
+| [`docs/flow.md`](docs/flow.md) | Auth and API execution flows (login, signup, `/me`, token refresh) |
+| [`docs/screens.md`](docs/screens.md) | Routes, layouts, home sections, auth shell |
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For **full-stack** VPS setup (API + Postgres + Redis + joint Nginx), follow the **backend** guide; use `docs/deploy.md` here for frontend-specific steps and `NEXT_PUBLIC_API_URL`.
 
 ## Environment Variables
 
@@ -137,12 +131,13 @@ Components call `t(error.message)` which resolves the key via `next-intl`.
 
 ```
 AuthLayout (client)
-  → useGetMe()                          [src/hooks/auth/useAuthContext.tsx]
-    → useAuth()                         [src/api/hooks/auth/useAuth.ts — SWR]
+  → useAuth()                           [src/api/hooks/auth/useAuth.ts — SWR]
       → getMeService()                  [src/api/callers/auth — apiFetch wrapper]
         → apiFetch(getMeEndpointKey)    [GET /api/v1/me]
           ↑ Authorization: Bearer <access_token>   (added by Axios interceptor)
 ```
+
+Optional: `useGetMe()` in [`src/hooks/auth/useAuthContext.tsx`](src/hooks/auth/useAuthContext.tsx) is a thin wrapper over the same SWR hook when you prefer the `@/hooks` import path.
 
 - **Header-based auth**: the Axios request interceptor in `src/api/instance.ts` reads the `access_token` cookie and attaches it as `Authorization: Bearer <token>` on every request.
 - **Automatic token refresh**: if a request returns `401` / `403` with `X-Token-Expired: true`, the response interceptor calls `POST /api/v1/auth/refresh` and retries the original request transparently (see below).
@@ -152,7 +147,7 @@ AuthLayout (client)
 
 | State | Rendered |
 |-------|----------|
-| `isLoading = true` | Circular 40×40 px skeleton with `animate-pulse` |
+| `isLoading = true` | `size-10` pulse placeholder (`animate-pulse` rounded circle) |
 | `me != null` | `<UserMenu me={me} />` with real user data |
 | `me == null` | `<AuthButton />` (login / sign-up button) |
 
@@ -164,7 +159,7 @@ AuthLayout (client)
 | `src/api/callers/auth/auth.ts` | `getMeEndpointKey`, `getMeService()`, `loginService()`, `refreshTokenService()` |
 | `src/api/hooks/auth/useAuth.ts` | SWR hook returning `{ me, isLoading, error, mutate }` |
 | `src/hooks/auth/useAuthContext.tsx` | `useGetMe()` — thin wrapper over `useAuth()` |
-| `src/components/…/auth-layout.tsx` | Rendering logic driven by state from `useGetMe` |
+| `src/components/…/auth-layout.tsx` | Header chrome: `useAuth()` → skeleton / `UserMenu` / `AuthButton` + `LoginSignupPopup` |
 | `src/components/…/user-menu.tsx` | Accepts `me: MeResponse` prop |
 
 ### `MeResponse` type
