@@ -3,7 +3,7 @@ name: Deploy Frontend to VPS (dev)
 on:
   push:
     branches:
-      - dev-test-no-trigger
+      - dev
 
 concurrency:
   group: fe-deploy-${{ github.ref }}
@@ -43,7 +43,7 @@ jobs:
         run: |
           ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.DEPLOY_PATH }} && \
             git stash -u && \
-            git checkout master && \
+            git checkout dev && \
             git pull && \
             npm ci && \
             npm run build && \
