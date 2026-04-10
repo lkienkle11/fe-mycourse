@@ -41,7 +41,7 @@ jobs:
 
       - name: Pull, build, and reload PM2 on server
         run: |
-          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.DEPLOY_PATH }} && \
+          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.DEPLOY_PATH_DEV }} && \
             git stash -u && \
             git checkout dev && \
             git pull && \
