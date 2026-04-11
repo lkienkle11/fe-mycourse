@@ -1,4 +1,9 @@
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, BookOpen, Users, Star, BarChart } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -37,24 +42,31 @@ export async function CourseCard({ course }: CourseCardProps) {
           </div>
         )}
         <div className="absolute top-3 left-3">
-          <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm font-semibold hover:bg-background/100">
+          <Badge
+            variant="secondary"
+            className="bg-background/90 backdrop-blur-sm font-semibold hover:bg-background/100"
+          >
             {course.category}
           </Badge>
         </div>
       </div>
-      
+
       <CardHeader className="p-5 pb-0">
         <div className="flex items-center gap-1.5 text-sm font-medium mb-2 text-amber-500">
           <Star className="h-4 w-4 fill-current" />
           <span>{course.rating.toFixed(1)}</span>
-          <span className="text-muted-foreground font-normal ml-1">({course.reviews})</span>
+          <span className="text-muted-foreground font-normal ml-1">
+            ({course.reviews})
+          </span>
         </div>
         <h3 className="font-bold text-lg line-clamp-2 leading-tight group-hover:text-primary transition-colors">
           {course.title}
         </h3>
-        <p className="text-sm text-muted-foreground mt-2 font-medium">{t("byAuthor")} {course.author}</p>
+        <p className="text-sm text-muted-foreground mt-2 font-medium">
+          {t("byAuthor")} {course.author}
+        </p>
       </CardHeader>
-      
+
       <CardContent className="p-5 flex-1">
         <div className="grid grid-cols-2 gap-y-3 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
@@ -63,7 +75,9 @@ export async function CourseCard({ course }: CourseCardProps) {
           </div>
           <div className="flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-primary/70" />
-            <span>{course.lessons} {t("lessons")}</span>
+            <span>
+              {course.lessons} {t("lessons")}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-primary/70" />
@@ -75,7 +89,7 @@ export async function CourseCard({ course }: CourseCardProps) {
           </div>
         </div>
       </CardContent>
-      
+
       <CardFooter className="p-5 pt-0 mt-auto border-t border-border/50 flex items-center justify-between">
         <div className="flex flex-col mt-4">
           {course.originalPrice && (

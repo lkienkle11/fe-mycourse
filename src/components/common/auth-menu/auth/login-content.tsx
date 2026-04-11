@@ -63,89 +63,89 @@ export function LoginContent({ className }: { className?: string }) {
   return (
     <div className={cn("space-y-3", className)}>
       <form onSubmit={handleSubmit(onSubmit)} className="contents space-y-3">
-      <div className="space-y-1">
-        <InputGroup className="h-12 border-none shadow-0 shadow-none bg-object-white/90 has-[[data-slot=input-group-control]:focus-visible]:ring-0">
-          <InputGroupInput
-            className="placeholder:text-object-black/10 placeholder:text-base text-base px-4"
-            type="email"
-            placeholder={t("email")}
-            {...register("email")}
-          />
-          <InputGroupAddon align="inline-end" className="mr-2">
-            <Mail />
-          </InputGroupAddon>
-        </InputGroup>
-        {errors.email ? (
-          <p className="text-xs text-destructive px-1">
-            {t(errors.email.message as "validation.email")}
-          </p>
-        ) : null}
-      </div>
+        <div className="space-y-1">
+          <InputGroup className="h-12 border-none shadow-0 shadow-none bg-object-white/90 has-[[data-slot=input-group-control]:focus-visible]:ring-0">
+            <InputGroupInput
+              className="placeholder:text-object-black/10 placeholder:text-base text-base px-4"
+              type="email"
+              placeholder={t("email")}
+              {...register("email")}
+            />
+            <InputGroupAddon align="inline-end" className="mr-2">
+              <Mail />
+            </InputGroupAddon>
+          </InputGroup>
+          {errors.email ? (
+            <p className="text-xs text-destructive px-1">
+              {t(errors.email.message as "validation.email")}
+            </p>
+          ) : null}
+        </div>
 
-      <div className="space-y-1">
-        <InputGroup className="h-12 border-none shadow-0 shadow-none bg-object-white/90 has-[[data-slot=input-group-control]:focus-visible]:ring-0">
-          <InputGroupInput
-            className="placeholder:text-object-black/10 placeholder:text-base text-base px-4"
-            type={showPassword ? "text" : "password"}
-            placeholder={t("password")}
-            {...register("password")}
-          />
-          <InputGroupAddon
-            align="inline-end"
-            className="mr-2 hover:cursor-pointer"
-            onClick={() => setShowPassword((prev) => !prev)}
-          >
-            {showPassword ? <LockKeyholeOpen /> : <LockKeyhole />}
-          </InputGroupAddon>
-        </InputGroup>
-        {errors.password ? (
-          <p className="text-xs text-destructive px-1">
-            {t(errors.password.message as "validation.password")}
-          </p>
-        ) : null}
-      </div>
+        <div className="space-y-1">
+          <InputGroup className="h-12 border-none shadow-0 shadow-none bg-object-white/90 has-[[data-slot=input-group-control]:focus-visible]:ring-0">
+            <InputGroupInput
+              className="placeholder:text-object-black/10 placeholder:text-base text-base px-4"
+              type={showPassword ? "text" : "password"}
+              placeholder={t("password")}
+              {...register("password")}
+            />
+            <InputGroupAddon
+              align="inline-end"
+              className="mr-2 hover:cursor-pointer"
+              onClick={() => setShowPassword((prev) => !prev)}
+            >
+              {showPassword ? <LockKeyholeOpen /> : <LockKeyhole />}
+            </InputGroupAddon>
+          </InputGroup>
+          {errors.password ? (
+            <p className="text-xs text-destructive px-1">
+              {t(errors.password.message as "validation.password")}
+            </p>
+          ) : null}
+        </div>
 
-      <div className="flex justify-between items-center">
-        <Field
-          orientation="horizontal"
-          className="flex items-center gap-2 justify-start"
-        >
-          <Checkbox
-            id="remember-me"
-            name="remember-me"
-            checked={rememberMe}
-            onCheckedChange={(checked) =>
-              setValue("rememberMe", checked === true)
-            }
-            className="size-4 hover:cursor-pointer"
-          />
-          <Label
-            htmlFor="remember-me"
-            className="hover:no-underline hover:cursor-pointer no-underline hover:brightness-110 transition-all duration-300"
+        <div className="flex justify-between items-center">
+          <Field
+            orientation="horizontal"
+            className="flex items-center gap-2 justify-start"
           >
-            {t("rememberMe")}
-          </Label>
-        </Field>
-        <Field
-          orientation="horizontal"
-          className="justify-end items-center text-end"
-        >
-          <Link
-            href="/forgot-password"
-            className="hover:no-underline hover:cursor-pointer no-underlin"
-          >
-            <Label className="hover:no-underline hover:cursor-pointer no-underline text-[#3DCBB1] hover:brightness-110 transition-all duration-300">
-              {t("forgotPassword")}
+            <Checkbox
+              id="remember-me"
+              name="remember-me"
+              checked={rememberMe}
+              onCheckedChange={(checked) =>
+                setValue("rememberMe", checked === true)
+              }
+              className="size-4 hover:cursor-pointer"
+            />
+            <Label
+              htmlFor="remember-me"
+              className="hover:no-underline hover:cursor-pointer no-underline hover:brightness-110 transition-all duration-300"
+            >
+              {t("rememberMe")}
             </Label>
-          </Link>
-        </Field>
-      </div>
+          </Field>
+          <Field
+            orientation="horizontal"
+            className="justify-end items-center text-end"
+          >
+            <Link
+              href="/forgot-password"
+              className="hover:no-underline hover:cursor-pointer no-underlin"
+            >
+              <Label className="hover:no-underline hover:cursor-pointer no-underline text-[#3DCBB1] hover:brightness-110 transition-all duration-300">
+                {t("forgotPassword")}
+              </Label>
+            </Link>
+          </Field>
+        </div>
 
-      {serverError ? (
-        <p className="text-xs text-destructive text-center px-1">
-          {serverError}
-        </p>
-      ) : null}
+        {serverError ? (
+          <p className="text-xs text-destructive text-center px-1">
+            {serverError}
+          </p>
+        ) : null}
 
         <Button
           type="submit"

@@ -1,4 +1,3 @@
 export const loadConfig = async () => {
-  return {
-  };
+  return {};
 };

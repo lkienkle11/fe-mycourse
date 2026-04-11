@@ -78,11 +78,7 @@ export function RegisterForm() {
             ) : null}
           </div>
 
-          <Button
-            className="w-full"
-            type="submit"
-            disabled={isMutating}
-          >
+          <Button className="w-full" type="submit" disabled={isMutating}>
             {isMutating ? t("submitting") : t("submit")}
           </Button>
         </form>

@@ -9,7 +9,12 @@ const linkClass =
 export const Footer = async () => {
   const t = await getTranslations("commonFooter");
 
-  const col2 = ["webProgramming", "mobileProgramming", "javaBeginner", "phpBeginner"] as const;
+  const col2 = [
+    "webProgramming",
+    "mobileProgramming",
+    "javaBeginner",
+    "phpBeginner",
+  ] as const;
   const col3 = ["adobeIllustrator", "adobePhotoshop", "designLogo"] as const;
   const col4 = ["writingCourse", "photography", "videoMaking"] as const;
 
@@ -23,24 +28,35 @@ export const Footer = async () => {
               className="flex w-fit items-center gap-2 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 rounded-sm"
             >
               <MainLogo width={40} height={40} />
-              <span className="text-lg font-bold tracking-tight">{t("brand")}</span>
+              <span className="text-lg font-bold tracking-tight">
+                {t("brand")}
+              </span>
             </Link>
           </div>
-          <nav aria-label={t("navCourses")} className="flex flex-col gap-2.5 text-base leading-[21px] font-normal">
+          <nav
+            aria-label={t("navCourses")}
+            className="flex flex-col gap-2.5 text-base leading-[21px] font-normal"
+          >
             {col2.map((key) => (
               <Link key={key} href="#" className={linkClass}>
                 {t(`links.${key}`)}
               </Link>
             ))}
           </nav>
-          <nav aria-label={t("navDesign")} className="flex flex-col gap-2.5 text-base leading-[21px] font-normal">
+          <nav
+            aria-label={t("navDesign")}
+            className="flex flex-col gap-2.5 text-base leading-[21px] font-normal"
+          >
             {col3.map((key) => (
               <Link key={key} href="#" className={linkClass}>
                 {t(`links.${key}`)}
               </Link>
             ))}
           </nav>
-          <nav aria-label={t("navCreative")} className="flex flex-col gap-2.5 text-base leading-[21px] font-normal">
+          <nav
+            aria-label={t("navCreative")}
+            className="flex flex-col gap-2.5 text-base leading-[21px] font-normal"
+          >
             {col4.map((key) => (
               <Link key={key} href="#" className={linkClass}>
                 {t(`links.${key}`)}

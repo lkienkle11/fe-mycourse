@@ -15,10 +15,17 @@ export async function PromoSection() {
             {t("description")}
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button size="lg" className="font-semibold px-8 shadow-xl shadow-primary/20">
+            <Button
+              size="lg"
+              className="font-semibold px-8 shadow-xl shadow-primary/20"
+            >
               {t("getStartedFree")}
             </Button>
-            <Button size="lg" variant="outline" className="font-semibold px-8 bg-background">
+            <Button
+              size="lg"
+              variant="outline"
+              className="font-semibold px-8 bg-background"
+            >
               {t("viewPricing")}
             </Button>
           </div>
