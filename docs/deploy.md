@@ -4,7 +4,7 @@ This is the **frontend** deployment runbook for the MyCourse Next.js application
 
 **Scope of this document:** Next.js-specific steps — environment variables, `next build` / `next start`, Nginx vhost for the web app, PM2 config, and the frontend go-live checklist.
 
-**Replace `yourdomain.net`** with your real domain throughout. Paths assume the monorepo is checked out at `/opt/mycourse` so `fe/` lives at `/opt/mycourse/fe`.
+**Replace `yourdomain.net`** with your real domain throughout. Paths below use **`/opt/mycourse/fe`** as a monorepo example; the checked-in **`ecosystem.config.cjs`** uses **`/var/www/fe-mycourse`** (dev), **`/var/www/fe-mycourse-staging`**, and **`/var/www/fe-mycourse-prod`** as `cwd` values — substitute your actual checkout path in every command.
 
 ---
 
@@ -12,13 +12,16 @@ This is the **frontend** deployment runbook for the MyCourse Next.js application
 
 | Item | Value |
 |------|-------|
-| App port | `3000` (Next.js production server) |
-| PM2 process name | `mycourse-web` |
-| Deploy path | `/opt/mycourse/fe` |
+| App port | `3000` (Next.js production server; staging/prod ports differ in repo `ecosystem.config.cjs`) |
+| PM2 process name | **Manual runbook:** `mycourse-web` · **Repo CI (`dev`):** `mycourse-web-dev` (see `ecosystem.config.cjs`) |
+| Deploy path | **Example:** `/opt/mycourse/fe` · **CI secret:** `DEPLOY_PATH_DEV` → server directory checked out for `dev` (often `/var/www/fe-mycourse` in `ecosystem.config.cjs`) |
 | Nginx vhost | `yourdomain.net` / `www.yourdomain.net` → `127.0.0.1:3000` |
 | Required env var | `NEXT_PUBLIC_API_URL` (must be set **before** `npm run build`) |
 | Optional env var | `AUTH_COOKIE_DOMAIN` (needed when FE and API are on different subdomains) |
 | Node.js version | 22 LTS (match `be/docs/deploy.md`) |
+| GitHub Actions | Push to **`dev`** → `.github/workflows/deploy-dev.yml` (build in CI + deploy rebuild on VPS — [Appendix G](#appendix-g--cicd-github-actions)) |
+
+> **PM2 process names:** This runbook uses **`mycourse-web`** in examples for a single manual app. The repo’s **`ecosystem.config.cjs`** and **GitHub Actions** use **`mycourse-web-dev`** (and staging/prod siblings). Use the name that matches `pm2 list` on your server (e.g. `pm2 logs mycourse-web-dev`).
 
 ---
 
@@ -298,6 +301,8 @@ After TLS is active, update `NEXT_PUBLIC_API_URL` to use `https://api.yourdomain
 ---
 
 ### Step 11 — Run Next.js under PM2
+
+The repository includes **`ecosystem.config.cjs`** at the frontend root with three apps (`mycourse-web-dev`, `mycourse-web-staging`, `mycourse-web-prod`) and per-environment `cwd` / `env_file`. CI for **`dev`** reloads **`mycourse-web-dev`** only. The snippet below is a minimal single-app example; align names and paths with that file if you use the shipped config.
 
 Create or update the PM2 ecosystem file. If you already have one from the backend guide at `/opt/mycourse/ecosystem.config.cjs`, add the `mycourse-web` entry:
 
@@ -580,29 +585,30 @@ tail -f /var/log/nginx/error.log
 
 ## Appendix G — CI/CD (GitHub Actions)
 
-The backend uses a **2-job workflow** (`.github/workflows/deploy-dev.yml`) that builds in CI and deploys via `rsync` + `pm2 reload` — triggered on pushes to `dev`. The frontend follows the **same structural pattern**.
+File: **`.github/workflows/deploy-dev.yml`**. Trigger: **push to `dev`**. Concurrency: `fe-deploy-${{ github.ref }}` with **`cancel-in-progress: true`**.
+
+This workflow differs from the backend: there is **no artifact rsync** — the **`deploy`** job SSHs into the VPS, syncs git, does a **clean `node_modules`**, runs **`npm ci` + `npm run build` on the server**, then **`pm2 reload mycourse-web-dev`** (or starts `ecosystem.config.cjs --only mycourse-web-dev`). The **`build`** job runs first as a **gate** (`npm ci` + `npm run build` on the runner) so a broken mainline fails before SSH; production bundles used on the VPS come from the **server** build (ensure `NEXT_PUBLIC_API_URL` and related vars exist in the server env file referenced by PM2, e.g. `env_file` in `ecosystem.config.cjs`).
 
 ### Required GitHub Secrets (frontend)
 
-| Secret / Variable | Description |
-|-------------------|-------------|
-| `SSH_PRIVATE_KEY` | Deploy SSH private key (same as BE if on the same server) |
-| `SSH_HOST` | VPS IP or hostname |
-| `SSH_USER` | SSH login user |
-| `DEPLOY_PATH_FE` | Absolute path to the frontend root on the server |
-| `PUBLIC_API_URL` (Variable) | Value baked into `NEXT_PUBLIC_API_URL` at build time |
+| Secret | Description |
+|--------|-------------|
+| `SSH_PRIVATE_KEY` | Deploy key (same VPS as BE if shared) |
+| `SSH_HOST` | Server IP or hostname |
+| `SSH_USER` | SSH user |
+| `DEPLOY_PATH_DEV` | Absolute path to the **frontend** git checkout on the server (must match `cwd` for `mycourse-web-dev` in `ecosystem.config.cjs`) |
 
 ### Job structure
 
 | Job | Responsibility |
 |-----|----------------|
-| `build` | `npm ci` + `npm run build` with `NEXT_PUBLIC_API_URL`; upload `.next/` as artifact |
-| `deploy` | Download artifact, rsync to server, `npm ci`, `pm2 reload mycourse-web` |
+| `build` | Checkout repo root, Node 22 (`cache: npm`), `npm ci` + `npm run build` — fails the workflow if the app does not build |
+| `deploy` | SSH → `cd $DEPLOY_PATH_DEV` → `git stash -u`, `git checkout dev`, `git pull`, **`rm -rf node_modules`**, `npm ci`, `npm run build`, PM2 reload/start **`mycourse-web-dev`** |
 
-### Example workflow
+### Workflow (matches repo)
 
 ```yaml
-name: Deploy Frontend to VPS
+name: Deploy Frontend to VPS (dev)
 
 on:
   push:
@@ -610,84 +616,58 @@ on:
       - dev
 
 concurrency:
-  group: deploy-fe-${{ github.ref }}
-  cancel-in-progress: true   # mirrors the BE workflow convention
+  group: fe-deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
-          cache-dependency-path: fe/package-lock.json
+          cache: npm
 
-      - name: Install dependencies
-        working-directory: fe
-        run: npm ci
-
-      - name: Build Next.js
-        working-directory: fe
-        env:
-          NEXT_PUBLIC_API_URL: ${{ vars.PUBLIC_API_URL }}
-          # AUTH_COOKIE_DOMAIN is runtime-only — set on the server, not here
-        run: npm run build
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: fe-build
-          path: fe/.next
-          retention-days: 1   # matches BE convention
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: fe-build
-          path: .next
-
       - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0   # same action as BE workflow
+        uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Add Server to known_hosts
         run: ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Ensure target directory exists
+      - name: Pull, build, and reload PM2 on server
         run: |
-          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            "mkdir -p ${{ secrets.DEPLOY_PATH_FE }}/.next"
-
-      - name: Rsync .next to server
-        run: |
-          rsync -avz --delete .next/ \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH_FE }}/.next/"
-
-      - name: Reload PM2 on server
-        run: |
-          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            "cd ${{ secrets.DEPLOY_PATH_FE }} && \
-            npm ci --omit=dev && \
-            (pm2 reload mycourse-web || pm2 start ecosystem.config.cjs --only mycourse-web) && \
-            git stash -u && git checkout dev && git pull"
+          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.DEPLOY_PATH_DEV }} && \
+            git stash -u && \
+            git checkout dev && \
+            git pull && \
+            rm -rf node_modules && \
+            npm ci && \
+            npm run build && \
+            (pm2 reload mycourse-web-dev || pm2 start ecosystem.config.cjs --only mycourse-web-dev)"
 ```
 
 ### Notes
 
-- **`cancel-in-progress: true`** — mirrors the BE `deploy-dev.yml` convention. Rapid pushes to `dev` only deploy the latest commit.
-- **`webfactory/ssh-agent@v0.9.0`** — same action and version as the BE workflow (`deploy-dev.yml`). Use the same `SSH_PRIVATE_KEY` secret if the FE and BE are on the same VPS.
-- **`NEXT_PUBLIC_API_URL` is baked at build time.** The `vars.PUBLIC_API_URL` GitHub Variable is injected by the CI runner at `npm run build`. Changing this variable without a rebuild will not update the client bundle.
-- **`AUTH_COOKIE_DOMAIN` is runtime-only** — set it on the server in `.env.production.local` or in the PM2 `env` block. Do not set it in CI.
-- **Post-reload `git pull`** — mirrors the BE pattern: after PM2 reloads, the server runs `git stash -u && git checkout dev && git pull` to keep config files and `ecosystem.config.cjs` in sync with the `dev` branch.
-- **Backend CI reference:** See `be/docs/deploy.md` Appendix C for the full backend workflow (`.github/workflows/deploy-dev.yml`) — the same `rsync` + `pm2 reload` pattern with `webfactory/ssh-agent@v0.9.0`.
+- **`DEPLOY_PATH_DEV`** — same naming convention as the backend workflow secret (`be/.github/workflows/deploy-dev.yml`); values differ per service (BE vs FE paths).
+- **Clean `node_modules` on deploy** — guarantees lockfile-aligned installs after each pull (matches the workflow as of 2026).
+- **`NEXT_PUBLIC_*` on the server** — must be present when **`npm run build`** runs on the VPS (e.g. `.env.production.local`, `.env.local`, or env injected before build). Changing them without rebuilding leaves a stale client bundle.
+- **`AUTH_COOKIE_DOMAIN`** — runtime / server-side for cookies; keep on the server, not required in GitHub Actions for this workflow.
+- **Backend CI** — still **2 jobs**, **`master`**, **`rsync`** binary to `DEPLOY_PATH_DEV/bin/` — see `be/docs/deploy.md` Appendix C.
 
 ---
 
@@ -777,6 +757,7 @@ sudo nginx -t                  # valid config after certbot edits?
 | Auth modal store | `src/store/auth/auth.ts` | `useAuthStore` (Zustand) |
 | Global error store | `src/store/api-error-store.ts` | `useApiError` (Zustand, max 20 entries) |
 | Translation files | `src/messages/en.json` / `vi.json` | English and Vietnamese copy |
+| PM2 (dev/staging/prod) | `ecosystem.config.cjs` (repo root) | App names `mycourse-web-dev` / `mycourse-web-staging` / `mycourse-web-prod`; CI reloads **dev** only |
 
 ---
 
