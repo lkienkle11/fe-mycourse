@@ -585,6 +585,12 @@ tail -f /var/log/nginx/error.log
 
 ## Appendix G — CI/CD (GitHub Actions)
 
+### Branch gate: `main` only from `dev`
+
+File: **`.github/workflows/enforce-main-from-dev.yml`**. Trigger: **pull requests targeting `main`**. The job fails unless **`github.head_ref` is `dev`**, so `main` is not updated via PRs from arbitrary feature branches. Combine with **branch protection** on `main` (require the check to pass; avoid direct pushes). Enforcement is **CI-only** (no repo-shipped local git hooks).
+
+---
+
 File: **`.github/workflows/deploy-dev.yml`**. Trigger: **push to `dev`**. Concurrency: `fe-deploy-${{ github.ref }}` with **`cancel-in-progress: true`**.
 
 This workflow differs from the backend: there is **no artifact rsync** — the **`deploy`** job SSHs into the VPS, syncs git, does a **clean `node_modules`**, runs **`npm ci` + `npm run build` on the server**, then **`pm2 reload mycourse-web-dev`** (or starts `ecosystem.config.cjs --only mycourse-web-dev`). The **`build`** job runs first as a **gate** (`npm ci` + `npm run build` on the runner) so a broken mainline fails before SSH; production bundles used on the VPS come from the **server** build (ensure `NEXT_PUBLIC_API_URL` and related vars exist in the server env file referenced by PM2, e.g. `env_file` in `ecosystem.config.cjs`).
