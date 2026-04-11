@@ -1,0 +1,30 @@
+name: Enforce main from dev only
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  source-branch-must-be-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require PR into main to come from branch dev
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -e
+          if [ -z "$HEAD_REF" ]; then
+            echo "::error::Could not read head ref for this pull request."
+            exit 1
+          fi
+          if [ "$HEAD_REF" != "dev" ]; then
+            echo "::error::Pull requests into 'main' must use branch 'dev' as the source branch. Current head: $HEAD_REF"
+            echo "Workflow: merge dev → main via a PR opened from 'dev', or retarget your changes through 'dev' first."
+            exit 1
+          fi
+          echo "OK: PR head is dev."
