@@ -47,15 +47,13 @@ export function SignupContent({ className }: { className?: string }) {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className={cn("space-y-3", className)}
-    >
+    <div className={cn("space-y-3", className)}>
       <AuthSocialLogin type="signup" />
       <span className="flex justify-center items-center text-sm leading-[18px] font-normal text-black">
         {t("socialLogin.title")}
       </span>
 
+      <form onSubmit={handleSubmit(onSubmit)} className="contents space-y-3">
       <div className="space-y-1">
         <InputGroup className="h-12 border-none shadow-0 shadow-none bg-object-white/90 has-[[data-slot=input-group-control]:focus-visible]:ring-0">
           <InputGroupInput
@@ -123,15 +121,16 @@ export function SignupContent({ className }: { className?: string }) {
         </p>
       ) : null}
 
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full h-11 text-sm font-medium flex items-center justify-center bg-base-primary rounded-full leading-[21px] hover:cursor-pointer hover:brightness-110 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        {isSubmitting ? "..." : t("register")}
-      </Button>
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full h-11 text-sm font-medium flex items-center justify-center bg-base-primary rounded-full leading-[21px] hover:cursor-pointer hover:brightness-110 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? "..." : t("register")}
+        </Button>
+      </form>
 
-      <span className="flex justify-center items-center text-sm leading-[18px] font-normal text-black">
+      <span className="flex justify-center items-center text-sm leading-[18px] font-normal text-black mt-2">
         {t("alreadyHaveAccount")}
         <Button
           type="button"
@@ -142,6 +141,6 @@ export function SignupContent({ className }: { className?: string }) {
           {t("login")}
         </Button>
       </span>
-    </form>
+    </div>
   );
 }
