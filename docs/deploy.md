@@ -377,7 +377,7 @@ curl -sS -o /dev/null -w "%{http_code}\n" https://yourdomain.net/en
 ```
 
 **Manual checks:**
-1. Open `https://yourdomain.net` in a browser — should redirect to `/vi` and render the home page.
+1. Open `https://yourdomain.net` in a browser — should redirect to `/vi` and render the home page (header, body, **footer** with `commonFooter` copy).
 2. Click the locale switcher — should navigate to `/en` (or vice versa).
 3. Open the login modal, enter credentials — should set cookies and show `UserMenu` (avatar).
 4. Hard-refresh — `UserMenu` should still be visible (SWR refetches `GET /api/v1/me`).
@@ -408,6 +408,7 @@ Integration
   [ ] Token refresh works (auth stays valid after 15 min without re-login).
   [ ] GET /api/v1/me returns the authenticated user after login.
   [ ] Locale switcher navigates between /vi and /en correctly.
+  [ ] Footer shows localized strings (`commonFooter`) and social icons load.
 ```
 
 ---
@@ -752,12 +753,12 @@ sudo nginx -t                  # valid config after certbot edits?
 | Middleware (locale routing) | `src/proxy.ts` → must be `src/middleware.ts` | See Appendix C |
 | Root layout | `src/app/layout.tsx` | Fonts (Roboto, Gilroy, GeistMono), Toaster |
 | Locale layout | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider` + `AppProviders` (SWR) |
-| Web shell layout | `src/app/[locale]/(web)/layout.tsx` | `Header` + `<main>` |
+| Web shell layout | `src/app/[locale]/(web)/layout.tsx` | `Header` + `<main>` + `Footer` (from `@/components/common`) |
 | Home screen | `src/screen/home/page.tsx` | Assembles 7 marketing sections |
 | API client instance | `src/api/instance.ts` | Axios + token attach + token refresh interceptors |
 | API helpers | `src/api/methods.ts` | `apiFetch`, `apiPost`, `apiPut`, `apiDelete` → `ApiResult<T>` |
 | Auth server actions | `src/actions/auth/auth.ts` | `loginAction`, `signupAction` (`"use server"`) |
-| Cookie utilities | `src/lib/utils.ts` | `buildCookieOptions`, `getCookieDomain`, `getCookieValue`, `setCookieValue` |
+| Cookie utilities | `src/lib/utils/cookie.ts` (+ barrel `index.ts`) | `buildCookieOptions`, `getCookieDomain`, `getCookieValue`, `setCookieValue` (import `@/lib/utils`) |
 | i18n routing | `src/i18n/routing.ts` | `locales: ["en","vi"]`, `defaultLocale: "vi"`, `localePrefix: "always"` |
 | API route constants | `src/constants/api-route.ts` | All API endpoint paths |
 | Auth modal store | `src/store/auth/auth.ts` | `useAuthStore` (Zustand) |

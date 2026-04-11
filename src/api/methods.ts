@@ -96,7 +96,9 @@ function resolveInstance(other?: AxiosInstance): AxiosInstance {
  * Multi-value headers (arrays) are joined with ", ".
  * `set-cookie` is intentionally excluded — use `parseSetCookies` instead.
  */
-function normalizeHeaders(raw: Record<string, unknown>): Record<string, string> {
+function normalizeHeaders(
+  raw: Record<string, unknown>,
+): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [k, v] of Object.entries(raw)) {
     if (k.toLowerCase() === "set-cookie") continue;
@@ -110,7 +112,9 @@ function normalizeHeaders(raw: Record<string, unknown>): Record<string, string> 
  * Parses `Set-Cookie` header value(s) into a `Record<name, rawValue>`.
  * Cookie attributes (Path, HttpOnly, SameSite, …) are stripped.
  */
-function parseSetCookies(raw: string | string[] | undefined): Record<string, string> {
+function parseSetCookies(
+  raw: string | string[] | undefined,
+): Record<string, string> {
   if (!raw) return {};
   const result: Record<string, string> = {};
   for (const entry of Array.isArray(raw) ? raw : [raw]) {
@@ -201,7 +205,11 @@ export async function apiFetch<T>(
   //   if (cached !== null) return { data: cached, statusCode: 200 };
   // }
 
-  const { data, status: statusCode, headers: rawHeaders } = await instance.get<T>(url, axiosConfig);
+  const {
+    data,
+    status: statusCode,
+    headers: rawHeaders,
+  } = await instance.get<T>(url, axiosConfig);
 
   // TODO: re-enable cache write block below when cache is turned back on
   // if (ttlMs !== null) {
@@ -216,7 +224,9 @@ export async function apiFetch<T>(
     data,
     statusCode,
     headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
-    cookies: parseSetCookies(rawHeaders["set-cookie"] as string | string[] | undefined),
+    cookies: parseSetCookies(
+      rawHeaders["set-cookie"] as string | string[] | undefined,
+    ),
   };
 }
 
@@ -232,14 +242,22 @@ export async function apiPost<T, D = unknown>(
   options: MutationApiOptions = {},
 ): Promise<ApiResult<T>> {
   const { otherAxiosInstance, ...rest } = options;
-  const { data: responseData, status: statusCode, headers: rawHeaders } = await resolveInstance(
-    otherAxiosInstance,
-  ).post<T>(url, data, buildAxiosConfig(rest));
+  const {
+    data: responseData,
+    status: statusCode,
+    headers: rawHeaders,
+  } = await resolveInstance(otherAxiosInstance).post<T>(
+    url,
+    data,
+    buildAxiosConfig(rest),
+  );
   return {
     data: responseData,
     statusCode,
     headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
-    cookies: parseSetCookies(rawHeaders["set-cookie"] as string | string[] | undefined),
+    cookies: parseSetCookies(
+      rawHeaders["set-cookie"] as string | string[] | undefined,
+    ),
   };
 }
 
@@ -255,14 +273,22 @@ export async function apiPut<T, D = unknown>(
   options: MutationApiOptions = {},
 ): Promise<ApiResult<T>> {
   const { otherAxiosInstance, ...rest } = options;
-  const { data: responseData, status: statusCode, headers: rawHeaders } = await resolveInstance(
-    otherAxiosInstance,
-  ).put<T>(url, data, buildAxiosConfig(rest));
+  const {
+    data: responseData,
+    status: statusCode,
+    headers: rawHeaders,
+  } = await resolveInstance(otherAxiosInstance).put<T>(
+    url,
+    data,
+    buildAxiosConfig(rest),
+  );
   return {
     data: responseData,
     statusCode,
     headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
-    cookies: parseSetCookies(rawHeaders["set-cookie"] as string | string[] | undefined),
+    cookies: parseSetCookies(
+      rawHeaders["set-cookie"] as string | string[] | undefined,
+    ),
   };
 }
 
@@ -277,13 +303,20 @@ export async function apiDelete<T>(
   options: MutationApiOptions = {},
 ): Promise<ApiResult<T>> {
   const { otherAxiosInstance, ...rest } = options;
-  const { data, status: statusCode, headers: rawHeaders } = await resolveInstance(
-    otherAxiosInstance,
-  ).delete<T>(url, buildAxiosConfig(rest));
+  const {
+    data,
+    status: statusCode,
+    headers: rawHeaders,
+  } = await resolveInstance(otherAxiosInstance).delete<T>(
+    url,
+    buildAxiosConfig(rest),
+  );
   return {
     data,
     statusCode,
     headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
-    cookies: parseSetCookies(rawHeaders["set-cookie"] as string | string[] | undefined),
+    cookies: parseSetCookies(
+      rawHeaders["set-cookie"] as string | string[] | undefined,
+    ),
   };
 }

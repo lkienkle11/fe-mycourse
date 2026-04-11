@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Header } from "@/components/common/header";
+import { Footer, Header } from "@/components/common";
 import { getLocale } from "next-intl/server";
 
 type WebLayoutProps = {
@@ -18,6 +18,7 @@ export default async function WebLayout({
     <>
       <Header switchedLocale={switchedLocale} />
       <main>{children}</main>
+      <Footer />
     </>
   );
 }

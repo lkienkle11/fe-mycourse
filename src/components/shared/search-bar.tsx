@@ -50,12 +50,18 @@ export const SearchBar = ({
           placeholder={placeholderText}
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
-          className={cn("h-11 rounded-none border-0 px-4 text-sm shadow-none focus-visible:ring-0", inputClassName)}
+          className={cn(
+            "h-11 rounded-none border-0 px-4 text-sm shadow-none focus-visible:ring-0",
+            inputClassName,
+          )}
         />
         <Button
           type="submit"
           aria-label="Search"
-          className={cn("inline-flex h-11 w-12 items-center justify-center text-foreground hover:bg-muted", searchButtonClassName)}
+          className={cn(
+            "inline-flex h-11 w-12 items-center justify-center text-foreground hover:bg-muted",
+            searchButtonClassName,
+          )}
           variant="ghost"
         >
           <Search className="size-4" />

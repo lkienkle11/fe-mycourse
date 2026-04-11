@@ -28,6 +28,28 @@
       "placeholder": "What do you want to learn today?"
     }
   },
+  "commonHeader": {
+    "title": "MyCourses.io"
+  },
+  "commonFooter": {
+    "brand": "MyCourse.io",
+    "copyright": "Copyright © MyCourse.io 2026. All Rights Reserved",
+    "navCourses": "Programming courses",
+    "navDesign": "Design courses",
+    "navCreative": "Creative courses",
+    "links": {
+      "webProgramming": "Web Programming",
+      "mobileProgramming": "Mobile Programming",
+      "javaBeginner": "Java Beginner",
+      "phpBeginner": "PHP Beginner",
+      "adobeIllustrator": "Adobe Illustrator",
+      "adobePhotoshop": "Adobe Photoshop",
+      "designLogo": "Design Logo",
+      "writingCourse": "Writing Course",
+      "photography": "Photography",
+      "videoMaking": "Video Making"
+    }
+  },
   "auth": {
     "login": "Login",
     "register": "Sign Up",

@@ -40,7 +40,8 @@ export const ApiErrorCode = {
   Unknown: 9999,
 } as const;
 
-export type ApiErrorCodeValue = (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
+export type ApiErrorCodeValue =
+  (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
 
 // ---------------------------------------------------------------------------
 // Response envelopes
@@ -104,7 +105,9 @@ export interface ApiPaginatedData<T = unknown> {
 }
 
 /** Convenience alias: paginated response ready to use as ApiResponse generic. */
-export type ApiPaginatedResponse<T = unknown> = ApiResponse<ApiPaginatedData<T>>;
+export type ApiPaginatedResponse<T = unknown> = ApiResponse<
+  ApiPaginatedData<T>
+>;
 
 /**
  * Envelope for GET /health.
@@ -150,6 +153,8 @@ export interface ApiResult<T = unknown> {
 // ---------------------------------------------------------------------------
 
 /** Returns `true` when the response indicates a successful operation (code === 0). */
-export function isApiSuccess<T>(res: ApiResponse<T>): res is ApiResponse<T> & { data: T } {
+export function isApiSuccess<T>(
+  res: ApiResponse<T>,
+): res is ApiResponse<T> & { data: T } {
   return res.code === ApiErrorCode.Success;
 }
