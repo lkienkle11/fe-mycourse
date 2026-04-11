@@ -5,7 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { SearchBar } from "@/components/shared";
 import { ShoppingCart } from "lucide-react";
 import { LocaleSwitcher } from "./locale-switcher";
-import { AuthLayout } from "../auth-menu";
+import { AuthLayout } from "@/components/common/auth-menu";
 
 export const Header = async ({
   switchedLocale,

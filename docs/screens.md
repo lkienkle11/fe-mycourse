@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`.
+Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from `fe/`, e.g. `npx gitnexus query -r fe "web layout footer"` or `npx gitnexus context -r fe Footer`.
 
 ---
 
@@ -46,6 +46,7 @@ src/app/layout.tsx                          Root layout
         │   Resolves locale for <Header>
         │   <Header switchedLocale={...} />
         │   <main>{children}</main>
+        │   <Footer />
         │
         └── src/app/[locale]/(web)/page.tsx → <HomePage />
 ```
@@ -53,7 +54,7 @@ src/app/layout.tsx                          Root layout
 Each layout layer adds a concern without re-rendering the parent:
 - **Root:** HTML scaffold, fonts, toast notifications.
 - **Locale:** i18n provider, global SWR configuration.
-- **Web shell:** Site chrome (header), `<main>` wrapper.
+- **Web shell:** Site chrome (`Header`), page body (`<main>{children}</main>`), site footer (`Footer`).
 
 ---
 
@@ -99,7 +100,18 @@ Header
 
 ### Footer
 
-**File:** `src/components/common/footer/footer.tsx` — available but not yet included in `(web)/layout.tsx`. Add via `hasFooter` prop when needed.
+**Imports:** `(web)/layout.tsx` pulls `Footer` from `@/components/common` (barrel: `src/components/common/index.ts`).
+
+**Files:**
+
+| File | Role |
+|------|------|
+| `src/components/common/footer/footer.tsx` | Async **Server Component** — dark shell, `MainLogo` + brand from `getTranslations("commonFooter")`, three columns of course links (placeholders `#` until routes exist), copyright row. |
+| `src/components/common/footer/footer-social.tsx` | **Client** — `XIcon`, `InstagramMono`, `FacebookMono` from `@public/assets/icons` (mono social SVGs need `"use client"` / `useUniqueId`). External links to X / Instagram / Facebook. |
+
+**i18n:** Namespace `commonFooter` in `src/messages/en.json` and `src/messages/vi.json` (`copyright`, `brand`, column link labels, `navCourses` / `navDesign` / `navCreative` for `aria-label`s).
+
+**Note:** `WebLayout` still accepts an optional `hasFooter` prop for future use; the footer is **always** rendered today.
 
 ### Locale Switcher
 
@@ -211,6 +223,7 @@ All primitives are re-exported from `src/components/ui/index.ts`.
 | Namespace | Usage |
 |-----------|-------|
 | `"home"` | Header title (`t("header.title")`), search placeholder (`t("search.placeholder")`) |
+| `"commonFooter"` | Footer brand, copyright, course link labels, nav `aria-label`s |
 | `"auth"` | Auth form labels, button text, validation messages (resolved from Zod schema keys) |
 
 Translation files: `src/messages/en.json` and `src/messages/vi.json`. The `LocaleSwitcher` toggles between locales while preserving the current URL path (via `next-intl` navigation helpers).
@@ -251,11 +264,13 @@ API_PRIVATE_ROUTES.user.getMe   // GET  /api/v1/me
 
 ## GitNexus Cluster Mapping
 
+Symbol and edge counts change as the codebase grows. Refresh the local graph with `npx gitnexus analyze --force` (from `fe/`), then `npx gitnexus status` or `npx gitnexus query -r fe "<topic>"` for up-to-date clusters and flows.
+
 | Cluster | Component surface |
 |---------|------------------|
-| **Ui** (51 symbols, 95% cohesion) | `src/components/ui/*`, home sections, `SearchBar`, `LocaleSwitcher`, `Header` |
-| **Auth** (15 symbols, 79% cohesion) | `AuthLayout`, `AuthButton`, `LoginSignupPopup`, `LoginContent`, `SignupContent`, `UserMenu`, `handleAuthSubmit`, auth stores and hooks |
-| **Api** (18 symbols, 100% cohesion) | `useAuth` SWR hook, `getMeService`, `createApiInstance`, `apiInstance`, all API callers and methods |
+| **Ui** | `src/components/ui/*`, home sections, `SearchBar`, `LocaleSwitcher`, `Header`, `Footer`, `FooterSocial` |
+| **Auth** | `AuthLayout`, `AuthButton`, `LoginSignupPopup`, `LoginContent`, `SignupContent`, `UserMenu`, `handleAuthSubmit`, auth stores and hooks |
+| **Api** | `useAuth` SWR hook, `getMeService`, `createApiInstance`, `apiInstance`, all API callers and methods |
 
 ---
 

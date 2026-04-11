@@ -67,7 +67,6 @@ export async function TopCoursesSection() {
   return (
     <section className="py-16 md:py-24 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
           <div className="max-w-2xl">
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
@@ -77,7 +76,10 @@ export async function TopCoursesSection() {
               {t("description")}
             </p>
           </div>
-          <Button variant="outline" className="shrink-0 font-medium hidden sm:flex">
+          <Button
+            variant="outline"
+            className="shrink-0 font-medium hidden sm:flex"
+          >
             {t("viewAll")} <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
@@ -87,13 +89,12 @@ export async function TopCoursesSection() {
             <CourseCard key={course.id} course={course} />
           ))}
         </div>
-        
+
         <div className="mt-10 flex justify-center sm:hidden">
           <Button variant="outline" className="w-full font-medium">
             {t("viewAll")} <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
-        
       </div>
     </section>
   );

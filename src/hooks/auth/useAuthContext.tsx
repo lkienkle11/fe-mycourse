@@ -1,7 +1,11 @@
 "use client";
 
 import { useAuth } from "@/api/hooks/auth";
-import { useAuthStore, type AuthStoreState, type MeStoreState } from "@/store/auth";
+import {
+  useAuthStore,
+  type AuthStoreState,
+  type MeStoreState,
+} from "@/store/auth";
 
 export function useAuthContext(): AuthStoreState {
   return useAuthStore();

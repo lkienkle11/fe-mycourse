@@ -28,6 +28,28 @@
       "placeholder": "Bạn muốn học gì hôm nay?"
     }
   },
+  "commonHeader": {
+    "title": "MyCourses.io"
+  },
+  "commonFooter": {
+    "brand": "MyCourse.io",
+    "copyright": "Bản quyền © MyCourse.io 2026. Mọi quyền được bảo lưu.",
+    "navCourses": "Khóa học lập trình",
+    "navDesign": "Khóa học thiết kế",
+    "navCreative": "Khóa học sáng tạo",
+    "links": {
+      "webProgramming": "Lập trình Web",
+      "mobileProgramming": "Lập trình Mobile",
+      "javaBeginner": "Java cho người mới",
+      "phpBeginner": "PHP cho người mới",
+      "adobeIllustrator": "Adobe Illustrator",
+      "adobePhotoshop": "Adobe Photoshop",
+      "designLogo": "Thiết kế Logo",
+      "writingCourse": "Khóa học Viết",
+      "photography": "Nhiếp ảnh",
+      "videoMaking": "Làm Video"
+    }
+  },
   "auth": {
     "login": "Đăng nhập",
     "register": "Đăng ký",

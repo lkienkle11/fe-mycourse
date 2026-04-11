@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe`)
 
-This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. It reflects the knowledge graph for repo **`fe`** (clusters: **Ui**, **Api**, **Auth**, 336 symbols across 118 files as of last index).
+This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. It reflects the knowledge graph for repo **`fe`** (clusters: **Ui**, **Api**, **Auth**, **350** symbols, **769** relationships, **126** indexed files, **11** communities, **12** execution flows — refresh with `npx gitnexus analyze --force` from `fe/`).
 
 ---
 
@@ -47,7 +47,7 @@ Browser
                     ├─ App Router layout tree
                     │     ├─ Root layout (fonts, Toaster)
                     │     ├─ [locale] layout (NextIntlClientProvider + AppProviders)
-                    │     └─ (web) layout (Header + main)
+                    │     └─ (web) layout (Header + main + Footer)
                     │           └─ HomePage / future pages
                     └─ Server Actions → NEXT_PUBLIC_API_URL (Go API on :8080)
 ```
@@ -60,12 +60,13 @@ Browser
 flowchart TB
   RL["src/app/layout.tsx\n(Root: fonts, Toaster)"]
   LL["src/app/[locale]/layout.tsx\n(NextIntlClientProvider + AppProviders)"]
-  WL["src/app/[locale]/(web)/layout.tsx\n(Header + <main>)"]
+  WL["src/app/[locale]/(web)/layout.tsx\n(Header + <main> + Footer)"]
   HP["src/app/[locale]/(web)/page.tsx\n→ HomePage screen"]
 
   RL --> LL --> WL --> HP
 
   WL -->|renders| Header["Header\n(SearchBar, LocaleSwitcher, AuthLayout)"]
+  WL -->|renders| Footer["Footer\n(course links, i18n commonFooter,\nFooterSocial: X / IG / FB)"]
   Header -->|client| AuthLayout["AuthLayout\n(useAuth SWR: skeleton / UserMenu / AuthButton)"]
   AuthLayout -->|modal| LoginSignupPopup["LoginSignupPopup\n(LoginContent / SignupContent)"]
   LoginSignupPopup -->|server action| SA["loginAction / signupAction\n(src/actions/auth/auth.ts)"]
@@ -87,7 +88,7 @@ fe/
 │   │   └── [locale]/
 │   │       ├── layout.tsx          # Locale layout — NextIntlClientProvider + AppProviders
 │   │       └── (web)/
-│   │           ├── layout.tsx      # Web shell — Header + <main>
+│   │           ├── layout.tsx      # Web shell — Header, <main>, Footer (see @/components/common)
 │   │           └── page.tsx        # Home route → HomePage
 │   │
 │   ├── screen/                     # Page-level screen components (async server components)
@@ -96,8 +97,9 @@ fe/
 │   ├── components/
 │   │   ├── ui/                     # Radix/shadcn primitives (Button, Dialog, Input, …)
 │   │   ├── common/
+│   │   │   ├── index.ts            # Barrel: re-exports auth-menu, footer, header
 │   │   │   ├── header/             # Header, LocaleSwitcher
-│   │   │   ├── footer/             # Footer (available; not yet in web layout)
+│   │   │   ├── footer/             # Footer (RSC), FooterSocial (client social icons)
 │   │   │   └── auth-menu/          # AuthLayout, AuthButton, LoginSignupPopup,
 │   │   │                           # LoginContent, SignupContent, UserMenu,
 │   │   │                           # auth-form-handler.ts, auth-social-login/
@@ -142,8 +144,13 @@ fe/
 │   │   └── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS
 │   │
 │   ├── lib/
-│   │   ├── utils.ts                # cn(), buildQueryParams(), cookie helpers,
-│   │   │                           # getCookieDomain(), buildCookieOptions(), pickCharacter()
+│   │   ├── utils/                  # Shared helpers — import `@/lib/utils` (barrel: index.ts)
+│   │   │   ├── index.ts            # Re-exports
+│   │   │   ├── cn.ts               # cn() (clsx + tailwind-merge)
+│   │   │   ├── url.ts              # buildQueryParams()
+│   │   │   ├── react.ts            # useUniqueId()
+│   │   │   ├── user.ts             # pickCharacter()
+│   │   │   └── cookie.ts           # cookie types, domain, build options, isomorphic get/set
 │   │   ├── font.ts                 # next/font definitions (Roboto, Gilroy, GeistMono)
 │   │   └── http.ts                 # (placeholder / future HTTP utilities)
 │   │
@@ -227,7 +234,7 @@ Design-system primitives and presentational components:
 | Radix/shadcn primitives | `Button`, `Dialog`, `Input`, `InputGroup`, `Field`, `Label`, `Textarea`, `Checkbox`, `Avatar`, `Badge`, `Card`, `Separator`, `DropdownMenu` |
 | Layout utilities | `cn()` (clsx + tailwind-merge), `buildQueryParams()` |
 | Home sections | `HeroSection`, `SearchSection`, `TopCoursesSection`, `AdvancedPromoSection`, `TrendingCoursesSection`, `UpcomingWebinarsSection`, `PromoSection`, `CourseCard` |
-| Header / global | `Header`, `LocaleSwitcher`, `SearchBar` |
+| Header / global | `Header`, `LocaleSwitcher`, `SearchBar`, `Footer`, `FooterSocial` |
 
 ---
 
@@ -243,7 +250,7 @@ Auth tokens (`access_token`, `refresh_token`, `session_id`) are stored as **non-
 
 ### 3. Isomorphic Cookie Layer
 
-`getCookieValue` / `setCookieValue` in `src/lib/utils.ts` transparently switch between `js-cookie` (browser) and `next/headers` (server). This allows the same Axios interceptor logic to run in both RSC/Server Action and browser contexts without code duplication.
+`getCookieValue` / `setCookieValue` in `src/lib/utils/cookie.ts` (re-exported from `src/lib/utils/index.ts` as `@/lib/utils`) transparently switch between `js-cookie` (browser) and `next/headers` (server). This allows the same Axios interceptor logic to run in both RSC/Server Action and browser contexts without code duplication.
 
 ### 4. Token Refresh Mutex (Client Only)
 
@@ -280,8 +287,8 @@ All Go API endpoints return a standard `{ code, message, data }` envelope (mirro
 | `src/i18n/routing.ts` | `defineRouting` — locales `["en","vi"]`, `defaultLocale: "vi"`, `localePrefix: "always"` |
 | `src/i18n/request.ts` | `getRequestConfig` — lazily imports `src/messages/{locale}.json` |
 | `src/i18n/navigation.ts` | Typed `Link`, `redirect`, `useRouter`, `usePathname` from `next-intl/navigation` |
-| `src/messages/en.json` | English copy |
-| `src/messages/vi.json` | Vietnamese copy (default locale) |
+| `src/messages/en.json` | English copy (`commonFooter`, `home`, `auth`, `homepage`, …) |
+| `src/messages/vi.json` | Vietnamese copy (default locale); same namespaces |
 | `next.config.ts` | `createNextIntlPlugin("./src/i18n/request.ts")` wraps the Next config |
 
 Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i18n keys** (e.g. `"validation.email"`). Components call `t(error.message)` to resolve them via `useTranslations("auth")`.

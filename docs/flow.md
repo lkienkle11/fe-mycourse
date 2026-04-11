@@ -1,6 +1,8 @@
 # Execution Flows (`fe`)
 
-This document traces the major user-visible and technical flows in the MyCourse frontend. Flows are derived from the **GitNexus** process index for repo `fe` (12 tracked execution chains across the **Auth** and **Api** clusters) and from direct source inspection.
+This document traces the major user-visible and technical flows in the MyCourse frontend. Flows are derived from the **GitNexus** process index for repo `fe` (12 tracked execution chains across the **Auth** and **Api** clusters) and from direct source inspection. Regenerate the graph after large UI changes with `npx gitnexus analyze --force` from `fe/`.
+
+The **(web) layout** (`src/app/[locale]/(web)/layout.tsx`) wraps every marketing page in `Header` → `<main>` → `Footer`; the flows below focus on **auth** and **API** unless otherwise noted.
 
 ---
 
@@ -91,7 +93,7 @@ cookieStore.set("session_id", session_id, buildCookieOptions({ ... }));
 
 **Step 4 — Cookie strategy**
 
-`buildCookieOptions` (in `src/lib/utils.ts`) produces **non-HttpOnly**, `SameSite=Lax` cookies:
+`buildCookieOptions` (from `src/lib/utils/cookie.ts`, via `@/lib/utils`) produces **non-HttpOnly**, `SameSite=Lax` cookies:
 
 | Attribute | Value | Reason |
 |-----------|-------|--------|
@@ -320,7 +322,7 @@ const { authAction, openLoginModal, openSignupModal, closeAllModals, nextLink } 
 
 ## 7. Isomorphic Cookie Utilities
 
-`getCookieValue(name)` and `setCookieValue(name, value, options?)` in `src/lib/utils.ts` are isomorphic helpers used throughout:
+`getCookieValue(name)` and `setCookieValue(name, value, options?)` in `src/lib/utils/cookie.ts` (imported as `@/lib/utils`) are isomorphic helpers used throughout:
 
 | Context | Read (`getCookieValue`) | Write (`setCookieValue`) |
 |---------|------------------------|--------------------------|

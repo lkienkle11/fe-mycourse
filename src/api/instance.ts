@@ -17,9 +17,7 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 
 // Resolved once at module load — used by the raw refresh helper.
 const resolvedBaseURL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  process.env.API_URL ??
-  DEFAULT_BASE_URL;
+  process.env.NEXT_PUBLIC_API_URL ?? process.env.API_URL ?? DEFAULT_BASE_URL;
 
 export interface CreateInstanceConfig {
   /** Override the base URL (falls back to env vars, then localhost) */
@@ -87,7 +85,9 @@ async function doTokenRefresh(
 
 function reportError(error: AxiosError): void {
   const statusCode: number = error.response?.status ?? 0;
-  const body = error.response?.data as { code?: number; message?: string } | undefined;
+  const body = error.response?.data as
+    | { code?: number; message?: string }
+    | undefined;
   const appCode: number = body?.code ?? ApiErrorCode.Unknown;
   const message: string = body?.message ?? error.message ?? "Unknown Error";
   const url: string = error.config?.url ?? "unknown";
@@ -121,7 +121,9 @@ function reportError(error: AxiosError): void {
  *     Server Actions and Route Handlers, silently skipped in pure RSC contexts).
  *   - On second failure (after retry) the error is surfaced and the promise rejects.
  */
-export function createApiInstance(config?: CreateInstanceConfig): AxiosInstance {
+export function createApiInstance(
+  config?: CreateInstanceConfig,
+): AxiosInstance {
   const baseURL = config?.baseURL ?? resolvedBaseURL;
 
   const instance = axios.create({
@@ -181,7 +183,9 @@ export function createApiInstance(config?: CreateInstanceConfig): AxiosInstance 
             return Promise.reject(error);
           }
 
-          await setCookieValue("access_token", tokens.access_token, { maxAge: 15 * 60 });
+          await setCookieValue("access_token", tokens.access_token, {
+            maxAge: 15 * 60,
+          });
           await setCookieValue("refresh_token", tokens.refresh_token);
           await setCookieValue("session_id", tokens.session_id);
 
@@ -226,8 +230,14 @@ export function createApiInstance(config?: CreateInstanceConfig): AxiosInstance 
             sameSite: "lax",
             expires: 15 / 1440, // 15 minutes in days
           });
-          Cookies.set("refresh_token", tokens.refresh_token, { path: "/", sameSite: "lax" });
-          Cookies.set("session_id", tokens.session_id, { path: "/", sameSite: "lax" });
+          Cookies.set("refresh_token", tokens.refresh_token, {
+            path: "/",
+            sameSite: "lax",
+          });
+          Cookies.set("session_id", tokens.session_id, {
+            path: "/",
+            sameSite: "lax",
+          });
 
           flushRefreshQueue(tokens.access_token);
 

@@ -54,9 +54,11 @@ export async function TrendingCoursesSection() {
   return (
     <section className="py-16 md:py-24 bg-muted/50 border-y">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        
         <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-12">
-          <Badge variant="secondary" className="mb-4 px-3 py-1 bg-orange-100 text-orange-700 hover:bg-orange-100 border-none">
+          <Badge
+            variant="secondary"
+            className="mb-4 px-3 py-1 bg-orange-100 text-orange-700 hover:bg-orange-100 border-none"
+          >
             <Flame className="w-4 h-4 mr-1" />
             {t("badge")}
           </Badge>
@@ -73,7 +75,6 @@ export async function TrendingCoursesSection() {
             <CourseCard key={course.id} course={course} />
           ))}
         </div>
-        
       </div>
     </section>
   );

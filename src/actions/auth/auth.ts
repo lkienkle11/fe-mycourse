@@ -35,7 +35,9 @@ export async function loginAction(
 
     if (response.code === ApiErrorCode.Success && response.data) {
       const { access_token, refresh_token, session_id } = response.data;
-      const refreshMaxAge = payload.remember_me ? REMEMBER_ME_MAX_AGE : undefined;
+      const refreshMaxAge = payload.remember_me
+        ? REMEMBER_ME_MAX_AGE
+        : undefined;
       const isProduction = process.env.NODE_ENV === "production";
       const domain = getCookieDomain(process.env.AUTH_COOKIE_DOMAIN);
       const sameSite = "lax";

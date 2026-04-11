@@ -1,6 +1,11 @@
 import { ISvgProps } from "../types";
 
-export const XIcon = ({ color = "#ffffff", width = 24, height = 24, className }: ISvgProps) => (
+export const XIcon = ({
+  color = "#ffffff",
+  width = 24,
+  height = 24,
+  className,
+}: ISvgProps) => (
   <svg
     fill={color}
     role="img"
