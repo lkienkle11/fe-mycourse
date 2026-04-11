@@ -110,7 +110,7 @@ LoginContent (client)
 - **No API endpoint is exposed in the browser network tab** — the call goes through a Next.js Server Action (`"use server"`).
 - **Tokens are set as non-HttpOnly cookies** so that client-side JS can read them and attach them to outgoing requests as `Authorization` / `X-Refresh-Token` / `X-Session-Id` headers.
 - The Server Action reads `access_token`, `refresh_token`, and `session_id` from the **JSON response body** (all three are returned by the BE) and sets them as `SameSite=Lax` non-HttpOnly cookies via `next/headers`.
-- **`buildCookieOptions`** (from `src/lib/utils/cookie/build-options.ts`, imported via `@/lib/utils`) is used to build cookie options with `httpOnly: false`.
+- **`buildCookieOptions`** (from `src/lib/utils/cookie.ts`, imported via `@/lib/utils`) is used to build cookie options with `httpOnly: false`.
 
 ### Files Added / Modified
 
@@ -120,7 +120,7 @@ LoginContent (client)
 | `src/schema/auth/auth.ts` | Zod schemas: `loginSchema`, `signupSchema` + inferred types |
 | `src/api/callers/auth/auth.ts` | `loginService(payload)` — wraps `apiPost` |
 | `src/actions/auth/auth.ts` | `loginAction(payload)` Server Action — reads tokens from JSON body, sets non-HttpOnly cookies |
-| `src/lib/utils/` | `buildCookieOptions` and related helpers — barrel `@/lib/utils` |
+| `src/lib/utils/*.ts` | `cn`, `url`, `react`, `user`, `cookie` modules + `index.ts` barrel `@/lib/utils` |
 | `src/components/…/auth-form-handler.ts` | `handleAuthSubmit(type, payload)` — shared by LoginContent & SignupContent |
 | `src/components/…/login-content.tsx` | react-hook-form + zodResolver + loginAction |
 | `src/components/…/signup-content.tsx` | react-hook-form + zodResolver + signupAction |
@@ -258,7 +258,7 @@ If multiple requests expire simultaneously, only **one** refresh call is made. A
 
 The mutex is **not used server-side** — server requests are isolated per user, so a shared flag would incorrectly block or mix tokens across different users.
 
-### Cookie helpers (`src/lib/utils/cookie/` + `@/lib/utils`)
+### Cookie helpers (`src/lib/utils/cookie.ts` + `@/lib/utils`)
 
 | Function | Description |
 |---|---|

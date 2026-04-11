@@ -93,7 +93,7 @@ cookieStore.set("session_id", session_id, buildCookieOptions({ ... }));
 
 **Step 4 — Cookie strategy**
 
-`buildCookieOptions` (from `src/lib/utils/cookie/build-options.ts`, via `@/lib/utils`) produces **non-HttpOnly**, `SameSite=Lax` cookies:
+`buildCookieOptions` (from `src/lib/utils/cookie.ts`, via `@/lib/utils`) produces **non-HttpOnly**, `SameSite=Lax` cookies:
 
 | Attribute | Value | Reason |
 |-----------|-------|--------|
@@ -322,7 +322,7 @@ const { authAction, openLoginModal, openSignupModal, closeAllModals, nextLink } 
 
 ## 7. Isomorphic Cookie Utilities
 
-`getCookieValue(name)` and `setCookieValue(name, value, options?)` in `src/lib/utils/cookie/isomorphic.ts` (imported as `@/lib/utils`) are isomorphic helpers used throughout:
+`getCookieValue(name)` and `setCookieValue(name, value, options?)` in `src/lib/utils/cookie.ts` (imported as `@/lib/utils`) are isomorphic helpers used throughout:
 
 | Context | Read (`getCookieValue`) | Write (`setCookieValue`) |
 |---------|------------------------|--------------------------|

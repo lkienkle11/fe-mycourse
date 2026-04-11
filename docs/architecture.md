@@ -146,11 +146,11 @@ fe/
 │   ├── lib/
 │   │   ├── utils/                  # Shared helpers — import `@/lib/utils` (barrel: index.ts)
 │   │   │   ├── index.ts            # Re-exports
-│   │   │   ├── cn/cn.ts            # cn() (clsx + tailwind-merge)
-│   │   │   ├── url/                # buildQueryParams()
-│   │   │   ├── react/              # useUniqueId()
-│   │   │   ├── user/               # pickCharacter()
-│   │   │   └── cookie/             # types, domain, buildCookieOptions, isomorphic get/set
+│   │   │   ├── cn.ts               # cn() (clsx + tailwind-merge)
+│   │   │   ├── url.ts              # buildQueryParams()
+│   │   │   ├── react.ts            # useUniqueId()
+│   │   │   ├── user.ts             # pickCharacter()
+│   │   │   └── cookie.ts           # cookie types, domain, build options, isomorphic get/set
 │   │   ├── font.ts                 # next/font definitions (Roboto, Gilroy, GeistMono)
 │   │   └── http.ts                 # (placeholder / future HTTP utilities)
 │   │
@@ -250,7 +250,7 @@ Auth tokens (`access_token`, `refresh_token`, `session_id`) are stored as **non-
 
 ### 3. Isomorphic Cookie Layer
 
-`getCookieValue` / `setCookieValue` in `src/lib/utils/cookie/isomorphic.ts` (re-exported from `src/lib/utils/index.ts` as `@/lib/utils`) transparently switch between `js-cookie` (browser) and `next/headers` (server). This allows the same Axios interceptor logic to run in both RSC/Server Action and browser contexts without code duplication.
+`getCookieValue` / `setCookieValue` in `src/lib/utils/cookie.ts` (re-exported from `src/lib/utils/index.ts` as `@/lib/utils`) transparently switch between `js-cookie` (browser) and `next/headers` (server). This allows the same Axios interceptor logic to run in both RSC/Server Action and browser contexts without code duplication.
 
 ### 4. Token Refresh Mutex (Client Only)
 
