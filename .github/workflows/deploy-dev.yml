@@ -45,6 +45,7 @@ jobs:
             git stash -u && \
             git checkout dev && \
             git pull && \
+            rm -rf node_modules && \
             npm ci && \
             npm run build && \
             (pm2 reload mycourse-web-dev || pm2 start ecosystem.config.cjs --only mycourse-web-dev)"
