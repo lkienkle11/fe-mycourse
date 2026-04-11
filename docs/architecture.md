@@ -42,7 +42,7 @@ Loaded in `src/lib/font.ts` via `next/font/google` and applied as CSS variables 
 ```
 Browser
   └─ DNS → Nginx (TLS termination)
-              └─ 127.0.0.1:3000 → next start (PM2: mycourse-web)
+              └─ 127.0.0.1:3000 → next start (PM2: e.g. `mycourse-web` or `mycourse-web-dev` per `ecosystem.config.cjs`)
                     ├─ Middleware (src/proxy.ts) → locale redirect
                     ├─ App Router layout tree
                     │     ├─ Root layout (fonts, Toaster)

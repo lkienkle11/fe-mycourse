@@ -31,6 +31,10 @@ Open the URL Next.js prints (default [http://localhost:3000](http://localhost:30
 
 For **full-stack** VPS setup (Go API + Postgres + Redis + joint Nginx), follow [`../be/docs/deploy.md`](../be/docs/deploy.md) first; use this repo's `docs/deploy.md` for frontend-specific steps.
 
+### CI deploy (`dev`)
+
+Pushing to the **`dev`** branch runs [`.github/workflows/deploy-dev.yml`](.github/workflows/deploy-dev.yml): a **build** job on GitHub Actions, then SSH to the VPS (`DEPLOY_PATH_DEV`), `git pull`, clean **`node_modules`**, **`npm ci` + `npm run build`**, and **`pm2 reload mycourse-web-dev`**. Required secrets: `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_USER`, `DEPLOY_PATH_DEV`. Details and operational notes are in [`docs/deploy.md` Appendix G](docs/deploy.md#appendix-g--cicd-github-actions).
+
 ## Environment Variables
 
 Create a `.env` file at the project root (gitignored). In production use `.env.production.local` on the server — see [`docs/deploy.md`](docs/deploy.md) for details.
