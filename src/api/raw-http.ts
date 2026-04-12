@@ -57,7 +57,10 @@ function parseSetCookies(
 }
 
 function buildAxiosConfig(
-  options: Omit<RawApiOptions, "timeout" | "withCredentials" | "signal" | "baseURL">,
+  options: Omit<
+    RawApiOptions,
+    "timeout" | "withCredentials" | "signal" | "baseURL"
+  >,
 ): AxiosRequestConfig {
   const { headers = {}, cookies = {}, params } = options;
 

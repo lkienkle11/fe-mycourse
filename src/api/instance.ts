@@ -82,7 +82,7 @@ async function getRefreshSessionPair(): Promise<{
   refreshToken: string;
   sessionId: string;
 } | null> {
-  if (isServer) {
+  if (isServer()) {
     const refreshToken = await getCookieValue("refresh_token");
     const sessionId = await getCookieValue("session_id");
     if (!refreshToken || !sessionId) return null;
@@ -140,7 +140,9 @@ function reportError(error: AxiosError): void {
     `[API] ${method} ${url} → HTTP ${statusCode} | appCode=${appCode} | ${message}`,
   );
 
-  // useApiError is a Zustand store — safe to call on server too (no-op if not hydrated).
+  if (isServer()) {
+    return;
+  }
   useApiError.getState().push({ statusCode, appCode, message, url, method });
 }
 
@@ -225,7 +227,7 @@ export function createApiInstance(
         cfg._retry = true;
 
         // ---- Server-side path (no shared mutex) ----
-        if (isServer) {
+        if (isServer()) {
           const tokens = await doTokenRefresh(
             pair.refreshToken,
             pair.sessionId,
