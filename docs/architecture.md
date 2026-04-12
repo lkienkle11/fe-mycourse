@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. It aligns with the GitNexus index for repo **`fe-mycourse`** (order-of-magnitude: **~134** source files, **~563** symbols, **~1,010** relationships, **~11** graph clusters, **~12** execution flows; top clusters **Ui**, **Api**, **Auth** — refresh with `npx gitnexus analyze --force` from this repo root).
+This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. It aligns with the GitNexus index for repo **`fe-mycourse`** (order-of-magnitude: **~136** source files, **~589** symbols, **~1,091** relationships, **~13** graph clusters, **~18** execution flows; top clusters **Ui**, **Api**, **Auth** — refresh with `npx gitnexus analyze` from this repo root).
 
 ---
 
@@ -119,9 +119,11 @@ fe/
 │   │   └── auth/auth.ts            # "use server": loginAction, signupAction
 │   │
 │   ├── api/
+│   │   ├── index.ts                # Barrel: re-exports api* + raw* + types from instance/methods/raw-http
 │   │   ├── instance.ts             # createApiInstance + singleton apiInstance
 │   │   │                           # Interceptors: Bearer token attach, token refresh
-│   │   ├── methods.ts              # apiFetch / apiPost / apiPut / apiDelete → ApiResult<T>
+│   │   ├── methods.ts              # apiFetch / apiPost / apiPut / apiDelete / apiOptions → ApiResult<T>
+│   │   ├── raw-http.ts             # rawFetch / rawPost / … plain Axios (used by doTokenRefresh)
 │   │   ├── cache.ts                # (DISABLED) Client IndexedDB + server Map cache layer
 │   │   ├── callers/
 │   │   │   └── auth/auth.ts        # loginService, getMeService, getMeEndpointKey
@@ -221,9 +223,10 @@ All HTTP communication and token lifecycle management:
 |--------|------|------|
 | `createApiInstance` | `api/instance.ts` | Axios instance factory with interceptors |
 | `apiInstance` | `api/instance.ts` | Singleton shared by all callers |
-| `doTokenRefresh` | `api/instance.ts` | Raw Axios refresh call (bypasses interceptors) |
+| `doTokenRefresh` | `api/instance.ts` | Calls `rawPost` in `raw-http.ts` for `POST /auth/refresh` (no `apiInstance`) |
 | `scheduleAfterRefresh` / `flushRefreshQueue` | `api/instance.ts` | Client-side mutex queue |
-| `apiFetch` / `apiPost` / `apiPut` / `apiDelete` | `api/methods.ts` | Low-level helpers → `ApiResult<T>` |
+| `rawPost` / `rawFetch` / … | `api/raw-http.ts` | Plain Axios helpers → `ApiResult<T>`; imported by `instance.ts` only from here |
+| `apiFetch` / `apiPost` / `apiPut` / `apiDelete` / `apiOptions` | `api/methods.ts` | Low-level helpers on `apiInstance` → `ApiResult<T>` |
 | `getMeService` | `api/callers/auth/auth.ts` | `GET /api/v1/me` → `MeResponse \| null` |
 | `loginService` | `api/callers/auth/auth.ts` | `POST /api/v1/auth/login` |
 | `useAuth` | `api/hooks/auth/useAuth.ts` | SWR hook for current user |
@@ -259,7 +262,7 @@ Auth tokens (`access_token`, `refresh_token`, `session_id`) are stored as **non-
 
 ### 4. Token Refresh Mutex (Client Only)
 
-When multiple concurrent client requests receive `401 + X-Token-Expired: true` simultaneously, only **one** refresh call is issued. All others are queued via a `pendingResolvers` array and receive the new token once the single refresh completes. Server-side requests are isolated per user and do not use this mutex.
+When multiple concurrent client requests are **eligible for silent refresh** (expired access per `X-Token-Expired`, or `401` with no Bearer while refresh cookies exist) simultaneously, only **one** refresh call is issued. All others are queued via a `pendingResolvers` array and receive the new token once the single refresh completes. Server-side requests are isolated per user and do not use this mutex.
 
 ### 5. SWR for Current User
 

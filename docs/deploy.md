@@ -724,7 +724,7 @@ npm run build && pm2 reload mycourse-web
 
 ### Auth tokens expire and the app does not recover
 
-The token refresh interceptor (`doTokenRefresh` in `src/api/instance.ts`) requires the `refresh_token` and `session_id` cookies. Verify they are present in the browser after login. Also ensure the backend's `/api/v1/auth/refresh` endpoint is reachable at `NEXT_PUBLIC_API_URL`.
+The token refresh path (`doTokenRefresh` → `rawPost` in `src/api/raw-http.ts`) requires the `refresh_token` and `session_id` cookies. Verify they are present in the browser after login. Also ensure the backend's `/api/v1/auth/refresh` endpoint is reachable at `NEXT_PUBLIC_API_URL`. Silent refresh runs on `X-Token-Expired: true` **or** on `401` when no Bearer was sent but those two cookies exist.
 
 ### `NEXT_PUBLIC_API_URL` is wrong after deploy
 
@@ -756,7 +756,8 @@ sudo nginx -t                  # valid config after certbot edits?
 | Web shell layout | `src/app/[locale]/(web)/layout.tsx` | `Header` + `<main>` + `Footer` (from `@/components/common`) |
 | Home screen | `src/screen/common/home/page.tsx` | Assembles 7 marketing sections |
 | API client instance | `src/api/instance.ts` | Axios + token attach + token refresh interceptors |
-| API helpers | `src/api/methods.ts` | `apiFetch`, `apiPost`, `apiPut`, `apiDelete` → `ApiResult<T>` |
+| API helpers | `src/api/methods.ts` | `apiFetch`, `apiPost`, `apiPut`, `apiDelete`, `apiOptions` → `ApiResult<T>` |
+| Raw HTTP + barrel | `src/api/raw-http.ts`, `src/api/index.ts` | Plain Axios `raw*`; `index.ts` re-exports `api*` + `raw*` |
 | Auth server actions | `src/actions/auth/auth.ts` | `loginAction`, `signupAction` (`"use server"`) |
 | Cookie utilities | `src/lib/utils/cookie.ts` (+ barrel `index.ts`) | `buildCookieOptions`, `getCookieDomain`, `getCookieValue`, `setCookieValue` (import `@/lib/utils`) |
 | i18n routing | `src/i18n/routing.ts` | `locales: ["en","vi"]`, `defaultLocale: "vi"`, `localePrefix: "always"` |
