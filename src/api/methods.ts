@@ -18,7 +18,7 @@
  *   - Client runtime  → IndexedDB  (persists across page reloads within TTL).
  *   - Server runtime  → module-level Map (in-process memory, per-worker).
  *
- * Extra options (all four methods):
+ * Extra options (all `api*` request helpers):
  *   - `headers`  – merged on top of the instance defaults.
  *   - `cookies`  – serialised into the Cookie header (server-side forwarding).
  *   - `params`   – URL query params forwarded to Axios.
@@ -313,6 +313,37 @@ export async function apiDelete<T>(
   );
   return {
     data,
+    statusCode,
+    headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
+    cookies: parseSetCookies(
+      rawHeaders["set-cookie"] as string | string[] | undefined,
+    ),
+  };
+}
+
+/**
+ * HTTP OPTIONS request via the shared Axios instance (interceptors, auth, …).
+ * For the same verb without `apiInstance`, use `rawOptions` from `./raw-http`.
+ *
+ * @example
+ * const { data, statusCode, headers } = await apiOptions<void>("/resource");
+ */
+export async function apiOptions<T>(
+  url: string,
+  options: MutationApiOptions = {},
+): Promise<ApiResult<T>> {
+  const { otherAxiosInstance, ...rest } = options;
+  const {
+    data,
+    status: statusCode,
+    headers: rawHeaders,
+  } = await resolveInstance(otherAxiosInstance).request<T>({
+    url,
+    method: "OPTIONS",
+    ...buildAxiosConfig(rest),
+  });
+  return {
+    data: data as T,
     statusCode,
     headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
     cookies: parseSetCookies(

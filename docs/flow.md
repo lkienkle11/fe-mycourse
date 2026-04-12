@@ -201,21 +201,22 @@ Request
   └─ interceptor reads access_token cookie
       ├─ Client: js-cookie  (getCookieValue → Cookies.get)
       └─ Server: next/headers  (getCookieValue → cookies().get)
-  └─ Sets  Authorization: Bearer <access_token>
+  └─ If a non-empty access token exists → sets  Authorization: Bearer <access_token>
+  └─ If the cookie is missing / empty → no Authorization header (BE returns 401 "missing bearer token")
 ```
 
 ### 4.2 Token refresh flow
 
-Triggered when a response is `401` or `403` **and** carries `X-Token-Expired: true`:
+Triggered when **all** of: HTTP `401` or `403`; response not already retried (`_retry`); **`refresh_token` and `session_id` cookies present**; **and** either the response header `X-Token-Expired: true` is set **(access JWT expired)**, **or** the failure is **`401` and the outgoing request had no non-empty `Authorization: Bearer …`** (session cookies exist but `access_token` was cleared — BE does not send `X-Token-Expired` for that case; see `be-mycourse/middleware/auth_jwt.go`).
 
 ```
-Response: 401 + X-Token-Expired: true
+Eligible 401/403 + refresh cookies?
   │
   ├─ cfg._retry already set? → surface error immediately (prevent retry loop)
   │
   ├─ SERVER PATH (no shared mutex — each request is per-user):
   │     Read refresh_token + session_id from cookies via next/headers
-  │     POST /api/v1/auth/refresh
+  │     POST /api/v1/auth/refresh  (rawPost in src/api/raw-http.ts — not apiInstance)
   │       X-Refresh-Token: <refresh_jwt>
   │       X-Session-Id:    <session_id>
   │     ├─ success → update cookies (setCookieValue) → retry original request
@@ -227,7 +228,7 @@ Response: 401 + X-Token-Expired: true
         isRefreshing == false:
           → set isRefreshing = true
           → read refresh_token + session_id from js-cookie
-          → POST /api/v1/auth/refresh  (raw axios, bypasses interceptors)
+          → POST /api/v1/auth/refresh  (rawPost — bypasses interceptors, avoids circular import with methods.ts)
           ├─ success:
           │     update cookies (js-cookie)
           │     flushRefreshQueue(newAccessToken) → unblock all queued requests

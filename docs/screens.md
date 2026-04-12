@@ -279,7 +279,7 @@ Symbol and edge counts change as the codebase grows. Refresh the local graph wit
 |---------|------------------|
 | **Ui** | `src/components/ui/*`, home sections, `SearchBar`, `LocaleSwitcher`, `Header`, `Footer`, `FooterSocial` |
 | **Auth** | `AuthLayout`, `AuthButton`, `LoginSignupPopup`, `LoginContent`, `SignupContent`, `UserMenu`, `handleAuthSubmit`, auth stores and hooks |
-| **Api** | `useAuth` SWR hook, `getMeService`, `createApiInstance`, `apiInstance`, all API callers and methods |
+| **Api** | `useAuth` SWR hook, `getMeService`, `createApiInstance`, `apiInstance`, `raw-http` helpers, `src/api/index.ts` barrel, callers and `methods` |
 
 ---
 

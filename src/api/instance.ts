@@ -11,6 +11,7 @@ import { ApiErrorCode } from "@/types/api";
 import type { ApiResponse } from "@/types/api";
 import type { RefreshTokenResponse } from "@/types/auth";
 import { useApiError } from "@/store/api-error-store";
+import { rawPost } from "./raw-http";
 
 const DEFAULT_BASE_URL = "http://localhost:3000/api";
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -50,6 +51,49 @@ function flushRefreshQueue(accessToken: string | null): void {
   }
 }
 
+function readAuthorizationHeader(
+  cfg: InternalAxiosRequestConfig,
+): string | undefined {
+  const h = cfg.headers;
+  if (!h) return undefined;
+  if (typeof (h as { get?: (n: string) => unknown }).get === "function") {
+    const g = (h as { get: (n: string) => unknown }).get.bind(h);
+    const a = g("Authorization") ?? g("authorization");
+    if (typeof a === "string") return a;
+    if (Array.isArray(a) && typeof a[0] === "string") return a[0];
+    return undefined;
+  }
+  const o = h as Record<string, unknown>;
+  const x = o.Authorization ?? o.authorization;
+  return typeof x === "string" ? x : undefined;
+}
+
+/** True when the outbound request carried a non-empty JWT in `Authorization: Bearer …`. */
+function requestSentNonEmptyBearerToken(
+  cfg: InternalAxiosRequestConfig,
+): boolean {
+  const raw = readAuthorizationHeader(cfg);
+  if (!raw?.trim()) return false;
+  const m = /^Bearer\s+(\S+)/i.exec(raw.trim());
+  return Boolean(m?.[1]);
+}
+
+async function getRefreshSessionPair(): Promise<{
+  refreshToken: string;
+  sessionId: string;
+} | null> {
+  if (isServer) {
+    const refreshToken = await getCookieValue("refresh_token");
+    const sessionId = await getCookieValue("session_id");
+    if (!refreshToken || !sessionId) return null;
+    return { refreshToken, sessionId };
+  }
+  const refreshToken = Cookies.get("refresh_token");
+  const sessionId = Cookies.get("session_id");
+  if (!refreshToken || !sessionId) return null;
+  return { refreshToken, sessionId };
+}
+
 // ---------------------------------------------------------------------------
 // Token refresh (plain axios — skips interceptors to avoid re-entry)
 // ---------------------------------------------------------------------------
@@ -59,19 +103,18 @@ async function doTokenRefresh(
   sessionId: string,
 ): Promise<RefreshTokenResponse | null> {
   try {
-    const resp = await axios.post<ApiResponse<RefreshTokenResponse>>(
-      resolvedBaseURL + API_PUBLIC_ROUTES.auth.refresh,
-      null,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "X-Refresh-Token": refreshToken,
-          "X-Session-Id": sessionId,
-        },
-        timeout: DEFAULT_TIMEOUT_MS,
+    const { data: envelope } = await rawPost<
+      ApiResponse<RefreshTokenResponse>,
+      null
+    >(resolvedBaseURL + API_PUBLIC_ROUTES.auth.refresh, null, {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Refresh-Token": refreshToken,
+        "X-Session-Id": sessionId,
       },
-    );
-    const payload = resp.data?.data;
+      timeout: DEFAULT_TIMEOUT_MS,
+    });
+    const payload = envelope?.data;
     if (!payload?.access_token) return null;
     return payload;
   } catch {
@@ -112,8 +155,12 @@ function reportError(error: AxiosError): void {
  *   - Client: reads access_token via js-cookie → `Authorization: Bearer …`
  *   - Server: reads access_token via next/headers → `Authorization: Bearer …`
  *
- * Response interceptor — silent token refresh on expiry:
- *   - Triggered by 401/403 + `X-Token-Expired: true` response header.
+ * Response interceptor — silent token refresh:
+ *   - When the server sends `X-Token-Expired: true` (access JWT expired), or
+ *   - On HTTP 401 when no `Authorization: Bearer …` was sent but `refresh_token`
+ *     and `session_id` cookies exist (e.g. user cleared `access_token` only).
+ *     The API still returns 401 without `X-Token-Expired` in that case — see BE
+ *     `middleware/auth_jwt.go` (`missing bearer token` vs `token expired`).
  *   - Client: mutex prevents a stampede when many requests expire simultaneously.
  *     Queued requests wait for the single in-flight refresh and share the result.
  *   - Server: no module-level mutex (each request is isolated per user).
@@ -159,25 +206,30 @@ export function createApiInstance(
         _retry?: boolean;
       };
 
-      if (
-        (status === 401 || status === 403) &&
-        tokenExpired &&
+      const missingAccessTokenRequest =
+        status === 401 && !requestSentNonEmptyBearerToken(cfg);
+
+      const shouldAttemptSilentRefresh =
         cfg &&
-        !cfg._retry
-      ) {
+        !cfg._retry &&
+        (status === 401 || status === 403) &&
+        (tokenExpired || missingAccessTokenRequest);
+
+      if (shouldAttemptSilentRefresh) {
+        const pair = await getRefreshSessionPair();
+        if (!pair) {
+          reportError(error);
+          return Promise.reject(error);
+        }
+
         cfg._retry = true;
 
         // ---- Server-side path (no shared mutex) ----
         if (isServer) {
-          const refreshToken = await getCookieValue("refresh_token");
-          const sessionId = await getCookieValue("session_id");
-
-          if (!refreshToken || !sessionId) {
-            reportError(error);
-            return Promise.reject(error);
-          }
-
-          const tokens = await doTokenRefresh(refreshToken, sessionId);
+          const tokens = await doTokenRefresh(
+            pair.refreshToken,
+            pair.sessionId,
+          );
           if (!tokens) {
             reportError(error);
             return Promise.reject(error);
@@ -209,16 +261,10 @@ export function createApiInstance(
 
         isRefreshing = true;
         try {
-          const refreshToken = Cookies.get("refresh_token") ?? null;
-          const sessionId = Cookies.get("session_id") ?? null;
-
-          if (!refreshToken || !sessionId) {
-            flushRefreshQueue(null);
-            reportError(error);
-            return Promise.reject(error);
-          }
-
-          const tokens = await doTokenRefresh(refreshToken, sessionId);
+          const tokens = await doTokenRefresh(
+            pair.refreshToken,
+            pair.sessionId,
+          );
           if (!tokens) {
             flushRefreshQueue(null);
             reportError(error);
