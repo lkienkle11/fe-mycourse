@@ -1,6 +1,6 @@
 # Deploying MyCourse Frontend on Ubuntu 24.04
 
-This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be/docs/deploy.md`](../../be/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.
+This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.
 
 **Scope of this document:** Next.js-specific steps — environment variables, `next build` / `next start`, Nginx vhost for the web app, PM2 config, and the frontend go-live checklist.
 
@@ -18,7 +18,7 @@ This is the **frontend** deployment runbook for the MyCourse Next.js application
 | Nginx vhost | `yourdomain.net` / `www.yourdomain.net` → `127.0.0.1:3000` |
 | Required env var | `NEXT_PUBLIC_API_URL` (must be set **before** `npm run build`) |
 | Optional env var | `AUTH_COOKIE_DOMAIN` (needed when FE and API are on different subdomains) |
-| Node.js version | 22 LTS (match `be/docs/deploy.md`) |
+| Node.js version | 22 LTS (match [backend deploy guide](../../be-mycourse/docs/deploy.md)) |
 | GitHub Actions | Push to **`dev`** → `.github/workflows/deploy-dev.yml` (build in CI + deploy rebuild on VPS — [Appendix G](#appendix-g--cicd-github-actions)) |
 
 > **PM2 process names:** This runbook uses **`mycourse-web`** in examples for a single manual app. The repo’s **`ecosystem.config.cjs`** and **GitHub Actions** use **`mycourse-web-dev`** (and staging/prod siblings). Use the name that matches `pm2 list` on your server (e.g. `pm2 logs mycourse-web-dev`).
@@ -47,7 +47,7 @@ Run steps **in order**. Each step notes whether it can be skipped if you already
 
 ### Step 2 — System update and core packages
 
-Skip if already done in `be/docs/deploy.md` Step 2. Verify at minimum these packages are present:
+Skip if already done in the [backend deploy guide](../../be-mycourse/docs/deploy.md) Step 2. Verify at minimum these packages are present:
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -106,7 +106,7 @@ PM2 will run `npm run start` (which calls `next start -p 3000`) and restart it a
 
 ### Step 5 — Configure the firewall
 
-Skip if done in `be/docs/deploy.md` Step 7. Confirm the rules are active:
+Skip if done in the [backend deploy guide](../../be-mycourse/docs/deploy.md) Step 7. Confirm the rules are active:
 
 ```bash
 sudo ufw default deny incoming
@@ -142,7 +142,7 @@ Confirm the frontend source is at `/opt/mycourse/fe/package.json`.
 
 ### Step 7 — Environment variables
 
-Create a **non-committed** env file at the `fe/` root. This file is read by `next build` and `next start`:
+Create a **non-committed** env file at the **repository root** (same directory as `package.json`). This file is read by `next build` and `next start`:
 
 ```bash
 nano /opt/mycourse/fe/.env.production.local
@@ -310,7 +310,7 @@ Create or update the PM2 ecosystem file. If you already have one from the backen
 // /opt/mycourse/ecosystem.config.cjs
 module.exports = {
   apps: [
-    // --- Go API (from be/docs/deploy.md) ---
+    // --- Go API (from be-mycourse/docs/deploy.md) ---
     {
       name: 'mycourse-api',
       cwd: '/opt/mycourse/be',
@@ -674,7 +674,7 @@ jobs:
 - **Clean `node_modules` on deploy** — guarantees lockfile-aligned installs after each pull (matches the workflow as of 2026).
 - **`NEXT_PUBLIC_*` on the server** — must be present when **`npm run build`** runs on the VPS (e.g. `.env.production.local`, `.env.local`, or env injected before build). Changing them without rebuilding leaves a stale client bundle.
 - **`AUTH_COOKIE_DOMAIN`** — runtime / server-side for cookies; keep on the server, not required in GitHub Actions for this workflow.
-- **Backend CI** — still **2 jobs**, **`master`**, **`rsync`** binary to `DEPLOY_PATH_DEV/bin/` — see `be/docs/deploy.md` Appendix C.
+- **Backend CI** — still **2 jobs**, **`master`**, **`rsync`** binary to `DEPLOY_PATH_DEV/bin/` — see [backend Appendix C](../../be-mycourse/docs/deploy.md#appendix-c--cicd-with-github-actions).
 
 ---
 
@@ -768,4 +768,4 @@ sudo nginx -t                  # valid config after certbot edits?
 
 ---
 
-*For the full-stack VPS setup (Go API, Postgres, Redis, joint Nginx, CI/CD), always use **`be/docs/deploy.md`** as the primary reference. Use this document for frontend-specific concerns only.*
+*For the full-stack VPS setup (Go API, Postgres, Redis, joint Nginx, CI/CD), always use **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** as the primary reference. Use this document for frontend-specific concerns only.*

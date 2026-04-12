@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from `fe/`, e.g. `npx gitnexus query -r fe "web layout footer"` or `npx gitnexus context -r fe Footer`.
+Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
 
 ---
 
@@ -273,7 +273,7 @@ API_PRIVATE_ROUTES.user.getMe   // GET  /api/v1/me
 
 ## GitNexus Cluster Mapping
 
-Symbol and edge counts change as the codebase grows. Refresh the local graph with `npx gitnexus analyze --force` (from `fe/`), then `npx gitnexus status` or `npx gitnexus query -r fe "<topic>"` for up-to-date clusters and flows.
+Symbol and edge counts change as the codebase grows. Refresh the local graph with `npx gitnexus analyze --force` (from this repo root), then `npx gitnexus status` or `npx gitnexus query -r fe-mycourse "<topic>"` for up-to-date clusters and flows.
 
 | Cluster | Component surface |
 |---------|------------------|

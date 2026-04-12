@@ -29,9 +29,9 @@ Open the URL Next.js prints (default [http://localhost:3000](http://localhost:30
 | [`docs/flow.md`](docs/flow.md) | Auth and API execution flows — login, signup (placeholder), `/me`, token refresh, cookie strategy, error handling, Zustand store interactions |
 | [`docs/screens.md`](docs/screens.md) | App Router routes, layout hierarchy (header / main / footer), home sections, auth shell, footer i18n (`commonFooter`), UI primitives, route constants |
 
-After large refactors, run **`npx gitnexus analyze --force`** in `fe/` so the local graph (`.gitnexus/`, ignored by git) and the generated **`CLAUDE.md` / `AGENTS.md`** header stats stay aligned with the code; use **`npx gitnexus query -r fe "…"`** / **`npx gitnexus context -r fe SymbolName`** when updating `docs/*.md`.
+After large refactors, run **`npx gitnexus analyze --force`** in this repo so the local graph (`.gitnexus/`, ignored by git) and the generated **`CLAUDE.md` / `AGENTS.md`** header stats stay aligned with the code; use **`npx gitnexus query -r fe-mycourse "…"`** / **`npx gitnexus context -r fe-mycourse SymbolName`** when updating `docs/*.md`.
 
-For **full-stack** VPS setup (Go API + Postgres + Redis + joint Nginx), follow [`../be/docs/deploy.md`](../be/docs/deploy.md) first; use this repo's `docs/deploy.md` for frontend-specific steps.
+For **full-stack** VPS setup (Go API + Postgres + Redis + joint Nginx), follow [`../be-mycourse/docs/deploy.md`](../be-mycourse/docs/deploy.md) first; use this repo's `docs/deploy.md` for frontend-specific steps.
 
 ### Branch policy: `main` only from `dev`
 
