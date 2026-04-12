@@ -92,7 +92,12 @@ fe/
 │   │           └── page.tsx        # Home route → HomePage
 │   │
 │   ├── screen/                     # Page-level screen components (async server components)
-│   │   └── home/page.tsx           # HomePage — assembles all home sections
+│   │   ├── index.ts                # Barrel: common + admin + instructor
+│   │   ├── common/
+│   │   │   ├── index.ts            # Barrel: shared web screens (e.g. HomePage)
+│   │   │   └── home/page.tsx       # HomePage — assembles all home sections
+│   │   ├── admin/index.ts          # Barrel: admin-role screens (extend as routes are added)
+│   │   └── instructor/index.ts     # Barrel: instructor-role screens (extend as routes are added)
 │   │
 │   ├── components/
 │   │   ├── ui/                     # Radix/shadcn primitives (Button, Dialog, Input, …)
