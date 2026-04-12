@@ -38,6 +38,7 @@ export type MeStoreState = {
   me: MeResponse | null;
   isLoading: boolean;
   isError: unknown;
+  mePermissions: string[];
   mutateMe: () => void;
 };
 
@@ -45,6 +46,7 @@ type MeAuthPayload = {
   me: MeResponse | null;
   isLoading: boolean;
   error: unknown;
+  mePermissions: string[];
   mutate: () => void;
 };
 
@@ -65,13 +67,15 @@ export const useMeStore = create<MeStoreState & MeStoreActions>((set) => ({
   me: null,
   isLoading: true,
   isError: undefined,
+  mePermissions: [],
   mutateMe: defaultMutateMe,
 
-  syncFromUseAuth: ({ me, isLoading, error, mutate }) =>
+  syncFromUseAuth: ({ me, isLoading, error, mePermissions, mutate }) =>
     set({
       me,
       isLoading,
       isError: error,
+      mePermissions,
       mutateMe: mutate,
     }),
 }));
