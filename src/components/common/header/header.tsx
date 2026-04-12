@@ -19,7 +19,7 @@ export const Header = async ({
     "Language";
 
   return (
-    <header className="w-full">
+    <header className="w-full sticky top-0 z-100 bg-background shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)]">
       <div className="container container-wrap mx-auto xl:px-4 flex w-full items-center justify-between py-4">
         <div className="flex items-center justify-center gap-1.5 cursor-pointer select-none">
           <MainLogo />
