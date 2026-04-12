@@ -1,6 +1,6 @@
 # Execution Flows (`fe`)
 
-This document traces the major user-visible and technical flows in the MyCourse frontend. Flows are derived from the **GitNexus** process index for repo `fe` (12 tracked execution chains across the **Auth** and **Api** clusters) and from direct source inspection. Regenerate the graph after large UI changes with `npx gitnexus analyze --force` from `fe/`.
+This document traces the major user-visible and technical flows in the MyCourse frontend. Flows are derived from the **GitNexus** process index for repo **`fe-mycourse`** (12 tracked execution chains across the **Auth** and **Api** clusters) and from direct source inspection. Regenerate the graph after large UI changes with `npx gitnexus analyze --force` from the **fe-mycourse** repo root.
 
 The **(web) layout** (`src/app/[locale]/(web)/layout.tsx`) wraps every marketing page in `Header` → `<main>` → `Footer`; the flows below focus on **auth** and **API** unless otherwise noted.
 
@@ -353,5 +353,5 @@ These trace the `SearchBar` component (`src/components/shared/search-bar.tsx`) r
 | Component structure and routes | [`docs/screens.md`](screens.md) |
 | Folder layout and clusters | [`docs/architecture.md`](architecture.md) |
 | Production env vars and cookies | [`docs/deploy.md`](deploy.md) |
-| Go API token endpoints | [`be/docs/deploy.md`](../../be/docs/deploy.md) |
+| Go API token endpoints | [`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md) |
 | Full README with code examples | [`README.md`](../README.md) |
