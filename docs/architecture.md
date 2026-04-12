@@ -1,6 +1,6 @@
-# Frontend Architecture (`fe`)
+# Frontend Architecture (`fe-mycourse`)
 
-This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. It reflects the knowledge graph for repo **`fe`** (clusters: **Ui**, **Api**, **Auth**, **350** symbols, **769** relationships, **126** indexed files, **11** communities, **12** execution flows — refresh with `npx gitnexus analyze --force` from `fe/`).
+This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. It aligns with the GitNexus index for repo **`fe-mycourse`** (order-of-magnitude: **~134** source files, **~563** symbols, **~1,010** relationships, **~11** graph clusters, **~12** execution flows; top clusters **Ui**, **Api**, **Auth** — refresh with `npx gitnexus analyze --force` from this repo root).
 
 ---
 
@@ -340,4 +340,4 @@ The cache integration in `apiFetch` is currently commented out (`// TODO: re-ena
 | [`docs/flow.md`](flow.md) | Auth and API execution flows with sequence diagrams |
 | [`docs/screens.md`](screens.md) | App Router routes, layouts, and UI surfaces |
 | [`docs/deploy.md`](deploy.md) | Production deployment runbook (Ubuntu 24.04, PM2, Nginx, TLS) |
-| [`../be/docs/deploy.md`](../../be/docs/deploy.md) | Full-stack VPS: Go API, Postgres, Redis, joint Nginx |
+| [`../be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md) | Full-stack VPS: Go API, Postgres, Redis, joint Nginx |
