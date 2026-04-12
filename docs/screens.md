@@ -58,9 +58,18 @@ Each layout layer adds a concern without re-rendering the parent:
 
 ---
 
+## Screen barrels (`src/screen/`)
+
+- **`src/screen/index.ts`** — re-exports `common`, `admin`, and `instructor` barrels (import `HomePage` from `@/screen` as before).
+- **`src/screen/common/`** — shared web-facing screens (e.g. marketing home). Barrel: `src/screen/common/index.ts`.
+- **`src/screen/admin/`** — admin-role screens (barrel: `src/screen/admin/index.ts`; add modules and re-exports when routes exist).
+- **`src/screen/instructor/`** — instructor-role screens (barrel: `src/screen/instructor/index.ts`).
+
+---
+
 ## Home Screen (`HomePage`)
 
-**File:** `src/screen/home/page.tsx` — async Server Component.
+**File:** `src/screen/common/home/page.tsx` — async Server Component.
 
 Assembles the marketing landing page from seven section components, all living under `src/components/home/`:
 

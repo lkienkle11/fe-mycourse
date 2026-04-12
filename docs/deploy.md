@@ -754,7 +754,7 @@ sudo nginx -t                  # valid config after certbot edits?
 | Root layout | `src/app/layout.tsx` | Fonts (Roboto, Gilroy, GeistMono), Toaster |
 | Locale layout | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider` + `AppProviders` (SWR) |
 | Web shell layout | `src/app/[locale]/(web)/layout.tsx` | `Header` + `<main>` + `Footer` (from `@/components/common`) |
-| Home screen | `src/screen/home/page.tsx` | Assembles 7 marketing sections |
+| Home screen | `src/screen/common/home/page.tsx` | Assembles 7 marketing sections |
 | API client instance | `src/api/instance.ts` | Axios + token attach + token refresh interceptors |
 | API helpers | `src/api/methods.ts` | `apiFetch`, `apiPost`, `apiPut`, `apiDelete` → `ApiResult<T>` |
 | Auth server actions | `src/actions/auth/auth.ts` | `loginAction`, `signupAction` (`"use server"`) |
