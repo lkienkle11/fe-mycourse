@@ -55,9 +55,11 @@ The Axios instance at `src/api/instance.ts` reads `NEXT_PUBLIC_API_URL` (or `API
 
 ---
 
-## Low-level API Helpers (`src/api/methods.ts`)
+## Low-level API Helpers
 
-Four Axios wrapper functions — `apiFetch`, `apiPost`, `apiPut`, `apiDelete` — all return `ApiResult<T>` (defined in `src/types/api.ts`):
+### Shared Axios instance (`src/api/methods.ts` + `src/api/instance.ts`)
+
+Five helpers on the singleton `apiInstance` — `apiFetch`, `apiPost`, `apiPut`, `apiDelete`, and **`apiOptions`** (HTTP OPTIONS) — all return `ApiResult<T>` (defined in `src/types/api.ts`):
 
 ```ts
 interface ApiResult<T = unknown> {
@@ -154,7 +156,7 @@ AuthLayout (client)
 Optional: `useGetMe()` in [`src/hooks/auth/useAuthContext.tsx`](src/hooks/auth/useAuthContext.tsx) is a thin wrapper over the same SWR hook when you prefer the `@/hooks` import path.
 
 - **Header-based auth**: the Axios request interceptor in `src/api/instance.ts` reads the `access_token` cookie and attaches it as `Authorization: Bearer <token>` on every request.
-- **Automatic token refresh**: if a request returns `401` / `403` with `X-Token-Expired: true`, the response interceptor calls `POST /api/v1/auth/refresh` and retries the original request transparently (see below).
+- **Automatic token refresh**: the response interceptor calls `POST /api/v1/auth/refresh` (via `rawPost` in `src/api/raw-http.ts`, so refresh does not depend on `apiInstance`) and retries the original request when **both** `refresh_token` and `session_id` cookies exist **and** either (a) the response is `401`/`403` with `X-Token-Expired: true` (access JWT expired — see BE `middleware/auth_jwt.go`), or (b) the response is **`401` with no non-empty `Authorization: Bearer …` on the outgoing request** (e.g. `access_token` cookie cleared while refresh cookies remain). Other `401`/`403` responses are reported and rejected without a refresh attempt.
 - **401 = not authenticated**: `getMeService` catches 401 and returns `null` instead of throwing, so SWR does not treat it as an error.
 
 ### Conditional Rendering in `AuthLayout`
@@ -234,14 +236,13 @@ mutateMe();
 
 ### How it works
 
-Every response that is `401` or `403` **and** carries `X-Token-Expired: true` triggers an automatic token rotation before the error is surfaced to the caller.
+When `refresh_token` and `session_id` are present, an automatic rotation runs **before** the error is surfaced if **all** of the following hold: response is `401` or `403`; the request has not already been retried (`_retry`); and **either** the response includes `X-Token-Expired: true` **or** the failed request had **no** non-empty `Authorization: Bearer …` and the status is `401` (missing access token while a session still exists).
 
 ```
-Request → BE → 401 + X-Token-Expired: true
+Request → BE → 401 (or 403 with X-Token-Expired)
   │
-  ├─ [first attempt, no _retry flag]
-  │     Read refresh_token + session_id from cookies
-  │     POST /api/v1/auth/refresh
+  ├─ [eligible + refresh cookies present, no _retry]
+  │     POST /api/v1/auth/refresh  (rawPost in raw-http.ts — no apiInstance)
   │       X-Refresh-Token: <refresh_jwt>
   │       X-Session-Id:    <session_id>
   │     ├─ [success] Update cookies → retry original request → return response
@@ -249,8 +250,12 @@ Request → BE → 401 + X-Token-Expired: true
   │
   └─ [second attempt, _retry flag set] → Report error → reject promise
 
-Any other error (non-401/403, or missing X-Token-Expired) → report + reject immediately
+Otherwise (no refresh cookies, wrong kind of 401/403, other status) → report + reject immediately
 ```
+
+### Raw HTTP (`src/api/raw-http.ts` + `src/api/index.ts`)
+
+`rawFetch`, `rawPost`, `rawPut`, `rawDelete`, and `rawOptions` call **plain Axios** (no `apiInstance`, no interceptors). They share the same `ApiResult<T>` shape as the `api*` helpers. The public barrel **`src/api/index.ts`** re-exports both `api*` and `raw*` symbols so callers can `import { apiFetch, rawPost } from "@/api"`. `instance.ts` imports **`rawPost` only from `./raw-http`** to avoid a circular dependency with `methods.ts`.
 
 ### Mutex (client-side only)
 
@@ -266,16 +271,9 @@ The mutex is **not used server-side** — server requests are isolated per user,
 | `getCookieValue(name)` | Reads a cookie. Client: `js-cookie`. Server: `next/headers` (requires a Next.js request context). |
 | `setCookieValue(name, value, options?)` | Writes a cookie. Client: `js-cookie`. Server: `next/headers` (writable only inside Server Actions / Route Handlers — silently skipped in pure RSC). |
 
-### `refreshTokenService`
+### `refreshTokenService` (optional caller)
 
-Low-level caller for the refresh endpoint. The interceptor calls this directly — application code should not need to call it manually.
-
-```ts
-import { refreshTokenService } from "@/api/callers/auth";
-
-const response = await refreshTokenService(refreshToken, sessionId);
-// response.data → { access_token, refresh_token, session_id }
-```
+A commented-out example in `src/api/callers/auth/auth.ts` showed calling refresh via `apiPost`; that would recurse through the same interceptors. **Production refresh** is implemented only inside `doTokenRefresh` → **`rawPost`** (`raw-http.ts`). Uncomment or reintroduce a dedicated caller only if you need refresh from code paths that must not duplicate `rawPost` logic.
 
 ### API route constants
 
