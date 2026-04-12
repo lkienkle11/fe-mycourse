@@ -1,1 +1,3 @@
-export * from "./home/page";
+export * from "./common";
+export * from "./admin";
+export * from "./instructor";
