@@ -1,1 +1,1 @@
-export * from "./useAuthContext";
+export * from "./use-auth-store";

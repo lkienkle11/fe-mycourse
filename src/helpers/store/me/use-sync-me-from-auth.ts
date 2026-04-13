@@ -5,16 +5,20 @@ import { useAuth } from "@/api/hooks/auth";
 import { useMeStore } from "@/store/auth";
 
 /**
- * Giữ Zustand `useMeStore` đồng bộ với SWR (`useAuth`).
- * Phải nằm trong `SWRConfig` (ví dụ trong `AppProviders`).
+ * Đồng bộ `useMeStore` với SWR `useAuth`.
+ * Gọi trong `AppProviders` (phải nằm trong `SWRConfig`).
  */
-export function MeAuthStoreSync() {
+export function useSyncMeFromAuth(): void {
   const { me, isLoading, error, mutate } = useAuth();
   const syncFromUseAuth = useMeStore((s) => s.syncFromUseAuth);
 
   useEffect(() => {
-    syncFromUseAuth({ me, isLoading, error, mutate });
+    syncFromUseAuth({
+      me,
+      isLoading,
+      error,
+      mePermissions: me?.permissions ?? [],
+      mutate,
+    });
   }, [me, isLoading, error, mutate, syncFromUseAuth]);
-
-  return null;
 }

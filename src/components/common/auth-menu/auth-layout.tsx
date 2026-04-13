@@ -1,12 +1,12 @@
 "use client";
 
-import { useAuth } from "@/api/hooks";
+import { useGetMe } from "@/hooks";
 import { LoginSignupPopup } from "./auth/login-signup-popup";
 import { AuthButton } from "./auth-button";
 import { UserMenu } from "./user-menu";
 
 export const AuthLayout = () => {
-  const { me, isLoading } = useAuth();
+  const { me, isLoading } = useGetMe();
 
   return (
     <>

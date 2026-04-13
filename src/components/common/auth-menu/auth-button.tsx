@@ -3,12 +3,12 @@
 import { TimelapseIcon } from "@public/assets";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { useAuthContext } from "@/hooks";
+import { useAuthStore } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 export const AuthButton = ({ className }: { className?: string }) => {
   const t = useTranslations("auth");
-  const { openLoginModal, openSignupModal } = useAuthContext();
+  const { openLoginModal, openSignupModal } = useAuthStore();
 
   return (
     <div className={cn("flex justify-center items-center gap-2", className)}>

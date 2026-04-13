@@ -189,7 +189,8 @@ export async function apiFetch<T>(
   url: string,
   options: FetchApiOptions = {},
 ): Promise<ApiResult<T>> {
-  const { caching: _caching, otherAxiosInstance, ...rest } = options;
+  const { caching, otherAxiosInstance, ...rest } = options;
+  void caching;
   const instance = resolveInstance(otherAxiosInstance);
   const axiosConfig = buildAxiosConfig(rest);
 

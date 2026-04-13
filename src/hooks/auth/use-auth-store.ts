@@ -1,11 +1,9 @@
 "use client";
 
 import { useShallow } from "zustand/react/shallow";
-import { useAuthStore, useMeStore, type AuthStoreState, type MeStoreState } from "@/store/auth";
+import { type MeStoreState, useMeStore } from "@/store/auth";
 
-export function useAuthContext(): AuthStoreState {
-  return useAuthStore();
-}
+export { type AuthStoreState, useAuthStore } from "@/store/auth";
 
 export function useGetMe(): MeStoreState {
   return useMeStore(
@@ -13,6 +11,7 @@ export function useGetMe(): MeStoreState {
       me: s.me,
       isLoading: s.isLoading,
       isError: s.isError,
+      mePermissions: s.mePermissions,
       mutateMe: s.mutateMe,
     })),
   );

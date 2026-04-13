@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { LockKeyhole, LockKeyholeOpen, Mail } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field } from "@/components/ui/field";
@@ -14,7 +14,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
-import { useAuthContext, useGetMe } from "@/hooks";
+import { useAuthStore, useGetMe } from "@/hooks";
 import { Link, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { type LoginFormValues, loginSchema } from "@/schema/auth";
@@ -24,7 +24,7 @@ import { handleAuthSubmit } from "./auth-form-handler";
 export function LoginContent({ className }: { className?: string }) {
   const t = useTranslations("auth");
   const router = useRouter();
-  const { openSignupModal, closeAllModals, nextLink } = useAuthContext();
+  const { openSignupModal, closeAllModals, nextLink } = useAuthStore();
   const { mutateMe } = useGetMe();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export function LoginContent({ className }: { className?: string }) {
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -44,7 +44,11 @@ export function LoginContent({ className }: { className?: string }) {
     },
   });
 
-  const rememberMe = watch("rememberMe");
+  const rememberMe = useWatch({
+    control,
+    name: "rememberMe",
+    defaultValue: false,
+  });
 
   const onSubmit = async (values: LoginFormValues) => {
     setServerError(null);

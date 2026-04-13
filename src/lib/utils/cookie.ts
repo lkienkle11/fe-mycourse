@@ -1,4 +1,5 @@
 import Cookies from "js-cookie";
+import { isServer } from "./runtime";
 
 export type CookieSameSite = "strict" | "lax" | "none";
 
@@ -66,15 +67,13 @@ export function buildCookieOptions(input: BuildCookieOptionsInput) {
 // Isomorphic cookie helpers
 // ---------------------------------------------------------------------------
 
-export const isServer = typeof window === "undefined";
-
 /**
  * Reads a cookie value.
  * - Client: via js-cookie.
  * - Server: via next/headers (requires an active Next.js request context).
  */
 export async function getCookieValue(name: string): Promise<string | null> {
-  if (!isServer) {
+  if (!isServer()) {
     return Cookies.get(name) ?? null;
   }
   try {
@@ -98,7 +97,7 @@ export async function setCookieValue(
   value: string,
   options?: { maxAge?: number },
 ): Promise<void> {
-  if (!isServer) {
+  if (!isServer()) {
     Cookies.set(name, value, {
       path: "/",
       sameSite: "lax",

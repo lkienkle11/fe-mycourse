@@ -40,7 +40,7 @@ src/app/layout.tsx                          Root layout
 └── src/app/[locale]/layout.tsx             Locale layout
     │   Validates locale (404 if unknown)
     │   <NextIntlClientProvider>            → loads src/messages/{locale}.json
-    │   <AppProviders>                      → SWRConfig (revalidateOnFocus: false, 30s dedup)
+    │   <AppProviders>                      → SWRConfig + `MeSwrSync` → `useSyncMeFromAuth` (SWR → `useMeStore`)
     │
     └── src/app/[locale]/(web)/layout.tsx   Web shell layout
         │   Resolves locale for <Header>
@@ -120,7 +120,7 @@ Header
 
 **i18n:** Namespace `commonFooter` in `src/messages/en.json` and `src/messages/vi.json` (`copyright`, `brand`, column link labels, `navCourses` / `navDesign` / `navCreative` for `aria-label`s).
 
-**Note:** `WebLayout` still accepts an optional `hasFooter` prop for future use; the footer is **always** rendered today.
+**Note:** `WebLayout` always renders `Footer` today. Add a `hasFooter` prop later if the shell needs to hide it.
 
 ### Locale Switcher
 

@@ -96,8 +96,9 @@ export async function loginAction(
  * Placeholder — sẽ gọi signupService khi triển khai đầy đủ.
  */
 export async function signupAction(
-  _payload: SignupPayload,
+  payload: SignupPayload,
 ): Promise<AuthActionResult> {
+  void payload;
   // TODO: implement signupService và gọi tại đây
   return {
     success: false,
