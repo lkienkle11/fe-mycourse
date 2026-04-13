@@ -2,11 +2,16 @@
 
 import type { ReactNode } from "react";
 import { SWRConfig } from "swr";
-import { MeAuthStoreSync } from "@/components/providers/me-auth-store-sync";
+import { useSyncMeFromAuth } from "@/helpers/store";
 
 type AppProvidersProps = {
   children: ReactNode;
 };
+
+function MeSwrSync() {
+  useSyncMeFromAuth();
+  return null;
+}
 
 export function AppProviders({ children }: AppProvidersProps) {
   return (
@@ -16,7 +21,7 @@ export function AppProviders({ children }: AppProvidersProps) {
         dedupingInterval: 30 * 1000,
       }}
     >
-      <MeAuthStoreSync />
+      <MeSwrSync />
       {children}
     </SWRConfig>
   );

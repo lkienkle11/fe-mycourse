@@ -2,6 +2,7 @@ export { cn } from "./cn";
 export { buildQueryParams } from "./url";
 export { useUniqueId } from "./react";
 export { pickCharacter } from "./user";
+export { isServer } from "./runtime";
 
 export type { CookieSameSite } from "./cookie";
 export type {
@@ -14,6 +15,5 @@ export {
   buildHttpOnlyCookieOptions,
   getCookieDomain,
   getCookieValue,
-  isServer,
   setCookieValue,
 } from "./cookie";

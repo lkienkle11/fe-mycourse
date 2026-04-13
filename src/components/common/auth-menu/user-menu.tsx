@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { HEADER_DROPDOWN_ITEMS } from "@/constants";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { HEADER_DROPDOWN_ITEMS } from "@/constants";
 import { Link } from "@/i18n/navigation";
 import { cn, pickCharacter } from "@/lib/utils";
 import type { MeResponse } from "@/types/auth";

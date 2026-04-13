@@ -331,7 +331,7 @@ const { authAction, openLoginModal, openSignupModal, closeAllModals, nextLink } 
 | Server Action / Route Handler | `next/headers` `cookies().get()` | `next/headers` `cookies().set()` |
 | Pure RSC (read-only server) | `next/headers` `cookies().get()` | Silently skipped (no-op) |
 
-`isServer = typeof window === "undefined"` is the branch condition.
+`isServer()` from `src/lib/utils/runtime.ts` (re-export `@/lib/utils`) is the branch condition.
 
 ---
 
