@@ -11,15 +11,15 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { useAuthContext } from "@/hooks";
+import { useAuthStore } from "@/hooks";
 import { cn } from "@/lib/utils";
-import { signupSchema, type SignupFormValues } from "@/schema/auth";
+import { type SignupFormValues, signupSchema } from "@/schema/auth";
 import { AuthSocialLogin } from "../auth-social-login";
 import { handleAuthSubmit } from "./auth-form-handler";
 
 export function SignupContent({ className }: { className?: string }) {
   const t = useTranslations("auth");
-  const { openLoginModal, closeAllModals } = useAuthContext();
+  const { openLoginModal, closeAllModals } = useAuthStore();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
