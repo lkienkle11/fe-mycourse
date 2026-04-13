@@ -1,1 +1,3 @@
-export default {};
+const itemsConfig = {};
+
+export default itemsConfig;
