@@ -51,7 +51,7 @@ type MeAuthPayload = {
 };
 
 type MeStoreActions = {
-  /** Đồng bộ từ `useAuth()` (SWR) — chỉ gọi từ `MeAuthStoreSync`. */
+  /** Đồng bộ từ `useAuth()` (SWR) — chỉ qua `useSyncMeFromAuth` trong `AppProviders`. */
   syncFromUseAuth: (payload: MeAuthPayload) => void;
 };
 
