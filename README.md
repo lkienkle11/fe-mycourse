@@ -153,7 +153,7 @@ AuthLayout (client)
           ↑ Authorization: Bearer <access_token>   (added by Axios interceptor)
 ```
 
-Optional: `useGetMe()` in [`src/hooks/auth/use-auth-store.ts`](src/hooks/auth/use-auth-store.ts) is a thin wrapper over the same SWR-backed store slice when you prefer the `@/hooks` import path.
+Optional: `useGetMe()` / `useSyncMeFromAuth()` in [`src/hooks/auth/use-auth-store.ts`](src/hooks/auth/use-auth-store.ts) — shallow `useMeStore` slice and SWR → store sync; `AppProviders` mounts `MeSwrSync` under `SWRConfig` to run the sync (see [`src/components/providers/app-providers.tsx`](src/components/providers/app-providers.tsx)).
 
 - **Header-based auth**: the Axios request interceptor in `src/api/instance.ts` reads the `access_token` cookie and attaches it as `Authorization: Bearer <token>` on every request.
 - **Automatic token refresh**: the response interceptor calls `POST /api/v1/auth/refresh` (via `rawPost` in `src/api/raw-http.ts`, so refresh does not depend on `apiInstance`) and retries the original request when **both** `refresh_token` and `session_id` cookies exist **and** either (a) the response is `401`/`403` with `X-Token-Expired: true` (access JWT expired — see BE `middleware/auth_jwt.go`), or (b) the response is **`401` with no non-empty `Authorization: Bearer …` on the outgoing request** (e.g. `access_token` cookie cleared while refresh cookies remain). Other `401`/`403` responses are reported and rejected without a refresh attempt.
@@ -174,7 +174,7 @@ Optional: `useGetMe()` in [`src/hooks/auth/use-auth-store.ts`](src/hooks/auth/us
 | `src/types/auth/auth.ts` | `MeResponse`, `LoginResponse` (+ `session_id`), `RefreshTokenResponse` |
 | `src/api/callers/auth/auth.ts` | `getMeEndpointKey`, `getMeService()`, `loginService()`, `refreshTokenService()` |
 | `src/api/hooks/auth/useAuth.ts` | SWR hook returning `{ me, isLoading, error, mutate }` |
-| `src/hooks/auth/use-auth-store.ts` | Re-export `useAuthStore`; `useGetMe()` — shallow `useMeStore` |
+| `src/hooks/auth/use-auth-store.ts` | Re-export `useAuthStore`; `useGetMe()`; `useSyncMeFromAuth()` — shallow `useMeStore` + SWR → store sync |
 | `src/components/…/auth-layout.tsx` | Header chrome: `useAuth()` → skeleton / `UserMenu` / `AuthButton` + `LoginSignupPopup` |
 | `src/components/…/user-menu.tsx` | Accepts `me: MeResponse` prop |
 
@@ -363,9 +363,9 @@ import { useAuthStore } from "@/store/auth";
 const { openLoginModal, closeAllModals } = useAuthStore();
 ```
 
-### `useAuthStore` and `useGetMe` (`src/hooks/auth/use-auth-store.ts`)
+### `useAuthStore`, `useGetMe`, and `useSyncMeFromAuth` (`src/hooks/auth/use-auth-store.ts`)
 
-`useAuthStore` is re-exported from `@/store/auth` for a single `@/hooks` import path. `useGetMe` selects the `/me` mirror slice (kept in sync from SWR via `useSyncMeFromAuth` inside `AppProviders`).
+`useAuthStore` is re-exported from `@/store/auth` for a single `@/hooks` import path. `useGetMe` selects the `/me` mirror slice (kept in sync from SWR via `useSyncMeFromAuth`). `useSyncMeFromAuth` lives in the same module and is wired by `MeSwrSync` in `AppProviders` — a null-render child **under** `SWRConfig` next to `children` (see `src/components/providers/app-providers.tsx`).
 
 ```ts
 import { useAuthStore, useGetMe } from "@/hooks/auth/use-auth-store";
@@ -375,4 +375,4 @@ const { openLoginModal, authAction } = useAuthStore();
 const { me, isLoading, isError, mutateMe } = useGetMe();
 ```
 
-> **Note**: Zustand stores remain provider-free. `AppProviders` only wraps `SWRConfig` and mounts `MeSwrSync`, which calls `useSyncMeFromAuth` from `src/helpers/store/me/use-sync-me-from-auth.ts`.
+> **Note**: Zustand stores remain provider-free. `AppProviders` wraps the app in `SWRConfig` and mounts `MeSwrSync`, which calls `useSyncMeFromAuth` from `src/hooks/auth/use-auth-store.ts` inside the provider so SWR context matches the rest of the subtree.
