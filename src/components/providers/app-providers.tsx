@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { SWRConfig } from "swr";
-import { useSyncMeFromAuth } from "@/helpers/store";
+import { useSyncMeFromAuth } from "@/hooks/auth";
 
 type AppProvidersProps = {
   children: ReactNode;

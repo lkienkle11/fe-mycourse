@@ -183,7 +183,7 @@ const { me, isLoading, error, mutate } = useAuth();
 ```
 
 - **Key:** `getMeEndpointKey` = `"/api/v1/me"` (defined once in `src/api/callers/auth/auth.ts`).
-- **Global config:** `revalidateOnFocus: false`, `dedupingInterval: 30_000ms` (set in `AppProviders`).
+- **Hook options:** `useAuth` passes `shouldRetryOnError: false` and its own `revalidateOnFocus` in `useAuth.ts`. `AppProviders` renders `SWRConfig` with `revalidateOnFocus: false` and `dedupingInterval: 30_000ms`; `MeSwrSync` calls `useSyncMeFromAuth` **inside** that provider so the `/me` SWR subscription shares the same context as the rest of the tree.
 - **401 handling:** `getMeService` catches 401 and returns `null` instead of throwing, so SWR does not enter error state for unauthenticated users.
 
 ---
