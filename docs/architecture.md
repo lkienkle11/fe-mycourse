@@ -15,7 +15,7 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Design system | shadcn | 4.x | Config at `components.json`; primitives live in `src/components/ui/` |
 | Forms | react-hook-form + zod | 7.x / 4.x | `@hookform/resolvers` bridges the two |
 | i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` |
-| Data fetching (client) | SWR | 2.x | Global config in `AppProviders`; `revalidateOnFocus: false`, 30 s dedup |
+| Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup) for hooks under the provider; `useAuth` sets its own SWR options |
 | HTTP client | Axios | 1.x | Shared instance with request/response interceptors |
 | Global state | Zustand | 5.x | Provider-free stores |
 | Toasts | Sonner | 2.x | Mounted in root layout, `position: "top-right"` |
@@ -111,7 +111,7 @@ fe/
 │   │   ├── home/                   # Home page sections (HeroSection, CourseCard, …)
 │   │   ├── shared/                 # Cross-feature components (SearchBar, …)
 │   │   ├── providers/
-│   │   │   └── app-providers.tsx   # SWRConfig + `MeSwrSync` → `useSyncMeFromAuth` (`helpers/store/me`)
+│   │   │   └── app-providers.tsx   # `SWRConfig` + `MeSwrSync` (`useSyncMeFromAuth`) + `children`
 │   │   └── demo/
 │   │       └── register-form.tsx   # Demo/sandbox form (not wired to a route)
 │   │
@@ -135,16 +135,10 @@ fe/
 │   │   ├── api-error-store.ts      # useApiError — global error accumulation (max 20)
 │   │   └── use-app-store.ts        # useAppStore — app-level placeholder
 │   │
-│   ├── helpers/
-│   │   ├── index.ts                # Re-export `store/`
-│   │   └── store/
-│   │       ├── index.ts            # `useSyncMeFromAuth`
-│   │       └── me/
-│   │           ├── index.ts
-│   │           └── use-sync-me-from-auth.ts  # SWR `useAuth` → `useMeStore.syncFromUseAuth`
-│   │
 │   ├── hooks/
-│   │   └── auth/use-auth-store.ts  # re-export `useAuthStore`; `useGetMe` (shallow `useMeStore`)
+│   │   └── auth/
+│   │       ├── index.ts            # Barrel: `use-auth-store`
+│   │       └── use-auth-store.ts   # `useAuthStore` re-export, `useGetMe`, `useSyncMeFromAuth` (SWR → `useMeStore`)
 │   │
 │   ├── types/
 │   │   ├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiErrorCode
@@ -221,7 +215,7 @@ Covers everything related to authentication UI and server-side token management:
 | `signupAction` | `actions/auth/auth.ts` | `"use server"` — placeholder (not yet implemented) |
 | `loginSchema` / `signupSchema` | `schema/auth/auth.ts` | Zod schemas with i18n error keys |
 | `useAuthStore` | `store/auth/auth.ts` | Auth modal state (authAction, nextLink) |
-| `useAuthStore` / `useGetMe` | `hooks/auth/use-auth-store.ts` | Re-export auth modal store; shallow slice for `/me` mirror |
+| `useAuthStore` / `useGetMe` / `useSyncMeFromAuth` | `hooks/auth/use-auth-store.ts` | Re-export auth modal store; shallow `/me` mirror; `useSyncMeFromAuth` mirrors SWR `useAuth` → `useMeStore` (mounted under `SWRConfig` via `MeSwrSync` in `AppProviders`) |
 
 ### `Api` cluster — 18 symbols, 100% cohesion
 
@@ -274,13 +268,13 @@ When multiple concurrent client requests are **eligible for silent refresh** (ex
 
 ### 5. SWR for Current User
 
-`useAuth` uses SWR to cache the `GET /api/v1/me` response. `revalidateOnFocus: false` and a 30-second dedup interval prevent unnecessary refetches. After a successful login, the caller invokes `mutate()` to force an immediate revalidation.
+`useAuth` uses SWR to cache the `GET /api/v1/me` response with options defined in `src/api/hooks/auth/useAuth.ts` (including `shouldRetryOnError: false` and hook-level `revalidateOnFocus`). `AppProviders` wraps the app in `SWRConfig` with `revalidateOnFocus: false` and a 30-second dedup interval; `MeSwrSync` (a null-render child) calls `useSyncMeFromAuth` **inside** that provider so the internal `useAuth` shares the same client SWR context as the rest of the subtree. After a successful login, the caller invokes `mutate()` to force an immediate revalidation.
 
 ### 6. Zustand for UI State
 
 Auth modal state (`authAction: "none" | "login" | "signup" | "logout"`) and API error accumulation live in provider-free Zustand stores. Any component can import the hook directly without a wrapping Provider.
 
-Current user slice (`useMeStore`) is synced from SWR inside `AppProviders` via `useSyncMeFromAuth` (`src/helpers/store/me/use-sync-me-from-auth.ts`), rendered as a tiny `MeSwrSync` child under `SWRConfig`. Server Components that need to influence client state should pass props into a client boundary and call `useMeStore.setState` / `useAuthStore.setState` there (no separate RSC seed helpers in-repo).
+Current user slice (`useMeStore`) is synced from SWR inside `AppProviders` via `useSyncMeFromAuth` (`src/hooks/auth/use-auth-store.ts`), invoked from a small `MeSwrSync` component rendered **under** `SWRConfig` alongside `children` (see `src/components/providers/app-providers.tsx`). Server Components that need to influence client state should pass props into a client boundary and call `useMeStore.setState` / `useAuthStore.setState` there (no separate RSC seed utilities in-repo).
 
 ### 7. API Response Envelope
 

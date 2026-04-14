@@ -40,7 +40,7 @@ src/app/layout.tsx                          Root layout
 └── src/app/[locale]/layout.tsx             Locale layout
     │   Validates locale (404 if unknown)
     │   <NextIntlClientProvider>            → loads src/messages/{locale}.json
-    │   <AppProviders>                      → SWRConfig + `MeSwrSync` → `useSyncMeFromAuth` (SWR → `useMeStore`)
+    │   <AppProviders>                      → `SWRConfig` + `MeSwrSync` → `useSyncMeFromAuth` (`hooks/auth/use-auth-store`, SWR → `useMeStore`) + `children`
     │
     └── src/app/[locale]/(web)/layout.tsx   Web shell layout
         │   Resolves locale for <Header>
