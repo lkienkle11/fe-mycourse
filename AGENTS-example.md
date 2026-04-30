@@ -294,38 +294,43 @@ If a `.context` folder exists in the project root, the agent MUST execute the fo
 
 ---
 
-## 4. Mandatory Project Documentation Snapshot
+## 4. Mandatory Project Documentation
 
-### 4.1 Create Temporary Folder
+### 4.1 Primary Documentation Folder
 
 ```
-.full-project/
+docs/
 ```
 
-### 4.2 Required Files in `.full-project/`
+The `docs/` folder is the **primary and authoritative** project documentation source. All agents MUST read from and update `docs/` exclusively.
 
-* architecture.md
-* folder-structure.md (FULL tree + purpose of EVERY folder + sub folder - summary EVERY FOLDER includes subfolder in project)
-* data-flow.md
-* api-overview.md
-* components.md (if exists)
-* pages.md (if exists)
-* logic-flow.md (if exists)
-* router.md (if exists)
-* api.md (if exists)
-* patterns.md
-* dependencies.md
-* modules.md
+### 4.2 Core Document Files in `docs/`
+
+* `architecture.md` → overall system design
+* `folder-structure.md` (FULL tree + purpose of EVERY folder + subfolder - summary EVERY FOLDER includes subfolder in project) (if applicable)
+* `flow.md` → data flow and control flow
+* `screens.md` → application screens and pages
+* `deploy.md` → deployment documentation
+* `api-overview.md` → APIs and integrations (if applicable)
+* `api-using.md` → frontend API usage patterns (if applicable)
+* `components.md` → UI/components and responsibilities (if applicable)
+* `pages.md` → application pages/views (if applicable)
+* `logic-flow.md` → control flow and execution paths (if applicable)
+* `router.md` → routing structure and navigation (if applicable)
+* `patterns.md` → coding patterns and conventions used (if applicable)
+* `dependencies.md` → key libraries, frameworks, and relationships (if applicable)
+* `reusable-assets.md` → all reusable elements across the project (if applicable)
+* `modules.md` → module documentation (if applicable)
 
 ---
 
-### 4.2.1 ADDITIONAL REQUIRED FILE (NEW)
+### 4.2.1 ADDITIONAL REQUIRED FILE
 
-* reusable-assets.md
+* `docs/reusable-assets.md` (if applicable)
 
 ---
 
-### 4.2.2 reusable-assets.md REQUIREMENTS (NEW)
+### 4.2.2 reusable-assets.md REQUIREMENTS
 
 This file MUST aggregate all reusable elements across the project, including but not limited to:
 
@@ -341,7 +346,7 @@ This file MUST aggregate all reusable elements across the project, including but
 
 ---
 
-### 4.2.3 CONTENT STRUCTURE FOR reusable-assets.md (NEW)
+### 4.2.3 CONTENT STRUCTURE FOR reusable-assets.md
 
 Each item MUST include:
 
@@ -361,11 +366,11 @@ Each item MUST include:
 
 ---
 
-### 4.4 Snapshot Reuse Rule
+### 4.4 Documentation Reuse Rule
 
-* Check `.full-project/` BEFORE any task
-* If exists → reuse
-* If not → re-run discovery in Rule 5
+* Check `docs/` BEFORE any task
+* If documentation is current and complete → reuse
+* If outdated or missing → re-run discovery in Rule 5 and update `docs/`
 
 ---
 
@@ -401,7 +406,7 @@ Each item MUST include:
   * Data flow impact
   * Dependencies
 
-### 6.3 Cross-check with `.full-project/`
+### 6.3 Cross-check with `docs/`
 
 * Avoid redundant discovery
 * Ensure accuracy
@@ -409,9 +414,9 @@ Each item MUST include:
 
 ---
 
-### 6.3.1 REUSABILITY CHECK (NEW)
+### 6.3.1 REUSABILITY CHECK
 
-* MUST check `reusable-assets.md` before proposing any solution
+* MUST check `docs/reusable-assets.md` before proposing any solution
 * MUST identify any existing:
 
   * Utility functions
@@ -420,7 +425,7 @@ Each item MUST include:
 
 ---
 
-### 6.3.2 REUSE ENFORCEMENT (NEW)
+### 6.3.2 REUSE ENFORCEMENT
 
 * If reusable logic exists:
 
@@ -458,7 +463,7 @@ IMPLEMENTATION_PLAN_EXECUTION.md
 
 ---
 
-### ADDITIONAL REQUIRED SECTION (NEW)
+### ADDITIONAL REQUIRED SECTION
 
 * Reusability Strategy:
 
@@ -505,7 +510,7 @@ The implementation plan has been written to IMPLEMENTATION_PLAN_EXECUTION.md. Pl
 
 ---
 
-### ADDITIONAL RULE: SHARED LOGIC EXTRACTION (NEW)
+### ADDITIONAL RULE: SHARED LOGIC EXTRACTION
 
 When implementing:
 
@@ -516,7 +521,7 @@ When implementing:
 
 ---
 
-### STRICT PROHIBITIONS (NEW)
+### STRICT PROHIBITIONS
 
 * DO NOT centralize all utilities into a single module
 * DO NOT place shared logic in incorrect folders
@@ -526,14 +531,14 @@ When implementing:
 
 ## 9. Documentation Sync
 
-* MUST update markdown files
+* MUST update markdown files in `docs/`
 * NOT chat-only summaries
 
 ---
 
-### ADDITIONAL REQUIREMENT (NEW)
+### ADDITIONAL REQUIREMENT
 
-* MUST update `reusable-assets.md` whenever:
+* MUST update `docs/reusable-assets.md` whenever:
 
   * New reusable logic is created
   * Existing reusable logic is modified
@@ -566,17 +571,17 @@ Mandatory:
 4. Subagent exploration
 5. Context processing (.context if exists)
 6. Architecture discovery
-7. Documentation reading
+7. Documentation reading (from `docs/`)
 8. API discovery
 9. Data flow mapping
-10. Create `.full-project/`
-11. Snapshot reuse check
+10. Update `docs/` with new findings
+11. Docs review check (reuse if current)
 12. Targeted code reading
 13. Task analysis
 14. Create implementation plan
 15. WAIT approval
 16. Implement
-17. Update docs
+17. Update `docs/`
 18. Validate
 19. Claude review
 20. Re-analyze
@@ -586,9 +591,9 @@ Mandatory:
 
 ---
 
-### ADDITIONAL FLOW STEPS (NEW)
+### ADDITIONAL FLOW STEPS
 
-24. Aggregate reusable assets into `reusable-assets.md`
+24. Aggregate reusable assets into `docs/reusable-assets.md`
 25. Perform reusability validation before implementation
 26. Extract shared logic during implementation
 
@@ -622,8 +627,6 @@ Before any analysis or exploration:
   gitnexus analyze --force
   ```
 
-
-
 * This applies to both:
 
   * GitNexus MCP
@@ -655,7 +658,7 @@ Before using GitNexus, the agent MUST:
 
 ---
 
-## 1.1 Mandatory Context Recovery (NEW)
+## 1.1 Mandatory Context Recovery
 
 Before proceeding to deeper exploration:
 
@@ -759,16 +762,15 @@ The AI Agent **MUST NOT write any code** until it has a **complete understanding
 * Entire source codebase
 * Folder and module structure
 
-  * `folder-structure.md` (FULL tree + purpose of EVERY folder + subfolder)
-* Architecture patterns
-* Data flow
-* Logic/control flow
-* APIs and integrations
-* Pages (if applicable)
-* Components (if applicable)
-* Routing system (if applicable)
-* Libraries and frameworks used
-* Shared utilities and core logic
+  * `docs/folder-structure.md` (FULL tree + purpose of EVERY folder + subfolder) (if applicable)
+* Architecture patterns — read `docs/architecture.md`
+* Data flow and logic flow — read `docs/flow.md`
+* Screens and pages — read `docs/screens.md`
+* APIs and integrations — read `docs/api-using.md` (if applicable)
+* Components (if applicable) — read `docs/components.md`
+* Routing system (if applicable) — read `docs/router.md`
+* Libraries and frameworks used — read `docs/dependencies.md` (if applicable)
+* Shared utilities and core logic — read `docs/reusable-assets.md` (if applicable)
 
 Partial understanding is **strictly forbidden**.
 
@@ -794,43 +796,45 @@ The agent MUST follow this strict order:
 
 ---
 
-## 6. Mandatory Project Documentation Snapshot
+## 6. Mandatory Project Documentation
 
 After understanding the project, the AI Agent MUST:
 
-### Create temporary folder:
+### Read and update the `docs/` folder:
 
 ```
-.full-project/
+docs/
 ```
 
-### Inside this folder, generate structured documentation:
+The `docs/` folder is the **primary and authoritative** project documentation source. Always use `docs/` as the primary documentation folder.
 
-#### Core Documentation Files:
+### Core Documentation Files in `docs/`:
 
 * `architecture.md` → overall system design
-* `folder-structure.md` → **FULL directory tree + purpose of EVERY folder (including subfolders)**
-* `data-flow.md` → how data moves through the system
-* `logic-flow.md` → control flow and execution paths
-* `api-overview.md` → APIs and integrations
+* `flow.md` → data flow and control flow
+* `screens.md` → application screens and pages
+* `deploy.md` → deployment documentation
+* `folder-structure.md` → **FULL directory tree + purpose of EVERY folder (including subfolders)** (if applicable)
+* `api-using.md` → frontend API usage patterns (if applicable)
 * `components.md` → UI/components and responsibilities (if applicable)
 * `pages.md` → application pages/views (if applicable)
 * `router.md` → routing structure and navigation (if applicable)
-* `patterns.md` → coding patterns and conventions used
-* `dependencies.md` → key libraries, frameworks, and relationships
-* `libraries.md` → detailed explanation of major libraries used
+* `patterns.md` → coding patterns and conventions used (if applicable)
+* `dependencies.md` → key libraries, frameworks, and relationships (if applicable)
+* `reusable-assets.md` → all reusable elements (if applicable)
+* `modules.md` → module documentation (if applicable)
 
 ---
 
-### 🔴 ADDITIONAL REQUIRED FILE (NEW - DO NOT MODIFY EXISTING RULES)
+### 🔴 ADDITIONAL REQUIRED FILE (DO NOT MODIFY EXISTING RULES)
 
-The AI Agent MUST additionally create the following file inside `.full-project/`:
+The AI Agent MUST additionally maintain the following file inside `docs/`:
 
-* `reusable-assets.md`
+* `reusable-assets.md` (if applicable)
 
 ---
 
-### 🔴 reusable-assets.md REQUIREMENTS (NEW)
+### 🔴 reusable-assets.md REQUIREMENTS
 
 This file MUST comprehensively aggregate ALL reusable elements across the project, including but not limited to:
 
@@ -846,7 +850,7 @@ This file MUST comprehensively aggregate ALL reusable elements across the projec
 
 ---
 
-### 🔴 reusable-assets.md STRUCTURE (NEW)
+### 🔴 reusable-assets.md STRUCTURE
 
 Each documented item MUST include:
 
@@ -859,14 +863,14 @@ Each documented item MUST include:
 
 ---
 
-### 🔴 REUSABILITY DISCOVERY REQUIREMENT (NEW)
+### 🔴 REUSABILITY DISCOVERY REQUIREMENT
 
 During project analysis, the AI Agent MUST:
 
 * Actively identify reusable logic across modules
 * Detect duplication patterns
 * Map shared responsibilities
-* Record ALL findings into `reusable-assets.md`
+* Record ALL findings into `docs/reusable-assets.md`
 
 ---
 
@@ -881,13 +885,13 @@ During project analysis, the AI Agent MUST:
 
 ---
 
-## 7. Mandatory Use of `.full-project` in Future Tasks
+## 7. Mandatory Use of `docs/` in Future Tasks
 
 For ANY future task (coding, planning, debugging):
 
 ### The AI Agent MUST:
 
-1. Check `.full-project/` first
+1. Check `docs/` first
 2. Determine if sufficient information already exists
 
 ### If documentation is sufficient:
@@ -910,7 +914,7 @@ For ANY future task (coding, planning, debugging):
 
 After completing ANY coding task, the AI Agent MUST:
 
-### Review ALL documentation in the project:
+### Review ALL documentation in `docs/`:
 
 Including:
 
@@ -929,11 +933,11 @@ Including:
 
 ---
 
-### 🔴 ADDITIONAL REQUIREMENT (NEW)
+### 🔴 ADDITIONAL REQUIREMENT
 
 The AI Agent MUST also:
 
-* Update `reusable-assets.md` whenever:
+* Update `docs/reusable-assets.md` whenever:
 
   * New reusable utilities are created
   * New shared data types are introduced
@@ -946,12 +950,12 @@ The AI Agent MUST also:
 Ensure **100% synchronization** between:
 
 * Codebase
-* Documentation
+* Documentation (`docs/`)
 * System behavior
 
 ---
 
-## 9. Subagent-Based Exploration Acceleration (NEW)
+## 9. Subagent-Based Exploration Acceleration
 
 To optimize exploration speed and scalability, the AI Agent SHOULD:
 
@@ -1000,7 +1004,7 @@ Each subagent MUST:
 
   * Aggregate outputs from all subagents
   * Resolve conflicts or inconsistencies
-  * Merge insights into `.full-project/` documentation
+  * Merge insights into `docs/` documentation
 
 * Subagents MUST NOT:
 
@@ -1025,16 +1029,16 @@ The AI Agent is ONLY allowed to begin coding when:
 * ✅ `.context` fully processed (if exists)
 * ✅ Folder traversal completed
 * ✅ Full project understanding achieved
-* ✅ `.full-project/` documentation created and complete
+* ✅ `docs/` documentation reviewed and up to date
 * ✅ Subagent exploration (if used) fully integrated
 
 ---
 
-### 🔴 ADDITIONAL EXECUTION RULE (NEW)
+### 🔴 ADDITIONAL EXECUTION RULE
 
 Before writing any new code, the AI Agent MUST:
 
-* Check `reusable-assets.md`
+* Check `docs/reusable-assets.md`
 * Determine if existing logic can be reused
 
 If reusable components exist:
@@ -1061,7 +1065,7 @@ The AI Agent MUST NOT:
 * Randomly read files without context
 * Work with partial understanding
 * Ignore architecture or patterns
-* Skip `.full-project` documentation
+* Skip `docs/` documentation
 * Ignore existing documentation before starting tasks
 * Use subagents without enforcing GitNexus and full protocol compliance
 
@@ -1076,8 +1080,8 @@ Understanding precedes implementation.
 * GitNexus analysis → THIRD
 * Deep exploration → REQUIRED
 * Subagent parallelization → RECOMMENDED (with strict compliance)
-* Documentation snapshot → MANDATORY
-* `.full-project` reuse → REQUIRED
+* `docs/` documentation → MANDATORY reference and update point
+* `docs/` reuse → REQUIRED
 
 If the project is not fully understood, **coding is strictly forbidden**.
 
