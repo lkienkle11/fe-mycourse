@@ -20,14 +20,32 @@ Open the URL Next.js prints (default [http://localhost:3000](http://localhost:30
 | `npm run lint` | ESLint |
 | `npm run lint:biome` / `npm run format:biome` | Biome check / format |
 
+## Documentation Convention (Mandatory)
+
+The `docs/` folder is the **primary and authoritative documentation source** for this project.
+
+- **Before starting any task** (coding, planning, debugging, refactoring), read the relevant files in `docs/` first.
+- If `docs/` already contains sufficient and up-to-date information → **reuse it directly** without re-running full discovery.
+- If `docs/` is missing information or outdated → re-run discovery and **update `docs/` before proceeding**.
+- Always sync `docs/` after completing any task that changes architecture, APIs, data flow, components, patterns, or reusable assets.
+- `docs/reusable-assets.md` must be checked before proposing any new utility, hook, type, or helper to avoid duplication.
+
 ## Documentation in this repo
 
 | Doc | Contents |
 |-----|----------|
 | [`docs/architecture.md`](docs/architecture.md) | Full tech stack, directory map, functional clusters (Ui / Api / Auth), design decisions, env vars, i18n, caching layer |
-| [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — Nginx, Certbot, PM2, env vars (`NEXT_PUBLIC_API_URL`, `AUTH_COOKIE_DOMAIN`), go-live checklist, rollback, troubleshooting, CI/CD |
+| [`docs/folder-structure.md`](docs/folder-structure.md) | Full directory tree with purpose of every folder and subfolder |
 | [`docs/flow.md`](docs/flow.md) | Auth and API execution flows — login, signup (placeholder), `/me`, token refresh, cookie strategy, error handling, Zustand store interactions |
 | [`docs/screens.md`](docs/screens.md) | App Router routes, layout hierarchy (header / main / footer), home sections, auth shell, footer i18n (`commonFooter`), UI primitives, route constants |
+| [`docs/api-using.md`](docs/api-using.md) | Frontend API usage patterns — `apiFetch`/`apiPost`, SWR hooks, Server Actions, auth token handling, error handling, pagination |
+| [`docs/components.md`](docs/components.md) | Component inventory by directory — responsibilities, client/server boundary, naming conventions |
+| [`docs/router.md`](docs/router.md) | App Router tree, locale routing, layout hierarchy, navigation helpers, route constants |
+| [`docs/patterns.md`](docs/patterns.md) | Coding conventions — naming, styling (`cn()`), state management rules, form patterns, i18n, TypeScript patterns |
+| [`docs/logic-flow.md`](docs/logic-flow.md) | Execution flows — login, token refresh, Me fetch, form submission, auth modal state, permission checks, i18n, API error capture |
+| [`docs/dependencies.md`](docs/dependencies.md) | All runtime and dev dependencies — versions, roles, and usage rules |
+| [`docs/reusable-assets.md`](docs/reusable-assets.md) | All reusable utilities, hooks, types, schemas, stores, constants, API callers, and Server Actions |
+| [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — Nginx, Certbot, PM2, env vars (`NEXT_PUBLIC_API_URL`, `AUTH_COOKIE_DOMAIN`), go-live checklist, rollback, troubleshooting, CI/CD |
 
 After large refactors, run **`npx gitnexus analyze --force`** in this repo so the local graph (`.gitnexus/`, ignored by git) and the generated **`CLAUDE.md` / `AGENTS.md`** header stats stay aligned with the code; use **`npx gitnexus query -r fe-mycourse "…"`** / **`npx gitnexus context -r fe-mycourse SymbolName`** when updating `docs/*.md`.
 

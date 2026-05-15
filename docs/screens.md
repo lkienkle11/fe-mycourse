@@ -1,5 +1,8 @@
 # Screens & Routes (`fe`)
 
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
 
 ---
@@ -11,7 +14,7 @@ Inventory of **App Router** routes, primary screen compositions, major UI surfac
 | Supported locales | `["en", "vi"]` | `src/i18n/routing.ts` |
 | Default locale | `vi` | `src/i18n/routing.ts` |
 | Locale prefix | `always` | `src/i18n/routing.ts` |
-| Middleware | `src/proxy.ts` → must be `src/middleware.ts` | See `docs/deploy.md` Appendix C |
+| Middleware | `src/proxy.ts` | See `docs/deploy.md` Appendix C |
 
 The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default locale) using the typed `redirect` helper from `src/i18n/navigation.ts`.
 
@@ -23,10 +26,10 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 |-------------|------------|---------------------|
 | `/` | `src/app/page.tsx` | **Locale redirect** → `/vi` (308 Permanent Redirect via `next-intl` navigation) |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | **Home page** — renders `HomePage` |
-| `/{locale}/auth/login` | (future — constant defined) | Login page (not yet a route segment; auth is currently modal-only) |
-| `/{locale}/auth/signup` | (future — constant defined) | Signup page (not yet a route segment) |
+| `/{locale}/auth/login` | (future) | Login page (planned, not yet implemented) |
+| `/{locale}/auth/signup` | (future) | Signup page (planned, not yet implemented) |
 
-> Route constants are defined in `src/constants/route.ts` (`PUBLIC_ROUTES.auth.login`, `.signup`) for future use. All authentication today is **modal-based** from the header.
+> Route constants are defined in `src/constants/route.ts` for future auth-route constants. All authentication today is **modal-based** from the header.
 
 ---
 

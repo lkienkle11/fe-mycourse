@@ -1,0 +1,279 @@
+# Coding Patterns and Conventions (`fe-mycourse`)
+
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
+Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
+
+---
+
+## 1. File Naming
+
+| Type | Convention | Example |
+|------|-----------|---------|
+| React components | `kebab-case.tsx` | `auth-layout.tsx` |
+| Hooks | `use-kebab-case.ts` | `use-auth-store.ts` |
+| Utilities | `kebab-case.ts` | `cookie.ts`, `cn.ts` |
+| Type files | `kebab-case.ts` | `api.ts`, `auth.ts` |
+| Schema files | `kebab-case.ts` | `auth.ts` |
+| Barrel files | always `index.ts` | `src/api/index.ts` |
+| Server Actions | `kebab-case.ts` in `src/actions/<domain>/` | `auth.ts` |
+
+---
+
+## 2. Component Patterns
+
+### Server vs Client boundary
+
+Default to **Server Components**. Add `"use client"` only when needed:
+
+| Requires `"use client"` | Stays Server Component |
+|------------------------|----------------------|
+| React hooks (`useState`, `useEffect`, SWR, Zustand) | Pure rendering (no state/effects) |
+| Event handlers (`onClick`, `onSubmit`) | Data fetching via `async` component |
+| Radix interactive primitives | Static layout and content |
+| `useTranslations` (next-intl client hook) | `getTranslations` (next-intl server function) |
+
+### Component export style
+
+Always named exports — never default exports for components:
+
+```ts
+// ✅ Correct
+export function AuthLayout() { ... }
+
+// ❌ Wrong
+export default function AuthLayout() { ... }
+```
+
+### Barrel re-exports
+
+Every feature folder must have an `index.ts` barrel:
+
+```ts
+// src/components/common/index.ts
+export * from "./header";
+export * from "./footer";
+export * from "./auth-menu";
+```
+
+Consumers import from the barrel, not the implementation file:
+
+```ts
+// ✅ Correct
+import { Header, Footer } from "@/components/common";
+
+// ❌ Wrong
+import { Header } from "@/components/common/header/header";
+```
+
+---
+
+## 3. Styling Pattern
+
+### Use `cn()` for conditional classes
+
+```ts
+import { cn } from "@/lib/utils";
+
+<div className={cn(
+  "base-styles here",
+  isActive && "active-styles",
+  variant === "outline" && "outline-styles",
+)} />
+```
+
+### No inline styles
+
+```ts
+// ✅ Correct
+<div className="flex items-center gap-2 px-4" />
+
+// ❌ Wrong
+<div style={{ display: "flex", alignItems: "center" }} />
+```
+
+### Tailwind class ordering
+
+Follow the Tailwind CSS recommended order: layout → spacing → sizing → typography → color → effects.
+
+---
+
+## 4. State Management
+
+### Rule: match state type to tool
+
+| State type | Tool | Example |
+|------------|------|---------|
+| Server data (async, cached) | SWR | `useAuth`, `useCourses` |
+| Global UI state (sync, no fetch) | Zustand | `useAuthStore` (modal), `useApiError` (errors) |
+| Local component state | `useState` | Form open/close toggles |
+| URL/navigation state | `useRouter` / `usePathname` | Active nav item highlight |
+
+### Zustand: no Provider needed
+
+```ts
+// ✅ Correct — import directly, no wrap needed
+import { useAuthStore } from "@/store/auth/auth";
+const { openLoginModal } = useAuthStore();
+```
+
+### SWR: always use the endpoint key constant
+
+```ts
+// src/api/callers/auth/auth.ts
+export const getMeEndpointKey = "/api/v1/me"; // defined once
+
+// In hooks or components that need to mutate
+import { getMeEndpointKey } from "@/api/callers/auth/auth";
+mutate(getMeEndpointKey);
+```
+
+---
+
+## 5. API Call Pattern
+
+### Never call Axios directly — use `api` wrappers
+
+```ts
+// ✅ Correct
+import { apiFetch } from "@/api";
+const { data, error } = await apiFetch<T>(url);
+
+// ❌ Wrong
+import axios from "axios";
+const res = await axios.get(url);
+```
+
+### Always check both HTTP error and app-level error code
+
+```ts
+const { data, error } = await apiFetch<T>(url);
+if (error) { /* network/HTTP failure */ }
+if (data && data.code !== 0) { /* business logic failure */ }
+const payload = data?.data;
+```
+
+---
+
+## 6. Forms Pattern
+
+All forms use `react-hook-form` with `zodResolver`:
+
+```ts
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema, type LoginValues } from "@/schema/auth/auth";
+
+const form = useForm<LoginValues>({
+  resolver: zodResolver(loginSchema),
+  defaultValues: { email: "", password: "", rememberMe: false },
+});
+```
+
+Validation error messages in schemas must use **i18n keys**, not hard-coded strings:
+
+```ts
+// ✅ Correct
+z.string().email({ message: "validation.email" })
+
+// ❌ Wrong
+z.string().email({ message: "Please enter a valid email" })
+```
+
+---
+
+## 7. Internationalization (i18n) Pattern
+
+### All user-visible text via `useTranslations`
+
+```ts
+import { useTranslations } from "next-intl";
+const t = useTranslations("auth"); // namespace
+<p>{t("loginTitle")}</p>
+```
+
+### Navigation helpers
+
+Always use the typed wrappers from `@/i18n/navigation`:
+
+```ts
+import { Link, useRouter } from "@/i18n/navigation"; // ✅ includes locale prefix
+import { Link } from "next/link"; // ❌ breaks locale routing
+```
+
+### Never hard-code locale strings
+
+```ts
+// ✅ Correct
+import { routing } from "@/i18n/routing";
+const { locales, defaultLocale } = routing;
+
+// ❌ Wrong
+const locales = ["en", "vi"];
+```
+
+---
+
+## 8. TypeScript Patterns
+
+### Strict mode — no `any`
+
+```ts
+// ✅ Correct
+function processUser(user: MeResponse): string { ... }
+
+// ❌ Wrong
+function processUser(user: any): string { ... }
+```
+
+### Type imports
+
+```ts
+// ✅ Always use `import type` for type-only imports
+import type { MeResponse } from "@/types/auth/auth";
+```
+
+### Path aliases
+
+Always use `@/` aliases — never relative path traversal beyond one level:
+
+```ts
+// ✅ Correct
+import { cn } from "@/lib/utils";
+
+// ❌ Wrong
+import { cn } from "../../../../lib/utils/cn";
+```
+
+---
+
+## 9. Cookie Handling Pattern
+
+Always use the isomorphic helpers — never access cookies directly:
+
+```ts
+import { getCookieValue, setCookieValue } from "@/lib/utils";
+
+// Works in both browser and server context
+const token = getCookieValue("access_token");
+setCookieValue("access_token", newToken, buildCookieOptions({ ... }));
+```
+
+---
+
+## 10. Adding New Features Checklist
+
+Before writing code for a new feature:
+
+- [ ] Read `docs/` — check architecture, flow, components, patterns
+- [ ] Run `npx gitnexus analyze --force` — understand impact
+- [ ] Reuse existing utilities from `src/lib/utils/`, types from `src/types/`, hooks from `src/api/hooks/`
+- [ ] Place server data fetching in `src/api/callers/<domain>/`
+- [ ] Place SWR hooks in `src/api/hooks/<domain>/`
+- [ ] Place Server Actions in `src/actions/<domain>/`
+- [ ] Place Zustand stores in `src/store/`
+- [ ] Add new i18n strings to both `en.json` and `vi.json`
+- [ ] Add route constants to `src/constants/route.ts`
+- [ ] Add API route constants to `src/constants/api-route.ts`
+- [ ] Update `docs/` after implementation
