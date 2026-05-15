@@ -1,5 +1,8 @@
 # Folder Structure (`fe-mycourse`)
 
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
 
 ---
@@ -16,7 +19,7 @@ fe-mycourse/
 ├── components.json         # shadcn/ui configuration
 ├── biome.json              # Biome linter/formatter configuration
 ├── eslint.config.mjs       # ESLint configuration (Next.js rules)
-├── commitlint.config.ts    # Conventional Commits lint configuration
+├── commitlint.config.cjs    # Conventional Commits lint configuration
 ├── tsconfig.json           # TypeScript compiler options (strict mode, path aliases)
 ├── tailwind.config.ts      # Tailwind CSS configuration (if present)
 ├── postcss.config.mjs      # PostCSS configuration (@tailwindcss/postcss)
@@ -118,7 +121,7 @@ src/api/
 │                           #   Response: token refresh mutex, error reporting
 ├── methods.ts              # apiFetch / apiPost / apiPut / apiDelete / apiOptions → ApiResult<T>
 ├── raw-http.ts             # rawFetch / rawPost / … plain Axios (used by doTokenRefresh only)
-├── cache.ts                # Dual-layer cache (IndexedDB + Map) — currently disabled
+├── cache.ts                # Dual-layer cache (IndexedDB + Map) — implemented but currently not wired in methods.ts
 ├── callers/
 │   └── auth/
 │       └── auth.ts         # loginService, getMeService, getMeEndpointKey
@@ -223,8 +226,7 @@ src/messages/
 
 ```
 src/proxy.ts                # next-intl middleware (createMiddleware(routing)) + config.matcher
-                            # ⚠️ Must be renamed to src/middleware.ts before deployment
-                            #    (Next.js only reads middleware from that filename)
+                            # Next.js 16 uses src/proxy.ts for request proxy/middleware-style handling.
 ```
 
 ---

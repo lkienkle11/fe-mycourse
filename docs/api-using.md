@@ -1,5 +1,8 @@
 # API Usage Patterns (`fe-mycourse`)
 
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
 
 ---
@@ -61,19 +64,25 @@ All return `ApiResult<T>`:
 
 ```ts
 type ApiResult<T> = {
-  data: ApiResponse<T> | null;
-  error: AxiosError | null;
+  data: T;
+  statusCode: number;
+  headers: Record<string, string>;
+  cookies: Record<string, string>;
 };
 ```
 
 ### Pattern: Fetch data (GET)
 
 ```ts
-const { data, error } = await apiFetch<CourseListResponse>("/api/v1/courses");
-if (error || !data || data.code !== 0) {
-  // handle error
+try {
+  const { data } = await apiFetch<ApiResponse<CourseListResponse>>("/api/v1/courses");
+  if (data.code !== 0) {
+    // handle business error
+  }
+  const courses = data.data;
+} catch (error) {
+  // handle transport/HTTP error
 }
-const courses = data.data;
 ```
 
 ### Pattern: Submit data (POST)
@@ -188,7 +197,7 @@ Use SWR hooks for data that needs to be reactive (e.g. current user state).
 
 ```ts
 // Using the built-in useAuth hook
-import { useAuth } from "@/api";
+import { useAuth } from "@/api/hooks/auth";
 const { me, isLoading, error, mutate } = useAuth();
 ```
 
@@ -218,7 +227,7 @@ export function useCourses() {
 
 ## Error Handling
 
-All API errors are automatically pushed to `useApiError` store by the response interceptor:
+Client-side API errors are pushed to `useApiError` store by the response interceptor (server-side path only logs and returns):
 
 ```ts
 import { useApiError } from "@/store/api-error-store";
@@ -247,8 +256,8 @@ Paginated responses return `ApiPageInfo` alongside the data:
 ```ts
 interface ApiPageInfo {
   page: number;
-  page_size: number;
-  total: number;
+  per_page: number;
+  total_items: number;
   total_pages: number;
 }
 ```

@@ -1,5 +1,8 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
 
 ---

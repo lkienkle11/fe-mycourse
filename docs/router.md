@@ -1,5 +1,8 @@
 # Routing (`fe-mycourse`)
 
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
 
 ---
@@ -9,7 +12,7 @@ How URL routing is structured in the Next.js App Router, including locale handli
 | Layer | Technology | File |
 |-------|-----------|------|
 | Framework | Next.js App Router (file-system routing) | `src/app/` |
-| Locale routing | next-intl middleware | `src/proxy.ts` → rename to `src/middleware.ts` |
+| Locale routing | next-intl proxy middleware | `src/proxy.ts` |
 | Locale config | `defineRouting` | `src/i18n/routing.ts` |
 | Navigation helpers | next-intl typed wrappers | `src/i18n/navigation.ts` |
 
@@ -44,7 +47,7 @@ Root `/` automatically redirects to `/vi` (default locale) via `src/app/page.tsx
 
 `src/proxy.ts` exports the next-intl middleware that enforces locale prefixes on every request.
 
-> **⚠️ Important:** Next.js only reads middleware from a file named `src/middleware.ts` (or project-root `middleware.ts`). Until `src/proxy.ts` is renamed, locale prefix enforcement does NOT run in production.
+> `src/proxy.ts` is the active locale proxy entry used in this project.
 
 ```ts
 // src/proxy.ts
@@ -58,7 +61,7 @@ export const config = {
 };
 ```
 
-**Fix required before deployment:** rename `src/proxy.ts` → `src/middleware.ts`.
+
 
 ---
 

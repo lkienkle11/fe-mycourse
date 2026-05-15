@@ -1,5 +1,8 @@
 # Reusable Assets
 
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
 
 ---
@@ -370,3 +373,53 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - Reusable paginated list hook when list endpoints are implemented.
 - Course, lesson, enrollment types and service callers (Phase 02+).
 - Shared loading skeleton component.
+
+## Additional audited reusable assets
+
+### Asset: ApiErrorCodeValue
+- Name: `ApiErrorCodeValue`
+- Type: Data type
+- File path: `src/types/api.ts`
+- Purpose: Union of all values inside `ApiErrorCode` map.
+- Reusability scope: Any typed API error handling code.
+- Dependencies: `ApiErrorCode`.
+
+### Asset: ApiHealthResponse
+- Name: `ApiHealthResponse`
+- Type: Data type
+- File path: `src/types/api.ts`
+- Purpose: Typed response envelope for health endpoint.
+- Reusability scope: Health check integrations.
+- Dependencies: none.
+
+### Asset: BuildHttpOnlyCookieOptionsInput
+- Name: `BuildHttpOnlyCookieOptionsInput`
+- Type: Data type
+- File path: `src/lib/utils/cookie.ts`
+- Purpose: Legacy input type for httpOnly cookie option builder.
+- Reusability scope: Transitional compatibility in auth cookie options.
+- Dependencies: `CookieSameSite`.
+
+### Asset: BuildCookieOptionsInput
+- Name: `BuildCookieOptionsInput`
+- Type: Data type
+- File path: `src/lib/utils/cookie.ts`
+- Purpose: Input contract for `buildCookieOptions`.
+- Reusability scope: All server actions and cookie writers.
+- Dependencies: `CookieSameSite`.
+
+### Asset: CookieSameSite
+- Name: `CookieSameSite`
+- Type: Data type
+- File path: `src/lib/utils/cookie.ts`
+- Purpose: Shared same-site cookie policy enum type.
+- Reusability scope: Cookie option definitions.
+- Dependencies: none.
+
+### Asset: UserMenuStatus
+- Name: `UserMenuStatus`
+- Type: Data type
+- File path: `src/constants/common.ts`
+- Purpose: Type-safe status values for user menu sections/actions.
+- Reusability scope: Header auth menu and related UX state.
+- Dependencies: none.

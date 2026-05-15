@@ -1,5 +1,8 @@
 # Components (`fe-mycourse`)
 
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
 
 ---

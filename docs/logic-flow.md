@@ -1,5 +1,8 @@
 # Logic Flow
 
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
 Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifecycle, data fetching, and form submission patterns.
 
 ---
@@ -19,7 +22,7 @@ User fills form (email + password + rememberMe)
 react-hook-form validates via zodResolver(loginSchema)   [src/schema/auth/auth.ts]
   → validation errors shown inline if invalid (i18n keys from useTranslations("auth"))
   ↓
-onSubmit → loginAction(payload)   [src/actions/auth/auth.ts]  "use server"
+onSubmit -> handleAuthSubmit("login", values) -> loginAction(payload)   [src/actions/auth/auth.ts]  "use server"
   ↓
 loginService(payload)   [src/api/callers/auth/auth.ts]
   → apiPost(API_PUBLIC_ROUTES.auth.login, payload)
@@ -49,9 +52,10 @@ Handled automatically in `src/api/instance.ts` response interceptor.
 ```
 Any apiInstance request fails with 401 or 403
   ↓
-Interceptor checks for X-Token-Expired: "true" header from BE
-  ↓
-  NOT present → re-throw error (not a token expiry issue)
+Interceptor checks refresh conditions:
+  - X-Token-Expired: "true", OR
+  - 401 with missing/empty Authorization bearer while refresh cookies exist
+  If neither condition matches -> re-throw error
   ↓
   PRESENT →
     isRefreshing === true?  → queue request into pendingResolvers (mutex prevents stampede)
@@ -70,8 +74,7 @@ Interceptor checks for X-Token-Expired: "true" header from BE
               → flushRefreshQueue(newAccessToken) → retry all queued requests
               → retry original failed request with new token
         NO  → flushRefreshQueue(null) → reject all queued requests
-              → clear tokens (access_token, refresh_token, session_id cookies)
-              → mutate SWR me cache (logout effect)
+              
 ```
 
 **Important notes:**
@@ -176,7 +179,7 @@ If user is not logged in: mePermissions = [] → all checks return false.
 ## 7. i18n Text Resolution Flow
 
 ```
-next-intl middleware (src/proxy.ts → rename to src/middleware.ts for production)
+next-intl middleware (src/proxy.ts)
   → detects locale from URL prefix (/vi/... or /en/...)
   → sets locale cookie / header
 
@@ -196,12 +199,10 @@ Convention:
 ## 8. API Error Global Capture Flow
 
 ```
-Any apiInstance request fails (error response)
+Any apiInstance request fails (error response) on client
   ↓
-Axios response interceptor in src/api/instance.ts:
-  → useApiError.getState().push({
-      statusCode, appCode, message, url, method
-    })
+Axios response interceptor in src/api/instance.ts
+  -> useApiError.getState().push({ statusCode, appCode, message, url, method })
   ↓
 Error is re-thrown so callers can still catch it locally.
 

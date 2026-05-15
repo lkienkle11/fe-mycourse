@@ -1,5 +1,8 @@
 # Dependencies
 
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
 
 ---
