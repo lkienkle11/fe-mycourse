@@ -1,5 +1,8 @@
 # Execution Flows (`fe`)
 
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
 This document traces the major user-visible and technical flows in the MyCourse frontend. Flows are derived from the **GitNexus** process index for repo **`fe-mycourse`** (12 tracked execution chains across the **Auth** and **Api** clusters) and from direct source inspection. Regenerate the graph after large UI changes with `npx gitnexus analyze --force` from the **fe-mycourse** repo root.
 
 The **(web) layout** (`src/app/[locale]/(web)/layout.tsx`) wraps every marketing page in `Header` → `<main>` → `Footer`; the flows below focus on **auth** and **API** unless otherwise noted.
@@ -295,7 +298,7 @@ interface ApiErrorEntry {
 }
 ```
 
-The store is safe to call on the server (Zustand stores are singleton modules — `getState()` works without hydration).
+Global error store updates are applied on client path; server path reports to logs only.
 
 ---
 

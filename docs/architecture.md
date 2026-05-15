@@ -1,5 +1,8 @@
 # Frontend Architecture (`fe-mycourse`)
 
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. It aligns with the GitNexus index for repo **`fe-mycourse`** (order-of-magnitude: **~136** source files, **~589** symbols, **~1,091** relationships, **~13** graph clusters, **~18** execution flows; top clusters **Ui**, **Api**, **Auth** — refresh with `npx gitnexus analyze` from this repo root).
 
 ---
@@ -43,7 +46,7 @@ Loaded in `src/lib/font.ts` via `next/font/google` and applied as CSS variables 
 Browser
   └─ DNS → Nginx (TLS termination)
               └─ 127.0.0.1:3000 → next start (PM2: e.g. `mycourse-web` or `mycourse-web-dev` per `ecosystem.config.cjs`)
-                    ├─ Middleware (src/proxy.ts) → locale redirect
+                    ├─ Middleware (src/proxy.ts) -> locale redirect
                     ├─ App Router layout tree
                     │     ├─ Root layout (fonts, Toaster)
                     │     ├─ [locale] layout (NextIntlClientProvider + AppProviders)
@@ -177,7 +180,7 @@ fe/
 │   │   └── vi.json                 # Vietnamese translations (default locale)
 │   │
 │   └── proxy.ts                    # next-intl middleware + matcher
-│                                   # ⚠️ Must be renamed/re-exported as src/middleware.ts
+│                                   # Locale proxy entry for next-intl routing
 │
 ├── docs/
 │   ├── architecture.md             # This file
@@ -309,9 +312,7 @@ Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i
 
 ## Middleware: Locale Routing
 
-`src/proxy.ts` exports the `next-intl` middleware (`createMiddleware(routing)`) and a `config.matcher`. **Next.js only loads middleware from a file named `middleware.ts`** (at project root or under `src/`). Until `src/proxy.ts` is renamed to `src/middleware.ts` (or a re-export bridge is added), locale-prefix redirects will not run.
-
-**Current status:** This file must be renamed before deployment to ensure `/vi`, `/en` locale enforcement works.
+``src/proxy.ts` exports the next-intl locale proxy middleware (`createMiddleware(routing)`) and `config.matcher` used by this project to enforce locale-prefixed routes.
 
 ---
 

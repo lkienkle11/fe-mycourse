@@ -1,5 +1,8 @@
 # Deploying MyCourse Frontend on Ubuntu 24.04
 
+_Last audited: 2026-05-15 (GitNexus + source scan)._
+
+
 This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.
 
 **Scope of this document:** Next.js-specific steps — environment variables, `next build` / `next start`, Nginx vhost for the web app, PM2 config, and the frontend go-live checklist.
@@ -37,11 +40,7 @@ Run steps **in order**. Each step notes whether it can be skipped if you already
 2. **DNS:** `yourdomain.net` and `www.yourdomain.net` must resolve to this server's IP **before** requesting TLS certificates.
 3. **API URL:** Obtain the public HTTPS base URL of the Go API (e.g. `https://api.yourdomain.net`). This is the value for `NEXT_PUBLIC_API_URL`.
 4. **Backend CORS:** Ensure `CORS_ALLOWED_ORIGINS` in the backend includes `https://yourdomain.net` and `https://www.yourdomain.net` (no trailing slashes).
-5. **Middleware filename:** The project ships `src/proxy.ts` with the `next-intl` middleware. **Rename it before deploying:**
-   ```bash
-   mv /opt/mycourse/fe/src/proxy.ts /opt/mycourse/fe/src/middleware.ts
-   ```
-   Next.js only loads middleware from `src/middleware.ts` (or `middleware.ts` at project root). Without this rename, locale-prefix redirects (`/vi`, `/en`) will **not** work in production.
+5. 
 
 ---
 
@@ -391,7 +390,7 @@ curl -sS -o /dev/null -w "%{http_code}\n" https://yourdomain.net/en
 Frontend
   [ ] NEXT_PUBLIC_API_URL is the HTTPS API URL used at build time for this release.
   [ ] AUTH_COOKIE_DOMAIN is set to the parent domain (e.g. yourdomain.net).
-  [ ] src/proxy.ts has been renamed to src/middleware.ts — locale routing is enforced.
+  [ ] src/proxy.ts exists and locale routing is enforced.
   [ ] npm run build completed without errors.
   [ ] PM2 mycourse-web is running and autorestart is enabled.
   [ ] pm2 save was run; PM2 startup unit was installed (pm2 startup systemd).
@@ -453,7 +452,7 @@ Browser  ──────────────►  │  Nginx (TLS: yourdom
 `src/proxy.ts` contains a valid `next-intl` middleware:
 
 ```ts
-// src/proxy.ts  (current, incorrect filename)
+// src/proxy.ts
 import createMiddleware from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
 
@@ -464,21 +463,7 @@ export const config = {
 };
 ```
 
-**Problem:** Next.js only executes middleware from `src/middleware.ts` or `middleware.ts` at the project root. The filename `proxy.ts` is not recognized.
-
-**Fix (Option 1 — rename):**
-
-```bash
-git mv src/proxy.ts src/middleware.ts
-git commit -m "fix: rename proxy.ts → middleware.ts so Next.js runs locale middleware"
-```
-
-**Fix (Option 2 — re-export bridge, keeps proxy.ts intact):**
-
-```ts
-// src/middleware.ts
-export { default, config } from "./proxy";
-```
+Project uses `src/proxy.ts` as locale proxy middleware entry. Keep this file in place and ensure matcher remains correct.
 
 After either fix, verify with:
 
@@ -705,9 +690,9 @@ ss -tlnp | grep 3000         # is port 3000 bound?
 The middleware file is not registered. See [Appendix C](#appendix-c--middleware-locale-routing-fix).
 
 ```bash
-ls /opt/mycourse/fe/src/middleware.ts   # must exist
+ls /opt/mycourse/fe/src/proxy.ts   # must exist
 # If missing:
-mv /opt/mycourse/fe/src/proxy.ts /opt/mycourse/fe/src/middleware.ts
+# no rename required for this project setup
 npm run build && pm2 reload mycourse-web
 ```
 
@@ -750,7 +735,7 @@ sudo nginx -t                  # valid config after certbot edits?
 | Area | Path | Notes |
 |------|------|-------|
 | Next.js config + i18n plugin | `next.config.ts` | `createNextIntlPlugin("./src/i18n/request.ts")` |
-| Middleware (locale routing) | `src/proxy.ts` → must be `src/middleware.ts` | See Appendix C |
+| Middleware (locale routing) | `src/proxy.ts` | See Appendix C |
 | Root layout | `src/app/layout.tsx` | Fonts (Roboto, Gilroy, GeistMono), Toaster |
 | Locale layout | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider` + `AppProviders` (SWR) |
 | Web shell layout | `src/app/[locale]/(web)/layout.tsx` | `Header` + `<main>` + `Footer` (from `@/components/common`) |
