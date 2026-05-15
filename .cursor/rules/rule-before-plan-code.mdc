@@ -215,6 +215,7 @@ The `docs/` folder is the **primary and authoritative** project documentation so
 * `patterns.md` → coding patterns and conventions used (if applicable)
 * `dependencies.md` → key libraries, frameworks, and relationships (if applicable)
 * `reusable-assets.md` → all reusable elements across the project (if applicable)
+* `delivery.md` → public delivery channels and transport exposure (API/WebSocket/gRPC/GraphQL/SSE/MQTT/Long Polling) (if applicable)
 * `modules.md` → module documentation (if applicable)
 
 ---
@@ -251,6 +252,32 @@ Each item MUST include:
 * Purpose
 * Reusability scope
 * Dependencies (if any)
+
+---
+
+### 4.2.4 DELIVERY-TYPE DOCUMENT SET REQUIREMENTS
+
+For each non-API delivery type, the project MUST maintain a dedicated markdown document (recommended folder: `docs/delivery/`):
+
+* `websocket.md`
+* `grpc.md`
+* `graphql.md`
+* `sse.md`
+* `mqtt.md`
+* `long-polling.md`
+
+Each delivery-type document MUST include:
+
+* Introduction
+* Implementation details
+* Client-to-server flow
+* Server-to-client flow
+* Data types returned to the client
+* Exact code locations for data types, setup, and flow
+* Security model (input validation, auth/authz, reject conditions)
+* Final summary
+
+If a delivery type is not implemented yet, the document is still REQUIRED and MUST explicitly state `Not implemented` with planned integration points and security prerequisites.
 
 ---
 
@@ -320,7 +347,15 @@ Each item MUST include:
 
 ---
 
-### 6.3.2 REUSE ENFORCEMENT
+### 6.3.2 DELIVERY CHECK
+
+* MUST check `docs/delivery.md` before proposing transport-related solutions
+* MUST verify whether the requested channel is already implemented or explicitly marked as not implemented
+* MUST update the relevant delivery-type document when transport behavior changes
+
+---
+
+### 6.3.3 REUSE ENFORCEMENT
 
 * If reusable logic exists:
 
@@ -491,6 +526,8 @@ Mandatory:
 24. Aggregate reusable assets into `docs/reusable-assets.md`
 25. Perform reusability validation before implementation
 26. Extract shared logic during implementation
+27. Validate delivery-surface documentation (`docs/delivery.md` + `docs/delivery/*`) before implementation
+28. Sync delivery-surface documentation after implementation
 
 ---
 

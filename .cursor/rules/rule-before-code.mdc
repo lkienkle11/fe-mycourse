@@ -164,6 +164,7 @@ The AI Agent **MUST NOT write any code** until it has a **complete understanding
 * Routing system (if applicable) — read `docs/router.md`
 * Libraries and frameworks used — read `docs/dependencies.md` (if applicable)
 * Shared utilities and core logic — read `docs/reusable-assets.md` (if applicable)
+* Delivery channels and external transports — read `docs/delivery.md` and delivery-type docs in `docs/delivery/` (if applicable)
 
 Partial understanding is **strictly forbidden**.
 
@@ -215,6 +216,7 @@ The `docs/` folder is the **primary and authoritative** project documentation so
 * `patterns.md` → coding patterns and conventions used (if applicable)
 * `dependencies.md` → key libraries, frameworks, and relationships (if applicable)
 * `reusable-assets.md` → all reusable elements (if applicable)
+* `delivery.md` → public delivery channels and transport exposure (API/WebSocket/gRPC/GraphQL/SSE/MQTT/Long Polling) (if applicable)
 * `modules.md` → module documentation (if applicable)
 
 ---
@@ -224,6 +226,7 @@ The `docs/` folder is the **primary and authoritative** project documentation so
 The AI Agent MUST additionally maintain the following file inside `docs/`:
 
 * `reusable-assets.md` (if applicable)
+* `delivery.md` (if applicable)
 
 ---
 
@@ -335,6 +338,11 @@ The AI Agent MUST also:
   * New reusable utilities are created
   * New shared data types are introduced
   * Existing reusable logic is modified or refactored
+
+* Update delivery documentation whenever any public delivery surface changes:
+
+  * `docs/delivery.md`
+  * Related files in `docs/delivery/` for affected non-API transport types
 
 ---
 
