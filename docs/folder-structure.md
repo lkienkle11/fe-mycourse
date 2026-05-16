@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-19 (stream events v1 — commit `16cfa594` + docs sync)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -91,6 +91,7 @@ src/components/
 │                           #   SearchBar (currently a UI stub — no backend call)
 ├── providers/
 │   └── app-providers.tsx   # SWRConfig (dedup 30 s, revalidateOnFocus:false)
+│                           # + EventsStreamProvider (stream transports)
 │                           # + MeSwrSync (null-render: calls useSyncMeFromAuth)
 │                           # + children
 └── demo/
@@ -139,17 +140,59 @@ src/store/
 ├── auth/
 │   └── auth.ts             # useAuthStore: modal state (authAction: "none"|"login"|"signup"|"logout", nextLink)
 ├── api-error-store.ts      # useApiError: global error accumulation (last 20 API errors)
-└── use-app-store.ts        # useAppStore: app-level placeholder store
+├── use-app-store.ts        # useAppStore: app-level placeholder store
+└── events/
+    ├── index.ts            # Barrel: stream + per-channel selectors
+    ├── stream-events-store.ts  # useStreamEventsStore: clientSeq, last, log (max 100)
+    ├── broadcast/index.ts  # useLastBroadcastStreamEvent()
+    ├── sse/index.ts        # useLastSseStreamEvent()
+    ├── socket/index.ts     # useLastWebSocketStreamEvent()
+    └── gRPC/index.ts       # useLastGrpcStreamEvent()
 ```
 
 ### `src/hooks/` — Custom React Hooks
 
 ```
 src/hooks/
-└── auth/
-    ├── index.ts            # Barrel: re-exports use-auth-store
-    └── use-auth-store.ts   # useAuthStore (re-export), useGetMe, useSyncMeFromAuth
-                            # useSyncMeFromAuth: mirrors SWR useAuth → useMeStore (Zustand)
+├── auth/
+│   ├── index.ts            # Barrel: re-exports use-auth-store
+│   └── use-auth-store.ts   # useAuthStore (re-export), useGetMe, useSyncMeFromAuth
+│                           # useSyncMeFromAuth: mirrors SWR useAuth → useMeStore (Zustand)
+└── events/
+    ├── index.ts            # Barrel: useStreamEvent + per-channel hooks
+    ├── use-stream-event.ts # subscribeStreamEvents + optional source/type filter
+    ├── broadcast/          # useBroadcastStreamEvent, useSendBroadcastOutbound
+    ├── sse/                # useSseStreamEvent
+    ├── socket/             # useWebSocketStreamEvent
+    └── gRPC/               # useGrpcStreamEvent
+```
+
+### `src/events/` — Realtime Stream Transports
+
+Client-side ingest pipeline (BroadcastChannel, SSE, WebSocket, NDJSON gRPC). See [`delivery.md`](./delivery.md).
+
+```
+src/events/
+├── index.ts                # Barrel: transports, post*Outbound, EventsStreamProvider
+├── providers/
+│   └── events-stream-provider.tsx  # useEffect → startStreamEventTransports()
+├── registry/
+│   └── start-stream-transports.ts  # Starts enabled transports; returns cleanup
+├── core/
+│   ├── publish.ts          # publishRawStreamPayload → normalize + store + emit
+│   ├── normalize-inbound.ts    # Zod envelope + per-(source,type) payload
+│   ├── subscribe.ts        # subscribeStreamEvents / emitStreamEventToSubscribers
+│   ├── outbound-metadata.ts    # nextStreamOutboundMetadata()
+│   ├── event-code.ts       # makeStreamEventCode(source, type)
+│   └── join-url.ts         # joinBaseUrlAndPath (gRPC stream URL)
+├── broadcast/
+│   └── broadcast-transport.ts    # BroadcastChannel listen + postBroadcastOutbound
+├── sse/
+│   └── sse-transport.ts    # @microsoft/fetch-event-source
+├── socket/
+│   └── socket-transport.ts # reconnecting-websocket + auto pong on ping
+└── gRPC/
+    └── grpc-transport.ts   # fetch NDJSON GET stream
 ```
 
 ### `src/types/` — TypeScript Type Definitions
@@ -157,8 +200,18 @@ src/hooks/
 ```
 src/types/
 ├── api.ts                  # ApiResult<T>, ApiResponse<T>, ApiPageInfo, ApiErrorCode constant map
-└── auth/
-    └── auth.ts             # MeResponse, LoginResponse, RefreshTokenResponse
+├── index.ts                # Re-exports domain types
+├── auth/
+│   └── auth.ts             # MeResponse, LoginResponse, RefreshTokenResponse
+└── events/
+    ├── index.ts            # Barrel: stream-events + per-channel types
+    ├── common.ts           # StreamEventSource, metadata, StreamInboundEventOf, StreamOutboundEventOf
+    ├── payloads.ts         # Shared payloads + StreamChannelEventMap, WebSocket/SSE maps
+    ├── stream-events.ts    # StreamEvent, StreamOutboundEvent unions
+    ├── broadcast/index.ts
+    ├── sse/index.ts
+    ├── socket/index.ts
+    └── gRPC/index.ts
 ```
 
 ### `src/schema/` — Zod Validation Schemas
@@ -176,7 +229,9 @@ src/schema/
 src/constants/
 ├── api-route.ts            # API_PUBLIC_ROUTES (login, signup, refresh), API_PRIVATE_ROUTES (getMe)
 ├── route.ts                # PUBLIC_ROUTES — client-side navigation path constants
-└── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS
+├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS
+└── events/
+    └── index.ts            # STREAM_EVENTS_LOG_MAX, STREAM_ENV_KEYS (SSE/WS/gRPC URLs)
 ```
 
 ### `src/lib/` — Shared Utilities and Core Helpers
@@ -201,8 +256,14 @@ src/lib/
 ```
 src/config/
 ├── load-config.ts          # Dynamic config loader (extend for feature flags)
-└── items/
-    └── items-config.ts     # Item/feature flag configuration
+├── items/
+│   └── items-config.ts     # Item/feature flag configuration
+└── events/
+    ├── index.ts            # Barrel: broadcast, sse, socket, gRPC configs
+    ├── broadcast/index.ts  # BroadcastChannel name, enabled flag
+    ├── sse/index.ts        # NEXT_PUBLIC_STREAM_SSE_URL
+    ├── socket/index.ts     # NEXT_PUBLIC_STREAM_WS_URL
+    └── gRPC/index.ts       # NEXT_PUBLIC_STREAM_GRPC_BASE_URL + streamPath
 ```
 
 ### `src/i18n/` — Internationalization Setup
@@ -245,11 +306,22 @@ public/
 ```
 docs/
 ├── architecture.md         # Technology stack, directory map, design decisions, clusters
+├── delivery.md             # Index: realtime channels (WS, SSE, gRPC, broadcast, …)
+├── delivery/               # Per-channel delivery docs (required by project rules)
+│   ├── broadcast.md
+│   ├── websocket.md
+│   ├── sse.md
+│   ├── grpc.md
+│   ├── graphql.md          # Not implemented
+│   ├── mqtt.md             # Not implemented
+│   └── long-polling.md     # Not implemented
 ├── deploy.md               # Production deployment runbook (PM2, Nginx, TLS, env vars)
-├── flow.md                 # Execution flows: login, signup, token refresh, error handling
+├── flow.md                 # Execution flows: login, signup, token refresh, stream events
+├── logic-flow.md           # Control-flow paths including stream ingest
 ├── screens.md              # App Router routes, layouts, UI surfaces
 ├── folder-structure.md     # This file
 ├── api-using.md            # Frontend API usage patterns and conventions
+├── modules.md              # Module map (Ui, Auth, Api, Events, …)
 ├── components.md           # Component inventory and responsibilities
 ├── router.md               # Routing structure and navigation conventions
 ├── patterns.md             # Coding patterns and conventions

@@ -1,3 +1,7 @@
+import { eventsConfigSnapshot } from "@/config/events";
+
 export const loadConfig = async () => {
-  return {};
+  return {
+    events: eventsConfigSnapshot,
+  };
 };

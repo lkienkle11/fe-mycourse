@@ -1,6 +1,6 @@
 # Deploying MyCourse Frontend on Ubuntu 24.04
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-19 (stream events env vars added)._
 
 
 This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.
@@ -21,6 +21,7 @@ This is the **frontend** deployment runbook for the MyCourse Next.js application
 | Nginx vhost | `yourdomain.net` / `www.yourdomain.net` → `127.0.0.1:3000` |
 | Required env var | `NEXT_PUBLIC_API_URL` (must be set **before** `npm run build`) |
 | Optional env var | `AUTH_COOKIE_DOMAIN` (needed when FE and API are on different subdomains) |
+| Optional stream env | `NEXT_PUBLIC_STREAM_SSE_URL`, `NEXT_PUBLIC_STREAM_WS_URL`, `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` (see [Variable reference table](#variable-reference-table)) |
 | Node.js version | 22 LTS (match [backend deploy guide](../../be-mycourse/docs/deploy.md)) |
 | GitHub Actions | Push to **`dev`** → `.github/workflows/deploy-dev.yml` (build in CI + deploy rebuild on VPS — [Appendix G](#appendix-g--cicd-github-actions)) |
 
@@ -177,8 +178,13 @@ API_URL=https://api.yourdomain.net
 | `NEXT_PUBLIC_API_URL` | **Yes** | Build + client + server | Base URL for all API calls. `NEXT_PUBLIC_*` variables are **inlined at `next build`** — you **must** rebuild after changing this. |
 | `AUTH_COOKIE_DOMAIN` | Prod recommended | Server only | Parent domain for `access_token`, `refresh_token`, `session_id` cookies. Passed to `getCookieDomain()` → included in `buildCookieOptions()` via `loginAction`. Without this on a multi-subdomain setup, cookies may not be sent to the API. |
 | `API_URL` | No | Server only | Server-side fallback API URL. Not exposed to the client bundle. Useful for private/internal network routing. |
+| `NEXT_PUBLIC_STREAM_SSE_URL` | No | Build + client | SSE stream URL; empty → SSE transport not started |
+| `NEXT_PUBLIC_STREAM_WS_URL` | No | Build + client | WebSocket URL (`wss://…`); empty → WS not started |
+| `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | Build + client | API base for NDJSON stream (path `/v1/events/stream` appended) |
 
 > **`NEXT_PUBLIC_*` warning:** These values are **baked into the JS bundle** at build time. If you change `NEXT_PUBLIC_API_URL` without rebuilding, old client code will still call the previous URL. Always rebuild after changing any `NEXT_PUBLIC_*` variable.
+
+See also [`delivery.md`](./delivery.md) for envelope format and per-channel behavior.
 
 ---
 
@@ -444,6 +450,9 @@ Browser  ──────────────►  │  Nginx (TLS: yourdom
 | `NEXT_PUBLIC_API_URL` | **Yes** | ✅ baked into bundle | ✅ also read server-side | Public Go API base URL. No trailing slash. Must match `CORS_ALLOWED_ORIGINS` on the backend. |
 | `AUTH_COOKIE_DOMAIN` | Prod recommended | ❌ | ✅ Server Actions only | Parent domain for auth cookies. Without this, cookies set on `yourdomain.net` may not be sent to `api.yourdomain.net`. |
 | `API_URL` | No | ❌ | ✅ Server only | Server-side fallback for API base URL. Not exposed to browser. Useful for private network routing. |
+| `NEXT_PUBLIC_STREAM_SSE_URL` | No | ✅ | ✅ | SSE endpoint; empty disables transport |
+| `NEXT_PUBLIC_STREAM_WS_URL` | No | ✅ | ✅ | WebSocket URL; empty disables transport |
+| `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | ✅ | ✅ | NDJSON stream base URL (appends `/v1/events/stream`) |
 
 ---
 

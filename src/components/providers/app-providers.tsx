@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { SWRConfig } from "swr";
+import { EventsStreamProvider } from "@/events";
 import { useSyncMeFromAuth } from "@/hooks/auth";
 
 type AppProvidersProps = {
@@ -21,8 +22,10 @@ export function AppProviders({ children }: AppProvidersProps) {
         dedupingInterval: 30 * 1000,
       }}
     >
-      <MeSwrSync />
-      {children}
+      <EventsStreamProvider>
+        <MeSwrSync />
+        {children}
+      </EventsStreamProvider>
     </SWRConfig>
   );
 }

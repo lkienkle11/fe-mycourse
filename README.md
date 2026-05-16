@@ -45,7 +45,8 @@ The `docs/` folder is the **primary and authoritative documentation source** for
 | [`docs/logic-flow.md`](docs/logic-flow.md) | Execution flows — login, token refresh, Me fetch, form submission, auth modal state, permission checks, i18n, API error capture |
 | [`docs/dependencies.md`](docs/dependencies.md) | All runtime and dev dependencies — versions, roles, and usage rules |
 | [`docs/reusable-assets.md`](docs/reusable-assets.md) | All reusable utilities, hooks, types, schemas, stores, constants, API callers, and Server Actions |
-| [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — Nginx, Certbot, PM2, env vars (`NEXT_PUBLIC_API_URL`, `AUTH_COOKIE_DOMAIN`), go-live checklist, rollback, troubleshooting, CI/CD |
+| [`docs/delivery.md`](docs/delivery.md) | **Realtime channels** — BroadcastChannel, WebSocket, SSE, NDJSON gRPC; envelope model, env vars, links to per-channel docs |
+| [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — Nginx, Certbot, PM2, env vars (`NEXT_PUBLIC_API_URL`, `AUTH_COOKIE_DOMAIN`, stream URLs), go-live checklist, rollback, troubleshooting, CI/CD |
 
 After large refactors, run **`npx gitnexus analyze --force`** in this repo so the local graph (`.gitnexus/`, ignored by git) and the generated **`CLAUDE.md` / `AGENTS.md`** header stats stay aligned with the code; use **`npx gitnexus query -r fe-mycourse "…"`** / **`npx gitnexus context -r fe-mycourse SymbolName`** when updating `docs/*.md`.
 
@@ -68,8 +69,13 @@ Create a `.env` file at the project root (gitignored). In production use `.env.p
 | `NEXT_PUBLIC_API_URL` | **Yes** | Build + client + server | Base URL for the backend API. **Inlined at `next build`** — rebuild required after changing. | `http://localhost:8080` |
 | `AUTH_COOKIE_DOMAIN` | Prod only | Server only | Parent domain for auth cookies when FE and API are on separate subdomains. Leave unset on localhost. | `yourdomain.net` |
 | `API_URL` | No | Server only | Server-side fallback for `NEXT_PUBLIC_API_URL`. Not exposed to the client bundle. | `http://localhost:8080` |
+| `NEXT_PUBLIC_STREAM_SSE_URL` | No | Build + client | SSE stream URL; omit to disable SSE transport | `http://localhost:8080/v1/events/sse` |
+| `NEXT_PUBLIC_STREAM_WS_URL` | No | Build + client | WebSocket URL; omit to disable WS transport | `ws://localhost:8080/v1/events/ws` |
+| `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | Build + client | Base URL for NDJSON event stream (no trailing slash) | `http://localhost:8080` |
 
 The Axios instance at `src/api/instance.ts` reads `NEXT_PUBLIC_API_URL` (or `API_URL` as a server-side fallback) as its `baseURL`. `AUTH_COOKIE_DOMAIN` is read by `loginAction` via `getCookieDomain()` to scope cookies for cross-subdomain auth.
+
+**Stream events (v1):** `EventsStreamProvider` in `AppProviders` starts BroadcastChannel (always) plus SSE/WS/gRPC when the env vars above are set. See [`docs/delivery.md`](docs/delivery.md).
 
 ---
 
