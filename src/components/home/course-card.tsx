@@ -1,12 +1,12 @@
+import { BarChart, BookOpen, Clock, Star, Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock, BookOpen, Users, Star, BarChart } from "lucide-react";
-import { getTranslations } from "next-intl/server";
 
 export type CourseType = {
   id: string;

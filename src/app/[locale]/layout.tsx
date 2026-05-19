@@ -1,5 +1,5 @@
-import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { notFound } from "next/navigation";
+import { hasLocale, NextIntlClientProvider } from "next-intl";
 import type { ReactNode } from "react";
 import { AppProviders } from "@/components/providers/app-providers";
 import { routing } from "@/i18n/routing";

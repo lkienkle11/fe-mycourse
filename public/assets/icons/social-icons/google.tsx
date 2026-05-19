@@ -1,4 +1,4 @@
-import { ISvgProps } from "../types";
+import type { ISvgProps } from "../types";
 
 export const GoogleIcon = ({
   width = 24,
@@ -14,6 +14,7 @@ export const GoogleIcon = ({
     width={width}
     height={height}
     className={className}
+    aria-hidden="true"
   >
     <defs>
       <linearGradient id="a">

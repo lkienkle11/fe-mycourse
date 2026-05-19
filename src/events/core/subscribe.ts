@@ -13,7 +13,10 @@ type StreamEventListenerEntry = {
 
 const listeners: StreamEventListenerEntry[] = [];
 
-function matchesFilter(event: StreamEvent, filter?: StreamEventFilter): boolean {
+function matchesFilter(
+  event: StreamEvent,
+  filter?: StreamEventFilter,
+): boolean {
   if (filter?.source && event.source !== filter.source) {
     return false;
   }

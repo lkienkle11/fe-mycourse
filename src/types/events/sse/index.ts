@@ -1,7 +1,4 @@
-import type {
-  StreamInboundEventOf,
-  StreamOutboundEventOf,
-} from "../common";
+import type { StreamInboundEventOf, StreamOutboundEventOf } from "../common";
 import type { SseInboundEventMap, StreamChannelEventMap } from "../payloads";
 
 export type SseStreamEvent = StreamInboundEventOf<"sse", SseInboundEventMap>;

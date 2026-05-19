@@ -1,5 +1,5 @@
-import localFont from "next/font/local";
 import { Geist_Mono, Roboto } from "next/font/google";
+import localFont from "next/font/local";
 
 /** Sans mặc định toàn app (Tailwind `font-sans`, biến `--font-sans`). */
 export const roboto = Roboto({

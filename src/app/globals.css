@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@import './utils.css';
+@import "./utils.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -92,10 +92,10 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  --object-black: #1B1B1B;
-  --object-white: #F9F9F9;
-  --base-primary: #3DCBB1;
-  --alert-error: #FE416D;
+  --object-black: #1b1b1b;
+  --object-white: #f9f9f9;
+  --base-primary: #3dcbb1;
+  --alert-error: #fe416d;
 }
 
 .dark {
@@ -131,10 +131,10 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 
-  --object-black: #1B1B1B;
-  --object-white: #F9F9F9;
-  --base-primary: #3DCBB1;
-  --alert-error: #FE416D;
+  --object-black: #1b1b1b;
+  --object-white: #f9f9f9;
+  --base-primary: #3dcbb1;
+  --alert-error: #fe416d;
 }
 
 @layer base {

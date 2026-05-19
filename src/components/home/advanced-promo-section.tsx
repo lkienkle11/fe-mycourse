@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { PlayCircle, BarChart, TrendingUp, Users } from "lucide-react";
+import { BarChart, PlayCircle, TrendingUp, Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { Button } from "@/components/ui/button";
 
 export async function AdvancedPromoSection() {
   const t = await getTranslations("home");
@@ -62,10 +62,10 @@ export async function AdvancedPromoSection() {
                 { icon: BarChart, textKey: "promo.list.item1" },
                 { icon: TrendingUp, textKey: "promo.list.item2" },
                 { icon: Users, textKey: "promo.list.item3" },
-              ].map((item, index) => {
+              ].map((item) => {
                 const Icon = item.icon;
                 return (
-                  <li key={index} className="flex gap-4">
+                  <li key={item.textKey} className="flex gap-4">
                     <div className="mt-1 bg-primary/10 p-2 text-primary rounded-lg shrink-0 h-fit">
                       <Icon className="h-5 w-5" />
                     </div>

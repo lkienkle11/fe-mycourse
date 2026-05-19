@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { Calendar, Clock, Video } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { getTranslations } from "next-intl/server";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export async function UpcomingWebinarsSection() {
   const t = await getTranslations("homepage.webinar");
