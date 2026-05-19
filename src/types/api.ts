@@ -33,6 +33,9 @@ export const ApiErrorCode = {
   EmailNotConfirmed: 4004,
   UserDisabled: 4005,
   InvalidConfirmToken: 4006,
+  RegistrationAbandoned: 4009,
+  RegistrationEmailRateLimited: 4010,
+  ConfirmationEmailSendFailed: 4011,
 
   // Server (9xxx)
   InternalError: 9001,

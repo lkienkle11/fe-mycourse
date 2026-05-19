@@ -1,31 +1,56 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { loginService } from "@/api/callers/auth";
-import type { LoginPayload, SignupPayload } from "@/api/callers/auth";
-import { buildCookieOptions, getCookieDomain } from "@/lib/utils";
+import {
+  confirmService,
+  loginService,
+  registerService,
+} from "@/api/callers/auth";
+import type {
+  ConfirmPayload,
+  LoginPayload,
+  RegisterPayload,
+} from "@/api/callers/auth";
+import { setAuthSessionCookies } from "@/lib/utils/auth-session";
 import { ApiErrorCode } from "@/types/api";
 
 export interface AuthActionResult {
   success: boolean;
   message: string;
   code: number;
+  /** Seconds until retry when register is rate-limited (4010). */
+  retryAfterSeconds?: number;
 }
 
-/** MaxAge (seconds) cho refresh_token / session_id khi remember_me = true (30 ngày). */
-const REMEMBER_ME_MAX_AGE = 30 * 24 * 60 * 60;
+function parseRetryAfterSeconds(headers?: Record<string, string>): number | undefined {
+  if (!headers) return undefined;
+  const raw =
+    headers["retry-after"] ??
+    headers["Retry-After"] ??
+    headers["x-mycourse-register-retry-after"] ??
+    headers["X-Mycourse-Register-Retry-After"];
+  if (!raw) return undefined;
+  const sec = Number.parseInt(raw, 10);
+  return Number.isFinite(sec) && sec > 0 ? sec : undefined;
+}
+
+function mapAxiosAuthError(error: unknown): AuthActionResult {
+  const axiosError = error as {
+    response?: {
+      data?: { code?: number; message?: string };
+      headers?: Record<string, string>;
+    };
+  };
+  const code = axiosError?.response?.data?.code ?? ApiErrorCode.Unknown;
+  const message =
+    axiosError?.response?.data?.message ?? "Unexpected error occurred";
+  const retryAfterSeconds = parseRetryAfterSeconds(
+    axiosError?.response?.headers,
+  );
+  return { success: false, message, code, retryAfterSeconds };
+}
 
 /**
  * Server Action đăng nhập.
- *
- * Client gọi action này thay vì gọi trực tiếp service để tránh lộ
- * endpoint /api/v1/auth/login ra network tab của browser.
- *
- * Vì request đi qua Next.js server, Set-Cookie từ BE không tự forward tới
- * browser. Action tự set lại ba HttpOnly cookies khớp với tên BE đọc vào:
- *   - access_token  — lấy từ JSON body
- *   - refresh_token — lấy từ JSON body
- *   - session_id    — lấy từ Set-Cookie header của BE response
  */
 export async function loginAction(
   payload: LoginPayload,
@@ -35,74 +60,61 @@ export async function loginAction(
 
     if (response.code === ApiErrorCode.Success && response.data) {
       const { access_token, refresh_token, session_id } = response.data;
-      const refreshMaxAge = payload.remember_me
-        ? REMEMBER_ME_MAX_AGE
-        : undefined;
-      const isProduction = process.env.NODE_ENV === "production";
-      const domain = getCookieDomain(process.env.AUTH_COOKIE_DOMAIN);
-      const sameSite = "lax";
-
-      const cookieStore = await cookies();
-
-      // Cookies are non-HttpOnly so that client-side JS can read them and attach
-      // them as Authorization / X-Refresh-Token / X-Session-Id headers.
-      cookieStore.set(
-        "access_token",
-        access_token,
-        buildCookieOptions({ sameSite, isProduction, domain }),
-      );
-
-      cookieStore.set(
-        "refresh_token",
-        refresh_token,
-        buildCookieOptions({
-          sameSite,
-          isProduction,
-          domain,
-          maxAge: refreshMaxAge,
-        }),
-      );
-
-      if (session_id) {
-        cookieStore.set(
-          "session_id",
-          session_id,
-          buildCookieOptions({
-            sameSite,
-            isProduction,
-            domain,
-            maxAge: refreshMaxAge,
-          }),
-        );
-      }
-
+      await setAuthSessionCookies({
+        tokens: { access_token, refresh_token, session_id },
+        rememberMe: payload.remember_me,
+      });
       return { success: true, message: response.message, code: response.code };
     }
 
     return { success: false, message: response.message, code: response.code };
   } catch (error: unknown) {
-    const axiosError = error as {
-      response?: { data?: { code?: number; message?: string } };
-    };
-    const code = axiosError?.response?.data?.code ?? ApiErrorCode.Unknown;
-    const message =
-      axiosError?.response?.data?.message ?? "Unexpected error occurred";
-    return { success: false, message, code };
+    return mapAxiosAuthError(error);
   }
 }
 
 /**
- * Server Action đăng ký tài khoản.
- * Placeholder — sẽ gọi signupService khi triển khai đầy đủ.
+ * Server Action đăng ký — 201 không set cookie; user xác nhận qua email.
  */
-export async function signupAction(
-  payload: SignupPayload,
+export async function registerAction(
+  payload: RegisterPayload,
 ): Promise<AuthActionResult> {
-  void payload;
-  // TODO: implement signupService và gọi tại đây
-  return {
-    success: false,
-    message: "Signup not implemented yet",
-    code: ApiErrorCode.Unknown,
-  };
+  try {
+    const { data: response } = await registerService(payload);
+
+    if (response.code === ApiErrorCode.Success) {
+      return { success: true, message: response.message, code: response.code };
+    }
+
+    return { success: false, message: response.message, code: response.code };
+  } catch (error: unknown) {
+    return mapAxiosAuthError(error);
+  }
+}
+
+/** @deprecated Use registerAction */
+export const signupAction = registerAction;
+
+/**
+ * Server Action xác nhận email — set cookie giống login và trả tokens.
+ */
+export async function confirmAction(
+  payload: ConfirmPayload,
+): Promise<AuthActionResult> {
+  try {
+    const { data: response } = await confirmService(payload);
+
+    if (response.code === ApiErrorCode.Success && response.data) {
+      const { access_token, refresh_token, session_id } = response.data;
+      await setAuthSessionCookies({
+        tokens: { access_token, refresh_token, session_id },
+        rememberMe: false,
+      });
+      return { success: true, message: response.message, code: response.code };
+    }
+
+    return { success: false, message: response.message, code: response.code };
+  } catch (error: unknown) {
+    return mapAxiosAuthError(error);
+  }
 }

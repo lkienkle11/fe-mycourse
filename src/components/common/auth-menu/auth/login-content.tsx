@@ -2,9 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LockKeyhole, LockKeyholeOpen, Mail } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import { registerAction } from "@/actions/auth";
 import { Button } from "@/components/ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field } from "@/components/ui/field";
@@ -18,22 +19,28 @@ import { useAuthStore, useGetMe } from "@/hooks";
 import { Link, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { type LoginFormValues, loginSchema } from "@/schema/auth";
+import { ApiErrorCode } from "@/types/api";
 import { AuthSocialLogin } from "../auth-social-login";
 import { handleAuthSubmit } from "./auth-form-handler";
 
 export function LoginContent({ className }: { className?: string }) {
   const t = useTranslations("auth");
+  const locale = useLocale();
   const router = useRouter();
   const { openSignupModal, closeAllModals, nextLink } = useAuthStore();
   const { mutateMe } = useGetMe();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+  const [resendPending, setResendPending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     setValue,
     control,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -52,6 +59,8 @@ export function LoginContent({ className }: { className?: string }) {
 
   const onSubmit = async (values: LoginFormValues) => {
     setServerError(null);
+    setEmailNotConfirmed(false);
+    setResendMessage(null);
     const result = await handleAuthSubmit("login", values);
     if (result.success) {
       mutateMe();
@@ -59,8 +68,31 @@ export function LoginContent({ className }: { className?: string }) {
       if (nextLink) {
         router.push(nextLink);
       }
+    } else if (result.code === ApiErrorCode.EmailNotConfirmed) {
+      setEmailNotConfirmed(true);
+      setServerError(t("errors.emailNotConfirmed"));
     } else {
       setServerError(result.message);
+    }
+  };
+
+  const onResendConfirmation = async () => {
+    const { email, password } = getValues();
+    if (!email || !password) return;
+    setResendPending(true);
+    setResendMessage(null);
+    const displayName = email.split("@")[0] || "User";
+    const result = await registerAction({
+      email,
+      password,
+      display_name: displayName,
+      locale,
+    });
+    setResendPending(false);
+    if (result.success) {
+      setResendMessage(t("resend.success"));
+    } else {
+      setResendMessage(t("errors.generic"));
     }
   };
 
@@ -149,6 +181,23 @@ export function LoginContent({ className }: { className?: string }) {
           <p className="text-xs text-destructive text-center px-1">
             {serverError}
           </p>
+        ) : null}
+
+        {emailNotConfirmed ? (
+          <div className="flex flex-col items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={resendPending}
+              onClick={() => void onResendConfirmation()}
+              className="w-full h-10 rounded-full text-sm"
+            >
+              {resendPending ? "..." : t("resend.cta")}
+            </Button>
+            {resendMessage ? (
+              <p className="text-xs text-center text-black/70">{resendMessage}</p>
+            ) : null}
+          </div>
         ) : null}
 
         <Button

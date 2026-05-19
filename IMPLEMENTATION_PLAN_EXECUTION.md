@@ -53,5 +53,10 @@
 - `docs/logic-flow.md`
 - `docs/screens.md`
 
+## Register / confirm (2026-05-19)
+- BE: `locale` on register; email link `/{locale}/confirm-email?token=`
+- FE: `registerAction`, `confirmAction`, confirm page, signup pending-email UX, login resend CTA
+- See `.context/session_summary_2026-05-19_120000.md` and follow-up handoff
+
 ## Notes
-- This execution is documentation-only (no source code implementation changes).
+- Prior phase (discovery) was documentation-only.

@@ -27,7 +27,13 @@ export function LoginSignupPopup({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogTitle />
-      <DialogContent className={cn("w-full max-w-200 p-0", contentClassName)}>
+      <DialogContent
+        className={cn(
+          "w-full max-w-200 p-0",
+          "max-lg:max-w-[calc(100%-2rem)] max-lg:max-h-[90dvh] max-lg:overflow-y-auto",
+          contentClassName,
+        )}
+      >
         <LoginSignupLayout type={authAction as "login" | "signup"}>
           {authAction === "login" ? <LoginContent /> : <SignupContent />}
         </LoginSignupLayout>

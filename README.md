@@ -146,7 +146,7 @@ LoginContent (client)
 | `src/schema/auth/auth.ts` | Zod schemas: `loginSchema`, `signupSchema` + inferred types |
 | `src/api/callers/auth/auth.ts` | `loginService(payload)` — wraps `apiPost` |
 | `src/actions/auth/auth.ts` | `loginAction(payload)` Server Action — reads tokens from JSON body, sets non-HttpOnly cookies |
-| `src/lib/utils/*.ts` | `cn`, `url`, `react`, `user`, `cookie` modules + `index.ts` barrel `@/lib/utils` |
+| `src/lib/utils/*.ts` | `cn`, `url`, `react`, `user`, `cookie` in barrel `@/lib/utils`; `auth-session.ts` is server-only (import `@/lib/utils/auth-session` in actions, not from barrel) |
 | `src/components/…/auth-form-handler.ts` | `handleAuthSubmit(type, payload)` — shared by LoginContent & SignupContent |
 | `src/components/…/login-content.tsx` | react-hook-form + zodResolver + loginAction |
 | `src/components/…/signup-content.tsx` | react-hook-form + zodResolver + signupAction |

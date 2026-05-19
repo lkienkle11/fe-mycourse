@@ -17,3 +17,6 @@ export {
   getCookieValue,
   setCookieValue,
 } from "./cookie";
+
+// Server-only helpers (e.g. setAuthSessionCookies) live in ./auth-session.ts —
+// import from "@/lib/utils/auth-session" in Server Actions only, not from this barrel.
