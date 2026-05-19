@@ -23,8 +23,15 @@ export function LoginSignupLayout({
   if (type === "none") return null;
 
   return (
-    <div className={cn("flex justify-center items-center gap-0", className)}>
-      <div className="w-1/2 basis-1/2 relative">
+    <div
+      className={cn(
+        "flex justify-center items-center gap-0",
+        "max-lg:flex-col max-lg:items-stretch",
+        className,
+      )}
+    >
+      {/* Desktop (lg+): unchanged two-column hero */}
+      <div className="w-1/2 basis-1/2 relative h-full max-lg:hidden">
         <div className="absolute flex justify-center items-center gap-2 left-3 bottom-6">
           <div className="w-[40px] h-[40px] rounded-full bg-white">
             <Image
@@ -55,10 +62,17 @@ export function LoginSignupLayout({
         <Image
           alt={type === "login" ? "Login background" : "Signup background"}
           src={type === "login" ? bgLogin : bgSignup}
-          className="rounded-tl-lg rounded-bl-lg"
+          className="rounded-tl-lg rounded-bl-lg h-full"
         />
       </div>
-      <div className="w-1/2 basis-1/2 h-full space-y-2.5 flex flex-col p-6 py-0 justify-center">
+
+      {/* Form: full width below lg; desktop sizes unchanged at lg+ */}
+      <div
+        className={cn(
+          "w-1/2 basis-1/2 h-full space-y-2.5 flex flex-col p-6 py-0.5 justify-center",
+          "max-lg:w-full max-lg:basis-full max-lg:p-4 max-lg:py-4",
+        )}
+      >
         <div className="flex items-center justify-start gap-1.5 cursor-default select-none">
           <MainLogo />
           <h1 className="text-xl font-bold bg-black bg-clip-text text-transparent">

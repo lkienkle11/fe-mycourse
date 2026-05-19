@@ -81,7 +81,36 @@
     "validation": {
       "email": "Please enter a valid email address",
       "password": "Please enter a valid password",
+      "passwordWeak": "Password must be at least 8 characters with uppercase, lowercase, and a special character",
       "fullName": "Please enter a valid full name"
+    },
+    "passwordRules": {
+      "hint": "At least 8 characters with uppercase, lowercase, and a special character"
+    },
+    "registerSuccess": {
+      "title": "Check your inbox",
+      "description": "We sent a confirmation email to {email}. Click the link in the email to finish signing up.",
+      "backToLogin": "Back to login"
+    },
+    "confirm": {
+      "pageTitle": "Confirm email",
+      "verifying": "Verifying your email…",
+      "success": "Email confirmed! Redirecting…",
+      "invalidToken": "This confirmation link is invalid or has expired."
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "emailAlreadyExists": "This email is already registered.",
+      "weakPassword": "Password is not strong enough.",
+      "registrationAbandoned": "Registration failed due to too many emails. Please sign up again.",
+      "rateLimited": "Too many confirmation emails sent. Please try again later.",
+      "emailSendFailed": "Could not send confirmation email. Please try again.",
+      "emailNotConfirmed": "Your email is not confirmed yet. Please check your inbox.",
+      "retryIn": "(retry in {seconds}s)"
+    },
+    "resend": {
+      "cta": "Resend confirmation email",
+      "success": "Confirmation email sent. Please check your inbox."
     }
   },
   "homepage": {

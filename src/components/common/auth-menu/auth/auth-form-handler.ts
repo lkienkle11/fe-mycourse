@@ -1,23 +1,13 @@
 "use client";
 
-import { loginAction, signupAction } from "@/actions/auth";
+import { loginAction, registerAction } from "@/actions/auth";
+import type { AuthActionResult } from "@/actions/auth";
 import type { LoginFormValues, SignupFormValues } from "@/schema/auth";
 
-export interface AuthActionResult {
-  success: boolean;
-  message: string;
-  code: number;
-}
+export type { AuthActionResult };
 
 /**
  * Hàm xử lý submit dùng chung cho cả form đăng nhập và đăng ký.
- *
- * Sử dụng `type` để phân biệt action cần gọi:
- * - "login"  → loginAction
- * - "signup" → signupAction
- *
- * Cả hai component LoginContent và SignupContent đều dùng hàm này
- * thay vì gọi trực tiếp server action, giữ cho component gọn.
  */
 export async function handleAuthSubmit(
   type: "login",
@@ -26,10 +16,12 @@ export async function handleAuthSubmit(
 export async function handleAuthSubmit(
   type: "signup",
   payload: SignupFormValues,
+  locale: string,
 ): Promise<AuthActionResult>;
 export async function handleAuthSubmit(
   type: "login" | "signup",
   payload: LoginFormValues | SignupFormValues,
+  locale?: string,
 ): Promise<AuthActionResult> {
   if (type === "login") {
     const { email, password, rememberMe } = payload as LoginFormValues;
@@ -38,7 +30,12 @@ export async function handleAuthSubmit(
 
   if (type === "signup") {
     const { email, password, fullName } = payload as SignupFormValues;
-    return signupAction({ email, password, display_name: fullName });
+    return registerAction({
+      email,
+      password,
+      display_name: fullName,
+      locale: locale ?? "vi",
+    });
   }
 
   throw new Error(`Unknown auth type: ${type}`);
