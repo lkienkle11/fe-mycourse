@@ -1,6 +1,6 @@
 # Execution Flows (`fe`)
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-19 (stream events flow added)._
 
 
 This document traces the major user-visible and technical flows in the MyCourse frontend. Flows are derived from the **GitNexus** process index for repo **`fe-mycourse`** (12 tracked execution chains across the **Auth** and **Api** clusters) and from direct source inspection. Regenerate the graph after large UI changes with `npx gitnexus analyze --force` from the **fe-mycourse** repo root.
@@ -338,7 +338,51 @@ const { authAction, openLoginModal, openSignupModal, closeAllModals, nextLink } 
 
 ---
 
-## 8. Search Flow (Stub)
+## 8. Stream Events Lifecycle
+
+**Goal:** Ingest realtime JSON envelopes from multiple transports into one typed store and notify React hooks.
+
+**Bootstrap:** `AppProviders` → `EventsStreamProvider` → `startStreamEventTransports()` on mount (cleanup on unmount).
+
+### 8.1 Sequence (inbound)
+
+```mermaid
+sequenceDiagram
+  participant T as Transport (SSE/WS/BC/gRPC)
+  participant P as publishRawStreamPayload
+  participant N as normalizeInboundEnvelope
+  participant Z as useStreamEventsStore
+  participant S as subscribeStreamEvents
+  participant H as useStreamEvent / use*StreamEvent
+
+  T->>P: raw JSON (+ defaultSource)
+  P->>N: Zod envelope + payload map
+  alt valid
+    N->>Z: push(StreamEvent)
+    Z->>S: emitStreamEventToSubscribers
+    S->>H: handler(event)
+  else invalid
+    N-->>P: null (dropped)
+  end
+```
+
+### 8.2 WebSocket ping → pong
+
+When the server sends `{ type: "ping", ... }`, `socket-transport.ts` automatically replies with `postSocketOutbound({ type: "pong", payload: { id } })` after the event is normalized. SSE only accepts inbound `pong` (no client send on SSE wire).
+
+### 8.3 Outbound examples
+
+| Channel | API | Typical use |
+|---------|-----|-------------|
+| Broadcast | `useSendBroadcastOutbound()` / `postBroadcastOutbound` | Logout sync, cross-tab confirm |
+| WebSocket | `postSocketOutbound` | Client ping, app messages |
+| SSE | — | No outbound on SSE connection |
+
+Detail: [`delivery.md`](./delivery.md).
+
+---
+
+## 9. Search Flow (Stub)
 
 GitNexus tracks three `HandleSearch` processes:
 
@@ -357,5 +401,6 @@ These trace the `SearchBar` component (`src/components/shared/search-bar.tsx`) r
 | Component structure and routes | [`docs/screens.md`](screens.md) |
 | Folder layout and clusters | [`docs/architecture.md`](architecture.md) |
 | Production env vars and cookies | [`docs/deploy.md`](deploy.md) |
+| Realtime channels (WS, SSE, …) | [`docs/delivery.md`](delivery.md) |
 | Go API token endpoints | [`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md) |
 | Full README with code examples | [`README.md`](../README.md) |

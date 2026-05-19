@@ -28,6 +28,8 @@
     "services": "@/services",
     "schema": "@/schema",
     "context": "@/context",
+    "events": "@/events",
+    "config": "@/config",
     "public": "@public"
   },
   "menuColor": "default",

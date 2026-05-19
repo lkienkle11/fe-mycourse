@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-19 (Events / stream transports cluster)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. It aligns with the GitNexus index for repo **`fe-mycourse`** (order-of-magnitude: **~136** source files, **~589** symbols, **~1,091** relationships, **~13** graph clusters, **~18** execution flows; top clusters **Ui**, **Api**, **Auth** — refresh with `npx gitnexus analyze` from this repo root).
@@ -20,7 +20,9 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` |
 | Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup) for hooks under the provider; `useAuth` sets its own SWR options |
 | HTTP client | Axios | 1.x | Shared instance with request/response interceptors |
-| Global state | Zustand | 5.x | Provider-free stores |
+| Global state | Zustand | 5.x | Provider-free stores (auth, me, stream event log) |
+| Realtime (client) | BroadcastChannel, SSE, WebSocket, NDJSON fetch | — | See [`docs/delivery.md`](./delivery.md) |
+| Stream libraries | `reconnecting-websocket`, `@microsoft/fetch-event-source` | 4.x / 2.x | Transports in `src/events/` |
 | Toasts | Sonner | 2.x | Mounted in root layout, `position: "top-right"` |
 | Cookies (client) | js-cookie | 3.x | Read/write in browser context; `next/headers` used server-side |
 | Icons | lucide-react | 1.x | |
@@ -279,7 +281,18 @@ Auth modal state (`authAction: "none" | "login" | "signup" | "logout"`) and API 
 
 Current user slice (`useMeStore`) is synced from SWR inside `AppProviders` via `useSyncMeFromAuth` (`src/hooks/auth/use-auth-store.ts`), invoked from a small `MeSwrSync` component rendered **under** `SWRConfig` alongside `children` (see `src/components/providers/app-providers.tsx`). Server Components that need to influence client state should pass props into a client boundary and call `useMeStore.setState` / `useAuthStore.setState` there (no separate RSC seed utilities in-repo).
 
-### 7. API Response Envelope
+### 7. Unified Stream Event Pipeline
+
+Realtime messages from BroadcastChannel, SSE, WebSocket, and NDJSON gRPC share one ingest path:
+
+1. Transport parses raw JSON (or string on BroadcastChannel).
+2. `normalizeInboundEnvelope` validates envelope + payload (Zod).
+3. `useStreamEventsStore.push` keeps `last` + rolling `log` (max 100).
+4. `subscribeStreamEvents` notifies hooks (`useStreamEvent`, `useWebSocketStreamEvent`, …).
+
+`EventsStreamProvider` starts transports on mount when env/config allows. See [`delivery.md`](./delivery.md) and `src/events/`.
+
+### 8. API Response Envelope
 
 All Go API endpoints return a standard `{ code, message, data }` envelope (mirroring `be/pkg/response/response.go`). `code === 0` means success; any other value is an application error. The `ApiErrorCode` constant map in `src/types/api.ts` mirrors `be/pkg/errcode/codes.go`.
 
@@ -292,6 +305,9 @@ All Go API endpoints return a standard `{ code, message, data }` envelope (mirro
 | `NEXT_PUBLIC_API_URL` | **Yes** | Build + runtime | Base URL of the Go API (e.g. `https://api.yourdomain.net`). Inlined at `next build`. |
 | `AUTH_COOKIE_DOMAIN` | Prod only | Server runtime | Parent domain for auth cookies when FE and API are on separate subdomains (e.g. `yourdomain.net`). Passed to `getCookieDomain()` → included in `buildCookieOptions()`. Leave unset on localhost. |
 | `API_URL` | Fallback | Server runtime | Server-side fallback for `NEXT_PUBLIC_API_URL` in pure SSR contexts (not prefixed, so never inlined into client bundle). |
+| `NEXT_PUBLIC_STREAM_SSE_URL` | No | Build | SSE endpoint; empty disables SSE transport |
+| `NEXT_PUBLIC_STREAM_WS_URL` | No | Build | WebSocket URL (`wss://…`); empty disables WS |
+| `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | Build | Base URL for NDJSON stream (`/v1/events/stream` appended) |
 
 ---
 

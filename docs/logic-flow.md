@@ -1,6 +1,6 @@
 # Logic Flow
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-19 (stream ingest + hook handler ref)._
 
 
 Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifecycle, data fetching, and form submission patterns.
@@ -210,3 +210,47 @@ Components can subscribe to the global error store:
   const { lastError, errors, clear } = useApiError()
   → show toast / banner / error overlay based on lastError
 ```
+
+---
+
+## 9. Stream Event Ingest Flow
+
+```
+EventsStreamProvider mounts (client)
+  ↓
+startStreamEventTransports()
+  ├─ broadcast: ensureBroadcastChannel + onmessage
+  ├─ sse: fetchEventSource(url) if NEXT_PUBLIC_STREAM_SSE_URL set
+  ├─ websocket: ReconnectingWebSocket if NEXT_PUBLIC_STREAM_WS_URL set
+  └─ gRPC: fetch NDJSON GET if NEXT_PUBLIC_STREAM_GRPC_BASE_URL set
+  ↓
+Transport receives raw message
+  ↓
+publishRawStreamPayload(raw, defaultSource?)
+  ↓
+normalizeInboundEnvelope(raw, { defaultSource, nextSeq })
+  ├─ inboundSchema (source?, type, payload, metadata?)
+  ├─ buildMetadata → timestamp, seq, code (makeStreamEventCode)
+  └─ buildTypedStreamEvent → Zod payload per inboundPayloadBySource[source][type]
+  ↓
+If null → stop (invalid / unknown type)
+  ↓
+useStreamEventsStore.push(event)
+  ↓
+emitStreamEventToSubscribers(event)
+  ↓
+useStreamEvent / useWebSocketStreamEvent / … filters by source/type → handler
+  (handler kept fresh via useEffect + ref inside useStreamEvent only)
+
+WebSocket-only branch after publish:
+  if event.type === "ping" → postSocketOutbound({ type: "pong", payload: { id } })
+```
+
+Allowed inbound types by source (see `src/events/core/normalize-inbound.ts`):
+
+| source | types |
+|--------|--------|
+| `broadcast` | `logout`, `confirm_success` |
+| `sse` | `notification`, `hello`, `pong` |
+| `websocket` | `notification`, `hello`, `ping`, `pong` |
+| `gRPC` | `notification`, `hello` |
