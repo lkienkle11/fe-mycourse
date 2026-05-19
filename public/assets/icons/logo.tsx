@@ -19,6 +19,7 @@ export function MainLogo({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      aria-hidden="true"
     >
       <g clipPath={`url(#${clipPathId})`}>
         <rect width="43" height="43" rx="21.5" fill={color} />

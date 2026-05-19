@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { useBroadcastStreamEvent } from "@/hooks/events/broadcast/use-broadcast-stream-event";
 import {
   consumePendingAuthTabReload,
   markPendingAuthTabReload,
 } from "@/lib/auth/pending-tab-auth-sync";
-import { useBroadcastStreamEvent } from "@/hooks/events/broadcast/use-broadcast-stream-event";
 
 /**
  * Background tabs: on confirm_success, set a sessionStorage flag.

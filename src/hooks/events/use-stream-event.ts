@@ -3,19 +3,20 @@
 import { useEffect, useRef } from "react";
 
 import {
-  subscribeStreamEvents,
   type StreamEventFilter,
+  subscribeStreamEvents,
 } from "@/events/core/subscribe";
 import type { StreamEvent } from "@/types/events";
 
 export type { StreamEventFilter };
 
-export type StreamEventListenerRegistration<E extends StreamEvent = StreamEvent> =
-  {
-    /** Nhỏ chạy trước. Mặc định `0`. */
-    order?: number;
-    handler: (event: E) => void;
-  };
+export type StreamEventListenerRegistration<
+  E extends StreamEvent = StreamEvent,
+> = {
+  /** Nhỏ chạy trước. Mặc định `0`. */
+  order?: number;
+  handler: (event: E) => void;
+};
 
 /** Một handler, hoặc nhiều handler có `order` cho cùng bộ lọc. */
 export type StreamEventSubscribeInput<E extends StreamEvent = StreamEvent> =

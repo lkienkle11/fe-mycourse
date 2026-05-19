@@ -28,6 +28,7 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | **Home page** — renders `HomePage` |
 | `/{locale}/auth/login` | (future) | Login page (planned, not yet implemented) |
 | `/{locale}/confirm-email` | Active | Email confirmation page (`ConfirmEmailContent` → `confirmAction`) |
+| `/{locale}/logout` | Active | Logout page (`LogoutContent` → `logoutAction`, cross-tab `broadcast:logout`) |
 
 > Route constants are defined in `src/constants/route.ts` for future auth-route constants. All authentication today is **modal-based** from the header.
 
@@ -123,7 +124,7 @@ Header
 
 **i18n:** Namespace `commonFooter` in `src/messages/en.json` and `src/messages/vi.json` (`copyright`, `brand`, column link labels, `navCourses` / `navDesign` / `navCreative` for `aria-label`s).
 
-**Note:** `WebLayout` always renders `Footer` today. Add a `hasFooter` prop later if the shell needs to hide it.
+**Note:** `WebLayout` always renders `Footer`.
 
 ### Locale Switcher
 

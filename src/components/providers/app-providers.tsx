@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { SWRConfig } from "swr";
 import { AuthConfirmTabSync } from "@/components/providers/auth-confirm-tab-sync";
+import { AuthLogoutTabSync } from "@/components/providers/auth-logout-tab-sync";
 import { EventsStreamProvider } from "@/events";
 import { useSyncMeFromAuth } from "@/hooks/auth";
 
@@ -26,6 +27,7 @@ export function AppProviders({ children }: AppProvidersProps) {
       <EventsStreamProvider>
         <MeSwrSync />
         <AuthConfirmTabSync />
+        <AuthLogoutTabSync />
         {children}
       </EventsStreamProvider>
     </SWRConfig>

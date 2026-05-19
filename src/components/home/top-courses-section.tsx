@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { CourseCard, type CourseType } from "./course-card";
 import { ArrowRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { Button } from "@/components/ui/button";
+import { CourseCard, type CourseType } from "./course-card";
 
 // Mock data based on design
 const TOP_COURSES: CourseType[] = [

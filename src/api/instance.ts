@@ -7,10 +7,10 @@ import axios, {
 import Cookies from "js-cookie";
 import { API_PUBLIC_ROUTES } from "@/constants/api-route";
 import { getCookieValue, isServer, setCookieValue } from "@/lib/utils";
-import { ApiErrorCode } from "@/types/api";
-import type { ApiResponse } from "@/types/api";
-import type { RefreshTokenResponse } from "@/types/auth";
 import { useApiError } from "@/store/api-error-store";
+import type { ApiResponse } from "@/types/api";
+import { ApiErrorCode } from "@/types/api";
+import type { RefreshTokenResponse } from "@/types/auth";
 import { rawPost } from "./raw-http";
 
 const DEFAULT_BASE_URL = "http://localhost:3000/api";

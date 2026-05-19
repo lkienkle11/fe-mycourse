@@ -195,7 +195,9 @@ export function LoginContent({ className }: { className?: string }) {
               {resendPending ? "..." : t("resend.cta")}
             </Button>
             {resendMessage ? (
-              <p className="text-xs text-center text-black/70">{resendMessage}</p>
+              <p className="text-xs text-center text-black/70">
+                {resendMessage}
+              </p>
             ) : null}
           </div>
         ) : null}

@@ -98,6 +98,12 @@
       "success": "Xác thực thành công! Đang chuyển hướng…",
       "invalidToken": "Link xác thực không hợp lệ hoặc đã hết hạn."
     },
+    "logout": {
+      "pageTitle": "Đăng xuất",
+      "loggingOut": "Đang đăng xuất…",
+      "success": "Đã đăng xuất! Đang chuyển hướng…",
+      "error": "Không thể đăng xuất. Vui lòng thử lại."
+    },
     "errors": {
       "generic": "Đã có lỗi xảy ra. Vui lòng thử lại.",
       "emailAlreadyExists": "Email này đã được đăng ký.",

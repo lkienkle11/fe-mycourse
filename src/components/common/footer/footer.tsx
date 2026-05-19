@@ -1,6 +1,6 @@
+import { MainLogo } from "@public/assets/icons";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { MainLogo } from "@public/assets/icons";
 import { FooterSocial } from "./footer-social";
 
 const linkClass =

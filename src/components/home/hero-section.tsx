@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Star, Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { Button } from "@/components/ui/button";
 
 export async function HeroSection() {
   const t = await getTranslations("homepage.hero");
