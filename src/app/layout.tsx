@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { geistMono, gilroy, roboto } from "@/lib/font";
 import { Toaster } from "sonner";
+import { geistMono, gilroy, roboto } from "@/lib/font";
 import "./globals.css";
 
 export const metadata: Metadata = {

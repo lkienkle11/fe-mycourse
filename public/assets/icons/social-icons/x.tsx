@@ -1,4 +1,4 @@
-import { ISvgProps } from "../types";
+import type { ISvgProps } from "../types";
 
 export const XIcon = ({
   color = "#ffffff",

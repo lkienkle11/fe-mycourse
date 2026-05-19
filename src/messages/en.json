@@ -98,6 +98,12 @@
       "success": "Email confirmed! Redirecting…",
       "invalidToken": "This confirmation link is invalid or has expired."
     },
+    "logout": {
+      "pageTitle": "Log out",
+      "loggingOut": "Logging out…",
+      "success": "Logged out! Redirecting…",
+      "error": "Could not log out. Please try again."
+    },
     "errors": {
       "generic": "Something went wrong. Please try again.",
       "emailAlreadyExists": "This email is already registered.",

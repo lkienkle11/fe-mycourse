@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { FacebookMono, InstagramMono, XIcon } from "@public/assets/icons";
+import Link from "next/link";
 
 const socialClass =
   "inline-flex text-zinc-300 transition-opacity hover:opacity-100 opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 rounded-sm";

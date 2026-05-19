@@ -1,7 +1,4 @@
-import type {
-  StreamInboundEventOf,
-  StreamOutboundEventOf,
-} from "../common";
+import type { StreamInboundEventOf, StreamOutboundEventOf } from "../common";
 import type { StreamWebSocketEventMap } from "../payloads";
 
 export type WebSocketStreamEvent = StreamInboundEventOf<

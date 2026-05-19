@@ -1,11 +1,11 @@
+import { MainLogo } from "@public/assets/icons";
+import { ShoppingCart } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { AuthLayout } from "@/components/common/auth-menu";
+import { SearchBar } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { LANGUAGE_OPTIONS } from "@/constants";
-import { MainLogo } from "@public/assets/icons";
-import { getTranslations } from "next-intl/server";
-import { SearchBar } from "@/components/shared";
-import { ShoppingCart } from "lucide-react";
 import { LocaleSwitcher } from "./locale-switcher";
-import { AuthLayout } from "@/components/common/auth-menu";
 
 export const Header = async ({
   switchedLocale,

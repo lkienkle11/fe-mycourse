@@ -103,10 +103,10 @@ export async function registerService(
 export async function confirmService(
   payload: ConfirmPayload,
 ): Promise<{ data: ApiResponse<LoginResponse> }> {
-  const { data } = await apiPost<
-    ApiResponse<LoginResponse>,
-    ConfirmPayload
-  >(API_PUBLIC_ROUTES.auth.confirm, payload);
+  const { data } = await apiPost<ApiResponse<LoginResponse>, ConfirmPayload>(
+    API_PUBLIC_ROUTES.auth.confirm,
+    payload,
+  );
   return { data };
 }
 
@@ -120,6 +120,26 @@ export async function confirmService(
  * Hàm này dùng `apiPost` thông thường — interceptor trong instance.ts sẽ tự
  * gọi hàm này khi phát hiện lỗi 401/403 + header X-Token-Expired.
  */
+/**
+ * Gọi API đăng xuất — revoke session trên BE và clear Set-Cookie.
+ */
+export async function logoutService(
+  refreshToken: string,
+  sessionId: string,
+): Promise<{ data: ApiResponse<null> }> {
+  const { data } = await apiPost<ApiResponse<null>>(
+    API_PUBLIC_ROUTES.auth.logout,
+    null,
+    {
+      headers: {
+        "X-Refresh-Token": refreshToken,
+        "X-Session-Id": sessionId,
+      },
+    },
+  );
+  return { data };
+}
+
 // export async function refreshTokenService(
 //   refreshToken: string,
 //   sessionId: string,

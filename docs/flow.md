@@ -154,6 +154,24 @@ GET /{locale}/confirm-email?token=...
 
 ---
 
+## 2c. Logout Flow
+
+**Goal:** User clicks Logout in `UserMenu` → dedicated page revokes BE session → cookies cleared → redirect home.
+
+```
+GET /{locale}/logout
+  → LogoutContent (client, once)
+    → logoutAction()                     ["use server"]
+      → logoutService                    POST /api/v1/auth/logout (X-Refresh-Token + X-Session-Id)
+      → clearAuthSessionCookies
+    → clearAuthCookiesClient()
+    → mutateMe() + broadcast logout + router.replace("/")
+```
+
+**Other tabs:** `useAuthLogoutTabSync` listens for `broadcast:logout`, clears client cookies, calls `mutateMe()`, then `window.location.reload()`.
+
+---
+
 ## 3. Current User ("me") Loading
 
 **Goal:** Render the correct header chrome (skeleton → `UserMenu` or `AuthButton`) based on session state.

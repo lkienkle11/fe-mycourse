@@ -1,15 +1,15 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Search,
-  Code,
-  Palette,
-  LineChart,
   Briefcase,
   Camera,
+  Code,
+  LineChart,
   Music,
+  Palette,
+  Search,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export async function SearchSection() {
   const t = await getTranslations("homepage.search");

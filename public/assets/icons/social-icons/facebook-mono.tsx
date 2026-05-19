@@ -1,7 +1,7 @@
 "use client";
 
 import { useUniqueId } from "@/lib/utils";
-import { ISvgProps } from "../types";
+import type { ISvgProps } from "../types";
 
 export const FacebookMono = ({
   color = "#ffffff",

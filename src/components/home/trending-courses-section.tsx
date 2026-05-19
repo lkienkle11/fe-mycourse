@@ -1,7 +1,8 @@
-import { CourseCard, type CourseType } from "./course-card";
 import { Flame } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { getTranslations } from "next-intl/server";
+import { Badge } from "@/components/ui/badge";
+import { CourseCard, type CourseType } from "./course-card";
+
 // Mock data based on design
 const TRENDING_COURSES: CourseType[] = [
   {

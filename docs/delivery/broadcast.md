@@ -93,3 +93,5 @@ Zod: `src/events/core/normalize-inbound.ts` (`broadcastLogoutPayload`, `broadcas
 ## Summary
 
 BroadcastChannel is the **lightweight multi-tab bus** for auth/session UX (logout sync, cross-tab confirm). It shares the global `StreamEvent` pipeline with SSE/WebSocket/gRPC.
+
+**Logout:** The tab at `/{locale}/logout` calls `logoutAction`, then `sendBroadcast({ type: "logout", payload: { reason: "user" } })`. `AuthLogoutTabSync` in other tabs runs `clearAuthCookiesClient`, `mutateMe()`, and `window.location.reload()`.
