@@ -1,7 +1,7 @@
 "use client";
 
-import { loginAction, registerAction } from "@/actions/auth";
 import type { AuthActionResult } from "@/actions/auth";
+import { loginAction, registerAction } from "@/actions/auth";
 import type { LoginFormValues, SignupFormValues } from "@/schema/auth";
 
 export type { AuthActionResult };

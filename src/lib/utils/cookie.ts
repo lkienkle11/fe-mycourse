@@ -92,6 +92,28 @@ export async function getCookieValue(name: string): Promise<string | null> {
  *   Only works inside a Server Action or Route Handler (not a pure RSC).
  *   Failures are swallowed silently.
  */
+const AUTH_COOKIE_NAMES = [
+  "access_token",
+  "refresh_token",
+  "session_id",
+] as const;
+
+/**
+ * Xóa auth cookies phía client (tab hiện tại) — mirror clearAuthSessionCookies.
+ */
+export function clearAuthCookiesClient(): void {
+  if (isServer()) return;
+  const isProduction = process.env.NODE_ENV === "production";
+  const domain = getCookieDomain(process.env.AUTH_COOKIE_DOMAIN);
+  for (const name of AUTH_COOKIE_NAMES) {
+    Cookies.remove(name, {
+      path: "/",
+      ...(domain ? { domain } : {}),
+      ...(isProduction ? { secure: true } : {}),
+    });
+  }
+}
+
 export async function setCookieValue(
   name: string,
   value: string,

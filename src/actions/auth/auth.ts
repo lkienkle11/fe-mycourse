@@ -1,16 +1,21 @@
 "use server";
 
-import {
-  confirmService,
-  loginService,
-  registerService,
-} from "@/api/callers/auth";
+import { cookies } from "next/headers";
 import type {
   ConfirmPayload,
   LoginPayload,
   RegisterPayload,
 } from "@/api/callers/auth";
-import { setAuthSessionCookies } from "@/lib/utils/auth-session";
+import {
+  confirmService,
+  loginService,
+  logoutService,
+  registerService,
+} from "@/api/callers/auth";
+import {
+  clearAuthSessionCookies,
+  setAuthSessionCookies,
+} from "@/lib/utils/auth-session";
 import { ApiErrorCode } from "@/types/api";
 
 export interface AuthActionResult {
@@ -21,7 +26,9 @@ export interface AuthActionResult {
   retryAfterSeconds?: number;
 }
 
-function parseRetryAfterSeconds(headers?: Record<string, string>): number | undefined {
+function parseRetryAfterSeconds(
+  headers?: Record<string, string>,
+): number | undefined {
   if (!headers) return undefined;
   const raw =
     headers["retry-after"] ??
@@ -115,6 +122,30 @@ export async function confirmAction(
 
     return { success: false, message: response.message, code: response.code };
   } catch (error: unknown) {
+    return mapAxiosAuthError(error);
+  }
+}
+
+/**
+ * Server Action đăng xuất — revoke session BE và xóa cookie phía server.
+ */
+export async function logoutAction(): Promise<AuthActionResult> {
+  const cookieStore = await cookies();
+  const refreshToken = cookieStore.get("refresh_token")?.value;
+  const sessionId = cookieStore.get("session_id")?.value;
+
+  try {
+    if (refreshToken && sessionId) {
+      await logoutService(refreshToken, sessionId);
+    }
+    await clearAuthSessionCookies();
+    return {
+      success: true,
+      message: "logout_success",
+      code: ApiErrorCode.Success,
+    };
+  } catch (error: unknown) {
+    await clearAuthSessionCookies();
     return mapAxiosAuthError(error);
   }
 }

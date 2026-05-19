@@ -51,3 +51,30 @@ export async function setAuthSessionCookies({
     set("session_id", session_id, refreshMaxAge);
   }
 }
+
+/**
+ * Xóa access_token, refresh_token, session_id — dùng chung cho logout.
+ */
+export async function clearAuthSessionCookies(): Promise<void> {
+  const isProduction = process.env.NODE_ENV === "production";
+  const domain = getCookieDomain(process.env.AUTH_COOKIE_DOMAIN);
+  const sameSite = "lax" as const;
+  const cookieStore = await cookies();
+
+  const remove = (name: string) => {
+    const opts = buildCookieOptions({
+      sameSite,
+      isProduction,
+      domain,
+    });
+    cookieStore.delete({
+      name,
+      path: opts.path,
+      ...(opts.domain ? { domain: opts.domain } : {}),
+    });
+  };
+
+  remove("access_token");
+  remove("refresh_token");
+  remove("session_id");
+}
