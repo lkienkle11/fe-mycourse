@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-19 (stream transport deps)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -27,6 +27,17 @@ All dependencies for the `fe-mycourse` project. Checked against `package.json`.
 |---------|---------|------|
 | `axios` | 1.13.6 | HTTP client — shared `apiInstance` in `src/api/instance.ts` with interceptors for auth header injection and transparent token refresh |
 | `js-cookie` | 3.0.5 | Client-side cookie read/write (used inside `src/lib/utils/cookie.ts` for browser-side token access) |
+
+---
+
+### Realtime stream transports
+
+| Package | Version | Role |
+|---------|---------|------|
+| `reconnecting-websocket` | 4.4.0 | WebSocket client with auto-reconnect — `src/events/socket/socket-transport.ts` |
+| `@microsoft/fetch-event-source` | 2.0.1 | SSE client with abort/reconnect — `src/events/sse/sse-transport.ts` |
+
+Envelope validation uses existing **`zod`** (see `src/events/core/normalize-inbound.ts`). NDJSON gRPC stream uses native **`fetch`** + `ReadableStream` (no extra package).
 
 ---
 
@@ -130,3 +141,4 @@ All Radix primitives are wrapped in `src/components/ui/` following shadcn conven
 5. **Radix primitives**: Always use the wrappers in `src/components/ui/` — do not import Radix primitives directly into feature components.
 6. **Icons**: Always import icons from `lucide-react`. Do not add other icon libraries.
 7. **Toasts**: Use `sonner` (`toast.success`, `toast.error`, etc.) for user-facing notifications.
+8. **Stream events**: Subscribe with `hooks/events/*`; send WS via `postSocketOutbound`, broadcast via `postBroadcastOutbound`. Do not add a second WebSocket/SSE library without updating [`delivery.md`](./delivery.md).

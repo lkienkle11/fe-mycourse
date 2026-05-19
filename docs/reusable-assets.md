@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-19 (stream hooks: useStreamEvent handler ref via useEffect)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -366,9 +366,134 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ---
 
+## Stream events (realtime)
+
+### Asset: StreamEvent / StreamOutboundEvent
+- **Name**: `StreamEvent`, `StreamOutboundEvent`
+- **Type**: Discriminated union (data type)
+- **Path**: `src/types/events/stream-events.ts`
+- **Purpose**: All normalized inbound events and all outbound envelopes across channels.
+- **Scope**: Transports, store, hooks, feature handlers.
+- **Dependencies**: Per-channel types in `broadcast`, `sse`, `socket`, `gRPC`.
+
+### Asset: StreamInboundEventOf / StreamOutboundEventOf
+- **Name**: `StreamInboundEventOf<S, M>`, `StreamOutboundEventOf<S, M>`
+- **Type**: Generic type builder
+- **Path**: `src/types/events/common.ts`
+- **Purpose**: Build channel events from `{ type: Payload }` map without repeating four fields per variant.
+- **Scope**: `src/types/events/*/index.ts`
+- **Dependencies**: `StreamInboundMetadata`, `StreamOutboundMetadata`, `StreamEventSource`.
+
+### Asset: StreamChannelEventMap / StreamWebSocketEventMap / SseInboundEventMap
+- **Name**: Channel payload maps
+- **Type**: Data type maps
+- **Path**: `src/types/events/payloads.ts`
+- **Purpose**: Shared `notification`/`hello`; WS adds `ping`/`pong`; SSE inbound adds `pong` only.
+- **Scope**: SSE, WebSocket, gRPC type aliases.
+- **Dependencies**: `StreamHelloPayload`, `StreamNotificationPayload`, `StreamPingPayload`, `StreamPongPayload`.
+
+### Asset: STREAM_ENV_KEYS / STREAM_EVENTS_LOG_MAX
+- **Name**: `STREAM_ENV_KEYS`, `STREAM_EVENTS_LOG_MAX`
+- **Type**: Constant
+- **Path**: `src/constants/events/index.ts`
+- **Purpose**: Env key names for stream URLs; max events in Zustand log (100).
+- **Scope**: `src/config/events/*`, `stream-events-store.ts`
+- **Dependencies**: none
+
+### Asset: normalizeInboundEnvelope
+- **Name**: `normalizeInboundEnvelope(raw, options)`
+- **Type**: Function
+- **Path**: `src/events/core/normalize-inbound.ts`
+- **Purpose**: Parse unknown JSON → `StreamEvent | null` with Zod per `(source, type)`.
+- **Scope**: `publishRawStreamPayload` only (do not call from UI).
+- **Dependencies**: `zod`, `makeStreamEventCode`, channel Zod schemas.
+
+### Asset: publishRawStreamPayload
+- **Name**: `publishRawStreamPayload(raw, defaultSource?)`
+- **Type**: Function
+- **Path**: `src/events/core/publish.ts`
+- **Purpose**: Normalize → push store → notify subscribers.
+- **Scope**: All transports.
+- **Dependencies**: `normalizeInboundEnvelope`, `useStreamEventsStore`, `emitStreamEventToSubscribers`.
+
+### Asset: subscribeStreamEvents / emitStreamEventToSubscribers
+- **Name**: `subscribeStreamEvents`, `emitStreamEventToSubscribers`
+- **Type**: Function
+- **Path**: `src/events/core/subscribe.ts`
+- **Purpose**: In-process pub/sub after store ingest. Hỗ trợ `{ filter, order, handler }` — nhiều handler cùng key, gọi theo `order` tăng dần (cùng `order` → FIFO đăng ký).
+- **Scope**: `useStreamEvent` hook; có thể gọi trực tiếp ngoài React.
+- **Dependencies**: `StreamEvent`, `StreamEventFilter`.
+
+### Asset: nextStreamOutboundMetadata
+- **Name**: `nextStreamOutboundMetadata()`
+- **Type**: Function
+- **Path**: `src/events/core/outbound-metadata.ts`
+- **Purpose**: `{ timestamp, seq }` for outbound messages (no `code`).
+- **Scope**: `postSocketOutbound`, `postBroadcastOutbound`, hooks.
+- **Dependencies**: `useStreamEventsStore.nextClientSeq`.
+
+### Asset: makeStreamEventCode
+- **Name**: `makeStreamEventCode(source, type)`
+- **Type**: Function
+- **Path**: `src/events/core/event-code.ts`
+- **Purpose**: Build `metadata.code` as `source:type` when missing on inbound.
+- **Scope**: `normalize-inbound.ts`
+- **Dependencies**: none
+
+### Asset: useStreamEventsStore
+- **Name**: `useStreamEventsStore`
+- **Type**: Zustand store
+- **Path**: `src/store/events/stream-events-store.ts`
+- **Purpose**: `clientSeq`, `last`, `log`, `push`, `nextClientSeq`.
+- **Scope**: Publish pipeline, debug selectors.
+- **Dependencies**: `STREAM_EVENTS_LOG_MAX`.
+
+### Asset: useStreamEvent
+- **Name**: `useStreamEvent(filter, input)`
+- **Type**: Hook
+- **Path**: `src/hooks/events/use-stream-event.ts`
+- **Purpose**: Subscribe with optional `source` / `type` filter. `input` = một function, `{ order, handler }`, hoặc mảng nhiều `{ order, handler }` cho cùng filter.
+- **Scope**: Channel-specific hooks (`useSseStreamEvent`, …).
+- **Dependencies**: `subscribeStreamEvents`, `StreamEventSubscribeInput`, `StreamEventListenerRegistration`.
+
+### Asset: useWebSocketStreamEvent / useSseStreamEvent / useGrpcStreamEvent / useBroadcastStreamEvent
+- **Name**: Per-channel listen hooks
+- **Type**: Hook
+- **Path**: `src/hooks/events/{socket,sse,gRPC,broadcast}/`
+- **Purpose**: Typed handler for one channel (+ optional type).
+- **Scope**: Feature components.
+- **Dependencies**: `useStreamEvent`.
+
+### Asset: useSendBroadcastOutbound
+- **Name**: `useSendBroadcastOutbound()`
+- **Type**: Hook
+- **Path**: `src/hooks/events/broadcast/use-send-broadcast-outbound.ts`
+- **Purpose**: Send `BroadcastOutboundEvent` with auto metadata.
+- **Scope**: Cross-tab logout / confirm.
+- **Dependencies**: `postBroadcastOutbound`, `nextStreamOutboundMetadata`.
+
+### Asset: postSocketOutbound / postBroadcastOutbound
+- **Name**: `postSocketOutbound`, `postBroadcastOutbound`
+- **Type**: Function
+- **Path**: `src/events/socket/socket-transport.ts`, `src/events/broadcast/broadcast-transport.ts`
+- **Purpose**: Send outbound JSON on live transport.
+- **Scope**: Hooks, transport auto-pong.
+- **Dependencies**: Channel config, typed outbound events.
+
+### Asset: startStreamEventTransports
+- **Name**: `startStreamEventTransports()`
+- **Type**: Function
+- **Path**: `src/events/registry/start-stream-transports.ts`
+- **Purpose**: Start all enabled transports; returns combined cleanup.
+- **Scope**: `EventsStreamProvider`.
+- **Dependencies**: `startBroadcastTransport`, `startSseTransport`, `startSocketTransport`, `startGrpcNdjsonTransport`.
+
+---
+
 ## Gap Analysis (What Must Be Created Later)
 
 - Reusable permission guard hook (e.g. `useHasPermission(permission: string): boolean`) using `mePermissions` from `useMeStore`.
+- `useSendWebSocketOutbound` hook (mirror broadcast) if many call sites send WS messages.
 - Shared form error display component.
 - Reusable paginated list hook when list endpoints are implemented.
 - Course, lesson, enrollment types and service callers (Phase 02+).

@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-19 (EventsStreamProvider)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -114,7 +114,8 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 
 | Component | File | Description |
 |-----------|------|-------------|
-| `AppProviders` | `app-providers.tsx` | Mounts `SWRConfig` (`revalidateOnFocus: false`, dedup 30 s) + `MeSwrSync` (null-render child that calls `useSyncMeFromAuth`) + `children`. Placed in `[locale]/layout.tsx`. |
+| `AppProviders` | `app-providers.tsx` | Mounts `SWRConfig` (`revalidateOnFocus: false`, dedup 30 s) + `EventsStreamProvider` (starts stream transports) + `MeSwrSync` + `children`. Placed in `[locale]/layout.tsx`. |
+| `EventsStreamProvider` | `src/events/providers/events-stream-provider.tsx` | Client-only; `useEffect` → `startStreamEventTransports()`. Re-exported from `@/events`. |
 
 `MeSwrSync` is an internal null-render component inside `app-providers.tsx` that syncs `useAuth` SWR state → `useMeStore` Zustand store. It has no visible output.
 

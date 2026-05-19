@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-19 (stream hooks ESLint / ref sync)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -106,7 +106,8 @@ Follow the Tailwind CSS recommended order: layout → spacing → sizing → typ
 | State type | Tool | Example |
 |------------|------|---------|
 | Server data (async, cached) | SWR | `useAuth`, `useCourses` |
-| Global UI state (sync, no fetch) | Zustand | `useAuthStore` (modal), `useApiError` (errors) |
+| Global UI state (sync, no fetch) | Zustand | `useAuthStore` (modal), `useApiError` (errors), `useStreamEventsStore` (event log) |
+| Realtime push (multi-transport) | Events pipeline + hooks | `useWebSocketStreamEvent`, `useSseStreamEvent`, … |
 | Local component state | `useState` | Form open/close toggles |
 | URL/navigation state | `useRouter` / `usePathname` | Active nav item highlight |
 
@@ -128,6 +129,91 @@ export const getMeEndpointKey = "/api/v1/me"; // defined once
 import { getMeEndpointKey } from "@/api/callers/auth/auth";
 mutate(getMeEndpointKey);
 ```
+
+---
+
+## 4.1 Stream events
+
+### Listen: channel hooks, not raw socket
+
+```ts
+// ✅ Correct
+import { useWebSocketStreamEvent } from "@/hooks/events/socket";
+useWebSocketStreamEvent("notification", (e) => { /* e is WebSocketStreamEvent */ });
+
+// ❌ Wrong — bypasses normalize + store
+ws.onmessage = (ev) => { /* manual JSON */ };
+```
+
+`handler` may be an inline function — `useStreamEvent` syncs it in `useEffect`. Do **not** assign `ref.current = handler` during render in custom hooks (eslint-plugin-react-hooks).
+
+### Nhiều handler cho cùng một key (`source` + `type`)
+
+Một event có thể có **nhiều function** xử lý. Dùng `order` (số nhỏ chạy trước). Thứ tự áp dụng **toàn app** (mọi component / mọi lần `subscribeStreamEvents`).
+
+**Cách 1 — một hook, mảng handler** (nên `useMemo` mảng để tránh đăng ký lại mỗi render):
+
+```ts
+const handlers = useMemo(
+  () => [
+    { order: 0, handler: (e) => validateNotification(e) },
+    { order: 10, handler: (e) => toast.info(e.payload.title) },
+    { order: 20, handler: (e) => analytics.track(e.metadata.code) },
+  ],
+  [],
+);
+
+useWebSocketStreamEvent("notification", handlers);
+```
+
+**Cách 2 — nhiều component / nhiều hook**, cùng key, `order` khác nhau:
+
+```ts
+// Component A
+useWebSocketStreamEvent("notification", {
+  order: 0,
+  handler: (e) => syncToStore(e),
+});
+
+// Component B
+useWebSocketStreamEvent("notification", {
+  order: 100,
+  handler: (e) => showToast(e),
+});
+```
+
+**Cách 3 — imperative** (ngoài React):
+
+```ts
+import { subscribeStreamEvents } from "@/events";
+
+const unsub = subscribeStreamEvents({
+  filter: { source: "websocket", type: "notification" },
+  order: 5,
+  handler: (event) => { /* ... */ },
+});
+// unsub() khi không cần nữa
+```
+
+### Send: typed outbound + metadata helper
+
+```ts
+import { postSocketOutbound } from "@/events";
+import { nextStreamOutboundMetadata } from "@/events/core/outbound-metadata";
+
+postSocketOutbound({
+  source: "websocket",
+  type: "ping",
+  payload: { id: crypto.randomUUID() },
+  metadata: nextStreamOutboundMetadata(),
+});
+```
+
+### Define new event types
+
+1. Add payload + map entry in `src/types/events/payloads.ts` (or channel-specific `index.ts`).
+2. Add Zod schema to `inboundPayloadBySource` in `normalize-inbound.ts`.
+3. Update the matching `docs/delivery/*.md` type table.
 
 ---
 
