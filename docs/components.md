@@ -71,7 +71,9 @@ Sourced from [shadcn/ui](https://ui.shadcn.com/) backed by Radix UI. All are uns
 | `AuthLayout` | `auth-layout.tsx` | Client | Renders header auth chrome. Shows: loading skeleton → `UserMenu` (authenticated) → `AuthButton` + `LoginSignupPopup` (unauthenticated). Uses `useAuth` SWR hook. |
 | `AuthButton` | `auth-button.tsx` | Client | "Sign In / Sign Up" CTA button. Calls `openLoginModal()` from `useAuthStore`. |
 | `UserMenu` | `user-menu.tsx` | Client | Avatar dropdown for authenticated users. Shows avatar, user name, logout option. |
-| `LoginSignupPopup` | `auth/login-signup-popup.tsx` | Client | Dialog that switches between Login and Signup tabs. Observes `useAuthStore.authAction`. |
+| `LoginSignupPopup` | `auth/login-signup-popup.tsx` | Client | Dialog; `max-lg:` narrower full-width modal, `lg+` keeps `max-w-200`. |
+| `LoginSignupLayout` | `auth/login-signup-layout.tsx` | Client | `lg+` unchanged two-column layout; below `lg` form-only full width. |
+| `AuthConfirmTabSync` | `providers/auth-confirm-tab-sync.tsx` | Client | Reloads background tabs on focus after email confirm elsewhere. |
 | `LoginContent` | `auth/login-content.tsx` | Client | Login form. `react-hook-form` + `zodResolver(loginSchema)`. On submit: calls `handleAuthSubmit("login", values)` then `mutate()` on `useAuth`. |
 | `SignupContent` | `auth/signup-content.tsx` | Client | Signup form. `react-hook-form` + `zodResolver(signupSchema)`. Currently calls placeholder `signupAction`. |
 | `handleAuthSubmit` | `auth/auth-form-handler.ts` | Utility | Shared dispatcher. Routes to `loginAction` or `signupAction` based on action type. |

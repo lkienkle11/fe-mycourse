@@ -27,7 +27,7 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/` | `src/app/page.tsx` | **Locale redirect** → `/vi` (308 Permanent Redirect via `next-intl` navigation) |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | **Home page** — renders `HomePage` |
 | `/{locale}/auth/login` | (future) | Login page (planned, not yet implemented) |
-| `/{locale}/auth/signup` | (future) | Signup page (planned, not yet implemented) |
+| `/{locale}/confirm-email` | Active | Email confirmation page (`ConfirmEmailContent` → `confirmAction`) |
 
 > Route constants are defined in `src/constants/route.ts` for future auth-route constants. All authentication today is **modal-based** from the header.
 
@@ -162,7 +162,7 @@ AuthLayout
       │     → handleAuthSubmit("login", values) → loginAction
       └── SignupContent (auth/signup-content.tsx)
             react-hook-form + signupSchema (Zod)
-            → handleAuthSubmit("signup", values) → signupAction [placeholder]
+            → handleAuthSubmit("signup", values, locale) → registerAction → POST /auth/register
 ```
 
 ### Component tree (authenticated)

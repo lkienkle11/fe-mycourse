@@ -72,6 +72,7 @@ export const config = {
 /[locale]/              → src/app/[locale]/layout.tsx     NextIntlClientProvider + AppProviders
 /[locale]/              → src/app/[locale]/(web)/layout.tsx  Header + main + Footer
 /[locale]/              → src/app/[locale]/(web)/page.tsx    HomePage
+/[locale]/confirm-email → src/app/[locale]/(web)/confirm-email/page.tsx  Email confirm
 ```
 
 ### Route Groups
@@ -95,6 +96,8 @@ src/app/[locale]/
 |-----|-----------|--------|--------|
 | `/vi` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
 | `/en` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
+| `/vi/confirm-email?token=…` | `[locale]/(web)/confirm-email/page.tsx` | `ConfirmEmailContent` | ✅ Implemented |
+| `/en/confirm-email?token=…` | same | same | ✅ Implemented |
 | `/vi/courses` | — | — | 🚧 Planned |
 | `/vi/admin/*` | — | — | 🚧 Planned |
 | `/vi/instructor/*` | — | — | 🚧 Planned |

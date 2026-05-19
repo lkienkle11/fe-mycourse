@@ -18,6 +18,7 @@ _Last audited: 2026-05-15 (GitNexus + source scan)._
 | URL | Notes |
 |---|---|
 | `/{locale}/auth/login` | Planned route, currently auth is modal-based |
-| `/{locale}/auth/signup` | Planned route, currently auth is modal-based |
+| `/{locale}/confirm-email` | Email confirmation (`src/app/[locale]/(web)/confirm-email/page.tsx`) |
+| Signup UI | Modal-only (`SignupContent` in `LoginSignupPopup`), not a dedicated page |
 | `/{locale}/admin/*` | Planned |
 | `/{locale}/instructor/*` | Planned |
