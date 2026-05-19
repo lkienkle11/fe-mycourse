@@ -81,7 +81,36 @@
     "validation": {
       "email": "Vui lòng nhập địa chỉ email hợp lệ",
       "password": "Vui lòng nhập mật khẩu hợp lệ",
+      "passwordWeak": "Mật khẩu cần ít nhất 8 ký tự, gồm chữ hoa, chữ thường và ký tự đặc biệt",
       "fullName": "Vui lòng nhập họ và tên hợp lệ"
+    },
+    "passwordRules": {
+      "hint": "Tối thiểu 8 ký tự, có chữ hoa, chữ thường và ký tự đặc biệt"
+    },
+    "registerSuccess": {
+      "title": "Kiểm tra hộp thư của bạn",
+      "description": "Chúng tôi đã gửi email xác thực tới {email}. Nhấn link trong email để hoàn tất đăng ký.",
+      "backToLogin": "Quay lại đăng nhập"
+    },
+    "confirm": {
+      "pageTitle": "Xác thực email",
+      "verifying": "Đang xác thực email…",
+      "success": "Xác thực thành công! Đang chuyển hướng…",
+      "invalidToken": "Link xác thực không hợp lệ hoặc đã hết hạn."
+    },
+    "errors": {
+      "generic": "Đã có lỗi xảy ra. Vui lòng thử lại.",
+      "emailAlreadyExists": "Email này đã được đăng ký.",
+      "weakPassword": "Mật khẩu không đủ mạnh.",
+      "registrationAbandoned": "Đăng ký thất bại do gửi quá nhiều email. Vui lòng đăng ký lại.",
+      "rateLimited": "Đã gửi quá nhiều email xác thực. Vui lòng thử lại sau.",
+      "emailSendFailed": "Không gửi được email xác thực. Vui lòng thử lại.",
+      "emailNotConfirmed": "Email chưa được xác thực. Vui lòng kiểm tra hộp thư.",
+      "retryIn": "(thử lại sau {seconds}s)"
+    },
+    "resend": {
+      "cta": "Gửi lại email xác thực",
+      "success": "Đã gửi lại email xác thực. Vui lòng kiểm tra hộp thư."
     }
   },
   "homepage": {

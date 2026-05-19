@@ -267,6 +267,8 @@ Auth tokens (`access_token`, `refresh_token`, `session_id`) are stored as **non-
 
 `getCookieValue` / `setCookieValue` in `src/lib/utils/cookie.ts` (re-exported from `src/lib/utils/index.ts` as `@/lib/utils`) transparently switch between `js-cookie` (browser) and `next/headers` (server). This allows the same Axios interceptor logic to run in both RSC/Server Action and browser contexts without code duplication.
 
+`setAuthSessionCookies` lives in `src/lib/utils/auth-session.ts` with `import "server-only"` — it is **excluded** from the `@/lib/utils` barrel so Client Components never pull in `next/headers`. Server Actions import it directly: `@/lib/utils/auth-session`.
+
 ### 4. Token Refresh Mutex (Client Only)
 
 When multiple concurrent client requests are **eligible for silent refresh** (expired access per `X-Token-Expired`, or `401` with no Bearer while refresh cookies exist) simultaneously, only **one** refresh call is issued. All others are queued via a `pendingResolvers` array and receive the new token once the single refresh completes. Server-side requests are isolated per user and do not use this mutex.

@@ -2,8 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LockKeyhole, LockKeyholeOpen, Mail, User } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui";
 import {
@@ -14,14 +14,38 @@ import {
 import { useAuthStore } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { type SignupFormValues, signupSchema } from "@/schema/auth";
+import { ApiErrorCode } from "@/types/api";
 import { AuthSocialLogin } from "../auth-social-login";
 import { handleAuthSubmit } from "./auth-form-handler";
 
+function registerErrorKey(code: number): string {
+  switch (code) {
+    case ApiErrorCode.EmailAlreadyExists:
+      return "errors.emailAlreadyExists";
+    case ApiErrorCode.WeakPassword:
+      return "errors.weakPassword";
+    case ApiErrorCode.RegistrationAbandoned:
+      return "errors.registrationAbandoned";
+    case ApiErrorCode.RegistrationEmailRateLimited:
+      return "errors.rateLimited";
+    case ApiErrorCode.ConfirmationEmailSendFailed:
+      return "errors.emailSendFailed";
+    default:
+      return "errors.generic";
+  }
+}
+
 export function SignupContent({ className }: { className?: string }) {
   const t = useTranslations("auth");
-  const { openLoginModal, closeAllModals } = useAuthStore();
+  const locale = useLocale();
+  const { openLoginModal } = useAuthStore();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [registrationPending, setRegistrationPending] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string>("");
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState<number | null>(
+    null,
+  );
 
   const {
     register,
@@ -36,15 +60,56 @@ export function SignupContent({ className }: { className?: string }) {
     },
   });
 
+  useEffect(() => {
+    if (retryAfterSeconds === null || retryAfterSeconds <= 0) return;
+    const id = window.setInterval(() => {
+      setRetryAfterSeconds((s) => {
+        if (s === null || s <= 1) {
+          window.clearInterval(id);
+          return null;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [retryAfterSeconds]);
+
   const onSubmit = async (values: SignupFormValues) => {
     setServerError(null);
-    const result = await handleAuthSubmit("signup", values);
+    setRetryAfterSeconds(null);
+    const result = await handleAuthSubmit("signup", values, locale);
     if (result.success) {
-      closeAllModals();
+      setPendingEmail(values.email);
+      setRegistrationPending(true);
     } else {
-      setServerError(result.message);
+      if (result.retryAfterSeconds) {
+        setRetryAfterSeconds(result.retryAfterSeconds);
+      }
+      const key = registerErrorKey(result.code);
+      setServerError(t(key as "errors.generic"));
     }
   };
+
+  if (registrationPending) {
+    return (
+      <div className={cn("space-y-4 text-center px-2", className)}>
+        <h3 className="text-lg font-semibold text-black">
+          {t("registerSuccess.title")}
+        </h3>
+        <p className="text-sm text-black/80">
+          {t("registerSuccess.description", { email: pendingEmail })}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => openLoginModal()}
+          className="w-full h-11 rounded-full"
+        >
+          {t("registerSuccess.backToLogin")}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -110,20 +175,27 @@ export function SignupContent({ className }: { className?: string }) {
           </InputGroup>
           {errors.password ? (
             <p className="text-xs text-destructive px-1">
-              {t(errors.password.message as "validation.password")}
+              {t(errors.password.message as "validation.passwordWeak")}
             </p>
-          ) : null}
+          ) : (
+            <p className="text-xs text-black/50 px-1">
+              {t("passwordRules.hint")}
+            </p>
+          )}
         </div>
 
         {serverError ? (
           <p className="text-xs text-destructive text-center px-1">
             {serverError}
+            {retryAfterSeconds !== null && retryAfterSeconds > 0
+              ? ` ${t("errors.retryIn", { seconds: retryAfterSeconds })}`
+              : null}
           </p>
         ) : null}
 
         <Button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || (retryAfterSeconds ?? 0) > 0}
           className="w-full h-11 text-sm font-medium flex items-center justify-center bg-base-primary rounded-full leading-[21px] hover:cursor-pointer hover:brightness-110 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isSubmitting ? "..." : t("register")}

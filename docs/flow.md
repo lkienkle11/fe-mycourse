@@ -77,7 +77,7 @@ Shared dispatcher called by both `LoginContent` and `SignupContent`:
 
 ```ts
 handleAuthSubmit("login", loginValues)   // → loginAction
-handleAuthSubmit("signup", signupValues) // → signupAction
+handleAuthSubmit("signup", signupValues, locale) // → registerAction
 ```
 
 **Step 3 — Server Action (`loginAction`)**
@@ -86,12 +86,15 @@ handleAuthSubmit("signup", signupValues) // → signupAction
 
 - Calls `loginService(payload)` which issues `POST /api/v1/auth/login` **from the Next.js server** (not the browser).
 - The Go API returns `{ code, message, data: { access_token, refresh_token, session_id } }`.
-- The action reads the three tokens from the JSON body and writes them as cookies via `next/headers`:
+- The action calls `setAuthSessionCookies` from `src/lib/utils/auth-session.ts` (server-only — **not** imported via `@/lib/utils` barrel, so client bundles stay clean):
 
 ```ts
-cookieStore.set("access_token", access_token, buildCookieOptions({ sameSite: "lax", isProduction, domain }));
-cookieStore.set("refresh_token", refresh_token, buildCookieOptions({ sameSite: "lax", isProduction, domain, maxAge: ... }));
-cookieStore.set("session_id", session_id, buildCookieOptions({ ... }));
+import { setAuthSessionCookies } from "@/lib/utils/auth-session";
+
+await setAuthSessionCookies({
+  tokens: { access_token, refresh_token, session_id },
+  rememberMe: payload.remember_me,
+});
 ```
 
 **Step 4 — Cookie strategy**
@@ -114,33 +117,40 @@ After a successful login, the client calls `mutate()` on the `useAuth` SWR hook.
 
 ---
 
-## 2. Signup Flow
+## 2. Register (Signup) Flow
 
-**Goal:** Create a new user account through the same UX pattern as login.
-
-### Current status
-
-`signupAction` (`src/actions/auth/auth.ts`) is a **placeholder**:
-
-```ts
-export async function signupAction(_payload: SignupPayload): Promise<AuthActionResult> {
-  // TODO: implement signupService and call it here
-  return { success: false, message: "Signup not implemented yet", code: ApiErrorCode.Unknown };
-}
-```
-
-The form (`SignupContent`) is fully wired with `react-hook-form` + `signupSchema`, but the server action does not yet call the API. Implement `signupService` in `src/api/callers/auth/auth.ts` and update the action to complete this flow.
-
-### Expected sequence (once implemented)
+**Goal:** Create a pending user and send a confirmation email — no login until email is confirmed.
 
 ```
-SignupContent (client)
-  → handleAuthSubmit("signup", signupValues)
-    → signupAction(payload)             ["use server"]
-      → signupService(payload)          [POST /api/v1/auth/signup]
-        → apply same cookie strategy as loginAction
-      → mutate() on useAuth SWR
+SignupContent (client, locale from useLocale())
+  → handleAuthSubmit("signup", values, locale)
+    → registerAction(payload)              ["use server"]
+      → registerService(payload)           POST /api/v1/auth/register
+        body: email, password, display_name, locale
+      → 201: no cookies set
+  → UI: registrationPending panel ("check your email"), modal stays open
 ```
+
+**Errors mapped in UI:** `4001`, `4003`, `4009`, `4010` (+ `Retry-After` countdown), `4011`.
+
+**Email link (BE):** `{APP_CLIENT_BASE_URL}/{locale}/confirm-email?token={uuid}` → see §2b.
+
+---
+
+## 2b. Email Confirm Flow
+
+**Goal:** User clicks email link → FE page confirms → session cookies set → redirect home.
+
+```
+GET /{locale}/confirm-email?token=...
+  → ConfirmEmailContent (client, once)
+    → confirmAction({ token })           ["use server"]
+      → confirmService                   POST /api/v1/auth/confirm
+      → setAuthSessionCookies (shared with login)
+    → mutateMe() + broadcast confirm_success + router.replace("/")
+```
+
+**Other tabs:** Background tabs receive `confirm_success` via `BroadcastChannel`. If the tab is hidden, `useAuthConfirmTabSync` sets `sessionStorage` (`mycourse:pending_auth_tab_reload`). When the user focuses that tab, the page reloads so `/me` reflects the new session. The tab that performed confirm does not reload again.
 
 ---
 

@@ -239,14 +239,13 @@ src/constants/
 ```
 src/lib/
 ├── utils/                  # Shared helper functions — import as @/lib/utils
-│   ├── index.ts            # Barrel: re-exports all utils
+│   ├── index.ts            # Barrel: client-safe utils only (cn, url, cookie, …)
 │   ├── cn.ts               # cn() — clsx + tailwind-merge class combiner
 │   ├── url.ts              # buildQueryParams() — query string builder
 │   ├── react.ts            # useUniqueId() — stable ID generator for accessibility
 │   ├── user.ts             # pickCharacter() — avatar initial picker
-│   └── cookie.ts           # isomorphic getCookieValue / setCookieValue
-│                           # buildCookieOptions — constructs cookie attributes
-│                           # getCookieDomain — reads AUTH_COOKIE_DOMAIN env
+│   ├── cookie.ts           # isomorphic getCookieValue / setCookieValue; buildCookieOptions
+│   └── auth-session.ts     # SERVER ONLY — setAuthSessionCookies (import directly, not via barrel)
 ├── font.ts                 # next/font definitions: Roboto, Gilroy, GeistMono
 └── http.ts                 # Placeholder for future HTTP utilities
 ```

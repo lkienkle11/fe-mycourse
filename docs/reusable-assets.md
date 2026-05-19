@@ -100,7 +100,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant object
 - **Path**: `src/constants/api-route.ts`
 - **Purpose**: All public (unauthenticated) BE API endpoint paths. Prevents scattered hardcoded strings.
-- **Current Entries**: `auth.login`, `auth.signup`, `auth.refresh`.
+- **Current Entries**: `auth.login`, `auth.register`, `auth.confirm`, `auth.refresh`.
 - **Scope**: API callers, `api/instance.ts` token refresh interceptor.
 - **Dependencies**: none.
 
@@ -192,6 +192,20 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `src/actions/auth/auth.ts`, any Server Action that sets auth cookies.
 - **Dependencies**: none.
 - **Note**: `buildHttpOnlyCookieOptions` is deprecated — use `buildCookieOptions` instead.
+
+### Asset: pending-tab-auth-sync / useAuthConfirmTabSync
+- **Path**: `src/lib/auth/pending-tab-auth-sync.ts`, `src/hooks/auth/use-auth-confirm-tab-sync.ts`
+- **Purpose**: Defer page reload on background tabs until `visibilitychange` → `visible` after `confirm_success` broadcast.
+- **Scope**: `AuthConfirmTabSync` in `AppProviders`.
+
+### Asset: setAuthSessionCookies
+- **Name**: `setAuthSessionCookies(input: SetAuthSessionCookiesInput): Promise<void>`
+- **Type**: Server-only utility function
+- **Path**: `src/lib/utils/auth-session.ts` — **not** re-exported from `@/lib/utils` (barrel is client-safe).
+- **Purpose**: Writes `access_token`, `refresh_token`, and `session_id` cookies after login or email confirm. Uses `next/headers` `cookies()`.
+- **Scope**: `src/actions/auth/auth.ts` (`loginAction`, `confirmAction`) only.
+- **Import**: `import { setAuthSessionCookies } from "@/lib/utils/auth-session";`
+- **Dependencies**: `server-only`, `next/headers`, `buildCookieOptions`, `getCookieDomain` from `./cookie`.
 
 ### Asset: getCookieValue / setCookieValue
 - **Name**: `getCookieValue(name): Promise<string | null>`, `setCookieValue(name, value, options?): Promise<void>`
@@ -344,12 +358,12 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Login form's `onSubmit` handler in `login-content.tsx`.
 - **Dependencies**: `loginService`, `buildCookieOptions`, `getCookieDomain`, `next/headers cookies()`.
 
-### Asset: signupAction
-- **Name**: `signupAction(payload: SignupPayload): Promise<AuthActionResult>`
+### Asset: registerAction / confirmAction
+- **Name**: `registerAction`, `confirmAction`, `setAuthSessionCookies`
 - **Type**: Next.js Server Action (`"use server"`)
 - **Path**: `src/actions/auth/auth.ts`
-- **Purpose**: Placeholder — signup not yet implemented. Returns `{ success: false }`.
-- **Scope**: `signup-content.tsx` (placeholder).
+- **Purpose**: Register (201, no cookies) and confirm (tokens + cookies via `setAuthSessionCookies` in `@/lib/utils/auth-session`).
+- **Scope**: `signup-content.tsx`, `confirm-email-content.tsx`, `login-content.tsx` (resend).
 - **Dependencies**: none (yet).
 
 ---

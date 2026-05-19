@@ -346,6 +346,14 @@ const token = getCookieValue("access_token");
 setCookieValue("access_token", newToken, buildCookieOptions({ ... }));
 ```
 
+**Server Actions only** — after login/confirm, set auth cookies via:
+
+```ts
+import { setAuthSessionCookies } from "@/lib/utils/auth-session"; // not from @/lib/utils barrel
+```
+
+`auth-session.ts` uses `next/headers` and `import "server-only"` so it must never be re-exported from the client-safe barrel.
+
 ---
 
 ## 10. Adding New Features Checklist
@@ -354,7 +362,7 @@ Before writing code for a new feature:
 
 - [ ] Read `docs/` — check architecture, flow, components, patterns
 - [ ] Run `npx gitnexus analyze --force` — understand impact
-- [ ] Reuse existing utilities from `src/lib/utils/`, types from `src/types/`, hooks from `src/api/hooks/`
+- [ ] Reuse utilities from `src/lib/utils/` (barrel) or direct paths for server-only files (`auth-session.ts`)
 - [ ] Place server data fetching in `src/api/callers/<domain>/`
 - [ ] Place SWR hooks in `src/api/hooks/<domain>/`
 - [ ] Place Server Actions in `src/actions/<domain>/`

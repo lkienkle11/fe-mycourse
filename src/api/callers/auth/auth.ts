@@ -11,10 +11,18 @@ export interface LoginPayload {
   remember_me: boolean;
 }
 
-export interface SignupPayload {
+export interface RegisterPayload {
   email: string;
   password: string;
   display_name: string;
+  locale: string;
+}
+
+/** @deprecated Use RegisterPayload */
+export type SignupPayload = RegisterPayload;
+
+export interface ConfirmPayload {
+  token: string;
 }
 
 /**
@@ -74,6 +82,32 @@ export async function loginService(payload: LoginPayload): Promise<{
     LoginPayload
   >(API_PUBLIC_ROUTES.auth.login, payload);
   return { data, cookies };
+}
+
+/**
+ * Gọi API đăng ký. BE trả 201, không có token — user xác nhận email trước.
+ */
+export async function registerService(
+  payload: RegisterPayload,
+): Promise<{ data: ApiResponse<null> }> {
+  const { data } = await apiPost<ApiResponse<null>, RegisterPayload>(
+    API_PUBLIC_ROUTES.auth.register,
+    payload,
+  );
+  return { data };
+}
+
+/**
+ * Gọi API xác nhận email — trả token pair giống login.
+ */
+export async function confirmService(
+  payload: ConfirmPayload,
+): Promise<{ data: ApiResponse<LoginResponse> }> {
+  const { data } = await apiPost<
+    ApiResponse<LoginResponse>,
+    ConfirmPayload
+  >(API_PUBLIC_ROUTES.auth.confirm, payload);
+  return { data };
 }
 
 /**
