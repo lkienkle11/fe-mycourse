@@ -102,6 +102,12 @@ HomePage (server)
 ```
 Header
 ├── Logo + site title (getTranslations("home") → t("header.title"))
+├── HeaderBrowseNav (src/components/common/header/browse-nav.tsx)
+│     Client — single module; Tailwind `md:` splits desktop vs mobile
+│     Desktop (md+): NavigationMenu flyout, recursive N-column hover cascade
+│       activeStack[0] = hovered root → column 2 shows its children
+│       activeStack[1] = hovered child → column 3 shows grandchildren, …
+│     Mobile (max-md): Sheet + nested Accordion (MobileMenuItems recurses)
 ├── SearchBar (src/components/shared/search-bar.tsx)
 │     Hidden on mobile (max-lg:hidden), visible lg+
 ├── LocaleSwitcher (src/components/common/header/locale-switcher.tsx)

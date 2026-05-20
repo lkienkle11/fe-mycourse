@@ -117,7 +117,8 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
-| `Header` | `header.tsx` | Server | Top navigation bar. Renders logo, `SearchBar`, `LocaleSwitcher`, `AuthLayout`. |
+| `Header` | `header.tsx` | Server | Top navigation bar. Renders logo, `HeaderBrowseNav`, `SearchBar`, `LocaleSwitcher`, `AuthLayout`. |
+| `HeaderBrowseNav` | `browse-nav.tsx` | Client | Browse mega menu (desktop: N-column hover via `activeStack`) + mobile Sheet/Accordion. Internal helpers: `MenuColumn`, `MobileMenuItems` (recursive). |
 | `LocaleSwitcher` | `locale-switcher.tsx` | Client | Language toggle between `en` and `vi`. Uses `next-intl` navigation. |
 
 ### Footer
