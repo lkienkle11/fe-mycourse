@@ -15,7 +15,7 @@ export const AuthButton = ({ className }: { className?: string }) => {
       <Button
         variant="ghost"
         onClick={() => openLoginModal()}
-        className="rounded-xl border-1 border-object-black/90 text-object-black/90 hover:cursor-pointer transition-all duration-300 px-4 py-2 text-xs leading-4"
+        className="rounded-xl border border-object-black/90 text-object-black/90 hover:cursor-pointer transition-all duration-300 px-4 py-2 text-xs leading-4"
       >
         {t("login")}
       </Button>
