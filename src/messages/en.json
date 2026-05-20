@@ -29,7 +29,27 @@
     }
   },
   "commonHeader": {
-    "title": "MyCourses.io"
+    "title": "MyCourses.io",
+    "browse": {
+      "label": "Browse",
+      "categoriesTitle": "Browse categories",
+      "design": "Design",
+      "designDesc": "All About Design Course",
+      "illustration": "Illustration",
+      "illustrationDesc": "How to be great illustrator",
+      "graphicDesign": "Graphic Design",
+      "graphicDesignDesc": "Make more benefit from design",
+      "uiUxDesign": "UI/UX Design",
+      "uiUxDesignDesc": "Make Design for website and apps",
+      "programming": "Programming",
+      "programmingDesc": "Website and Mobile Programming",
+      "businessMarketing": "Business & Marketing",
+      "businessMarketingDesc": "Business and Marketing Strategies",
+      "photoVideo": "Photo & Video",
+      "photoVideoDesc": "Photography and Video Making",
+      "writing": "Writing",
+      "writingDesc": "Content Writing and Copywriting"
+    }
   },
   "commonFooter": {
     "brand": "MyCourse.io",

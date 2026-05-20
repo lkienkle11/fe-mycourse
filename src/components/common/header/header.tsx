@@ -5,6 +5,7 @@ import { AuthLayout } from "@/components/common/auth-menu";
 import { SearchBar } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { LANGUAGE_OPTIONS } from "@/constants";
+import { HeaderBrowseNav } from "./browse-nav";
 import { LocaleSwitcher } from "./locale-switcher";
 
 export const Header = async ({
@@ -27,6 +28,7 @@ export const Header = async ({
             {t("header.title")}
           </h1>
         </div>
+        <HeaderBrowseNav />
         <SearchBar
           placeholderText={t("search.placeholder")}
           wrapClassName="max-lg:hidden lg:w-100"
