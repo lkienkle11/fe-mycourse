@@ -21,9 +21,9 @@ export const Header = async ({
   return (
     <header className="w-full sticky top-0 z-100 bg-background shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)]">
       <div className="container container-wrap mx-auto xl:px-4 flex w-full items-center justify-between py-4">
-        <div className="flex items-center justify-center gap-1.5 cursor-pointer select-none">
+        <div className="flex items-center justify-center gap-1.5 cursor-pointer select-none max-md:px-2.5">
           <MainLogo />
-          <h1 className="text-xl font-bold bg-black bg-clip-text text-transparent">
+          <h1 className="max-md:hidden text-xl font-bold bg-black bg-clip-text text-transparent">
             {t("header.title")}
           </h1>
         </div>
