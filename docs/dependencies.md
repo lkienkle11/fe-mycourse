@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-05-19 (stream transport deps)._
+_Last audited: 2026-05-20 (Phase 7 — complete shadcn catalog)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -80,18 +80,42 @@ Envelope validation uses existing **`zod`** (see `src/events/core/normalize-inbo
 
 ---
 
-### UI Components (Radix UI primitives)
+### UI Components (Radix / shadcn — **no Base UI**)
 
 | Package | Version | Role |
 |---------|---------|------|
-| `@radix-ui/react-avatar` | ^1.1.11 | Accessible avatar component base |
-| `@radix-ui/react-checkbox` | ^1.3.3 | Accessible checkbox |
-| `@radix-ui/react-dialog` | ^1.1.15 | Accessible dialog / modal (used in `login-signup-popup.tsx`) |
-| `@radix-ui/react-dropdown-menu` | ^2.1.16 | Accessible dropdown menu (used in `user-menu.tsx`) |
-| `@radix-ui/react-separator` | ^1.1.8 | Visual separator |
-| `@radix-ui/react-slot` | ^1.2.4 | Composition primitive — `asChild` prop pattern in `Button` component |
+| `radix-ui` | ^1.4.3 | Unified Radix package for shadcn v4 `radix-nova` components (`select`, `popover`, `sidebar`, etc.) |
+| `@radix-ui/react-avatar` | ^1.1.11 | Avatar (legacy import path; pre-batch components) |
+| `@radix-ui/react-checkbox` | ^1.3.3 | Checkbox |
+| `@radix-ui/react-dialog` | ^1.1.15 | Dialog / modal (`login-signup-popup.tsx`) |
+| `@radix-ui/react-dropdown-menu` | ^2.1.16 | Dropdown menu (`user-menu.tsx`) |
+| `@radix-ui/react-separator` | ^1.1.8 | Separator (legacy; new `separator.tsx` uses `radix-ui`) |
+| `@radix-ui/react-slot` | ^1.2.4 | `asChild` composition |
+| `vaul` | ^1.1.2 | Drawer primitive |
+| `react-day-picker` | ^10.0.1 | Calendar / date picker grid |
+| `date-fns` | ^4.2.1 | Date utilities (calendar peer) |
+| `embla-carousel-react` | ^8.6.0 | Carousel |
+| `recharts` | ^3.8.0 | Charts |
+| `react-resizable-panels` | ^4.11.1 | Resizable layouts |
+| `cmdk` | ^1.1.1 | Command palette (`command.tsx`) |
+| `input-otp` | ^1.4.2 | OTP input (`input-otp.tsx`) |
 
-All Radix primitives are wrapped in `src/components/ui/` following shadcn conventions.
+> **Policy:** Do **not** install `@base-ui/react` or run `shadcn add combobox`. Use `Select` + `Popover` + `Command` instead.
+
+All UI primitives live in `src/components/ui/` and are re-exported from `src/components/ui/index.ts`.
+
+### Drag-and-drop & tree (install-only)
+
+| Package | Version | Role |
+|---------|---------|------|
+| `@dnd-kit/core` | ^6.3.1 | DnD context, sensors, collision |
+| `@dnd-kit/sortable` | ^10.0.0 | Sortable lists |
+| `@dnd-kit/utilities` | ^3.2.2 | CSS transform helpers |
+| `@dnd-kit/modifiers` | ^9.0.0 | Drag modifiers |
+| `@dnd-kit/accessibility` | ^3.1.1 | Screen reader announcements |
+| `@nosferatu500/react-sortable-tree` | ^5.0.0 | Nested tree UI (React 19 fork) |
+| `react-dnd` | ^16.0.1 | Peer for sortable-tree |
+| `react-dnd-html5-backend` | ^16.0.1 | HTML5 backend for react-dnd |
 
 ---
 

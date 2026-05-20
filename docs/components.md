@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-05-19 (EventsStreamProvider)._
+_Last audited: 2026-05-20 (Phase 7 — complete shadcn catalog)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -22,23 +22,90 @@ Inventory of all React components, their responsibilities, and where they live. 
 
 ## `ui/` — Design System Primitives
 
-Sourced from [shadcn/ui](https://ui.shadcn.com/) backed by Radix UI. All are unstyled headless primitives with Tailwind CSS variants applied.
+Sourced from [shadcn/ui](https://ui.shadcn.com/) (`radix-nova` style in `components.json`) backed by **Radix UI only** via the unified `radix-ui` package. **Base UI is forbidden** — never run `shadcn add combobox` (installs `@base-ui/react`). Use `Select` + `Popover` for combobox/autocomplete patterns.
 
-| Component | File | Radix Primitive | Description |
-|-----------|------|-----------------|-------------|
-| `Button` | `ui/button.tsx` | — | Primary CTA button with variant support |
-| `Dialog` | `ui/dialog.tsx` | `@radix-ui/react-dialog` | Modal dialog overlay |
-| `Input` | `ui/input.tsx` | — | Text input field |
-| `InputGroup` | `ui/input-group.tsx` | — | Input with prefix/suffix slot |
-| `Field` | `ui/field.tsx` | — | Form field wrapper (label + input + error) |
-| `Label` | `ui/label.tsx` | — | Accessible form label |
-| `Textarea` | `ui/textarea.tsx` | — | Multi-line text input |
-| `Checkbox` | `ui/checkbox.tsx` | `@radix-ui/react-checkbox` | Checkbox with indeterminate support |
+All **54** primitives are exported from `src/components/ui/index.ts`. Catalog reference: [shadcn/ui Components](https://ui.shadcn.com/docs/components). Coverage: **~54/55** (all except forbidden **Combobox**).
+
+| Component | File | Base | Description |
+|-----------|------|------|-------------|
+| `Accordion` | `ui/accordion.tsx` | `radix-ui` | Collapsible sections |
+| `Alert` | `ui/alert.tsx` | — | Inline alert banners (info, warning, error) |
+| `AlertDialog` | `ui/alert-dialog.tsx` | `radix-ui` | Blocking confirm modal (destructive actions) |
+| `AspectRatio` | `ui/aspect-ratio.tsx` | `radix-ui` | Fixed ratio containers (16:9 media) |
 | `Avatar` | `ui/avatar.tsx` | `@radix-ui/react-avatar` | User avatar with fallback initials |
 | `Badge` | `ui/badge.tsx` | — | Status/label badge |
+| `Breadcrumb` | `ui/breadcrumb.tsx` | `radix-ui` Slot | Navigation breadcrumbs |
+| `Button` | `ui/button.tsx` | `radix-ui` Slot | Primary CTA with variants |
+| `ButtonGroup` | `ui/button-group.tsx` | — | Grouped related buttons |
+| `Calendar` | `ui/calendar.tsx` | `react-day-picker` | Date grid (pairs with `Popover` for date picker) |
 | `Card` | `ui/card.tsx` | — | Content card container |
-| `Separator` | `ui/separator.tsx` | `@radix-ui/react-separator` | Horizontal/vertical divider |
+| `Carousel` | `ui/carousel.tsx` | `embla-carousel-react` | Horizontal carousel |
+| `Chart` | `ui/chart.tsx` | `recharts` | Chart container + themed tooltip/legend |
+| `Checkbox` | `ui/checkbox.tsx` | `@radix-ui/react-checkbox` | Checkbox with indeterminate support |
+| `Collapsible` | `ui/collapsible.tsx` | `radix-ui` | Single-panel expand/collapse |
+| `Command` | `ui/command.tsx` | `cmdk` | Command palette / searchable list (pairs with `Popover` for autocomplete) |
+| `ContextMenu` | `ui/context-menu.tsx` | `radix-ui` | Right-click menu |
+| `Dialog` | `ui/dialog.tsx` | `@radix-ui/react-dialog` | Modal dialog overlay |
+| `Direction` | `ui/direction.tsx` | `radix-ui` | RTL/LTR direction provider |
+| `Drawer` | `ui/drawer.tsx` | `vaul` | Bottom/side drawer |
 | `DropdownMenu` | `ui/dropdown-menu.tsx` | `@radix-ui/react-dropdown-menu` | Contextual dropdown menu |
+| `Empty` | `ui/empty.tsx` | — | Empty state layout |
+| `Field` | `ui/field.tsx` | — | Form field wrapper (label + input + error) |
+| `HoverCard` | `ui/hover-card.tsx` | `radix-ui` | Hover preview card |
+| `Input` | `ui/input.tsx` | — | Text input field |
+| `InputGroup` | `ui/input-group.tsx` | — | Input with prefix/suffix slot |
+| `InputOTP` | `ui/input-otp.tsx` | `input-otp` | OTP / verification code input |
+| `Item` | `ui/item.tsx` | — | List row / settings item layout |
+| `Kbd` | `ui/kbd.tsx` | — | Keyboard shortcut badge (`⌘K`) |
+| `Label` | `ui/label.tsx` | — | Accessible form label |
+| `Menubar` | `ui/menubar.tsx` | `radix-ui` | Desktop-style menu bar |
+| `NavigationMenu` | `ui/navigation-menu.tsx` | `radix-ui` | Top nav with dropdown submenus |
+| `NativeSelect` | `ui/native-select.tsx` | Native HTML | Styled `<select>` / `<option>` / `<optgroup>` (OS-native dropdown; **not** the same as `Select`) |
+| `Pagination` | `ui/pagination.tsx` | `Button` + Tailwind | Page navigation (`Pagination`, `PaginationContent`, `PaginationLink`, …) |
+| `Popover` | `ui/popover.tsx` | `radix-ui` | Floating panel (date picker, menus) |
+| `Progress` | `ui/progress.tsx` | `radix-ui` | Progress bar |
+| `RadioGroup` | `ui/radio-group.tsx` | `radix-ui` | Radio button group |
+| `Resizable` | `ui/resizable.tsx` | `react-resizable-panels` | Resizable panel layout |
+| `ScrollArea` | `ui/scroll-area.tsx` | `radix-ui` | Custom scrollbar / scrollable region (**registry substitute for “scrollbar”**) |
+| `Select` | `ui/select.tsx` | `radix-ui` | **Radix substitute for combobox** — custom dropdown select |
+| `Separator` | `ui/separator.tsx` | `radix-ui` | Horizontal/vertical divider |
+| `Sheet` | `ui/sheet.tsx` | `radix-ui` Dialog | Side panel (used by `Sidebar`) |
+| `Sidebar` | `ui/sidebar.tsx` | `radix-ui` + Sheet | App sidebar shell + `SidebarProvider` |
+| `Skeleton` | `ui/skeleton.tsx` | — | Loading placeholder |
+| `Slider` | `ui/slider.tsx` | `radix-ui` | Range slider |
+| `Spinner` | `ui/spinner.tsx` | — | Loading spinner |
+| `Switch` | `ui/switch.tsx` | `radix-ui` | Toggle switch |
+| `Table` | `ui/table.tsx` | — | Styled HTML table (base for Data Table pattern) |
+| `Tabs` | `ui/tabs.tsx` | `radix-ui` | Tabbed panels |
+| `Textarea` | `ui/textarea.tsx` | — | Multi-line text input |
+| `Toggle` | `ui/toggle.tsx` | `radix-ui` | Pressable toggle button |
+| `ToggleGroup` | `ui/toggle-group.tsx` | `radix-ui` | Group of toggle buttons |
+| `Tooltip` | `ui/tooltip.tsx` | `radix-ui` | Hover tooltip (`TooltipProvider` required at app root when used) |
+| `Typography*` | `ui/typography.tsx` | Tailwind only | `TypographyH1`–`TypographyMuted`, etc. (shadcn docs utility pattern) |
+
+### Not installed (by design)
+
+| shadcn docs | Why skip | Use instead |
+|-------------|----------|-------------|
+| [Combobox](https://ui.shadcn.com/docs/components/radix/combobox) | Installs `@base-ui/react` — **FORBIDDEN** | `Select` + `Popover` + `Command` |
+| [Data Table](https://ui.shadcn.com/docs/components/radix/data-table) | No `radix-nova` registry item | `Table` + `@tanstack/react-table` in feature code |
+| [Date Picker](https://ui.shadcn.com/docs/components/radix/date-picker) | No registry file | `Calendar` + `Popover` |
+| [Toast](https://ui.shadcn.com/docs/components/radix/toast) | Deprecated → Sonner | `sonner` in root layout |
+| `scrollbar` CLI | Does not exist | `ScrollArea` |
+| [Sonner](https://ui.shadcn.com/docs/components/radix/sonner) UI wrapper | Optional — app uses `sonner` directly | `import { Toaster } from "sonner"` in layout |
+
+### Drag-and-drop (npm only — no wrapper components yet)
+
+| Package | Role |
+|---------|------|
+| `@dnd-kit/core`, `sortable`, `utilities`, `modifiers`, `accessibility` | Modern DnD toolkit |
+| `@nosferatu500/react-sortable-tree` + `react-dnd` + `react-dnd-html5-backend` | Tree reorder (React 19 fork); separate from dnd-kit |
+
+### Hooks (sidebar)
+
+| Hook | File | Description |
+|------|------|-------------|
+| `useIsMobile` | `src/hooks/use-mobile.ts` | Viewport &lt; 768px; exported from `@/hooks` |
 
 ---
 

@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-19 (Events / stream transports cluster)._
+_Last audited: 2026-05-20 (Phase 7 — complete shadcn catalog)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. It aligns with the GitNexus index for repo **`fe-mycourse`** (order-of-magnitude: **~136** source files, **~589** symbols, **~1,091** relationships, **~13** graph clusters, **~18** execution flows; top clusters **Ui**, **Api**, **Auth** — refresh with `npx gitnexus analyze` from this repo root).
@@ -14,8 +14,10 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Framework | Next.js (App Router) | 16.2.1 | Server Components, Server Actions, Middleware |
 | UI library | React | 19.2.4 | Concurrent features, `use client` / `use server` boundary |
 | Styling | Tailwind CSS | 4.x | PostCSS plugin (`@tailwindcss/postcss`) |
-| Component primitives | Radix UI | various | Headless: Avatar, Checkbox, Dialog, DropdownMenu, Separator, Slot |
-| Design system | shadcn | 4.x | Config at `components.json`; primitives live in `src/components/ui/` |
+| Component primitives | Radix UI (`radix-ui` + legacy `@radix-ui/*`) | various | Headless primitives; shadcn v4 batch uses unified `radix-ui` package |
+| Design system | shadcn | 4.2.0 | `components.json` style `radix-nova`; **54** files under `src/components/ui/`; **no Base UI**; full catalog except Combobox |
+| Charts / carousel / calendar | recharts, embla-carousel-react, react-day-picker | 3.x / 8.x / 10.x | Installed via shadcn `chart`, `carousel`, `calendar` |
+| DnD / tree | @dnd-kit/*, @nosferatu500/react-sortable-tree | 6.x / 5.x | npm install only; no app wrappers yet |
 | Forms | react-hook-form + zod | 7.x / 4.x | `@hookform/resolvers` bridges the two |
 | i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` |
 | Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup) for hooks under the provider; `useAuth` sets its own SWR options |
@@ -246,7 +248,7 @@ Design-system primitives and presentational components:
 
 | Area | Files |
 |------|-------|
-| Radix/shadcn primitives | `Button`, `Dialog`, `Input`, `InputGroup`, `Field`, `Label`, `Textarea`, `Checkbox`, `Avatar`, `Badge`, `Card`, `Separator`, `DropdownMenu` |
+| Radix/shadcn primitives | Full set in `src/components/ui/` (54 modules) — see [`docs/components.md`](./components.md) inventory table |
 | Layout utilities | `cn()` (clsx + tailwind-merge), `buildQueryParams()` |
 | Home sections | `HeroSection`, `SearchSection`, `TopCoursesSection`, `AdvancedPromoSection`, `TrendingCoursesSection`, `UpcomingWebinarsSection`, `PromoSection`, `CourseCard` |
 | Header / global | `Header`, `LocaleSwitcher`, `SearchBar`, `Footer`, `FooterSocial` |
