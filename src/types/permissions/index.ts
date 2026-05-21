@@ -20,6 +20,14 @@ export type ParsedPermission = {
   action: PermissionAction;
 };
 
+export type PermissionCheckMode = "all" | "any";
+
+/** Config-driven guard: empty/omitted permissions => allow (when user is authenticated). */
+export type PermissionRequirement = {
+  permissions?: readonly PermissionName[];
+  permissionMode?: PermissionCheckMode;
+};
+
 /** Bidirectional map: permission name ↔ DB permission_id (for admin UI). */
 export const PERMISSION_NAME_TO_ID = Object.fromEntries(
   (Object.keys(PERMISSIONS) as (keyof typeof PERMISSIONS)[]).map((key) => [
