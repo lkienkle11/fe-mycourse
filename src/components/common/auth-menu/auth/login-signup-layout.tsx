@@ -25,13 +25,13 @@ export function LoginSignupLayout({
   return (
     <div
       className={cn(
-        "flex justify-center items-center gap-0",
-        "max-lg:flex-col max-lg:items-stretch",
+        "flex justify-center items-stretch gap-0",
+        "max-lg:flex-col",
         className,
       )}
     >
-      {/* Desktop (lg+): unchanged two-column hero */}
-      <div className="w-1/2 basis-1/2 relative h-full max-lg:hidden">
+      {/* Desktop (lg+): hero stretches to match form column height */}
+      <div className="relative w-1/2 basis-1/2 min-h-0 shrink-0 overflow-hidden rounded-tl-lg rounded-bl-lg max-lg:hidden">
         <div className="absolute flex justify-center items-center gap-2 left-3 bottom-6">
           <div className="w-[40px] h-[40px] rounded-full bg-white">
             <Image
@@ -62,14 +62,16 @@ export function LoginSignupLayout({
         <Image
           alt={type === "login" ? "Login background" : "Signup background"}
           src={type === "login" ? bgLogin : bgSignup}
-          className="rounded-tl-lg rounded-bl-lg h-full"
+          fill
+          sizes="(min-width: 1024px) 50vw, 0px"
+          className="object-cover"
         />
       </div>
 
       {/* Form: full width below lg; desktop sizes unchanged at lg+ */}
       <div
         className={cn(
-          "w-1/2 basis-1/2 h-full space-y-2.5 flex flex-col p-6 py-0.5 justify-center",
+          "w-1/2 basis-1/2 min-h-0 space-y-2.5 flex flex-col p-6 py-4 justify-center",
           "max-lg:w-full max-lg:basis-full max-lg:p-4 max-lg:py-4",
         )}
       >
