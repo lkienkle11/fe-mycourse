@@ -96,7 +96,7 @@ export async function UpcomingWebinarsSection() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex flex-col md:flex-row max-md:gap-4 items-center justify-between pt-2">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-xs font-bold text-slate-500">
                       {webinar.host.charAt(0)}
