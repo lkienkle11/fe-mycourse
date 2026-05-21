@@ -81,7 +81,7 @@ export function SidebarAuthFooter({ onNavigate }: SidebarAuthFooterProps) {
         align="start"
         side="top"
         sideOffset={8}
-        className="relative z-100 w-(--radix-dropdown-menu-trigger-width) min-w-60 rounded-md border-none bg-white p-4 shadow-[0_0_0_1px_rgba(15,23,42,0.06),0_0_24px_rgba(15,23,42,0.1)]"
+        className="relative z-1000 w-(--radix-dropdown-menu-trigger-width) min-w-60 rounded-md border-none bg-white p-4 shadow-[0_0_0_1px_rgba(15,23,42,0.06),0_0_24px_rgba(15,23,42,0.1)]"
         onCloseAutoFocus={(event) => {
           event.preventDefault();
         }}
