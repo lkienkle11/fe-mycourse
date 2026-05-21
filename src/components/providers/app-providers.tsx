@@ -6,6 +6,7 @@ import { AuthConfirmTabSync } from "@/components/providers/auth-confirm-tab-sync
 import { AuthLogoutTabSync } from "@/components/providers/auth-logout-tab-sync";
 import { EventsStreamProvider } from "@/events";
 import { useSyncMeFromAuth } from "@/hooks/auth";
+import { useSyncLanguageFromLocale } from "@/hooks/language";
 
 type AppProvidersProps = {
   children: ReactNode;
@@ -13,6 +14,11 @@ type AppProvidersProps = {
 
 function MeSwrSync() {
   useSyncMeFromAuth();
+  return null;
+}
+
+function LanguageLocaleSync() {
+  useSyncLanguageFromLocale();
   return null;
 }
 
@@ -26,6 +32,7 @@ export function AppProviders({ children }: AppProvidersProps) {
     >
       <EventsStreamProvider>
         <MeSwrSync />
+        <LanguageLocaleSync />
         <AuthConfirmTabSync />
         <AuthLogoutTabSync />
         {children}

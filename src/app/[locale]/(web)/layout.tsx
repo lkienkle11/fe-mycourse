@@ -1,4 +1,3 @@
-import { getLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 import { Footer, Header } from "@/components/common";
 
@@ -8,12 +7,9 @@ type WebLayoutProps = {
 };
 
 export default async function WebLayout({ children }: WebLayoutProps) {
-  const locale = await getLocale();
-  const switchedLocale = locale === "vi" ? "en" : "vi";
-
   return (
     <>
-      <Header switchedLocale={switchedLocale} />
+      <Header />
       <main>{children}</main>
       <Footer />
     </>

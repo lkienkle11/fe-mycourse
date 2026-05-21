@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-05-20 (Phase 7 — complete shadcn catalog)._
+_Last audited: 2026-05-21 (full source vs docs sync)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -124,7 +124,7 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 | Package | Version | Role |
 |---------|---------|------|
 | `lucide-react` | ^1.7.0 | SVG icon set — tree-shakeable, used throughout components |
-| `sonner` | ^2.0.7 | Toast notification system — `<Toaster />` mounted in `app-providers.tsx` |
+| `sonner` | ^2.0.7 | Toast notifications — `<Toaster />` in **`src/app/layout.tsx`** (root), not `AppProviders` |
 
 ---
 

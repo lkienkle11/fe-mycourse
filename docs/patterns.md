@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-05-19 (stream hooks ESLint / ref sync)._
+_Last audited: 2026-05-21 (full source vs docs sync)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -106,7 +106,7 @@ Follow the Tailwind CSS recommended order: layout → spacing → sizing → typ
 | State type | Tool | Example |
 |------------|------|---------|
 | Server data (async, cached) | SWR | `useAuth`, `useCourses` |
-| Global UI state (sync, no fetch) | Zustand | `useAuthStore` (modal), `useApiError` (errors), `useStreamEventsStore` (event log) |
+| Global UI state (sync, no fetch) | Zustand | `useAuthStore` (modal), `useLanguageStore` (locale label/code), `useApiError`, `useStreamEventsStore` |
 | Realtime push (multi-transport) | Events pipeline + hooks | `useWebSocketStreamEvent`, `useSseStreamEvent`, … |
 | Local component state | `useState` | Form open/close toggles |
 | URL/navigation state | `useRouter` / `usePathname` | Active nav item highlight |
@@ -118,6 +118,10 @@ Follow the Tailwind CSS recommended order: layout → spacing → sizing → typ
 import { useAuthStore } from "@/store/auth/auth";
 const { openLoginModal } = useAuthStore();
 ```
+
+### Language: store + sync hook (no Context)
+
+`useLocale()` (next-intl) is synced once in `LanguageLocaleSync` → `useLanguageStore`. Client components read via `useCustomLanguage()` (`languageCode`, `locale`, `languageLabel`). Server components use `resolveCustomLanguage(await getLocale())` from `src/lib/language/resolve-language.ts`.
 
 ### SWR: always use the endpoint key constant
 

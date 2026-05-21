@@ -1,6 +1,6 @@
 # Execution Flows (`fe`)
 
-_Last audited: 2026-05-19 (stream events flow added)._
+_Last audited: 2026-05-21 (full source vs docs sync)._
 
 
 This document traces the major user-visible and technical flows in the MyCourse frontend. Flows are derived from the **GitNexus** process index for repo **`fe-mycourse`** (12 tracked execution chains across the **Auth** and **Api** clusters) and from direct source inspection. Regenerate the graph after large UI changes with `npx gitnexus analyze --force` from the **fe-mycourse** repo root.
@@ -50,7 +50,7 @@ sequenceDiagram
   SA->>CK: cookieStore.set("refresh_token", ..., buildCookieOptions + maxAge)
   SA->>CK: cookieStore.set("session_id", ..., buildCookieOptions + maxAge)
   SA-->>LC: AuthActionResult { success: true, message, code }
-  LC->>SWR: mutate() → force GET /api/v1/me revalidation
+  LC->>SWR: mutateMe() → force GET /api/v1/me revalidation
   SWR->>API: GET /api/v1/me  (Authorization: Bearer <access_token>)
   API-->>SWR: MeResponse
   SWR-->>LC: me (triggers AuthLayout to render UserMenu)
@@ -113,7 +113,7 @@ await setAuthSessionCookies({
 
 **Step 5 — SWR revalidation**
 
-After a successful login, the client calls `mutate()` on the `useAuth` SWR hook. This forces an immediate `GET /api/v1/me` request with the newly set `access_token` cookie. The response populates `me` and `AuthLayout` switches from `AuthButton` to `UserMenu`.
+After a successful login, `login-content.tsx` calls **`mutateMe()`** from `useGetMe()` (Zustand mirror synced from SWR). This forces an immediate `GET /api/v1/me` with the new cookies; `AuthLayout` switches from `AuthButton` to `UserMenu`.
 
 ---
 

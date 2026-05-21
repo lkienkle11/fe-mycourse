@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-21 (full source vs docs sync)._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -118,7 +118,9 @@ import { API_PUBLIC_ROUTES, API_PRIVATE_ROUTES } from "@/constants/api-route";
 
 // Public (no auth required)
 API_PUBLIC_ROUTES.auth.login    // POST /api/v1/auth/login
-API_PUBLIC_ROUTES.auth.signup   // POST /api/v1/auth/signup
+API_PUBLIC_ROUTES.auth.register  // POST /api/v1/auth/register
+API_PUBLIC_ROUTES.auth.confirm   // POST /api/v1/auth/confirm
+API_PUBLIC_ROUTES.auth.logout    // POST /api/v1/auth/logout
 API_PUBLIC_ROUTES.auth.refresh  // POST /api/v1/auth/refresh
 
 // Private (requires Authorization header)

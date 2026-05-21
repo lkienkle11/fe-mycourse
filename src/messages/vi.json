@@ -29,7 +29,33 @@
     }
   },
   "commonHeader": {
-    "title": "MyCourses.io"
+    "title": "MyCourses.io",
+    "menu": {
+      "open": "Mở menu điều hướng",
+      "close": "Đóng menu điều hướng",
+      "language": "Ngôn ngữ",
+      "account": "Tài khoản"
+    },
+    "browse": {
+      "label": "Danh mục",
+      "categoriesTitle": "Duyệt danh mục",
+      "design": "Thiết kế",
+      "designDesc": "Tất cả khóa học về Thiết kế",
+      "illustration": "Minh họa",
+      "illustrationDesc": "Cách trở thành nhà minh họa giỏi",
+      "graphicDesign": "Thiết kế đồ họa",
+      "graphicDesignDesc": "Tận dụng tối đa lợi ích từ thiết kế",
+      "uiUxDesign": "Thiết kế UI/UX",
+      "uiUxDesignDesc": "Thiết kế cho website và ứng dụng",
+      "programming": "Lập trình",
+      "programmingDesc": "Lập trình Web và Mobile",
+      "businessMarketing": "Kinh doanh & Marketing",
+      "businessMarketingDesc": "Chiến lược Kinh doanh và Marketing",
+      "photoVideo": "Ảnh & Video",
+      "photoVideoDesc": "Nhiếp ảnh và Làm Video",
+      "writing": "Viết lách",
+      "writingDesc": "Viết nội dung và Copywriting"
+    }
   },
   "commonFooter": {
     "brand": "MyCourse.io",
