@@ -752,7 +752,7 @@ sudo nginx -t                  # valid config after certbot edits?
 | API client instance | `src/api/instance.ts` | Axios + token attach + token refresh interceptors |
 | API helpers | `src/api/methods.ts` | `apiFetch`, `apiPost`, `apiPut`, `apiDelete`, `apiOptions` → `ApiResult<T>` |
 | Raw HTTP + barrel | `src/api/raw-http.ts`, `src/api/index.ts` | Plain Axios `raw*`; `index.ts` re-exports `api*` + `raw*` |
-| Auth server actions | `src/actions/auth/auth.ts` | `loginAction`, `signupAction` (`"use server"`) |
+| Auth server actions | `src/actions/auth/auth.ts` | `loginAction`, `registerAction`, `confirmAction`, `logoutAction` (`signupAction` deprecated alias) |
 | Cookie utilities | `src/lib/utils/cookie.ts` (+ barrel `index.ts`) | `buildCookieOptions`, `getCookieDomain`, `getCookieValue`, `setCookieValue` (import `@/lib/utils`) |
 | Auth session cookies | `src/lib/utils/auth-session.ts` (server-only, **not** in barrel) | `setAuthSessionCookies` — import `@/lib/utils/auth-session` in Server Actions only |
 | i18n routing | `src/i18n/routing.ts` | `locales: ["en","vi"]`, `defaultLocale: "vi"`, `localePrefix: "always"` |

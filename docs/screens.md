@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-21 (full source vs docs sync)._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -30,7 +30,7 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/confirm-email` | Active | Email confirmation page (`ConfirmEmailContent` → `confirmAction`) |
 | `/{locale}/logout` | Active | Logout page (`LogoutContent` → `logoutAction`, cross-tab `broadcast:logout`) |
 
-> Route constants are defined in `src/constants/route.ts` for future auth-route constants. All authentication today is **modal-based** from the header.
+> `PUBLIC_ROUTES` (`src/constants/route.ts`): `home`, `confirmEmail`, `logout`. Login/signup are **modal-only** via `LoginSignupPopup`; confirm/logout have dedicated routes.
 
 ---
 
@@ -44,11 +44,10 @@ src/app/layout.tsx                          Root layout
 └── src/app/[locale]/layout.tsx             Locale layout
     │   Validates locale (404 if unknown)
     │   <NextIntlClientProvider>            → loads src/messages/{locale}.json
-    │   <AppProviders>                      → `SWRConfig` + `MeSwrSync` → `useSyncMeFromAuth` (`hooks/auth/use-auth-store`, SWR → `useMeStore`) + `children`
+    │   <AppProviders>                      → `SWRConfig` + `MeSwrSync` + `LanguageLocaleSync` + stream/auth tab sync + `children`
     │
     └── src/app/[locale]/(web)/layout.tsx   Web shell layout
-        │   Resolves locale for <Header>
-        │   <Header switchedLocale={...} />
+        │   <Header />                      (no locale props — language via client hook)
         │   <main>{children}</main>
         │   <Footer />
         │
@@ -100,22 +99,22 @@ HomePage (server)
 **File:** `src/components/common/header/header.tsx` — async Server Component.
 
 ```
-Header
-├── Logo + site title (getTranslations("home") → t("header.title"))
-├── HeaderBrowseNav (src/components/common/header/browse-nav.tsx)
-│     Client — single module; Tailwind `md:` splits desktop vs mobile
-│     Desktop (md+): NavigationMenu flyout, recursive N-column hover cascade
-│       activeStack[0] = hovered root → column 2 shows its children
-│       activeStack[1] = hovered child → column 3 shows grandchildren, …
-│     Mobile (max-md): Sheet + nested Accordion (MobileMenuItems recurses)
-├── SearchBar (src/components/shared/search-bar.tsx)
-│     Hidden on mobile (max-lg:hidden), visible lg+
-├── LocaleSwitcher (src/components/common/header/locale-switcher.tsx)
-│     Displays current locale label (e.g. "Tiếng Việt")
-│     On click → navigate to the same path in the other locale
-├── Cart button (lucide-react ShoppingCart icon, outline variant)
-└── AuthLayout (src/components/common/auth-menu/auth-layout.tsx)
+Header (src/components/common/header/header.tsx)
+├── Desktop row (lg+): hidden below lg via `lg:flex`
+│     Logo + site title (getTranslations("home") → t("header.title"))
+│     HeaderBrowseNav (browse-nav.tsx) — NavigationMenu flyout, N-column hover cascade
+│     SearchBar — full width in header row
+│     LocaleSwitcher, Cart button, AuthLayout
+├── Mobile bar (max-lg): HeaderMobileBar — logo icon + burger only
+│     Opens HeaderMobileSidebar (portal overlay, right panel ~85vw / max 320px)
+│         Backdrop z-200 + panel slide-in from right (Tailwind transition, `open` state)
+│         Sidebar header: logo + title
+│         Scrollable body: `overflow-y-auto` (search + BrowseMenuTree accordion)
+│         Footer: LocaleSwitcher (full width, `useCustomLanguage`) + SidebarAuthFooter
+└── LoginSignupPopup — sibling after </header> (z-300 overlay / z-301 content, centered card)
 ```
+
+Breakpoint: **`lg` (1024px)**. Cart is desktop-only (not in mobile bar or sidebar).
 
 ### Footer
 
@@ -136,41 +135,40 @@ Header
 
 **File:** `src/components/common/header/locale-switcher.tsx` — client component.
 
-Uses `usePathname` + `useRouter` from `src/i18n/navigation.ts` to switch between `en` and `vi` while preserving the current path.
+- Trigger label from `useCustomLanguage()`: default `languageLabel`; desktop header passes `useCodeLabelLanguage` → shows `languageCode` (`en` / `vi`). Optional `currentLabel` override.
+- Menu links use `Link` from `src/i18n/navigation.ts` with `locale={item.locale}` (preserves path, switches `en` / `vi`).
+- Store sync: `LanguageLocaleSync` in `AppProviders` mirrors `useLocale()` → `useLanguageStore` (`hooks/language/use-sync-language-from-locale.ts`).
 
 ---
 
-## Auth Shell (`AuthLayout`)
+## Auth Shell (`AuthLayout` + `LoginSignupPopup`)
 
-**File:** `src/components/common/auth-menu/auth-layout.tsx` — client component (uses `useAuth` SWR hook).
-
-The header's authentication chrome. Renders one of three states:
+**`AuthLayout`** — `src/components/common/auth-menu/auth-layout.tsx` (client). Uses **`useGetMe()`** (Zustand mirror of SWR `useAuth`, synced by `MeSwrSync`).
 
 | State | Condition | Rendered |
 |-------|-----------|----------|
-| Loading | `isLoading === true` | `size-10` pulse placeholder (`animate-pulse` rounded circle) |
+| Loading | `isLoading === true` | `size-10` pulse placeholder |
 | Authenticated | `me !== null` | `<UserMenu me={me} />` |
-| Unauthenticated | `me === null` | `<AuthButton />` + `<LoginSignupPopup />` |
+| Unauthenticated | `me === null` | `<AuthButton />` only |
+
+**`LoginSignupPopup`** — mounted in **`header.tsx`** after `</header>` (not inside `AuthLayout`). Visible when `authAction === "login" || "signup"` (`useAuthStore`). Full-viewport dialog `z-300`/`z-301`.
 
 ### Component tree (unauthenticated)
 
 ```
-AuthLayout
-├── AuthButton (src/components/common/auth-menu/auth-button.tsx)
-│     → onClick: openLoginModal() via useAuthStore
-└── LoginSignupPopup (src/components/common/auth-menu/auth/login-signup-popup.tsx)
-      → visible when authAction === "login" || "signup"
-      ├── LoginSignupLayout (auth/login-signup-layout.tsx)
-      │     Tab: "login"  → LoginContent
-      │     Tab: "signup" → SignupContent
-      │     └── AuthSocialLogin (auth-social-login/auth-social-login.tsx) [stub]
-      ├── LoginContent (auth/login-content.tsx)
-      │     react-hook-form + loginSchema (Zod)
-      │     → handleAuthSubmit("login", values) → loginAction
-      └── SignupContent (auth/signup-content.tsx)
-            react-hook-form + signupSchema (Zod)
-            → handleAuthSubmit("signup", values, locale) → registerAction → POST /auth/register
+Header
+├── AuthLayout
+│     └── AuthButton → openLoginModal() via useAuthStore
+└── LoginSignupPopup (sibling, outside sticky header)
+      ├── LoginSignupLayout
+      │     "login"  → LoginContent
+      │     "signup" → SignupContent
+      │     └── AuthSocialLogin [stub]
+      ├── LoginContent → handleAuthSubmit("login") → loginAction → mutateMe()
+      └── SignupContent → handleAuthSubmit("signup", …, locale) → registerAction
 ```
+
+**Dedicated auth pages:** `ConfirmEmailContent` (`/confirm-email`), `LogoutContent` (`/logout`).
 
 ### Component tree (authenticated)
 
@@ -188,12 +186,14 @@ AuthLayout
 #### Dropdown menu items (from `src/constants/common.ts`)
 
 ```ts
-HEADER_DROPDOWN_ITEMS = [
-  { key: "study",   items: ["/my-courses", "/my-cart", "/wishlist"] },
-  { key: "account", items: ["/notifications", "/account-settings"] },
-  { key: "session", items: ["/logout"] },   // styled warning (hover:text-red-500)
+HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
+  { key: "study",   value: [{ href: "/my-courses", … }, …] },
+  { key: "account", value: […] },
+  { key: "session", value: [{ href: "/logout", status: "warning", … }] },
 ]
 ```
+
+Rendered via `UserMenuDropdownItems` in `UserMenu` and `SidebarAuthFooter`.
 
 ---
 
@@ -241,9 +241,10 @@ All primitives are re-exported from `src/components/ui/index.ts`.
 
 | Namespace | Usage |
 |-----------|-------|
-| `"home"` | Header title (`t("header.title")`), search placeholder (`t("search.placeholder")`) |
-| `"commonFooter"` | Footer brand, copyright, course link labels, nav `aria-label`s |
-| `"auth"` | Auth form labels, button text, validation messages (resolved from Zod schema keys) |
+| `"home"` | Header title, search placeholder |
+| `"commonHeader"` | Mobile menu (`menu.open`, `browse.categoriesTitle`, `menu.language`, `menu.account`) |
+| `"commonFooter"` | Footer brand, copyright, course link labels |
+| `"auth"` | Auth forms; Zod keys resolved via `useTranslations("auth")` |
 
 Translation files: `src/messages/en.json` and `src/messages/vi.json`. The `LocaleSwitcher` toggles between locales while preserving the current URL path (via `next-intl` navigation helpers).
 
@@ -254,30 +255,33 @@ Translation files: `src/messages/en.json` and `src/messages/vi.json`. The `Local
 Defined in `src/constants/route.ts`:
 
 ```ts
+// src/constants/route.ts
 PUBLIC_ROUTES = {
   home: "/",
-  auth: {
-    login:  "/auth/login",
-    signup: "/auth/signup",
-  },
+  confirmEmail: "/confirm-email",
+  logout: "/logout",
 }
 ```
 
-These are **string constants** for client-side `Link` / `router.push` usage. Neither `/auth/login` nor `/auth/signup` have corresponding App Router segments today — they are reserved for future dedicated pages. Authentication is currently handled entirely via the `LoginSignupPopup` modal triggered from the header.
+Use with `@/i18n/navigation` `Link` / `router.push` — locale prefix is applied automatically. No `auth.login` / `auth.signup` constants (modal-only login/signup).
 
 ---
 
 ## API Routes Constants
 
-Defined in `src/constants/api-route.ts` (used by callers, not navigation):
+`src/constants/api-route.ts`:
 
 ```ts
-API_PUBLIC_ROUTES.auth.login    // POST /api/v1/auth/login
-API_PUBLIC_ROUTES.auth.signup   // POST /api/v1/auth/signup
-API_PUBLIC_ROUTES.auth.refresh  // POST /api/v1/auth/refresh
+API_PUBLIC_ROUTES.auth.login     // POST /api/v1/auth/login
+API_PUBLIC_ROUTES.auth.register  // POST /api/v1/auth/register
+API_PUBLIC_ROUTES.auth.confirm   // POST /api/v1/auth/confirm
+API_PUBLIC_ROUTES.auth.refresh   // POST /api/v1/auth/refresh
+API_PUBLIC_ROUTES.auth.logout    // POST /api/v1/auth/logout
 
-API_PRIVATE_ROUTES.user.getMe   // GET  /api/v1/me
+API_PRIVATE_ROUTES.user.getMe    // GET  /api/v1/me
 ```
+
+`signupAction` in `actions/auth/auth.ts` is a **deprecated alias** of `registerAction`.
 
 ---
 

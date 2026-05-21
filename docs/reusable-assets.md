@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-05-19 (stream hooks: useStreamEvent handler ref via useEffect)._
+_Last audited: 2026-05-21 (full source vs docs sync)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -70,7 +70,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Interface (`{ success, message, code }`)
 - **Path**: `src/actions/auth/auth.ts`
 - **Purpose**: Standard return type for all auth Server Actions.
-- **Scope**: `loginAction`, `signupAction` and any future auth Server Action.
+- **Scope**: `loginAction`, `registerAction`, `confirmAction`, `logoutAction` (`signupAction` deprecated alias).
 - **Dependencies**: none.
 
 ### Asset: ApiErrorEntry
@@ -100,7 +100,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant object
 - **Path**: `src/constants/api-route.ts`
 - **Purpose**: All public (unauthenticated) BE API endpoint paths. Prevents scattered hardcoded strings.
-- **Current Entries**: `auth.login`, `auth.register`, `auth.confirm`, `auth.refresh`.
+- **Current Entries**: `auth.login`, `auth.register`, `auth.confirm`, `auth.refresh`, `auth.logout`.
 - **Scope**: API callers, `api/instance.ts` token refresh interceptor.
 - **Dependencies**: none.
 
@@ -118,7 +118,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant object
 - **Path**: `src/constants/route.ts`
 - **Purpose**: FE client-side route constants (paths for navigation).
-- **Current Entries**: `home: "/"`.
+- **Current Entries**: `home`, `confirmEmail`, `logout` (paths without locale prefix — use `@/i18n/navigation`).
 - **Scope**: Navigation helpers, links, router.
 - **Dependencies**: none.
 
@@ -135,7 +135,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant (`UserMenuGroup[]`)
 - **Path**: `src/constants/common.ts`
 - **Purpose**: Static configuration for the user dropdown menu in the header.
-- **Scope**: `src/components/common/auth-menu/user-menu.tsx`.
+- **Scope**: `user-menu-dropdown-items.tsx`, `user-menu.tsx`, `sidebar-auth-footer.tsx`.
 - **Dependencies**: `UserMenuGroup`, `UserMenuItem` (also in `common.ts`).
 
 ### Asset: LANGUAGE_OPTIONS
@@ -309,6 +309,46 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Bridges SWR `useAuth` → `useMeStore`. Called once inside `MeSwrSync` component in `AppProviders`. Keeps global Zustand state in sync with SWR cache.
 - **Scope**: `src/components/providers/app-providers.tsx` (`MeSwrSync`) only.
 - **Dependencies**: `useAuth`, `useMeStore`.
+
+### Asset: useLanguageStore
+- **Name**: `useLanguageStore`
+- **Type**: Zustand store
+- **Path**: `src/store/language/language-store.ts`
+- **Purpose**: `languageCode`, `locale`, `languageLabel`; `setFromLocale(locale)` updates from next-intl route locale.
+- **Scope**: Sync via `useSyncLanguageFromLocale` only; read via `useCustomLanguage`.
+- **Dependencies**: `resolveCustomLanguage`, `routing.defaultLocale`.
+
+### Asset: useCustomLanguage
+- **Name**: `useCustomLanguage(): { languageCode, locale, languageLabel }`
+- **Type**: Custom hook
+- **Path**: `src/hooks/language/use-custom-language.ts`
+- **Purpose**: Shallow read of `useLanguageStore` for UI labels (locale switcher, etc.).
+- **Scope**: Client components; prefer over prop-drilling locale from RSC.
+- **Dependencies**: `useLanguageStore`.
+
+### Asset: useSyncLanguageFromLocale
+- **Name**: `useSyncLanguageFromLocale(): void`
+- **Type**: Custom hook
+- **Path**: `src/hooks/language/use-sync-language-from-locale.ts`
+- **Purpose**: Mirrors `useLocale()` → `useLanguageStore`. Mounted in `LanguageLocaleSync` inside `AppProviders`.
+- **Scope**: Provider sync only — do not call in feature components.
+- **Dependencies**: `next-intl`, `useLanguageStore`.
+
+### Asset: resolveCustomLanguage / resolveLanguageCode
+- **Name**: `resolveCustomLanguage(locale)`, `resolveLanguageCode(locale)`, `AppLanguage`
+- **Type**: Pure functions + type
+- **Path**: `src/lib/language/resolve-language.ts`
+- **Purpose**: Validate locale against `routing.locales`; map to `LANGUAGE_OPTIONS` label. Use in RSC when hooks are unavailable.
+- **Scope**: Language store init, server layouts, tests.
+- **Dependencies**: `LANGUAGE_OPTIONS`, `routing`.
+
+### Asset: BROWSE_MENU_ITEMS
+- **Name**: `BROWSE_MENU_ITEMS`
+- **Type**: Constant tree
+- **Path**: `src/constants/browse-menu.ts` (+ types in `src/types/browse-menu.ts`)
+- **Purpose**: Static browse category tree for `HeaderBrowseNav` (desktop) and `BrowseMenuTree` (mobile sidebar).
+- **Scope**: Header browse UI only.
+- **Dependencies**: `BrowseMenuItem` type.
 
 ---
 
