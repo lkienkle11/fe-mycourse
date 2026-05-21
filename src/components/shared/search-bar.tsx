@@ -6,10 +6,14 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 
+type SearchBarVisibility = "header" | "sidebar";
+
 type SearchBarProps = {
   onSearch?: (keyword: string) => void;
   defaultValue?: string;
   placeholderText?: string;
+  /** header: hidden below md; sidebar: always full width flex */
+  visibility?: SearchBarVisibility;
   wrapClassName?: string;
   inputClassName?: string;
   searchButtonClassName?: string;
@@ -19,6 +23,7 @@ export const SearchBar = ({
   onSearch,
   defaultValue = "",
   placeholderText = "",
+  visibility = "header",
   wrapClassName,
   inputClassName,
   searchButtonClassName,
@@ -37,7 +42,9 @@ export const SearchBar = ({
   return (
     <div
       className={cn(
-        "hidden w-full max-w-xl items-center md:flex",
+        visibility === "sidebar"
+          ? "flex w-full items-center"
+          : "hidden w-full max-w-xl items-center md:flex",
         wrapClassName,
       )}
     >

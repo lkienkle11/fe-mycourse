@@ -1,6 +1,6 @@
 # API Overview (`fe-mycourse`)
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-21 (full source vs docs sync)._
 
 
 ## Scope
@@ -23,6 +23,7 @@ Frontend API layer lives in `src/api/` and is used by `src/actions/` and client 
 - `POST /api/v1/auth/register` — register / resend confirmation (`registerAction`, `registerService`)
 - `POST /api/v1/auth/confirm` — confirm email and issue tokens (`confirmAction`, `confirmService`)
 - `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/logout`
 - `GET /api/v1/me`
 
 ## Rules

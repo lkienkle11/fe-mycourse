@@ -1,6 +1,6 @@
 # Logic Flow
 
-_Last audited: 2026-05-19 (stream ingest + hook handler ref)._
+_Last audited: 2026-05-21 (full source vs docs sync)._
 
 
 Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifecycle, data fetching, and form submission patterns.
@@ -149,10 +149,10 @@ openLoginModal(nextPath?)  → authAction="login",  nextLink=nextPath
 openSignupModal(nextPath?) → authAction="signup", nextLink=nextPath
 closeAllModals()           → authAction="none",   nextLink=null
 
-LoginSignupPopup renders:
+LoginSignupPopup (mounted in header.tsx, outside AuthLayout):
   authAction === "login"  → show LoginContent
   authAction === "signup" → show SignupContent
-  authAction === "none"   → unmount / hidden
+  authAction === "none"   → dialog closed
 
 LoginContent ↔ SignupContent:
   → Switch tab → setAuthAction("signup") / setAuthAction("login")

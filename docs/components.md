@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-05-20 (Phase 7 — complete shadcn catalog)._
+_Last audited: 2026-05-21 (full source vs docs sync)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -28,7 +28,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Base | Description |
 |-----------|------|------|-------------|
-| `Accordion` | `ui/accordion.tsx` | `radix-ui` | Collapsible sections |
+| `Accordion` | `ui/accordion.tsx` | `radix-ui` | Collapsible sections; open panels use `data-open:overflow-visible` (mobile browse tree scroll) |
 | `Alert` | `ui/alert.tsx` | — | Inline alert banners (info, warning, error) |
 | `AlertDialog` | `ui/alert-dialog.tsx` | `radix-ui` | Blocking confirm modal (destructive actions) |
 | `AspectRatio` | `ui/aspect-ratio.tsx` | `radix-ui` | Fixed ratio containers (16:9 media) |
@@ -45,7 +45,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `Collapsible` | `ui/collapsible.tsx` | `radix-ui` | Single-panel expand/collapse |
 | `Command` | `ui/command.tsx` | `cmdk` | Command palette / searchable list (pairs with `Popover` for autocomplete) |
 | `ContextMenu` | `ui/context-menu.tsx` | `radix-ui` | Right-click menu |
-| `Dialog` | `ui/dialog.tsx` | `@radix-ui/react-dialog` | Modal dialog overlay |
+| `Dialog` | `ui/dialog.tsx` | `@radix-ui/react-dialog` | Modal dialog overlay; `DialogContent` accepts optional `overlayClassName` |
 | `Direction` | `ui/direction.tsx` | `radix-ui` | RTL/LTR direction provider |
 | `Drawer` | `ui/drawer.tsx` | `vaul` | Bottom/side drawer |
 | `DropdownMenu` | `ui/dropdown-menu.tsx` | `@radix-ui/react-dropdown-menu` | Contextual dropdown menu |
@@ -101,14 +101,6 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `@dnd-kit/core`, `sortable`, `utilities`, `modifiers`, `accessibility` | Modern DnD toolkit |
 | `@nosferatu500/react-sortable-tree` + `react-dnd` + `react-dnd-html5-backend` | Tree reorder (React 19 fork); separate from dnd-kit |
 
-### Hooks (sidebar)
-
-| Hook | File | Description |
-|------|------|-------------|
-| `useIsMobile` | `src/hooks/use-mobile.ts` | Viewport &lt; 768px; exported from `@/hooks` |
-
----
-
 ## `common/` — Layout Chrome
 
 ### Header
@@ -117,8 +109,13 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
-| `Header` | `header.tsx` | Server | Top navigation bar. Renders logo, `SearchBar`, `LocaleSwitcher`, `AuthLayout`. |
-| `LocaleSwitcher` | `locale-switcher.tsx` | Client | Language toggle between `en` and `vi`. Uses `next-intl` navigation. |
+| `Header` | `header.tsx` | Server | Sticky `z-100`. Desktop row (`lg+`) + `HeaderMobileBar`. `LoginSignupPopup` mounted after `</header>`. |
+| `HeaderBrowseNav` | `browse-nav.tsx` | Client | Desktop-only (`lg+`) browse flyout. N-column hover via `activeStack`; helper `MenuColumn`. |
+| `HeaderMobileBar` | `header-mobile-bar.tsx` | Client | Below `lg`: logo + burger opening `HeaderMobileSidebar`. |
+| `HeaderMobileSidebar` | `header-mobile-sidebar.tsx` | Client | Portal `z-200` / panel `z-201`, `h-dvh`, slides from **right**. Middle column: native `overflow-y-auto` (not `ScrollArea`) for touch scroll. |
+| `BrowseMenuTree` | `browse-menu-tree.tsx` | Client | Recursive `Accordion` + `BROWSE_MENU_ITEMS`. Nested `AccordionContent` uses `h-auto!`; leaf links `no-underline!`. |
+| `SidebarAuthFooter` | `sidebar-auth-footer.tsx` | Client | Guest `AuthButton` or avatar + `UserMenuDropdownItems`. |
+| `LocaleSwitcher` | `locale-switcher.tsx` | Client | `useCustomLanguage()`; props: `useCodeLabelLanguage`, `fullWidth`, `onNavigate`, optional `currentLabel`. |
 
 ### Footer
 
@@ -126,7 +123,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
-| `Footer` | `footer.tsx` | Server | Bottom site footer. Uses `useTranslations("commonFooter")`. Renders course links, social icons row. |
+| `Footer` | `footer.tsx` | Server | Async RSC; `getTranslations("commonFooter")`. Uses `next/link` for internal links. |
 | `FooterSocial` | `footer-social.tsx` | Client | Social media icon row (X / Instagram / Facebook). |
 
 ### Auth Menu
@@ -135,16 +132,20 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
-| `AuthLayout` | `auth-layout.tsx` | Client | Renders header auth chrome. Shows: loading skeleton → `UserMenu` (authenticated) → `AuthButton` + `LoginSignupPopup` (unauthenticated). Uses `useAuth` SWR hook. |
+| `AuthLayout` | `auth-layout.tsx` | Client | `useGetMe()` — skeleton / `UserMenu` / `AuthButton`. Does **not** mount `LoginSignupPopup`. |
+| `UserMenuDropdownItems` | `user-menu-dropdown-items.tsx` | Client | Shared `HEADER_DROPDOWN_ITEMS` groups for `UserMenu` and sidebar footer. |
 | `AuthButton` | `auth-button.tsx` | Client | "Sign In / Sign Up" CTA button. Calls `openLoginModal()` from `useAuthStore`. |
 | `UserMenu` | `user-menu.tsx` | Client | Avatar dropdown for authenticated users. Shows avatar, user name, logout option. |
-| `LoginSignupPopup` | `auth/login-signup-popup.tsx` | Client | Dialog; `max-lg:` narrower full-width modal, `lg+` keeps `max-w-200`. |
+| `LoginSignupPopup` | `auth/login-signup-popup.tsx` | Client | Full-viewport centered dialog (`z-300`/`z-301`); card `max-w-200`; close button on card (`DialogClose`). |
 | `LoginSignupLayout` | `auth/login-signup-layout.tsx` | Client | `lg+` unchanged two-column layout; below `lg` form-only full width. |
-| `AuthConfirmTabSync` | `providers/auth-confirm-tab-sync.tsx` | Client | Reloads background tabs on focus after email confirm elsewhere. |
-| `LoginContent` | `auth/login-content.tsx` | Client | Login form. `react-hook-form` + `zodResolver(loginSchema)`. On submit: calls `handleAuthSubmit("login", values)` then `mutate()` on `useAuth`. |
-| `SignupContent` | `auth/signup-content.tsx` | Client | Signup form. `react-hook-form` + `zodResolver(signupSchema)`. Currently calls placeholder `signupAction`. |
-| `handleAuthSubmit` | `auth/auth-form-handler.ts` | Utility | Shared dispatcher. Routes to `loginAction` or `signupAction` based on action type. |
-| `auth-social-login/` | `auth/auth-social-login/` | Client | Social auth provider buttons (UI placeholder, not yet wired). |
+| `LoginContent` | `auth/login-content.tsx` | Client | Login form → `loginAction` → **`mutateMe()`** via `useGetMe()`. Resend confirm uses `registerAction`. |
+| `SignupContent` | `auth/signup-content.tsx` | Client | Signup form → `handleAuthSubmit("signup", …)` → **`registerAction`**. |
+| `ConfirmEmailContent` | `auth/confirm-email-content.tsx` | Client | Email confirm page body → `confirmAction`. |
+| `LogoutContent` | `auth/logout-content.tsx` | Client | Logout page → `logoutAction`. |
+| `handleAuthSubmit` | `auth/auth-form-handler.ts` | Utility | Routes `"login"` → `loginAction`, `"signup"` → **`registerAction`**. |
+| `AuthConfirmTabSync` | `providers/auth-confirm-tab-sync.tsx` | Client | Reload tabs after email confirm elsewhere. |
+| `AuthLogoutTabSync` | `providers/auth-logout-tab-sync.tsx` | Client | Cross-tab logout via `broadcast:logout`. |
+| `auth-social-login/` | `auth/auth-social-login/` | Client | Social auth buttons (UI stub). |
 
 ---
 
@@ -173,20 +174,32 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 
 | Component | File | Description |
 |-----------|------|-------------|
-| `SearchBar` | `search-bar.tsx` | Global search input. Currently a UI stub — no backend search call is wired. Handles keyboard focus events tracked by GitNexus as `HandleSearch` process. |
+| `SearchBar` | `search-bar.tsx` | Global search input (UI stub). `visibility`: `"header"` (default, hidden below `md`) or `"sidebar"` (full-width flex for mobile sheet). |
 
 ---
 
-## `providers/` — Context Providers
+## Hooks (`src/hooks/`)
+
+| Hook | File | Description |
+|------|------|-------------|
+| `useCustomLanguage` | `hooks/language/use-custom-language.ts` | `{ languageCode, locale, languageLabel }` from `useLanguageStore` |
+| `useSyncLanguageFromLocale` | `hooks/language/use-sync-language-from-locale.ts` | Syncs `useLocale()` → store (mount in `AppProviders`) |
+| `useIsMobile` | `hooks/use-mobile.ts` | Viewport &lt; 768px |
+
+Server/RSC: `resolveCustomLanguage(locale)` in `src/lib/language/resolve-language.ts` (no Context).
+
+---
+
+## `providers/` — App Providers
 
 `src/components/providers/`
 
 | Component | File | Description |
 |-----------|------|-------------|
-| `AppProviders` | `app-providers.tsx` | Mounts `SWRConfig` (`revalidateOnFocus: false`, dedup 30 s) + `EventsStreamProvider` (starts stream transports) + `MeSwrSync` + `children`. Placed in `[locale]/layout.tsx`. |
+| `AppProviders` | `app-providers.tsx` | `SWRConfig` + `EventsStreamProvider` + `MeSwrSync` + `LanguageLocaleSync` + auth tab sync + `children`. Placed in `[locale]/layout.tsx`. |
 | `EventsStreamProvider` | `src/events/providers/events-stream-provider.tsx` | Client-only; `useEffect` → `startStreamEventTransports()`. Re-exported from `@/events`. |
 
-`MeSwrSync` is an internal null-render component inside `app-providers.tsx` that syncs `useAuth` SWR state → `useMeStore` Zustand store. It has no visible output.
+Null-render sync components in `app-providers.tsx`: `MeSwrSync` (SWR `useAuth` → `useMeStore`), `LanguageLocaleSync` (`useLocale()` → `useLanguageStore`). No Context providers for language.
 
 ---
 

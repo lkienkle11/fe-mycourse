@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-05-15 (GitNexus + source scan)._
+_Last audited: 2026-05-21 (full source vs docs sync)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
@@ -73,6 +73,7 @@ export const config = {
 /[locale]/              → src/app/[locale]/(web)/layout.tsx  Header + main + Footer
 /[locale]/              → src/app/[locale]/(web)/page.tsx    HomePage
 /[locale]/confirm-email → src/app/[locale]/(web)/confirm-email/page.tsx  Email confirm
+/[locale]/logout        → src/app/[locale]/(web)/logout/page.tsx         Logout
 ```
 
 ### Route Groups
@@ -98,6 +99,8 @@ src/app/[locale]/
 | `/en` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
 | `/vi/confirm-email?token=…` | `[locale]/(web)/confirm-email/page.tsx` | `ConfirmEmailContent` | ✅ Implemented |
 | `/en/confirm-email?token=…` | same | same | ✅ Implemented |
+| `/vi/logout` | `[locale]/(web)/logout/page.tsx` | `LogoutContent` | ✅ Implemented |
+| `/en/logout` | same | same | ✅ Implemented |
 | `/vi/courses` | — | — | 🚧 Planned |
 | `/vi/admin/*` | — | — | 🚧 Planned |
 | `/vi/instructor/*` | — | — | 🚧 Planned |
@@ -116,7 +119,7 @@ Root layout            (src/app/layout.tsx)
 | Layout file | What it mounts |
 |-------------|---------------|
 | `src/app/layout.tsx` | Global fonts (Roboto, Gilroy, GeistMono as CSS vars), `<Toaster>` (Sonner) |
-| `src/app/[locale]/layout.tsx` | `NextIntlClientProvider` (messages + locale), `AppProviders` (SWR config, MeSwrSync) |
+| `src/app/[locale]/layout.tsx` | `NextIntlClientProvider`, `AppProviders` (`SWRConfig`, `EventsStreamProvider`, `MeSwrSync`, `LanguageLocaleSync`, auth tab sync) |
 | `src/app/[locale]/(web)/layout.tsx` | `Header`, `<main>` content area, `Footer` |
 
 ---

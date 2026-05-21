@@ -1,9 +1,9 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-20 (Phase 7 — complete shadcn catalog)._
+_Last audited: 2026-05-21 (full source vs docs sync)._
 
 
-This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. It aligns with the GitNexus index for repo **`fe-mycourse`** (order-of-magnitude: **~136** source files, **~589** symbols, **~1,091** relationships, **~13** graph clusters, **~18** execution flows; top clusters **Ui**, **Api**, **Auth** — refresh with `npx gitnexus analyze` from this repo root).
+This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
 
 ---
 
@@ -74,9 +74,9 @@ flowchart TB
 
   WL -->|renders| Header["Header\n(SearchBar, LocaleSwitcher, AuthLayout)"]
   WL -->|renders| Footer["Footer\n(course links, i18n commonFooter,\nFooterSocial: X / IG / FB)"]
-  Header -->|client| AuthLayout["AuthLayout\n(useAuth SWR: skeleton / UserMenu / AuthButton)"]
+  Header -->|client| AuthLayout["AuthLayout\n(useGetMe: skeleton / UserMenu / AuthButton)"]
   AuthLayout -->|modal| LoginSignupPopup["LoginSignupPopup\n(LoginContent / SignupContent)"]
-  LoginSignupPopup -->|server action| SA["loginAction / signupAction\n(src/actions/auth/auth.ts)"]
+  LoginSignupPopup -->|server action| SA["loginAction / registerAction / confirmAction / logoutAction\n(src/actions/auth/auth.ts)"]
   SA -->|HTTP server-to-server| GoAPI["Go API\n(NEXT_PUBLIC_API_URL)"]
 
   HP -->|assembles| Sections["HeroSection, SearchSection,\nTopCoursesSection, AdvancedPromoSection,\nTrendingCoursesSection, UpcomingWebinarsSection,\nPromoSection"]
@@ -118,12 +118,12 @@ fe/
 │   │   ├── home/                   # Home page sections (HeroSection, CourseCard, …)
 │   │   ├── shared/                 # Cross-feature components (SearchBar, …)
 │   │   ├── providers/
-│   │   │   └── app-providers.tsx   # `SWRConfig` + `MeSwrSync` (`useSyncMeFromAuth`) + `children`
+│   │   │   └── app-providers.tsx   # SWRConfig, EventsStreamProvider, MeSwrSync, LanguageLocaleSync, auth tab sync
 │   │   └── demo/
 │   │       └── register-form.tsx   # Demo/sandbox form (not wired to a route)
 │   │
 │   ├── actions/
-│   │   └── auth/auth.ts            # "use server": loginAction, signupAction
+│   │   └── auth/auth.ts            # "use server": loginAction, registerAction, confirmAction, logoutAction (+ deprecated signupAction alias)
 │   │
 │   ├── api/
 │   │   ├── index.ts                # Barrel: re-exports api* + raw* + types from instance/methods/raw-http
@@ -133,19 +133,22 @@ fe/
 │   │   ├── raw-http.ts             # rawFetch / rawPost / … plain Axios (used by doTokenRefresh)
 │   │   ├── cache.ts                # (DISABLED) Client IndexedDB + server Map cache layer
 │   │   ├── callers/
-│   │   │   └── auth/auth.ts        # loginService, getMeService, getMeEndpointKey
+│   │   │   └── auth/auth.ts        # loginService, registerService, confirmService, logoutService, getMeService
 │   │   └── hooks/
 │   │       └── auth/useAuth.ts     # SWR hook: { me, isLoading, error, mutate }
 │   │
 │   ├── store/
-│   │   ├── auth/auth.ts            # useAuthStore — modal state (authAction, nextLink)
-│   │   ├── api-error-store.ts      # useApiError — global error accumulation (max 20)
-│   │   └── use-app-store.ts        # useAppStore — app-level placeholder
+│   │   ├── auth/auth.ts            # useAuthStore, useMeStore
+│   │   ├── language/               # useLanguageStore (languageCode, languageLabel)
+│   │   ├── api-error-store.ts      # useApiError
+│   │   ├── events/                 # stream event log + per-channel selectors
+│   │   └── use-app-store.ts        # useAppStore — placeholder
 │   │
 │   ├── hooks/
-│   │   └── auth/
-│   │       ├── index.ts            # Barrel: `use-auth-store`
-│   │       └── use-auth-store.ts   # `useAuthStore` re-export, `useGetMe`, `useSyncMeFromAuth` (SWR → `useMeStore`)
+│   │   ├── auth/                   # useAuthStore, useGetMe, useSyncMeFromAuth
+│   │   ├── language/               # useCustomLanguage, useSyncLanguageFromLocale
+│   │   ├── events/                 # useStreamEvent, per-transport hooks
+│   │   └── use-mobile.ts           # useIsMobile
 │   │
 │   ├── types/
 │   │   ├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiErrorCode
@@ -156,10 +159,12 @@ fe/
 │   │
 │   ├── constants/
 │   │   ├── api-route.ts            # API_PUBLIC_ROUTES, API_PRIVATE_ROUTES
-│   │   ├── route.ts                # PUBLIC_ROUTES (client-side navigation paths)
+│   │   ├── route.ts                # PUBLIC_ROUTES (home, confirmEmail, logout)
+│   │   ├── browse-menu.ts          # BROWSE_MENU_ITEMS
 │   │   └── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS
 │   │
 │   ├── lib/
+│   │   ├── language/               # resolveCustomLanguage, resolveLanguageCode
 │   │   ├── utils/                  # Shared helpers — import `@/lib/utils` (barrel: index.ts)
 │   │   │   ├── index.ts            # Re-exports
 │   │   │   ├── cn.ts               # cn() (clsx + tailwind-merge)
@@ -217,12 +222,17 @@ Covers everything related to authentication UI and server-side token management:
 | `AuthButton` | `auth-menu/auth-button.tsx` | CTA button shown when not authenticated |
 | `AuthLayout` | `auth-menu/auth-layout.tsx` | Header chrome: skeleton / `UserMenu` / `AuthButton` |
 | `UserMenu` | `auth-menu/user-menu.tsx` | Avatar dropdown for authenticated users |
-| `handleAuthSubmit` | `auth-menu/auth/auth-form-handler.ts` | Shared dispatcher → `loginAction` / `signupAction` |
-| `loginAction` | `actions/auth/auth.ts` | `"use server"` — calls loginService, sets cookies |
-| `signupAction` | `actions/auth/auth.ts` | `"use server"` — placeholder (not yet implemented) |
+| `handleAuthSubmit` | `auth-menu/auth/auth-form-handler.ts` | Dispatcher → `loginAction` / `registerAction` (UI type `"signup"`) |
+| `loginAction` | `actions/auth/auth.ts` | `"use server"` — login, sets cookies |
+| `registerAction` | `actions/auth/auth.ts` | `"use server"` — register (201, no cookies until confirm) |
+| `confirmAction` | `actions/auth/auth.ts` | `"use server"` — email confirm, sets cookies |
+| `logoutAction` | `actions/auth/auth.ts` | `"use server"` — revoke session, clear cookies |
+| `signupAction` | `actions/auth/auth.ts` | **Deprecated alias** of `registerAction` |
 | `loginSchema` / `signupSchema` | `schema/auth/auth.ts` | Zod schemas with i18n error keys |
 | `useAuthStore` | `store/auth/auth.ts` | Auth modal state (authAction, nextLink) |
-| `useAuthStore` / `useGetMe` / `useSyncMeFromAuth` | `hooks/auth/use-auth-store.ts` | Re-export auth modal store; shallow `/me` mirror; `useSyncMeFromAuth` mirrors SWR `useAuth` → `useMeStore` (mounted under `SWRConfig` via `MeSwrSync` in `AppProviders`) |
+| `useAuthStore` / `useGetMe` / `useSyncMeFromAuth` | `hooks/auth/use-auth-store.ts` | Auth modal store; `/me` Zustand mirror; SWR sync via `MeSwrSync` |
+| `useCustomLanguage` / `useSyncLanguageFromLocale` | `hooks/language/*` | Language label/code store (no React Context) |
+| `useLanguageStore` | `store/language/language-store.ts` | `languageCode`, `locale`, `languageLabel` |
 
 ### `Api` cluster — 18 symbols, 100% cohesion
 
@@ -277,13 +287,13 @@ When multiple concurrent client requests are **eligible for silent refresh** (ex
 
 ### 5. SWR for Current User
 
-`useAuth` uses SWR to cache the `GET /api/v1/me` response with options defined in `src/api/hooks/auth/useAuth.ts` (including `shouldRetryOnError: false` and hook-level `revalidateOnFocus`). `AppProviders` wraps the app in `SWRConfig` with `revalidateOnFocus: false` and a 30-second dedup interval; `MeSwrSync` (a null-render child) calls `useSyncMeFromAuth` **inside** that provider so the internal `useAuth` shares the same client SWR context as the rest of the subtree. After a successful login, the caller invokes `mutate()` to force an immediate revalidation.
+`useAuth` uses SWR to cache the `GET /api/v1/me` response with options defined in `src/api/hooks/auth/useAuth.ts` (including `shouldRetryOnError: false` and hook-level `revalidateOnFocus`). `AppProviders` wraps the app in `SWRConfig` with `revalidateOnFocus: false` and a 30-second dedup interval; `MeSwrSync` (a null-render child) calls `useSyncMeFromAuth` **inside** that provider so the internal `useAuth` shares the same client SWR context as the rest of the subtree. After a successful login, `login-content.tsx` invokes **`mutateMe()`** from `useGetMe()` to refresh the Zustand `/me` slice immediately.
 
 ### 6. Zustand for UI State
 
-Auth modal state (`authAction: "none" | "login" | "signup" | "logout"`) and API error accumulation live in provider-free Zustand stores. Any component can import the hook directly without a wrapping Provider.
+Auth modal state (`useAuthStore`), `/me` mirror (`useMeStore`), language (`useLanguageStore`), API errors, and stream log live in **provider-free** Zustand stores.
 
-Current user slice (`useMeStore`) is synced from SWR inside `AppProviders` via `useSyncMeFromAuth` (`src/hooks/auth/use-auth-store.ts`), invoked from a small `MeSwrSync` component rendered **under** `SWRConfig` alongside `children` (see `src/components/providers/app-providers.tsx`). Server Components that need to influence client state should pass props into a client boundary and call `useMeStore.setState` / `useAuthStore.setState` there (no separate RSC seed utilities in-repo).
+`AppProviders` null-render sync children: `MeSwrSync` (`useSyncMeFromAuth`), `LanguageLocaleSync` (`useSyncLanguageFromLocale`), plus auth tab sync. **No** React Context for language — see `src/lib/language/resolve-language.ts`.
 
 ### 7. Unified Stream Event Pipeline
 
@@ -340,11 +350,13 @@ Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i
 
 ```ts
 // src/constants/api-route.ts
-API_PUBLIC_ROUTES.auth.login    → POST /api/v1/auth/login
-API_PUBLIC_ROUTES.auth.signup   → POST /api/v1/auth/signup
-API_PUBLIC_ROUTES.auth.refresh  → POST /api/v1/auth/refresh
+API_PUBLIC_ROUTES.auth.login     → POST /api/v1/auth/login
+API_PUBLIC_ROUTES.auth.register  → POST /api/v1/auth/register
+API_PUBLIC_ROUTES.auth.confirm   → POST /api/v1/auth/confirm
+API_PUBLIC_ROUTES.auth.refresh   → POST /api/v1/auth/refresh
+API_PUBLIC_ROUTES.auth.logout    → POST /api/v1/auth/logout
 
-API_PRIVATE_ROUTES.user.getMe   → GET  /api/v1/me
+API_PRIVATE_ROUTES.user.getMe    → GET  /api/v1/me
 ```
 
 All paths use the `NEXT_PUBLIC_API_URL` base URL (via `apiInstance`).

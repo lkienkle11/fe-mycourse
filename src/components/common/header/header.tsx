@@ -2,47 +2,54 @@ import { MainLogo } from "@public/assets/icons";
 import { ShoppingCart } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { AuthLayout } from "@/components/common/auth-menu";
+import { LoginSignupPopup } from "@/components/common/auth-menu/auth/login-signup-popup";
 import { SearchBar } from "@/components/shared";
 import { Button } from "@/components/ui/button";
-import { LANGUAGE_OPTIONS } from "@/constants";
+import { HeaderBrowseNav } from "./browse-nav";
+import { HeaderMobileBar } from "./header-mobile-bar";
 import { LocaleSwitcher } from "./locale-switcher";
 
-export const Header = async ({
-  switchedLocale,
-}: {
-  switchedLocale: string;
-}) => {
+export const Header = async () => {
   const t = await getTranslations("home");
-  const currentLocale = switchedLocale === "vi" ? "en" : "vi";
-  const currentLabel =
-    LANGUAGE_OPTIONS.find((item) => item.locale === currentLocale)?.locale ??
-    "Language";
 
   return (
-    <header className="w-full sticky top-0 z-100 bg-background shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)]">
-      <div className="container container-wrap mx-auto xl:px-4 flex w-full items-center justify-between py-4">
-        <div className="flex items-center justify-center gap-1.5 cursor-pointer select-none max-md:px-2.5">
-          <MainLogo />
-          <h1 className="max-md:hidden text-xl font-bold bg-black bg-clip-text text-transparent">
-            {t("header.title")}
-          </h1>
+    <>
+      <header className="w-full sticky top-0 z-100 bg-background shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)]">
+        {/* Desktop / large tablet (lg+) */}
+        <div className="container container-wrap mx-auto hidden w-full items-center justify-between py-4 xl:px-4 lg:flex">
+          <div className="flex cursor-pointer select-none items-center justify-center gap-1.5">
+            <MainLogo />
+            <h1 className="text-xl font-bold bg-black bg-clip-text text-transparent">
+              {t("header.title")}
+            </h1>
+          </div>
+          <HeaderBrowseNav />
+          <SearchBar
+            placeholderText={t("search.placeholder")}
+            wrapClassName="lg:w-100"
+            inputClassName="text-object-black/60 placeholder:text-object-black/60"
+          />
+          <div className="flex items-center justify-center gap-4">
+            <LocaleSwitcher useCodeLabelLanguage />
+            <Button
+              variant="outline"
+              className="border-none hover:cursor-pointer hover:scale-120 transition-all duration-300"
+            >
+              <ShoppingCart fill="var(--primary)" />
+            </Button>
+            <AuthLayout />
+          </div>
         </div>
-        <SearchBar
-          placeholderText={t("search.placeholder")}
-          wrapClassName="max-lg:hidden lg:w-100"
-          inputClassName="text-object-black/60 placeholder:text-object-black/60"
+
+        {/* Mobile + tablet below lg */}
+        <HeaderMobileBar
+          title={t("header.title")}
+          searchPlaceholder={t("search.placeholder")}
         />
-        <div className="flex items-center justify-center gap-4">
-          <LocaleSwitcher currentLabel={currentLabel} />
-          <Button
-            variant="outline"
-            className="border-none hover:cursor-pointer hover:scale-120 transition-all duration-300"
-          >
-            <ShoppingCart fill="var(--primary)" />
-          </Button>
-          <AuthLayout />
-        </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Auth modal portal — outside sticky header so z-index stacks above sidebar (z-200) */}
+      <LoginSignupPopup />
+    </>
   );
 };
