@@ -36,9 +36,11 @@ export function UserMenuDropdownItems({
         </div>
       ) : null}
 
-      {HEADER_DROPDOWN_ITEMS.map((group) => (
+      {HEADER_DROPDOWN_ITEMS.map((group, index) => (
         <div key={group.key}>
-          <DropdownMenuSeparator className="my-1 bg-object-black/10" />
+          {(showUserHeader || (!showUserHeader && index > 0)) && (
+            <DropdownMenuSeparator className="my-1 bg-object-black/10" />
+          )}
           {group.value.map((item) => (
             <DropdownMenuItem
               key={item.title}
