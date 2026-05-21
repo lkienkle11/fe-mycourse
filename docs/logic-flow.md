@@ -165,10 +165,23 @@ LoginContent ↔ SignupContent:
 ```
 Source: GET /api/v1/me → MeResponse.permissions → useSyncMeFromAuth → useGetMe().mePermissions (string[])
 
-Constants: PERMISSIONS, PERMISSION_IDS, ROLES  [src/constants/]
-Types: PermissionName, PERMISSION_NAME_TO_ID  [src/types/permissions/]
-Utils: hasPermission, hasAllPermissions (AND), hasAnyPermission (OR)  [src/lib/utils/permission.ts]
-Hooks: useHasPermission, useHasAllPermissions, useHasAnyPermissions  [src/hooks/auth/use-permissions.ts]
+Constants: PERMISSIONS, PERMISSION_IDS, ROLES, HEADER_DROPDOWN_ITEMS (+ per-item permissions)  [src/constants/]
+Types: PermissionName, PermissionRequirement, PermissionCheckMode  [src/types/permissions/]
+Utils: hasPermission, hasAllPermissions (AND), hasAnyPermission (OR), satisfiesPermissions, filterUserMenuGroups  [src/lib/utils/permission.ts]
+Hooks: useHasPermission, useHasAll/AnyPermissions, useSatisfiesPermissions, useFilteredUserMenuGroups  [src/hooks/auth/use-permissions.ts]
+Component: PermissionGate  [src/components/shared/permission-gate.tsx]
+
+Config rule (menu + PermissionRequirement):
+  permissions undefined or [] → visible (when authenticated)
+  permissionMode omitted → "all" (AND, mirrors BE RequirePermission)
+  permissionMode "any" → OR guard
+
+User menu filter flow:
+  HEADER_DROPDOWN_ITEMS (constants/common.ts; UserMenuGroup types in types/user-menu.ts)
+    → useFilteredUserMenuGroups() → filterUserMenuGroups(mePermissions set)
+    → group fails → entire group hidden
+    → group passes → each item filtered; empty groups dropped
+    → UserMenuDropdownItems renders visible groups; separators only between visible groups
 
 Example (single permission):
   import { PERMISSIONS } from "@/constants/permissions";
@@ -177,11 +190,10 @@ Example (single permission):
   const canCreateCourse = useHasPermission(PERMISSIONS.CourseCreate);
   if (!canCreateCourse) return null;
 
-Example (all required — mirrors BE RequirePermission):
-  const canManageUsers = useHasAllPermissions(
-    PERMISSIONS.UserRead,
-    PERMISSIONS.UserUpdate,
-  );
+Example (config-driven — menu item or PermissionGate):
+  <PermissionGate permissions={[PERMISSIONS.UserRead, PERMISSIONS.UserUpdate]} permissionMode="all">
+    <UserAdminPanel />
+  </PermissionGate>
 
 If user is not logged in: mePermissions = [] → all checks return false.
 Re-login required after BE permission matrix changes (JWT cache).

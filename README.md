@@ -252,12 +252,22 @@ mutateMe();
 
 ```ts
 import { PERMISSIONS } from "@/constants/permissions";
-import { useHasPermission } from "@/hooks/auth";
+import { PermissionGate } from "@/components/shared";
+import { useHasPermission, useSatisfiesPermissions } from "@/hooks/auth";
 
 const canCreateCourse = useHasPermission(PERMISSIONS.CourseCreate);
+
+// Config-driven guard (menu items use the same shape in HEADER_DROPDOWN_ITEMS)
+const canManage = useSatisfiesPermissions({
+  permissions: [PERMISSIONS.UserRead, PERMISSIONS.UserUpdate],
+});
+
+<PermissionGate permissions={[PERMISSIONS.CourseCreate]} fallback={null}>
+  <CreateCourseButton />
+</PermissionGate>
 ```
 
-`PERMISSIONS` mirrors BE `AllPermissions` (40 entries). `useHasAllPermissions` requires every listed permission (same as BE `RequirePermission`). Re-login after BE permission matrix changes so JWT claims refresh.
+`PERMISSIONS` mirrors BE `AllPermissions` (40 entries). Default mode is AND (`permissionMode: "all"`), same as BE `RequirePermission`. User menu links are filtered with `useFilteredUserMenuGroups()`. Re-login after BE permission matrix changes so JWT claims refresh.
 
 > To use the SWR hook directly:
 > ```ts
@@ -370,7 +380,7 @@ interface ApiErrorEntry {
 
 | File | Description |
 |------|-------------|
-| `common.ts` | Shared UI constants — `HEADER_DROPDOWN_ITEMS`, `LANGUAGE_OPTIONS`, and related types (`UserMenuItem`, `UserMenuGroup`). |
+| `common.ts` | Shared UI constants — `HEADER_DROPDOWN_ITEMS` (with per-item `permissions`), `LANGUAGE_OPTIONS`. Menu types live in `src/types/user-menu.ts`. |
 | `route.ts` | Application route paths — `ROUTES` object containing all named route strings (home, login, signup, …). |
 
 ## Auth Store (`src/store/auth/auth.ts`)

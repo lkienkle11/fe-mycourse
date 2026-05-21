@@ -26,7 +26,8 @@ _Last audited: 2026-05-21 (full source vs docs sync)._
 - **Constants**: `PERMISSIONS` (40 names), `PERMISSION_IDS` (P1–P40), `ROLES` in `src/constants/` — mirror BE `AllPermissions` and role tags.
 - **Types**: `PermissionName`, `PermissionId`, `RoleName`, `PERMISSION_NAME_TO_ID` in `src/types/permissions/`.
 - **Utils**: `src/lib/utils/permission.ts` — `hasAllPermissions` matches BE `RequirePermission` (AND semantics).
-- **Hooks**: `src/hooks/auth/use-permissions.ts` — `useHasPermission`, `useHasAllPermissions`, `useHasAnyPermissions` over `useGetMe().mePermissions`.
+- **Hooks**: `src/hooks/auth/use-permissions.ts` — `useHasPermission`, `useHasAll/AnyPermissions`, `useSatisfiesPermissions`, `useFilteredUserMenuGroups` over `useGetMe().mePermissions`.
+- **UI**: `PermissionGate` (`src/components/shared/permission-gate.tsx`); user menu filtered via `useFilteredUserMenuGroups` in `UserMenuDropdownItems`.
 - **Note**: `MeResponse` has `permissions: string[]` only; no `roles[]` on `/me` yet — gate UI by permission, not role name alone.
 
 ## Cross-module contracts

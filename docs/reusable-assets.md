@@ -147,36 +147,52 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: none.
 
 ### Asset: Permission types (`PermissionName`, `PermissionId`, `RoleName`, …)
-- **Name**: `PermissionName`, `PermissionId`, `RoleName`, `PermissionAction`, `ParsedPermission`, `PERMISSION_NAME_TO_ID`
+- **Name**: `PermissionName`, `PermissionId`, `RoleName`, `PermissionAction`, `ParsedPermission`, `PermissionCheckMode`, `PermissionRequirement`, `PERMISSION_NAME_TO_ID`
 - **Type**: TypeScript types + map
 - **Path**: `src/types/permissions/index.ts`
-- **Purpose**: Typed permission names and bidirectional name ↔ id map for admin UI.
-- **Scope**: Hooks, utils, components that need compile-time permission safety.
+- **Purpose**: Typed permission names, config-driven guard shape (`PermissionRequirement`), and bidirectional name ↔ id map for admin UI.
+- **Scope**: Hooks, utils, menu constants, `PermissionGate`.
 - **Dependencies**: `PERMISSIONS`, `PERMISSION_IDS`, `ROLES`.
 
+### Asset: User menu types (`UserMenuItem`, `UserMenuGroup`, `UserMenuStatus`)
+- **Name**: `UserMenuStatus`, `UserMenuItem`, `UserMenuGroup`
+- **Type**: TypeScript types
+- **Path**: `src/types/user-menu.ts` (barrel: `@/types` or `@/types/user-menu`)
+- **Purpose**: Dropdown menu config shape; extends `PermissionRequirement` for optional guards on groups and items.
+- **Scope**: `HEADER_DROPDOWN_ITEMS`, `filterUserMenuGroups`, auth menu UI.
+- **Dependencies**: `PermissionRequirement` from `src/types/permissions/`.
+
 ### Asset: Permission utils (`hasPermission`, `hasAllPermissions`, …)
-- **Name**: `toPermissionSet`, `hasPermission`, `hasAllPermissions`, `hasAnyPermission`, `parsePermissionName`, `permissionNameFromId`, `permissionIdFromName`, …
+- **Name**: `toPermissionSet`, `hasPermission`, `hasAllPermissions`, `hasAnyPermission`, `satisfiesPermissions`, `canShowWithPermissions`, `filterUserMenuGroups`, `parsePermissionName`, `permissionNameFromId`, `permissionIdFromName`, …
 - **Type**: Pure functions
 - **Path**: `src/lib/utils/permission.ts` (barrel: `@/lib/utils`)
-- **Purpose**: Client-safe permission checks; `hasAllPermissions` mirrors BE `RequirePermission` (user must have **all** listed names).
-- **Scope**: Hooks, server/client guards, admin tooling.
-- **Dependencies**: `PERMISSIONS`, `PERMISSION_IDS`, permission types.
+- **Purpose**: Client-safe permission checks; `hasAllPermissions` / default `satisfiesPermissions` mode mirror BE `RequirePermission` (AND). Empty/omitted `permissions` on a requirement ⇒ allow. `filterUserMenuGroups` applies group gate then filters items and drops empty groups.
+- **Scope**: Hooks, menu filtering, server/client guards, admin tooling.
+- **Dependencies**: `PERMISSIONS`, `PERMISSION_IDS`, permission types, `UserMenuGroup` from `src/types/user-menu.ts`.
 
 ### Asset: Permission hooks (`useHasPermission`, …)
-- **Name**: `usePermissionSet`, `useHasPermission`, `useHasAllPermissions`, `useHasAnyPermissions`
+- **Name**: `usePermissionSet`, `useHasPermission`, `useHasAllPermissions`, `useHasAnyPermissions`, `useSatisfiesPermissions`, `useFilteredUserMenuGroups`
 - **Type**: React hooks
 - **Path**: `src/hooks/auth/use-permissions.ts` (barrel: `@/hooks/auth`)
-- **Purpose**: Read `mePermissions` from `useGetMe()` and expose memoized Set + boolean guards.
-- **Scope**: Any client component that gates UI by permission.
-- **Dependencies**: `useGetMe`, permission utils, `PermissionName`.
+- **Purpose**: Read `mePermissions` from `useGetMe()` and expose memoized Set + boolean guards; `useFilteredUserMenuGroups` defaults to `HEADER_DROPDOWN_ITEMS`.
+- **Scope**: Any client component that gates UI by permission or renders the user menu.
+- **Dependencies**: `useGetMe`, permission utils, `PermissionName`, `PermissionRequirement`.
+
+### Asset: PermissionGate
+- **Name**: `PermissionGate`
+- **Type**: Client component
+- **Path**: `src/components/shared/permission-gate.tsx` (barrel: `@/components/shared`)
+- **Purpose**: Render `children` only when `useSatisfiesPermissions` passes; optional `fallback` (default `null`).
+- **Scope**: Pages and arbitrary UI blocks.
+- **Dependencies**: `useSatisfiesPermissions`, `PermissionRequirement`.
 
 ### Asset: HEADER_DROPDOWN_ITEMS
 - **Name**: `HEADER_DROPDOWN_ITEMS`
 - **Type**: Constant (`UserMenuGroup[]`)
 - **Path**: `src/constants/common.ts`
-- **Purpose**: Static configuration for the user dropdown menu in the header.
-- **Scope**: `user-menu-dropdown-items.tsx`, `user-menu.tsx`, `sidebar-auth-footer.tsx`.
-- **Dependencies**: `UserMenuGroup`, `UserMenuItem` (also in `common.ts`).
+- **Purpose**: Static configuration for the user dropdown menu in the header. Each item may declare `permissions` + optional `permissionMode` (`"all"` default, `"any"` for OR). Logout group omits permissions (always visible when logged in).
+- **Scope**: `UserMenuDropdownItems` (via `useFilteredUserMenuGroups`), `user-menu.tsx`, `sidebar-auth-footer.tsx`.
+- **Dependencies**: `UserMenuGroup`, `UserMenuItem` (`src/types/user-menu.ts`), `PERMISSIONS`.
 
 ### Asset: LANGUAGE_OPTIONS
 - **Name**: `LANGUAGE_OPTIONS`
@@ -634,10 +650,3 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - Reusability scope: Cookie option definitions.
 - Dependencies: none.
 
-### Asset: UserMenuStatus
-- Name: `UserMenuStatus`
-- Type: Data type
-- File path: `src/constants/common.ts`
-- Purpose: Type-safe status values for user menu sections/actions.
-- Reusability scope: Header auth menu and related UX state.
-- Dependencies: none.
