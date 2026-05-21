@@ -30,6 +30,12 @@
   },
   "commonHeader": {
     "title": "MyCourses.io",
+    "menu": {
+      "open": "Mở menu điều hướng",
+      "close": "Đóng menu điều hướng",
+      "language": "Ngôn ngữ",
+      "account": "Tài khoản"
+    },
     "browse": {
       "label": "Danh mục",
       "categoriesTitle": "Duyệt danh mục",

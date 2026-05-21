@@ -30,6 +30,12 @@
   },
   "commonHeader": {
     "title": "MyCourses.io",
+    "menu": {
+      "open": "Open navigation menu",
+      "close": "Close navigation menu",
+      "language": "Language",
+      "account": "Account"
+    },
     "browse": {
       "label": "Browse",
       "categoriesTitle": "Browse categories",
