@@ -133,7 +133,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
 | `AuthLayout` | `auth-layout.tsx` | Client | `useGetMe()` — skeleton / `UserMenu` / `AuthButton`. Does **not** mount `LoginSignupPopup`. |
-| `UserMenuDropdownItems` | `user-menu-dropdown-items.tsx` | Client | Shared `HEADER_DROPDOWN_ITEMS` groups for `UserMenu` and sidebar footer. |
+| `UserMenuDropdownItems` | `user-menu-dropdown-items.tsx` | Client | Renders `useFilteredUserMenuGroups()` (permission-filtered `HEADER_DROPDOWN_ITEMS`) for `UserMenu` and sidebar footer; separators only between visible groups. |
 | `AuthButton` | `auth-button.tsx` | Client | "Sign In / Sign Up" CTA button. Calls `openLoginModal()` from `useAuthStore`. |
 | `UserMenu` | `user-menu.tsx` | Client | Avatar dropdown for authenticated users. Shows avatar, user name, logout option. |
 | `LoginSignupPopup` | `auth/login-signup-popup.tsx` | Client | Full-viewport centered dialog (`z-300`/`z-301`); card `max-w-200`; close button on card (`DialogClose`). |
@@ -174,6 +174,7 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 
 | Component | File | Description |
 |-----------|------|-------------|
+| `PermissionGate` | `permission-gate.tsx` | Client wrapper: shows `children` when `useSatisfiesPermissions` passes; optional `fallback`. Props: `permissions`, `permissionMode` (`"all"` \| `"any"`). |
 | `SearchBar` | `search-bar.tsx` | Global search input (UI stub). `visibility`: `"header"` (default, hidden below `md`) or `"sidebar"` (full-width flex for mobile sheet). |
 
 ---

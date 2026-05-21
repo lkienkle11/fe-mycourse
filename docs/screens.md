@@ -183,15 +183,18 @@ AuthLayout
             └── Session group: Logout
 ```
 
-#### Dropdown menu items (from `src/constants/common.ts`)
+#### Dropdown menu items (`HEADER_DROPDOWN_ITEMS` in `src/constants/common.ts`; types in `src/types/user-menu.ts`)
 
-```ts
-HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
-  { key: "study",   value: [{ href: "/my-courses", … }, …] },
-  { key: "account", value: […] },
-  { key: "session", value: [{ href: "/logout", status: "warning", … }] },
-]
-```
+| Item | Route | Permissions (FE UI guard) |
+|------|-------|---------------------------|
+| My Courses | `/my-courses` | `course:read` |
+| My Cart | `/my-cart` | `profile:read` |
+| Wishlist | `/wishlist` | `profile:read` |
+| Notifications | `/notifications` | `profile:read` |
+| Account Settings | `/account-settings` | `profile:read` |
+| Logout | `/logout` | *(none — always visible when logged in)* |
+
+Groups `study` and `account` have no group-level permissions (gating is per item). `UserMenuDropdownItems` calls `useFilteredUserMenuGroups()` so learners without `course:read` do not see My Courses; logout remains visible.
 
 Rendered via `UserMenuDropdownItems` in `UserMenu` and `SidebarAuthFooter`.
 
