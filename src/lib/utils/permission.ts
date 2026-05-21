@@ -3,9 +3,12 @@ import { PERMISSIONS } from "@/constants/permissions";
 import type {
   ParsedPermission,
   PermissionAction,
+  PermissionCheckMode,
   PermissionId,
   PermissionName,
+  PermissionRequirement,
 } from "@/types/permissions";
+import type { UserMenuGroup, UserMenuItem } from "@/types/user-menu";
 
 const PERMISSION_ACTIONS: readonly PermissionAction[] = [
   "read",
@@ -49,6 +52,59 @@ export function hasAnyPermission(
   ...names: PermissionName[]
 ): boolean {
   return names.some((name) => set.has(name));
+}
+
+/**
+ * Config-driven check: empty/omitted permissions => visible.
+ * `permissionMode` defaults to `"all"` (mirrors BE `RequirePermission`).
+ */
+export function satisfiesPermissions(
+  set: ReadonlySet<string>,
+  requirement: PermissionRequirement,
+): boolean {
+  const { permissions, permissionMode = "all" } = requirement;
+  if (!permissions || permissions.length === 0) {
+    return true;
+  }
+  if (permissionMode === "any") {
+    return hasAnyPermission(set, ...permissions);
+  }
+  return hasAllPermissions(set, ...permissions);
+}
+
+/** Thin wrapper for inline permission checks. */
+export function canShowWithPermissions(
+  set: ReadonlySet<string>,
+  permissions?: readonly PermissionName[],
+  mode: PermissionCheckMode = "all",
+): boolean {
+  return satisfiesPermissions(set, { permissions, permissionMode: mode });
+}
+
+/**
+ * Filter menu groups: group gate first, then items; drop empty groups.
+ * Same rules for group and item (`permissions` empty/omitted => visible).
+ */
+export function filterUserMenuGroups(
+  set: ReadonlySet<string>,
+  groups: readonly UserMenuGroup[],
+): UserMenuGroup[] {
+  const result: UserMenuGroup[] = [];
+
+  for (const group of groups) {
+    if (!satisfiesPermissions(set, group)) {
+      continue;
+    }
+    const value = group.value.filter((item: UserMenuItem) =>
+      satisfiesPermissions(set, item),
+    );
+    if (value.length === 0) {
+      continue;
+    }
+    result.push({ ...group, value });
+  }
+
+  return result;
 }
 
 /**

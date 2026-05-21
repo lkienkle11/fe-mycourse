@@ -4,7 +4,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { HEADER_DROPDOWN_ITEMS } from "@/constants";
+import { useFilteredUserMenuGroups } from "@/hooks/auth";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import type { MeResponse } from "@/types/auth";
@@ -25,6 +25,8 @@ export function UserMenuDropdownItems({
   showUserHeader = false,
   onItemClick,
 }: UserMenuDropdownItemsProps) {
+  const menuGroups = useFilteredUserMenuGroups();
+
   return (
     <>
       {showUserHeader && me ? (
@@ -36,9 +38,9 @@ export function UserMenuDropdownItems({
         </div>
       ) : null}
 
-      {HEADER_DROPDOWN_ITEMS.map((group, index) => (
+      {menuGroups.map((group, index) => (
         <div key={group.key}>
-          {(showUserHeader || (!showUserHeader && index > 0)) && (
+          {(showUserHeader || index > 0) && (
             <DropdownMenuSeparator className="my-1 bg-object-black/10" />
           )}
           {group.value.map((item) => (

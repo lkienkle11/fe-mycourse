@@ -12,6 +12,8 @@ export {
   setCookieValue,
 } from "./cookie";
 export {
+  canShowWithPermissions,
+  filterUserMenuGroups,
   hasAllPermissions,
   hasAnyPermission,
   hasPermission,
@@ -21,6 +23,7 @@ export {
   parsePermissionName,
   permissionIdFromName,
   permissionNameFromId,
+  satisfiesPermissions,
   toPermissionSet,
 } from "./permission";
 export { useUniqueId } from "./react";

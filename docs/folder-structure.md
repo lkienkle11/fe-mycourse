@@ -91,7 +91,7 @@ src/components/
 │                           #   AdvancedPromoSection, TrendingCoursesSection,
 │                           #   UpcomingWebinarsSection, PromoSection, CourseCard
 ├── shared/                 # Cross-feature presentational components
-│                           #   SearchBar (currently a UI stub — no backend call)
+│                           #   PermissionGate, SearchBar (stub — no backend call)
 ├── providers/
 │   └── app-providers.tsx   # SWRConfig + EventsStreamProvider
 │                           # + MeSwrSync (useSyncMeFromAuth)
@@ -161,7 +161,7 @@ src/hooks/
 ├── auth/
 │   ├── index.ts            # Barrel: use-auth-store, use-permissions, tab-sync hooks
 │   ├── use-auth-store.ts   # useAuthStore (re-export), useGetMe, useSyncMeFromAuth
-│   ├── use-permissions.ts  # usePermissionSet, useHasPermission, useHasAll/AnyPermissions
+│   ├── use-permissions.ts  # usePermissionSet, useHas*, useSatisfiesPermissions, useFilteredUserMenuGroups
 │   ├── use-auth-confirm-tab-sync.ts
 │   └── use-auth-logout-tab-sync.ts
 ├── language/
@@ -212,11 +212,12 @@ src/events/
 src/types/
 ├── api.ts                  # ApiResult<T>, ApiResponse<T>, ApiPageInfo, ApiErrorCode constant map
 ├── browse-menu.ts          # BrowseMenuItem (recursive children?: BrowseMenuItem[])
+├── user-menu.ts            # UserMenuItem, UserMenuGroup, UserMenuStatus (+ PermissionRequirement)
 ├── index.ts                # Re-exports domain types
 ├── auth/
 │   └── auth.ts             # MeResponse, LoginResponse, RefreshTokenResponse
 ├── permissions/
-│   └── index.ts            # PermissionName, PermissionId, RoleName, PERMISSION_NAME_TO_ID
+│   └── index.ts            # PermissionName, PermissionId, PermissionRequirement, PERMISSION_NAME_TO_ID
 └── events/
     ├── index.ts            # Barrel: stream-events + per-channel types
     ├── common.ts           # StreamEventSource, metadata, StreamInboundEventOf, StreamOutboundEventOf
@@ -244,7 +245,7 @@ src/constants/
 ├── api-route.ts            # API_PUBLIC_ROUTES (login, register, confirm, refresh, logout), getMe
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
 ├── route.ts                # PUBLIC_ROUTES — client-side navigation path constants
-├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS
+├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (values only)
 ├── permissions.ts          # PERMISSIONS — 40 canonical names (mirror BE AllPermissions)
 ├── permission-ids.ts       # PERMISSION_IDS — P1…P40
 ├── roles.ts                # ROLES — sysadmin, admin, instructor, learner
@@ -271,7 +272,7 @@ src/lib/
 │   ├── react.ts            # useUniqueId() — stable ID generator for accessibility
 │   ├── user.ts             # pickCharacter() — avatar initial picker
 │   ├── cookie.ts           # isomorphic getCookieValue / setCookieValue; buildCookieOptions
-│   ├── permission.ts       # hasPermission, hasAllPermissions, parsePermissionName, id lookup
+│   ├── permission.ts       # hasPermission, satisfiesPermissions, filterUserMenuGroups, id lookup
 │   └── auth-session.ts     # SERVER ONLY — setAuthSessionCookies (import directly, not via barrel)
 ├── font.ts                 # next/font definitions: Roboto, Gilroy, GeistMono
 └── http.ts                 # Placeholder for future HTTP utilities

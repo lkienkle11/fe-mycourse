@@ -161,7 +161,7 @@ fe/
 │   │   ├── api-route.ts            # API_PUBLIC_ROUTES, API_PRIVATE_ROUTES
 │   │   ├── route.ts                # PUBLIC_ROUTES (home, confirmEmail, logout)
 │   │   ├── browse-menu.ts          # BROWSE_MENU_ITEMS
-│   │   └── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS
+│   │   └── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (types: types/user-menu.ts)
 │   │
 │   ├── lib/
 │   │   ├── language/               # resolveCustomLanguage, resolveLanguageCode

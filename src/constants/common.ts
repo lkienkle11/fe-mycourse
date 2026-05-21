@@ -1,34 +1,44 @@
-export type UserMenuStatus = "warning" | "normal";
-
-export type UserMenuItem = {
-  href: string;
-  title: string;
-  status: UserMenuStatus;
-  itemClassName?: string;
-};
-
-export type UserMenuGroup = {
-  key: string;
-  value: UserMenuItem[];
-};
+import { PERMISSIONS } from "@/constants/permissions";
+import type { UserMenuGroup } from "@/types/user-menu";
 
 export const HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
   {
     key: "study",
     value: [
-      { href: "/my-courses", title: "My Courses", status: "normal" },
-      { href: "/my-cart", title: "My Cart", status: "normal" },
-      { href: "/wishlist", title: "Wishlist", status: "normal" },
+      {
+        href: "/my-courses",
+        title: "My Courses",
+        status: "normal",
+        permissions: [PERMISSIONS.CourseRead],
+      },
+      {
+        href: "/my-cart",
+        title: "My Cart",
+        status: "normal",
+        permissions: [PERMISSIONS.ProfileRead],
+      },
+      {
+        href: "/wishlist",
+        title: "Wishlist",
+        status: "normal",
+        permissions: [PERMISSIONS.ProfileRead],
+      },
     ],
   },
   {
     key: "account",
     value: [
-      { href: "/notifications", title: "Notifications", status: "normal" },
+      {
+        href: "/notifications",
+        title: "Notifications",
+        status: "normal",
+        permissions: [PERMISSIONS.ProfileRead],
+      },
       {
         href: "/account-settings",
         title: "Account Settings",
         status: "normal",
+        permissions: [PERMISSIONS.ProfileRead],
       },
     ],
   },
