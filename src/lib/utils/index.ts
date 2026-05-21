@@ -11,6 +11,18 @@ export {
   getCookieValue,
   setCookieValue,
 } from "./cookie";
+export {
+  hasAllPermissions,
+  hasAnyPermission,
+  hasPermission,
+  isPermissionAction,
+  isReadPermission,
+  isWritePermission,
+  parsePermissionName,
+  permissionIdFromName,
+  permissionNameFromId,
+  toPermissionSet,
+} from "./permission";
 export { useUniqueId } from "./react";
 export { isServer } from "./runtime";
 export { buildQueryParams } from "./url";

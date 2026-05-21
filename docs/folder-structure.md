@@ -159,8 +159,11 @@ src/store/
 ```
 src/hooks/
 ├── auth/
-│   ├── index.ts            # Barrel: re-exports use-auth-store
-│   └── use-auth-store.ts   # useAuthStore (re-export), useGetMe, useSyncMeFromAuth
+│   ├── index.ts            # Barrel: use-auth-store, use-permissions, tab-sync hooks
+│   ├── use-auth-store.ts   # useAuthStore (re-export), useGetMe, useSyncMeFromAuth
+│   ├── use-permissions.ts  # usePermissionSet, useHasPermission, useHasAll/AnyPermissions
+│   ├── use-auth-confirm-tab-sync.ts
+│   └── use-auth-logout-tab-sync.ts
 ├── language/
 │   ├── index.ts            # useCustomLanguage, useSyncLanguageFromLocale
 │   ├── use-custom-language.ts
@@ -212,6 +215,8 @@ src/types/
 ├── index.ts                # Re-exports domain types
 ├── auth/
 │   └── auth.ts             # MeResponse, LoginResponse, RefreshTokenResponse
+├── permissions/
+│   └── index.ts            # PermissionName, PermissionId, RoleName, PERMISSION_NAME_TO_ID
 └── events/
     ├── index.ts            # Barrel: stream-events + per-channel types
     ├── common.ts           # StreamEventSource, metadata, StreamInboundEventOf, StreamOutboundEventOf
@@ -237,10 +242,12 @@ src/schema/
 ```
 src/constants/
 ├── api-route.ts            # API_PUBLIC_ROUTES (login, register, confirm, refresh, logout), getMe
-├── browse-menu.ts          # BROWSE_MENU_ITEMS for header browse / mobile tree
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
 ├── route.ts                # PUBLIC_ROUTES — client-side navigation path constants
 ├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS
+├── permissions.ts          # PERMISSIONS — 40 canonical names (mirror BE AllPermissions)
+├── permission-ids.ts       # PERMISSION_IDS — P1…P40
+├── roles.ts                # ROLES — sysadmin, admin, instructor, learner
 └── events/
     └── index.ts            # STREAM_EVENTS_LOG_MAX, STREAM_ENV_KEYS (SSE/WS/gRPC URLs)
 ```
@@ -264,6 +271,7 @@ src/lib/
 │   ├── react.ts            # useUniqueId() — stable ID generator for accessibility
 │   ├── user.ts             # pickCharacter() — avatar initial picker
 │   ├── cookie.ts           # isomorphic getCookieValue / setCookieValue; buildCookieOptions
+│   ├── permission.ts       # hasPermission, hasAllPermissions, parsePermissionName, id lookup
 │   └── auth-session.ts     # SERVER ONLY — setAuthSessionCookies (import directly, not via barrel)
 ├── font.ts                 # next/font definitions: Roboto, Gilroy, GeistMono
 └── http.ts                 # Placeholder for future HTTP utilities

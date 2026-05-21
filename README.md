@@ -248,6 +248,17 @@ await loginAction(payload);
 mutateMe();
 ```
 
+### Permission checks
+
+```ts
+import { PERMISSIONS } from "@/constants/permissions";
+import { useHasPermission } from "@/hooks/auth";
+
+const canCreateCourse = useHasPermission(PERMISSIONS.CourseCreate);
+```
+
+`PERMISSIONS` mirrors BE `AllPermissions` (40 entries). `useHasAllPermissions` requires every listed permission (same as BE `RequirePermission`). Re-login after BE permission matrix changes so JWT claims refresh.
+
 > To use the SWR hook directly:
 > ```ts
 > import { useAuth } from "@/api/hooks/auth";

@@ -21,6 +21,14 @@ _Last audited: 2026-05-21 (full source vs docs sync)._
 - `Routing + i18n` controls locale-prefixed navigation and message loading.
 - `Shared` exposes reusable helpers/types/constants (`lib/language`, `constants/browse-menu.ts`, …).
 
+## Authorization constants & hooks
+
+- **Constants**: `PERMISSIONS` (40 names), `PERMISSION_IDS` (P1–P40), `ROLES` in `src/constants/` — mirror BE `AllPermissions` and role tags.
+- **Types**: `PermissionName`, `PermissionId`, `RoleName`, `PERMISSION_NAME_TO_ID` in `src/types/permissions/`.
+- **Utils**: `src/lib/utils/permission.ts` — `hasAllPermissions` matches BE `RequirePermission` (AND semantics).
+- **Hooks**: `src/hooks/auth/use-permissions.ts` — `useHasPermission`, `useHasAllPermissions`, `useHasAnyPermissions` over `useGetMe().mePermissions`.
+- **Note**: `MeResponse` has `permissions: string[]` only; no `roles[]` on `/me` yet — gate UI by permission, not role name alone.
+
 ## Cross-module contracts
 - `Auth UI -> actions/auth -> api/callers` for login/signup submit.
 - `api/hooks/auth/useAuth -> hooks/auth/use-auth-store` for SWR-to-Zustand sync.
