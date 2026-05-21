@@ -32,7 +32,7 @@ export function LoginSignupLayout({
     >
       {/* Desktop (lg+): hero stretches to match form column height */}
       <div className="relative w-1/2 basis-1/2 min-h-0 shrink-0 overflow-hidden rounded-tl-lg rounded-bl-lg max-lg:hidden">
-        <div className="absolute flex justify-center items-center gap-2 left-3 bottom-6">
+        <div className="absolute flex justify-center items-center gap-2 left-3 bottom-6 z-2000">
           <div className="w-[40px] h-[40px] rounded-full bg-white">
             <Image
               alt={
