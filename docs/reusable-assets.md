@@ -122,13 +122,53 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Navigation helpers, links, router.
 - **Dependencies**: none.
 
-### Asset: BASIC_ACTIONS
-- **Name**: `BASIC_ACTIONS`
-- **Type**: Constant object
-- **Path**: `src/constants/actions.ts`
-- **Purpose**: Maps BE RBAC permission code strings to named constants for FE permission checks.
-- **Scope**: Any component or guard that checks the current user's permissions.
+### Asset: PERMISSIONS
+- **Name**: `PERMISSIONS`
+- **Type**: Constant object (40 entries)
+- **Path**: `src/constants/permissions.ts`
+- **Purpose**: Canonical permission names — 1:1 mirror of BE `constants.AllPermissions` (e.g. `CourseCreate` → `course:create`).
+- **Scope**: Permission checks, admin UI labels, API alignment.
 - **Dependencies**: none.
+
+### Asset: PERMISSION_IDS
+- **Name**: `PERMISSION_IDS`
+- **Type**: Constant object (`P1`…`P40`)
+- **Path**: `src/constants/permission-ids.ts`
+- **Purpose**: DB `permissions.permission_id` keyed like BE `perm_id` tags.
+- **Scope**: Admin RBAC UI, id ↔ name lookup via utils.
+- **Dependencies**: `PERMISSIONS` (paired keys).
+
+### Asset: ROLES
+- **Name**: `ROLES`
+- **Type**: Constant object
+- **Path**: `src/constants/roles.ts`
+- **Purpose**: Role name literals (`sysadmin`, `admin`, `instructor`, `learner`) — mirror BE `role:"..."` tags. Use with permission checks; `/me` does not return roles yet.
+- **Scope**: Future role-based UI; documentation only until BE exposes roles on `MeResponse`.
+- **Dependencies**: none.
+
+### Asset: Permission types (`PermissionName`, `PermissionId`, `RoleName`, …)
+- **Name**: `PermissionName`, `PermissionId`, `RoleName`, `PermissionAction`, `ParsedPermission`, `PERMISSION_NAME_TO_ID`
+- **Type**: TypeScript types + map
+- **Path**: `src/types/permissions/index.ts`
+- **Purpose**: Typed permission names and bidirectional name ↔ id map for admin UI.
+- **Scope**: Hooks, utils, components that need compile-time permission safety.
+- **Dependencies**: `PERMISSIONS`, `PERMISSION_IDS`, `ROLES`.
+
+### Asset: Permission utils (`hasPermission`, `hasAllPermissions`, …)
+- **Name**: `toPermissionSet`, `hasPermission`, `hasAllPermissions`, `hasAnyPermission`, `parsePermissionName`, `permissionNameFromId`, `permissionIdFromName`, …
+- **Type**: Pure functions
+- **Path**: `src/lib/utils/permission.ts` (barrel: `@/lib/utils`)
+- **Purpose**: Client-safe permission checks; `hasAllPermissions` mirrors BE `RequirePermission` (user must have **all** listed names).
+- **Scope**: Hooks, server/client guards, admin tooling.
+- **Dependencies**: `PERMISSIONS`, `PERMISSION_IDS`, permission types.
+
+### Asset: Permission hooks (`useHasPermission`, …)
+- **Name**: `usePermissionSet`, `useHasPermission`, `useHasAllPermissions`, `useHasAnyPermissions`
+- **Type**: React hooks
+- **Path**: `src/hooks/auth/use-permissions.ts` (barrel: `@/hooks/auth`)
+- **Purpose**: Read `mePermissions` from `useGetMe()` and expose memoized Set + boolean guards.
+- **Scope**: Any client component that gates UI by permission.
+- **Dependencies**: `useGetMe`, permission utils, `PermissionName`.
 
 ### Asset: HEADER_DROPDOWN_ITEMS
 - **Name**: `HEADER_DROPDOWN_ITEMS`
@@ -546,7 +586,6 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ## Gap Analysis (What Must Be Created Later)
 
-- Reusable permission guard hook (e.g. `useHasPermission(permission: string): boolean`) using `mePermissions` from `useMeStore`.
 - `useSendWebSocketOutbound` hook (mirror broadcast) if many call sites send WS messages.
 - Shared form error display component.
 - Reusable paginated list hook when list endpoints are implemented.
