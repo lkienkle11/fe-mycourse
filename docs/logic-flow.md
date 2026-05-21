@@ -163,15 +163,28 @@ LoginContent ↔ SignupContent:
 ## 6. Authorization / Permission Check Pattern
 
 ```
-Current user's permissions are in: useGetMe().mePermissions (string[])
+Source: GET /api/v1/me → MeResponse.permissions → useSyncMeFromAuth → useGetMe().mePermissions (string[])
 
-Check example:
-  const { mePermissions } = useGetMe()
-  const canManageRBAC = mePermissions.includes(BASIC_ACTIONS.RBAC_MANAGE)
+Constants: PERMISSIONS, PERMISSION_IDS, ROLES  [src/constants/]
+Types: PermissionName, PERMISSION_NAME_TO_ID  [src/types/permissions/]
+Utils: hasPermission, hasAllPermissions (AND), hasAnyPermission (OR)  [src/lib/utils/permission.ts]
+Hooks: useHasPermission, useHasAllPermissions, useHasAnyPermissions  [src/hooks/auth/use-permissions.ts]
 
-BASIC_ACTIONS constants  [src/constants/actions.ts]  mirror BE RBAC permission strings.
+Example (single permission):
+  import { PERMISSIONS } from "@/constants/permissions";
+  import { useHasPermission } from "@/hooks/auth";
+
+  const canCreateCourse = useHasPermission(PERMISSIONS.CourseCreate);
+  if (!canCreateCourse) return null;
+
+Example (all required — mirrors BE RequirePermission):
+  const canManageUsers = useHasAllPermissions(
+    PERMISSIONS.UserRead,
+    PERMISSIONS.UserUpdate,
+  );
 
 If user is not logged in: mePermissions = [] → all checks return false.
+Re-login required after BE permission matrix changes (JWT cache).
 ```
 
 ---
