@@ -29,7 +29,7 @@ export function LoginSignupPopup({
       <DialogTitle />
       <DialogContent
         className={cn(
-          "w-full max-w-200 p-0",
+          "w-full max-w-200 sm:max-w-200 p-0",
           "max-lg:max-w-[calc(100%-2rem)] max-lg:max-h-[90dvh] max-lg:overflow-y-auto",
           contentClassName,
         )}
