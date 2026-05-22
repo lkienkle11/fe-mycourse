@@ -106,10 +106,10 @@ Header (src/components/common/header/header.tsx)
 │     SearchBar — full width in header row
 │     LocaleSwitcher, Cart button, AuthLayout
 ├── Mobile bar (max-lg): HeaderMobileBar — logo icon + burger only
-│     Opens HeaderMobileSidebar (portal overlay, right panel ~85vw / max 320px)
-│         Backdrop z-200 + panel slide-in from right (Tailwind transition, `open` state)
+│     Opens HeaderMobileSidebar (portal overlay, right panel `w-[min(320px,85vw)]`)
+│         Backdrop `z-200` + panel `z-202`, slide-in from right; `document.body` overflow locked while open; `Escape` closes
 │         Sidebar header: logo + title
-│         Scrollable body: `overflow-y-auto` (search + BrowseMenuTree accordion)
+│         Scrollable body: `overflow-y-auto` (search + `BrowseSidebarMenu` — Collapsible + `SidebarMenu*`)
 │         Footer: LocaleSwitcher (full width, `useCustomLanguage`) + SidebarAuthFooter
 └── LoginSignupPopup — sibling after </header> (z-300 overlay / z-301 content, centered card)
 ```
