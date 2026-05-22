@@ -6,11 +6,10 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
-import { BrowseMenuTree } from "@/components/common/header/browse-menu-tree";
+import { BrowseSidebarMenu } from "@/components/common/header/browse-sidebar-menu";
 import { LocaleSwitcher } from "@/components/common/header/locale-switcher";
 import { SidebarAuthFooter } from "@/components/common/header/sidebar-auth-footer";
 import { SearchBar } from "@/components/shared";
-import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { BROWSE_MENU_ITEMS } from "@/constants/browse-menu";
 import { Link } from "@/i18n/navigation";
@@ -131,12 +130,10 @@ export function HeaderMobileSidebar({
                     >
                       {t("browse.categoriesTitle")}
                     </h2>
-                    <Accordion type="single" collapsible className="w-full">
-                      <BrowseMenuTree
-                        items={BROWSE_MENU_ITEMS}
-                        onLinkClick={closeSidebar}
-                      />
-                    </Accordion>
+                    <BrowseSidebarMenu
+                      items={BROWSE_MENU_ITEMS}
+                      onLinkClick={closeSidebar}
+                    />
                   </section>
                 </div>
               </div>
