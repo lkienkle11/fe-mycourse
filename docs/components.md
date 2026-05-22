@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-05-21 (full source vs docs sync)._
+_Last audited: 2026-05-22 (full source vs docs sync; removed dead `BrowseMenuTree`)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -28,7 +28,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Base | Description |
 |-----------|------|------|-------------|
-| `Accordion` | `ui/accordion.tsx` | `radix-ui` | Collapsible sections; open panels use `data-open:overflow-visible` (mobile browse tree scroll) |
+| `Accordion` | `ui/accordion.tsx` | `radix-ui` | Collapsible sections; open panels use `data-open:overflow-visible` for nested content |
 | `Alert` | `ui/alert.tsx` | — | Inline alert banners (info, warning, error) |
 | `AlertDialog` | `ui/alert-dialog.tsx` | `radix-ui` | Blocking confirm modal (destructive actions) |
 | `AspectRatio` | `ui/aspect-ratio.tsx` | `radix-ui` | Fixed ratio containers (16:9 media) |
@@ -110,12 +110,14 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
 | `Header` | `header.tsx` | Server | Sticky `z-100`. Desktop row (`lg+`) + `HeaderMobileBar`. `LoginSignupPopup` mounted after `</header>`. |
-| `HeaderBrowseNav` | `browse-nav.tsx` | Client | Desktop-only (`lg+`) browse flyout. N-column hover via `activeStack`; helper `MenuColumn`. |
+| `HeaderBrowseNav` | `browse-nav.tsx` | Client | Desktop-only (`lg+`) browse flyout (`NavigationMenu`). N-column hover via `activeStack`; private helper `MenuColumn`. |
 | `HeaderMobileBar` | `header-mobile-bar.tsx` | Client | Below `lg`: logo + burger opening `HeaderMobileSidebar`. |
-| `HeaderMobileSidebar` | `header-mobile-sidebar.tsx` | Client | Portal `z-200` / panel `z-201`, `h-dvh`, slides from **right**. Middle column: native `overflow-y-auto` (not `ScrollArea`) for touch scroll. |
-| `BrowseMenuTree` | `browse-menu-tree.tsx` | Client | Recursive `Accordion` + `BROWSE_MENU_ITEMS`. Nested `AccordionContent` uses `h-auto!`; leaf links `no-underline!`. |
+| `HeaderMobileSidebar` | `header-mobile-sidebar.tsx` | Client | Portal overlay `z-200`, panel `z-202`, `h-dvh`, slides from **right** (no Radix Sheet). Body: `overflow-y-auto` + `SearchBar` (`visibility="sidebar"`) + `BrowseSidebarMenu` + footer (`LocaleSwitcher`, `SidebarAuthFooter`). Locks `document.body` overflow while open; `Escape` closes. |
+| `BrowseSidebarMenu` | `browse-sidebar-menu.tsx` | Client | Mobile browse tree: `SidebarProvider` + `SidebarContent` + `Collapsible` / `SidebarMenu*`. Private helpers: `BrowseSidebarMenuLevel`, `BrowseSidebarMenuSubLevel`, `BrowseMenuLabel`. Props: `items`, `onLinkClick`. Imported directly by `HeaderMobileSidebar` (not in `header/index.ts` barrel). |
 | `SidebarAuthFooter` | `sidebar-auth-footer.tsx` | Client | Guest `AuthButton` or avatar + `UserMenuDropdownItems`. |
-| `LocaleSwitcher` | `locale-switcher.tsx` | Client | `useCustomLanguage()`; props: `useCodeLabelLanguage`, `fullWidth`, `onNavigate`, optional `currentLabel`. |
+| `LocaleSwitcher` | `locale-switcher.tsx` | Client | `useCustomLanguage()`; props: `useCodeLabelLanguage`, `fullWidth`, `onNavigate`, optional `currentLabel`. Not re-exported from `header/index.ts`. |
+
+**`header/index.ts` barrel:** `HeaderBrowseNav`, `Header`, `HeaderMobileBar`, `HeaderMobileSidebar`, `SidebarAuthFooter` only.
 
 ### Footer
 

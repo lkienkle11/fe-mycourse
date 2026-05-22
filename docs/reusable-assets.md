@@ -402,7 +402,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `BROWSE_MENU_ITEMS`
 - **Type**: Constant tree
 - **Path**: `src/constants/browse-menu.ts` (+ types in `src/types/browse-menu.ts`)
-- **Purpose**: Static browse category tree for `HeaderBrowseNav` (desktop) and `BrowseMenuTree` (mobile sidebar).
+- **Purpose**: Static browse category tree for `HeaderBrowseNav` (desktop flyout) and `BrowseSidebarMenu` (mobile sidebar).
 - **Scope**: Header browse UI only.
 - **Dependencies**: `BrowseMenuItem` type.
 
