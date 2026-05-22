@@ -110,7 +110,8 @@ fe/
 │   │   ├── ui/                     # Radix/shadcn primitives (Button, Dialog, Input, …)
 │   │   ├── common/
 │   │   │   ├── index.ts            # Barrel: re-exports auth-menu, footer, header
-│   │   │   ├── header/             # Header, LocaleSwitcher
+│   │   │   ├── header/             # Header (RSC), HeaderBrowseNav, HeaderMobileBar/Sidebar,
+│   │   │                           # BrowseSidebarMenu, SidebarAuthFooter, LocaleSwitcher
 │   │   │   ├── footer/             # Footer (RSC), FooterSocial (client social icons)
 │   │   │   └── auth-menu/          # AuthLayout, AuthButton, LoginSignupPopup,
 │   │   │                           # LoginContent, SignupContent, UserMenu,
