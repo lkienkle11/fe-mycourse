@@ -84,7 +84,9 @@ export function RegisterForm() {
         </form>
 
         <div className="mt-6 flex items-center justify-between rounded-md border p-3">
-          <span className="text-sm">{t("zustandCount", { count: String(count) })}</span>
+          <span className="text-sm">
+            {t("zustandCount", { count: String(count) })}
+          </span>
           <Button type="button" variant="outline" onClick={increment}>
             {t("increment")}
           </Button>
