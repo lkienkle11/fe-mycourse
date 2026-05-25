@@ -59,18 +59,18 @@ export async function AdvancedPromoSection() {
 
             <ul className="space-y-4 mb-10">
               {[
-                { icon: BarChart, textKey: "promo.list.item1" },
-                { icon: TrendingUp, textKey: "promo.list.item2" },
-                { icon: Users, textKey: "promo.list.item3" },
+                { icon: BarChart, text: t("promo.list.item1") },
+                { icon: TrendingUp, text: t("promo.list.item2") },
+                { icon: Users, text: t("promo.list.item3") },
               ].map((item) => {
                 const Icon = item.icon;
                 return (
-                  <li key={item.textKey} className="flex gap-4">
+                  <li key={item.text} className="flex gap-4">
                     <div className="mt-1 bg-primary/10 p-2 text-primary rounded-lg shrink-0 h-fit">
                       <Icon className="h-5 w-5" />
                     </div>
                     <span className="text-foreground font-medium">
-                      {t(item.textKey)}
+                      {item.text}
                     </span>
                   </li>
                 );

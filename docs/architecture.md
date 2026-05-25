@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-21 (full source vs docs sync)._
+_Last audited: 2026-05-25 (dashboard locale chrome, `LocaleSwitcher` pathname)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -94,23 +94,26 @@ fe/
 │   │   ├── page.tsx                # / → redirect to /vi
 │   │   └── [locale]/
 │   │       ├── layout.tsx          # Locale layout — NextIntlClientProvider + AppProviders
-│   │       └── (web)/
-│   │           ├── layout.tsx      # Web shell — Header, <main>, Footer (see @/components/common)
-│   │           └── page.tsx        # Home route → HomePage
+│   │       ├── (web)/
+│   │       │   ├── layout.tsx      # Web shell — Header, <main>, Footer
+│   │       │   └── page.tsx        # Home route → HomePage
+│   │       ├── admin/              # DashboardLayout + AdminDashboardPage
+│   │       ├── instructor/
+│   │       └── sysadmin/
 │   │
 │   ├── screen/                     # Page-level screen components (async server components)
-│   │   ├── index.ts                # Barrel: common + admin + instructor
-│   │   ├── common/
-│   │   │   ├── index.ts            # Barrel: shared web screens (e.g. HomePage)
-│   │   │   └── home/page.tsx       # HomePage — assembles all home sections
-│   │   ├── admin/index.ts          # Barrel: admin-role screens (extend as routes are added)
-│   │   └── instructor/index.ts     # Barrel: instructor-role screens (extend as routes are added)
+│   │   ├── index.ts                # Barrel: common + admin + instructor + sysadmin
+│   │   ├── common/home/page.tsx    # HomePage
+│   │   ├── admin/page.tsx          # AdminDashboardPage
+│   │   ├── instructor/page.tsx
+│   │   └── sysadmin/page.tsx
 │   │
 │   ├── components/
 │   │   ├── ui/                     # Radix/shadcn primitives (Button, Dialog, Input, …)
 │   │   ├── common/
-│   │   │   ├── index.ts            # Barrel: re-exports auth-menu, footer, header
-│   │   │   ├── header/             # Header (RSC), HeaderBrowseNav, HeaderMobileBar/Sidebar,
+│   │   │   ├── index.ts            # Barrel: auth-menu, dashboard, footer, header
+│   │   │   ├── dashboard/          # DashboardLayout (+ locale chrome helpers), DashboardSidebar, DashboardUnauthorized
+│   │   │   ├── header/             # Header (RSC), HeaderDashboard, HeaderBrowseNav, HeaderMobileBar/Sidebar,
 │   │   │                           # BrowseSidebarMenu, SidebarAuthFooter, LocaleSwitcher
 │   │   │   ├── footer/             # Footer (RSC), FooterSocial (client social icons)
 │   │   │   └── auth-menu/          # AuthLayout, AuthButton, LoginSignupPopup,
@@ -185,9 +188,14 @@ fe/
 │   │   ├── request.ts              # getRequestConfig — message loading per locale
 │   │   └── navigation.ts          # next-intl navigation helpers (Link, redirect, …)
 │   │
+│   ├── lib/i18n/
+│   │   ├── load-messages.ts        # loadMessages / preloadAllMessages
+│   │   └── index.ts
+│   │
 │   ├── messages/
-│   │   ├── en.json                 # English translations
-│   │   └── vi.json                 # Vietnamese translations (default locale)
+│   │   ├── en.ts                   # English translations (as const)
+│   │   ├── vi.ts                   # Vietnamese (satisfies Messages)
+│   │   └── types.ts                # Messages type from en.ts
 │   │
 │   └── proxy.ts                    # next-intl middleware + matcher
 │                                   # Locale proxy entry for next-intl routing
@@ -262,7 +270,7 @@ Design-system primitives and presentational components:
 | Radix/shadcn primitives | Full set in `src/components/ui/` (54 modules) — see [`docs/components.md`](./components.md) inventory table |
 | Layout utilities | `cn()` (clsx + tailwind-merge), `buildQueryParams()` |
 | Home sections | `HeroSection`, `SearchSection`, `TopCoursesSection`, `AdvancedPromoSection`, `TrendingCoursesSection`, `UpcomingWebinarsSection`, `PromoSection`, `CourseCard` |
-| Header / global | `Header`, `LocaleSwitcher`, `SearchBar`, `Footer`, `FooterSocial` |
+| Header / global | `Header`, `HeaderDashboard`, `DashboardLayout`, `LocaleSwitcher`, `SearchBar`, `Footer`, `FooterSocial` |
 
 ---
 
@@ -331,10 +339,12 @@ All Go API endpoints return a standard `{ code, message, data }` envelope (mirro
 | File | Role |
 |------|------|
 | `src/i18n/routing.ts` | `defineRouting` — locales `["en","vi"]`, `defaultLocale: "vi"`, `localePrefix: "always"` |
-| `src/i18n/request.ts` | `getRequestConfig` — lazily imports `src/messages/{locale}.json` |
+| `src/i18n/request.ts` | `getRequestConfig` — `loadMessages(locale)`; dev preloads all locales |
 | `src/i18n/navigation.ts` | Typed `Link`, `redirect`, `useRouter`, `usePathname` from `next-intl/navigation` |
-| `src/messages/en.json` | English copy (`commonFooter`, `home`, `auth`, `homepage`, …) |
-| `src/messages/vi.json` | Vietnamese copy (default locale); same namespaces |
+| `src/lib/i18n/load-messages.ts` | Locale loaders map → `@/messages/en` / `@/messages/vi` |
+| `src/messages/en.ts` | English copy (`commonFooter`, `home`, `auth`, `homepage`, …) |
+| `src/messages/vi.ts` | Vietnamese copy (default locale); `satisfies Messages` |
+| `src/types/i18n.d.ts` | `AppConfig.Messages` augmentation for typed `useTranslations` keys |
 | `next.config.ts` | `createNextIntlPlugin("./src/i18n/request.ts")` wraps the Next config |
 
 Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i18n keys** (e.g. `"validation.email"`). Components call `t(error.message)` to resolve them via `useTranslations("auth")`.

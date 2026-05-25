@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-05-21 (full source vs docs sync)._
+_Last audited: 2026-05-25 (dashboard locale chrome, `LocaleSwitcher` pathname preservation)._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -29,6 +29,9 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/auth/login` | (future) | Login page (planned, not yet implemented) |
 | `/{locale}/confirm-email` | Active | Email confirmation page (`ConfirmEmailContent` → `confirmAction`) |
 | `/{locale}/logout` | Active | Logout page (`LogoutContent` → `logoutAction`, cross-tab `broadcast:logout`) |
+| `/{locale}/admin` | Active | Admin dashboard shell (`AdminDashboardPage` placeholder) |
+| `/{locale}/instructor` | Active | Instructor dashboard shell (`InstructorDashboardPage` placeholder) |
+| `/{locale}/sysadmin` | Active | Sysadmin dashboard shell (`SysadminDashboardPage` placeholder) |
 
 > `PUBLIC_ROUTES` (`src/constants/route.ts`): `home`, `confirmEmail`, `logout`. Login/signup are **modal-only** via `LoginSignupPopup`; confirm/logout have dedicated routes.
 
@@ -43,30 +46,31 @@ src/app/layout.tsx                          Root layout
 │
 └── src/app/[locale]/layout.tsx             Locale layout
     │   Validates locale (404 if unknown)
-    │   <NextIntlClientProvider>            → loads src/messages/{locale}.json
+    │   <NextIntlClientProvider>            → messages from loadMessages(locale) in request.ts
     │   <AppProviders>                      → `SWRConfig` + `MeSwrSync` + `LanguageLocaleSync` + stream/auth tab sync + `children`
     │
-    └── src/app/[locale]/(web)/layout.tsx   Web shell layout
-        │   <Header />                      (no locale props — language via client hook)
-        │   <main>{children}</main>
-        │   <Footer />
-        │
-        └── src/app/[locale]/(web)/page.tsx → <HomePage />
+    ├── src/app/[locale]/(web)/layout.tsx   Web shell layout
+    │     <Header /> + <main> + <Footer /> → HomePage, confirm-email, logout
+    ├── src/app/[locale]/admin/layout.tsx   DashboardLayout (admin items, `admin:modify`)
+    ├── src/app/[locale]/instructor/layout.tsx
+    └── src/app/[locale]/sysadmin/layout.tsx
 ```
 
 Each layout layer adds a concern without re-rendering the parent:
 - **Root:** HTML scaffold, fonts, toast notifications.
 - **Locale:** i18n provider, global SWR configuration.
 - **Web shell:** Site chrome (`Header`), page body (`<main>{children}</main>`), site footer (`Footer`).
+- **Dashboard shells:** `DashboardLayout` (sidebar + `HeaderDashboard`), no site `Footer`.
 
 ---
 
 ## Screen barrels (`src/screen/`)
 
-- **`src/screen/index.ts`** — re-exports `common`, `admin`, and `instructor` barrels (import `HomePage` from `@/screen` as before).
+- **`src/screen/index.ts`** — re-exports `common`, `admin`, `instructor`, and `sysadmin` barrels.
 - **`src/screen/common/`** — shared web-facing screens (e.g. marketing home). Barrel: `src/screen/common/index.ts`.
-- **`src/screen/admin/`** — admin-role screens (barrel: `src/screen/admin/index.ts`; add modules and re-exports when routes exist).
-- **`src/screen/instructor/`** — instructor-role screens (barrel: `src/screen/instructor/index.ts`).
+- **`src/screen/admin/`** — `AdminDashboardPage` (`page.tsx`); barrel: `src/screen/admin/index.ts`.
+- **`src/screen/instructor/`** — `InstructorDashboardPage`; barrel: `src/screen/instructor/index.ts`.
+- **`src/screen/sysadmin/`** — `SysadminDashboardPage`; barrel: `src/screen/sysadmin/index.ts`.
 
 ---
 
@@ -110,7 +114,7 @@ Header (src/components/common/header/header.tsx)
 │         Backdrop `z-200` + panel `z-202`, slide-in from right; `document.body` overflow locked while open; `Escape` closes
 │         Sidebar header: logo + title
 │         Scrollable body: `overflow-y-auto` (search + `BrowseSidebarMenu` — Collapsible + `SidebarMenu*`)
-│         Footer: LocaleSwitcher (full width, `useCustomLanguage`) + SidebarAuthFooter
+│         Footer: LocaleSwitcher (`fullWidth`, `languageLabel` trigger) + SidebarAuthFooter
 └── LoginSignupPopup — sibling after </header> (z-300 overlay / z-301 content, centered card)
 ```
 
@@ -127,17 +131,52 @@ Breakpoint: **`lg` (1024px)**. Cart is desktop-only (not in mobile bar or sideba
 | `src/components/common/footer/footer.tsx` | Async **Server Component** — dark shell, `MainLogo` + brand from `getTranslations("commonFooter")`, three columns of course links (placeholders `#` until routes exist), copyright row. |
 | `src/components/common/footer/footer-social.tsx` | **Client** — `XIcon`, `InstagramMono`, `FacebookMono` from `@public/assets/icons` (mono social SVGs need `"use client"` / `useUniqueId`). External links to X / Instagram / Facebook. |
 
-**i18n:** Namespace `commonFooter` in `src/messages/en.json` and `src/messages/vi.json` (`copyright`, `brand`, column link labels, `navCourses` / `navDesign` / `navCreative` for `aria-label`s).
+**i18n:** Namespace `commonFooter` in `src/messages/en.ts` and `src/messages/vi.ts` (`copyright`, `brand`, column link labels, `navCourses` / `navDesign` / `navCreative` for `aria-label`s).
 
-**Note:** `WebLayout` always renders `Footer`.
+**Note:** `(web)/layout.tsx` always renders `Footer`. Dashboard layouts do not.
 
 ### Locale Switcher
 
 **File:** `src/components/common/header/locale-switcher.tsx` — client component.
 
 - Trigger label from `useCustomLanguage()`: default `languageLabel`; desktop header passes `useCodeLabelLanguage` → shows `languageCode` (`en` / `vi`). Optional `currentLabel` override.
-- Menu links use `Link` from `src/i18n/navigation.ts` with `locale={item.locale}` (preserves path, switches `en` / `vi`).
+- Menu links use `Link` from `src/i18n/navigation.ts` with `href={usePathname()}` and `locale={item.locale}` — same path, different locale prefix (e.g. `/vi/sysadmin` → `/en/sysadmin`; **not** redirected to home).
 - Store sync: `LanguageLocaleSync` in `AppProviders` mirrors `useLocale()` → `useLanguageStore` (`hooks/language/use-sync-language-from-locale.ts`).
+
+---
+
+## Dashboard Shell (`DashboardLayout`)
+
+**Layouts:** `src/app/[locale]/{admin,instructor,sysadmin}/layout.tsx` → `DashboardLayout` with role-specific `*_DASHBOARD_ITEMS` and permission gate.
+
+**Screens:** `src/screen/{admin,instructor,sysadmin}/page.tsx` — placeholder pages inside `main`.
+
+Does **not** use site `Header` / `Footer`. Reuses `LocaleSwitcher` with the **same breakpoints as the marketing header** (`header.tsx` + `header-mobile-sidebar.tsx`):
+
+```
+DashboardLayout (authorized)
+├── SidebarProvider
+│     ├── HeaderDashboard
+│     │     leading: DashboardMenuTrigger (burger, md:hidden → mobile Sheet)
+│     │     trailing: DashboardHeaderLocale — LocaleSwitcher useCodeLabelLanguage (lg+ only)
+│     │     AuthLayout
+│     ├── Sidebar (collapsible="icon", fixed below header)
+│     │     DashboardSidebarMobileHeader — logo + close (md:hidden, inside Sheet)
+│     │     SidebarContent — DashboardSidebar or loading skeletons
+│     │     DashboardSidebarLocaleFooter — LocaleSwitcher fullWidth + onNavigate close (lg:hidden)
+│     │     SidebarFooter (md+) — SidebarTrigger (collapse)
+│     └── SidebarInset → main (px-2 py-4) → role page
+└── LoginSignupPopup (when authorized)
+
+Unauthorized: HeaderDashboard + trailing locale (lg+) + DashboardUnauthorized (no sidebar)
+```
+
+| Breakpoint | Locale control |
+|------------|----------------|
+| **`lg+` (1024px)** | Compact code label on top bar (`useCodeLabelLanguage`), same as desktop `header.tsx` |
+| **Below `lg`** | Full-width switcher at bottom of mobile nav sheet (`fullWidth`, `triggerClassName="justify-between"`), same as `HeaderMobileSidebar` footer |
+
+Sidebar collapsed icons use `SidebarMenuButton` tooltips; `SidebarProvider` includes `TooltipProvider`.
 
 ---
 
@@ -249,7 +288,7 @@ All primitives are re-exported from `src/components/ui/index.ts`.
 | `"commonFooter"` | Footer brand, copyright, course link labels |
 | `"auth"` | Auth forms; Zod keys resolved via `useTranslations("auth")` |
 
-Translation files: `src/messages/en.json` and `src/messages/vi.json`. The `LocaleSwitcher` toggles between locales while preserving the current URL path (via `next-intl` navigation helpers).
+Translation files: `src/messages/en.ts` and `src/messages/vi.ts`. `LocaleSwitcher` uses `usePathname()` from `@/i18n/navigation` so locale changes keep the current route.
 
 ---
 
@@ -294,7 +333,7 @@ Symbol and edge counts change as the codebase grows. Refresh the local graph wit
 
 | Cluster | Component surface |
 |---------|------------------|
-| **Ui** | `src/components/ui/*`, home sections, `SearchBar`, `LocaleSwitcher`, `Header`, `Footer`, `FooterSocial` |
+| **Ui** | `src/components/ui/*`, home sections, `SearchBar`, `LocaleSwitcher`, `Header`, `HeaderDashboard`, `DashboardLayout`, `Footer`, `FooterSocial` |
 | **Auth** | `AuthLayout`, `AuthButton`, `LoginSignupPopup`, `LoginContent`, `SignupContent`, `UserMenu`, `handleAuthSubmit`, auth stores and hooks |
 | **Api** | `useAuth` SWR hook, `getMeService`, `createApiInstance`, `apiInstance`, `raw-http` helpers, `src/api/index.ts` barrel, callers and `methods` |
 
