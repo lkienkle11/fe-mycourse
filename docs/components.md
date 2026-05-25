@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-05-22 (full source vs docs sync; removed dead `BrowseMenuTree`)._
+_Last audited: 2026-05-25 (dashboard locale chrome, `LocaleSwitcher` pathname, sidebar `TooltipProvider`)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -70,7 +70,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `Select` | `ui/select.tsx` | `radix-ui` | **Radix substitute for combobox** — custom dropdown select |
 | `Separator` | `ui/separator.tsx` | `radix-ui` | Horizontal/vertical divider |
 | `Sheet` | `ui/sheet.tsx` | `radix-ui` Dialog | Side panel (used by `Sidebar`) |
-| `Sidebar` | `ui/sidebar.tsx` | `radix-ui` + Sheet | App sidebar shell + `SidebarProvider` |
+| `Sidebar` | `ui/sidebar.tsx` | `radix-ui` + Sheet | App sidebar shell; `SidebarProvider` wraps `TooltipProvider` (`delayDuration={0}`) for `SidebarMenuButton` tooltips when collapsed |
 | `Skeleton` | `ui/skeleton.tsx` | — | Loading placeholder |
 | `Slider` | `ui/slider.tsx` | `radix-ui` | Range slider |
 | `Spinner` | `ui/spinner.tsx` | — | Loading spinner |
@@ -80,7 +80,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `Textarea` | `ui/textarea.tsx` | — | Multi-line text input |
 | `Toggle` | `ui/toggle.tsx` | `radix-ui` | Pressable toggle button |
 | `ToggleGroup` | `ui/toggle-group.tsx` | `radix-ui` | Group of toggle buttons |
-| `Tooltip` | `ui/tooltip.tsx` | `radix-ui` | Hover tooltip (`TooltipProvider` required at app root when used) |
+| `Tooltip` | `ui/tooltip.tsx` | `radix-ui` | Hover tooltip; dashboard/browse sidebars get `TooltipProvider` via `SidebarProvider` — not mounted at app root |
 | `Typography*` | `ui/typography.tsx` | Tailwind only | `TypographyH1`–`TypographyMuted`, etc. (shadcn docs utility pattern) |
 
 ### Not installed (by design)
@@ -115,9 +115,23 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `HeaderMobileSidebar` | `header-mobile-sidebar.tsx` | Client | Portal overlay `z-200`, panel `z-202`, `h-dvh`, slides from **right** (no Radix Sheet). Body: `overflow-y-auto` + `SearchBar` (`visibility="sidebar"`) + `BrowseSidebarMenu` + footer (`LocaleSwitcher`, `SidebarAuthFooter`). Locks `document.body` overflow while open; `Escape` closes. |
 | `BrowseSidebarMenu` | `browse-sidebar-menu.tsx` | Client | Mobile browse tree: `SidebarProvider` + `SidebarContent` + `Collapsible` / `SidebarMenu*`. Private helpers: `BrowseSidebarMenuLevel`, `BrowseSidebarMenuSubLevel`, `BrowseMenuLabel`. Props: `items`, `onLinkClick`. Imported directly by `HeaderMobileSidebar` (not in `header/index.ts` barrel). |
 | `SidebarAuthFooter` | `sidebar-auth-footer.tsx` | Client | Guest `AuthButton` or avatar + `UserMenuDropdownItems`. |
-| `LocaleSwitcher` | `locale-switcher.tsx` | Client | `useCustomLanguage()`; props: `useCodeLabelLanguage`, `fullWidth`, `onNavigate`, optional `currentLabel`. Not re-exported from `header/index.ts`. |
+| `LocaleSwitcher` | `locale-switcher.tsx` | Client | `usePathname()` + `Link` from `@/i18n/navigation` — switches locale **on the current path** (not hard-coded `/`). `useCustomLanguage()` for trigger label; props: `useCodeLabelLanguage`, `fullWidth`, `onNavigate`, optional `currentLabel`. Not re-exported from `header/index.ts`. |
 
-**`header/index.ts` barrel:** `HeaderBrowseNav`, `Header`, `HeaderMobileBar`, `HeaderMobileSidebar`, `SidebarAuthFooter` only.
+**`header/index.ts` barrel:** `HeaderBrowseNav`, `Header`, `HeaderDashboard`, `HeaderMobileBar`, `HeaderMobileSidebar`, `SidebarAuthFooter`.
+
+| `HeaderDashboard` | `header-dashboard.tsx` | Client | Dashboard top bar (`h-16`, `z-20`): optional `leading` (e.g. mobile burger) + logo/title (`md+`) + optional `trailing` (locale slot from `DashboardLayout`) + `AuthLayout`. Does **not** embed `LocaleSwitcher` itself. |
+
+### Dashboard shell
+
+`src/components/common/dashboard/`
+
+| Component | File | Type | Description |
+|-----------|------|------|-------------|
+| `DashboardLayout` | `dashboard-layout.tsx` | Client | `SidebarProvider` + `HeaderDashboard` (`leading` burger `md:hidden`, `trailing` `DashboardHeaderLocale` on `lg+`) + left `Sidebar` (`!top-16`, `h-[calc(100svh-4rem)]`) + `SidebarInset` / `main`. Private helpers: `DashboardMenuTrigger`, `DashboardHeaderLocale`, `DashboardSidebarMobileHeader`, `DashboardSidebarLocaleFooter` (`lg:hidden`, mirrors `HeaderMobileSidebar` footer). Mobile nav via Radix `Sheet`; desktop footer `SidebarTrigger`. Filters `items` via `useFilteredDashboardItems`; gate via `permissions` / `isAuthorized`; loading uses `SidebarMenuSkeleton` with fixed `widthPercent` (SSR-safe). Unauthorized: header + locale + `DashboardUnauthorized`. `LoginSignupPopup` when authorized. |
+| `DashboardSidebar` | `dashboard-sidebar.tsx` | Client | Recursive nav tree (pattern from `BrowseSidebarMenu`). **Collapsed:** root icons only (no child subtrees). **Expanded:** full `Collapsible` + `SidebarMenuSub*`. Active route via `usePathname`. |
+| `DashboardUnauthorized` | `dashboard-unauthorized.tsx` | Client | Compact access-denied message when layout permissions fail. |
+
+**`dashboard/index.ts` barrel:** `DashboardLayout`, `DashboardSidebar`, `DashboardUnauthorized`.
 
 ### Footer
 
@@ -246,7 +260,7 @@ Components that display user-visible text MUST use `useTranslations`:
 
 ```ts
 import { useTranslations } from "next-intl";
-const t = useTranslations("auth"); // namespace matches src/messages/*.json key
+const t = useTranslations("auth"); // namespace matches src/messages/*.ts key
 ```
 
-Add new strings to both `en.json` and `vi.json` — never hard-code display strings.
+Add new strings to both `en.ts` and `vi.ts` — never hard-code display strings.

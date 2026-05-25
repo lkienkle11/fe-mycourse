@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { HEADER_DROPDOWN_ITEMS } from "@/constants/common";
+import { filterDashboardItems } from "@/lib/utils/dashboard";
 import {
   filterUserMenuGroups,
   hasAllPermissions,
@@ -10,6 +11,7 @@ import {
   satisfiesPermissions,
   toPermissionSet,
 } from "@/lib/utils/permission";
+import type { DashboardItem } from "@/types/dashboard";
 import type {
   PermissionName,
   PermissionRequirement,
@@ -56,4 +58,12 @@ export function useFilteredUserMenuGroups(
 ): UserMenuGroup[] {
   const set = usePermissionSet();
   return useMemo(() => filterUserMenuGroups(set, groups), [set, groups]);
+}
+
+/** Memoized dashboard nav tree filtered by current user permissions. */
+export function useFilteredDashboardItems(
+  items: readonly DashboardItem[],
+): DashboardItem[] {
+  const set = usePermissionSet();
+  return useMemo(() => filterDashboardItems(set, items), [set, items]);
 }

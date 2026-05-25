@@ -212,7 +212,7 @@ Server Component or Client Component:
   → useTranslations("namespace") or getTranslations("namespace")
   → returns typed translation function t("key")
 
-Message files: src/messages/vi.json, src/messages/en.json
+Message files: src/messages/vi.ts, src/messages/en.ts (loaded via src/lib/i18n/load-messages.ts)
 
 Convention:
   → Zod validation messages = i18n key strings (e.g. "validation.email")

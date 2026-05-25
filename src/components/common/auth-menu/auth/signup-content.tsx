@@ -188,7 +188,7 @@ export function SignupContent({ className }: { className?: string }) {
           <p className="text-xs text-destructive text-center px-1">
             {serverError}
             {retryAfterSeconds !== null && retryAfterSeconds > 0
-              ? ` ${t("errors.retryIn", { seconds: retryAfterSeconds })}`
+              ? ` ${t("errors.retryIn", { seconds: String(retryAfterSeconds) })}`
               : null}
           </p>
         ) : null}

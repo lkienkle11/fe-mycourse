@@ -1,0 +1,238 @@
+const messages = {
+  home: {
+    title: "FE boilerplate is ready",
+    switchLanguage: "Switch to Vietnamese",
+    formTitle: "Register account",
+    email: "Email",
+    password: "Password",
+    submit: "Register",
+    submitting: "Submitting...",
+    zustandCount: "Zustand count: {count}",
+    increment: "Increment +1",
+    promoTitle1: "Advance your career with",
+    promoTitle2: "certified",
+    promoTitle3: "skills",
+    promoDesc:
+      "We provide the highest quality learning experience with the world's leading experts. Flexible, engaging, and practical learning that gets you results.",
+    promo: {
+      list: {
+        item1: "Learn from industry experts and renowned universities",
+        item2: "Earn an accredited certificate upon completion",
+        item3: "Get lifetime access to course materials and updates",
+      },
+    },
+    learnMore: "Learn More About Us",
+    header: {
+      title: "MyCourses.io",
+    },
+    search: {
+      placeholder: "What do you want to learn today?",
+    },
+  },
+  commonHeader: {
+    title: "MyCourses.io",
+    menu: {
+      open: "Open navigation menu",
+      close: "Close navigation menu",
+      language: "Language",
+      account: "Account",
+    },
+    browse: {
+      label: "Browse",
+      categoriesTitle: "Browse categories",
+      design: "Design",
+      designDesc: "All About Design Course",
+      illustration: "Illustration",
+      illustrationDesc: "How to be great illustrator",
+      graphicDesign: "Graphic Design",
+      graphicDesignDesc: "Make more benefit from design",
+      uiUxDesign: "UI/UX Design",
+      uiUxDesignDesc: "Make Design for website and apps",
+      programming: "Programming",
+      programmingDesc: "Website and Mobile Programming",
+      businessMarketing: "Business & Marketing",
+      businessMarketingDesc: "Business and Marketing Strategies",
+      photoVideo: "Photo & Video",
+      photoVideoDesc: "Photography and Video Making",
+      writing: "Writing",
+      writingDesc: "Content Writing and Copywriting",
+    },
+  },
+  commonFooter: {
+    brand: "MyCourse.io",
+    copyright: "Copyright © MyCourse.io 2026. All Rights Reserved",
+    navCourses: "Programming courses",
+    navDesign: "Design courses",
+    navCreative: "Creative courses",
+    links: {
+      webProgramming: "Web Programming",
+      mobileProgramming: "Mobile Programming",
+      javaBeginner: "Java Beginner",
+      phpBeginner: "PHP Beginner",
+      adobeIllustrator: "Adobe Illustrator",
+      adobePhotoshop: "Adobe Photoshop",
+      designLogo: "Design Logo",
+      writingCourse: "Writing Course",
+      photography: "Photography",
+      videoMaking: "Video Making",
+    },
+  },
+  auth: {
+    login: "Login",
+    register: "Sign Up",
+    title:
+      "Join us and get more benefits. We promise to keep your data safely.",
+    socialLogin: {
+      title: "or you can",
+      googleLogin: "Continue with Google",
+      xLogin: "Continue with X",
+      googleSignup: "Sign up with Google",
+      xSignup: "Sign up with X",
+    },
+    email: "Email Address",
+    password: "Password",
+    fullName: "Full Name",
+    rememberMe: "Remember me",
+    forgotPassword: "Forgot password?",
+    noAccount: "Need an Account?",
+    alreadyHaveAccount: "Already have an account?",
+    contentBonus: {
+      firstPerson: {
+        name: "Jane MyCourse",
+        role: "Graphic Designer",
+      },
+      secondPerson: {
+        name: "Joe Kitanoe",
+        role: "Software Developer",
+      },
+    },
+    validation: {
+      email: "Please enter a valid email address",
+      password: "Please enter a valid password",
+      passwordWeak:
+        "Password must be at least 8 characters with uppercase, lowercase, and a special character",
+      fullName: "Please enter a valid full name",
+    },
+    passwordRules: {
+      hint: "At least 8 characters with uppercase, lowercase, and a special character",
+    },
+    registerSuccess: {
+      title: "Check your inbox",
+      description:
+        "We sent a confirmation email to {email}. Click the link in the email to finish signing up.",
+      backToLogin: "Back to login",
+    },
+    confirm: {
+      pageTitle: "Confirm email",
+      verifying: "Verifying your email…",
+      success: "Email confirmed! Redirecting…",
+      invalidToken: "This confirmation link is invalid or has expired.",
+    },
+    logout: {
+      pageTitle: "Log out",
+      loggingOut: "Logging out…",
+      success: "Logged out! Redirecting…",
+      error: "Could not log out. Please try again.",
+    },
+    errors: {
+      generic: "Something went wrong. Please try again.",
+      emailAlreadyExists: "This email is already registered.",
+      weakPassword: "Password is not strong enough.",
+      registrationAbandoned:
+        "Registration failed due to too many emails. Please sign up again.",
+      rateLimited: "Too many confirmation emails sent. Please try again later.",
+      emailSendFailed: "Could not send confirmation email. Please try again.",
+      emailNotConfirmed:
+        "Your email is not confirmed yet. Please check your inbox.",
+      retryIn: "(retry in {seconds}s)",
+    },
+    resend: {
+      cta: "Resend confirmation email",
+      success: "Confirmation email sent. Please check your inbox.",
+    },
+  },
+  homepage: {
+    hero: {
+      title1: "Unlock Your Potential with Our",
+      title2: "Diverse Courses",
+      description:
+        "Discover World-Class Courses Taught By Industry Experts. Elevate your skills, advance your career, and achieve your goals with our comprehensive learning platform.",
+      exploreCourses: "Explore Courses",
+      watchDemo: "Watch Demo",
+      joinText: "Join over 10,000+ students",
+      illustration: "Hero Illustration",
+      studentRating: "Student Rating",
+      expertTutors: "Expert Tutors",
+    },
+    search: {
+      placeholder: "What do you want to learn today?",
+      button: "Search",
+      popularCategories: "Popular Categories",
+    },
+    topCourses: {
+      title: "Our Top Rated Courses",
+      description:
+        "Explore our highest-rated courses, carefully selected by our experts and loved by thousands of students worldwide.",
+      viewAll: "View All Courses",
+    },
+    trending: {
+      badge: "Hot & Trending",
+      title: "Trending This Week",
+      description:
+        "Join the buzz. Check out the courses that everyone is talking about and taking right now.",
+    },
+    promo: {
+      title1: "Advance your career with",
+      title2: "certified",
+      title3: "skills",
+      description:
+        "We provide the highest quality learning experience with the world's leading experts. Flexible, engaging, and practical learning that gets you results.",
+      list1: "Learn from industry experts and renowned universities",
+      list2: "Earn an accredited certificate upon completion",
+      list3: "Get lifetime access to course materials and updates",
+      list4: "Join a global community of interactive learners",
+      learnMore: "Learn More About Us",
+    },
+    webinar: {
+      title: "Upcoming Live Webinars",
+      description:
+        "Join our free live masterclasses taught by top industry professionals.",
+      allWebinars: "All Webinars",
+      hostedBy: "Hosted by",
+      registerFree: "Register for Free",
+    },
+    cta: {
+      title: "Ready to start your learning journey?",
+      description:
+        "Join thousands of students and start your path to success today. Get unlimited access to 10,000+ top courses.",
+      getStartedFree: "Get Started for Free",
+      viewPricing: "View Pricing Plans",
+    },
+    courseCard: {
+      image: "Course Image",
+      byAuthor: "By",
+      lessons: "Lessons",
+      enrollNow: "Enroll Now",
+    },
+  },
+  dashboard: {
+    unauthorized: {
+      title: "Access denied",
+      description: "You do not have permission to view this dashboard.",
+    },
+    admin: {
+      title: "Admin dashboard",
+      description: "Manage users, courses, and platform settings.",
+    },
+    instructor: {
+      title: "Instructor dashboard",
+      description: "Manage your courses and teaching materials.",
+    },
+    sysadmin: {
+      title: "System admin dashboard",
+      description: "System configuration and role management.",
+    },
+  },
+} as const;
+
+export default messages;

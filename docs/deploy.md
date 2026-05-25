@@ -759,7 +759,7 @@ sudo nginx -t                  # valid config after certbot edits?
 | API route constants | `src/constants/api-route.ts` | All API endpoint paths |
 | Auth modal store | `src/store/auth/auth.ts` | `useAuthStore` (Zustand) |
 | Global error store | `src/store/api-error-store.ts` | `useApiError` (Zustand, max 20 entries) |
-| Translation files | `src/messages/en.json` / `vi.json` | English and Vietnamese copy |
+| Translation files | `src/messages/en.ts` / `vi.ts` | English and Vietnamese copy; loaded by `loadMessages` |
 | PM2 (dev/staging/prod) | `ecosystem.config.cjs` (repo root) | App names `mycourse-web-dev` / `mycourse-web-staging` / `mycourse-web-prod`; CI reloads **dev** only |
 
 ---

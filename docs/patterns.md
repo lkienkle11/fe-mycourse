@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-05-21 (full source vs docs sync)._
+_Last audited: 2026-05-25 (`LocaleSwitcher` pathname rule)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -122,6 +122,8 @@ const { openLoginModal } = useAuthStore();
 ### Language: store + sync hook (no Context)
 
 `useLocale()` (next-intl) is synced once in `LanguageLocaleSync` → `useLanguageStore`. Client components read via `useCustomLanguage()` (`languageCode`, `locale`, `languageLabel`). Server components use `resolveCustomLanguage(await getLocale())` from `src/lib/language/resolve-language.ts`.
+
+**Locale links:** `LocaleSwitcher` must use `usePathname()` from `@/i18n/navigation` as `href` — never hard-code `href="/"` or switching locale always sends users to home.
 
 ### SWR: always use the endpoint key constant
 
@@ -275,6 +277,8 @@ z.string().email({ message: "Please enter a valid email" })
 
 ## 7. Internationalization (i18n) Pattern
 
+Translations live in `src/messages/en.ts` and `vi.ts` (`vi` uses `satisfies Messages`). Server bootstrap loads them via `loadMessages` in `src/lib/i18n/load-messages.ts`, called from `src/i18n/request.ts`.
+
 ### All user-visible text via `useTranslations`
 
 ```ts
@@ -371,7 +375,7 @@ Before writing code for a new feature:
 - [ ] Place SWR hooks in `src/api/hooks/<domain>/`
 - [ ] Place Server Actions in `src/actions/<domain>/`
 - [ ] Place Zustand stores in `src/store/`
-- [ ] Add new i18n strings to both `en.json` and `vi.json`
+- [ ] Add new i18n strings to both `en.ts` and `vi.ts` (keep `vi.ts` satisfying `Messages`)
 - [ ] Add route constants to `src/constants/route.ts`
 - [ ] Add API route constants to `src/constants/api-route.ts`
 - [ ] Update `docs/` after implementation
