@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LANGUAGE_OPTIONS } from "@/constants";
 import { useCustomLanguage } from "@/hooks";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 interface LocaleSwitcherProps {
@@ -31,6 +31,7 @@ export function LocaleSwitcher({
   useCodeLabelLanguage = false,
   onNavigate,
 }: LocaleSwitcherProps) {
+  const pathname = usePathname();
   const { languageLabel, languageCode } = useCustomLanguage();
   const triggerLabel =
     currentLabel ?? (useCodeLabelLanguage ? languageCode : languageLabel);
@@ -58,7 +59,7 @@ export function LocaleSwitcher({
         {LANGUAGE_OPTIONS.map((item) => (
           <DropdownMenuItem key={item.locale} className="p-0">
             <Link
-              href="/"
+              href={pathname}
               locale={item.locale}
               onClick={onNavigate}
               className="block w-full px-2 py-1.5"

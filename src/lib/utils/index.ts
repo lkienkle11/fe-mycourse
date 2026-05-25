@@ -11,6 +11,7 @@ export {
   getCookieValue,
   setCookieValue,
 } from "./cookie";
+export { filterDashboardItems } from "./dashboard";
 export {
   canShowWithPermissions,
   filterUserMenuGroups,
