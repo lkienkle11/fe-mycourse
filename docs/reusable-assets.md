@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-05-21 (full source vs docs sync)._
+_Last audited: 2026-05-25 (dashboard locale chrome, `LocaleSwitcher` asset)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -170,8 +170,56 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Hooks, menu filtering, server/client guards, admin tooling.
 - **Dependencies**: `PERMISSIONS`, `PERMISSION_IDS`, permission types, `UserMenuGroup` from `src/types/user-menu.ts`.
 
+### Asset: Dashboard types (`DashboardItem`, `DashboardLayoutProps`)
+- **Name**: `DashboardItem`, `DashboardCustomStyles`, `DashboardLayoutProps`
+- **Type**: TypeScript types
+- **Path**: `src/types/dashboard/index.ts` (barrel: `@/types`)
+- **Purpose**: Recursive dashboard nav config with `PermissionRequirement`, Lucide icons, optional nested `children`, and layout callback props.
+- **Scope**: `DashboardLayout`, role menu constants, permission filtering.
+- **Dependencies**: `PermissionRequirement`, `lucide-react`.
+
+### Asset: `filterDashboardItems`
+- **Name**: `filterDashboardItems`
+- **Type**: Pure function
+- **Path**: `src/lib/utils/dashboard.ts` (barrel: `@/lib/utils`)
+- **Purpose**: Recursively filter `DashboardItem[]` by `satisfiesPermissions`; drop group-only parents with no `href` and empty children; keep leaves with `href`.
+- **Scope**: `useFilteredDashboardItems`, `DashboardSidebar`.
+- **Dependencies**: `satisfiesPermissions`, `DashboardItem`.
+
+### Asset: `useFilteredDashboardItems`
+- **Name**: `useFilteredDashboardItems`
+- **Type**: React hook
+- **Path**: `src/hooks/auth/use-permissions.ts`
+- **Purpose**: Memoized `filterDashboardItems(usePermissionSet(), items)`.
+- **Scope**: `DashboardLayout` and any client dashboard nav.
+- **Dependencies**: `usePermissionSet`, `filterDashboardItems`.
+
+### Asset: Role dashboard menu constants
+- **Name**: `ADMIN_DASHBOARD_ITEMS`, `INSTRUCTOR_DASHBOARD_ITEMS`, `SYSADMIN_DASHBOARD_ITEMS`
+- **Type**: Constant (`DashboardItem[]`)
+- **Path**: `src/constants/dashboard/` (barrel: `@/constants/dashboard`)
+- **Purpose**: Placeholder nav trees per role with nested children and permission gates aligned to BE `permissions.go`.
+- **Scope**: App route layouts under `src/app/[locale]/{admin,instructor,sysadmin}/layout.tsx`.
+- **Dependencies**: `PERMISSIONS`, `DashboardItem`.
+
+### Asset: Dashboard shell components
+- **Name**: `DashboardLayout`, `DashboardSidebar`, `HeaderDashboard`, `DashboardUnauthorized`
+- **Type**: Client components
+- **Path**: `src/components/common/dashboard/`, `src/components/common/header/header-dashboard.tsx`
+- **Purpose**: Role dashboard chrome: `SidebarProvider` + fixed sidebar under `HeaderDashboard` (`h-16`); `collapsible="icon"` (collapsed = root icons + tooltips); mobile nav via `Sheet` with `DashboardSidebarMobileHeader` / `DashboardSidebarLocaleFooter`. Locale: `DashboardHeaderLocale` (`LocaleSwitcher` + `useCodeLabelLanguage`, `lg+`) and drawer footer (`fullWidth`, below `lg`) — same pattern as `header.tsx` / `header-mobile-sidebar.tsx`. `HeaderDashboard` exposes `leading` / `trailing` slots only (no built-in locale). Layout permission gate + unauthorized fallback.
+- **Scope**: `/admin`, `/instructor`, `/sysadmin` routes.
+- **Dependencies**: shadcn `Sidebar*` (includes `TooltipProvider`), `LocaleSwitcher`, RBAC hooks, `LoginSignupPopup`.
+
+### Asset: LocaleSwitcher
+- **Name**: `LocaleSwitcher`
+- **Type**: Client component
+- **Path**: `src/components/common/header/locale-switcher.tsx`
+- **Purpose**: Dropdown locale menu; `href={usePathname()}` + `locale` on `Link` preserves current route across `en` / `vi`.
+- **Scope**: `Header` (desktop `lg+`), `HeaderMobileSidebar` footer, `DashboardLayout` chrome.
+- **Dependencies**: `useCustomLanguage`, `LANGUAGE_OPTIONS`, `@/i18n/navigation`.
+
 ### Asset: Permission hooks (`useHasPermission`, …)
-- **Name**: `usePermissionSet`, `useHasPermission`, `useHasAllPermissions`, `useHasAnyPermissions`, `useSatisfiesPermissions`, `useFilteredUserMenuGroups`
+- **Name**: `usePermissionSet`, `useHasPermission`, `useHasAllPermissions`, `useHasAnyPermissions`, `useSatisfiesPermissions`, `useFilteredUserMenuGroups`, `useFilteredDashboardItems`
 - **Type**: React hooks
 - **Path**: `src/hooks/auth/use-permissions.ts` (barrel: `@/hooks/auth`)
 - **Purpose**: Read `mePermissions` from `useGetMe()` and expose memoized Set + boolean guards; `useFilteredUserMenuGroups` defaults to `HEADER_DROPDOWN_ITEMS`.

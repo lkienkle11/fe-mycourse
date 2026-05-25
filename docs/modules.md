@@ -4,7 +4,7 @@ _Last audited: 2026-05-21 (full source vs docs sync)._
 
 
 ## Module map
-- `Ui`: `src/components`, `src/screen`, `src/app/[locale]/(web)`
+- `Ui`: `src/components`, `src/screen`, `src/app/[locale]/(web)`, `src/app/[locale]/{admin,instructor,sysadmin}` (dashboard shells)
 - `Auth`: `src/actions/auth`, `src/components/common/auth-menu`, `src/schema/auth`, `src/types/auth`
 - `Api`: `src/api`, `src/constants/api-route.ts`, `src/types/api.ts`
 - `Events`: `src/events`, `src/hooks/events`, `src/store/events`, `src/types/events`, `src/config/events`

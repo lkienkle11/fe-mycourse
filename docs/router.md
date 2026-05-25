@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-05-21 (full source vs docs sync)._
+_Last audited: 2026-05-25 (dashboard locale chrome; no route changes)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
@@ -74,19 +74,26 @@ export const config = {
 /[locale]/              → src/app/[locale]/(web)/page.tsx    HomePage
 /[locale]/confirm-email → src/app/[locale]/(web)/confirm-email/page.tsx  Email confirm
 /[locale]/logout        → src/app/[locale]/(web)/logout/page.tsx         Logout
+/[locale]/admin         → src/app/[locale]/admin/layout.tsx   DashboardLayout (admin items)
+/[locale]/admin         → src/app/[locale]/admin/page.tsx     AdminDashboardPage
+/[locale]/instructor    → src/app/[locale]/instructor/layout.tsx
+/[locale]/instructor    → src/app/[locale]/instructor/page.tsx
+/[locale]/sysadmin      → src/app/[locale]/sysadmin/layout.tsx
+/[locale]/sysadmin      → src/app/[locale]/sysadmin/page.tsx
 ```
 
 ### Route Groups
 
 `(web)` is a [Next.js route group](https://nextjs.org/docs/app/building-your-application/routing/route-groups) — the parentheses mean it does NOT appear in the URL. It applies the web shell layout (Header/Footer) to all pages inside.
 
-Future admin or instructor routes can use separate route groups with their own layouts:
+Role dashboards use **URL segments** (not route groups) with a dedicated `DashboardLayout` shell:
 
 ```
 src/app/[locale]/
 ├── (web)/              # Public/marketing pages — Header + Footer layout
-├── (admin)/            # Admin pages — Admin sidebar layout (future)
-└── (instructor)/       # Instructor pages — Instructor dashboard layout (future)
+├── admin/              # Admin dashboard — DashboardLayout + ADMIN_DASHBOARD_ITEMS
+├── instructor/         # Instructor dashboard — DashboardLayout + INSTRUCTOR_DASHBOARD_ITEMS
+└── sysadmin/           # Sysadmin dashboard — DashboardLayout + SYSADMIN_DASHBOARD_ITEMS
 ```
 
 ---
@@ -101,9 +108,11 @@ src/app/[locale]/
 | `/en/confirm-email?token=…` | same | same | ✅ Implemented |
 | `/vi/logout` | `[locale]/(web)/logout/page.tsx` | `LogoutContent` | ✅ Implemented |
 | `/en/logout` | same | same | ✅ Implemented |
+| `/vi/admin` | `[locale]/admin/page.tsx` | `AdminDashboardPage` | ✅ Shell + placeholder |
+| `/vi/instructor` | `[locale]/instructor/page.tsx` | `InstructorDashboardPage` | ✅ Shell + placeholder |
+| `/vi/sysadmin` | `[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` | ✅ Shell + placeholder |
 | `/vi/courses` | — | — | 🚧 Planned |
-| `/vi/admin/*` | — | — | 🚧 Planned |
-| `/vi/instructor/*` | — | — | 🚧 Planned |
+| `/vi/admin/users`, `/vi/admin/courses`, … | — | — | 🚧 Placeholder nav links only |
 
 ---
 
@@ -112,8 +121,11 @@ src/app/[locale]/
 ```
 Root layout            (src/app/layout.tsx)
   └─ Locale layout     (src/app/[locale]/layout.tsx)
-        └─ Web layout  (src/app/[locale]/(web)/layout.tsx)
-              └─ Page  (src/app/[locale]/(web)/page.tsx → HomePage)
+        ├─ Web layout  (src/app/[locale]/(web)/layout.tsx)
+        │     └─ Page  (HomePage, confirm-email, logout)
+        ├─ Admin layout (DashboardLayout + admin items)
+        ├─ Instructor layout
+        └─ Sysadmin layout
 ```
 
 | Layout file | What it mounts |
@@ -121,6 +133,9 @@ Root layout            (src/app/layout.tsx)
 | `src/app/layout.tsx` | Global fonts (Roboto, Gilroy, GeistMono as CSS vars), `<Toaster>` (Sonner) |
 | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider`, `AppProviders` (`SWRConfig`, `EventsStreamProvider`, `MeSwrSync`, `LanguageLocaleSync`, auth tab sync) |
 | `src/app/[locale]/(web)/layout.tsx` | `Header`, `<main>` content area, `Footer` |
+| `src/app/[locale]/admin/layout.tsx` | `DashboardLayout` (`ADMIN_DASHBOARD_ITEMS`, `admin:modify` gate) |
+| `src/app/[locale]/instructor/layout.tsx` | `DashboardLayout` (`INSTRUCTOR_DASHBOARD_ITEMS`, `instructor:modify` gate) |
+| `src/app/[locale]/sysadmin/layout.tsx` | `DashboardLayout` (`SYSADMIN_DASHBOARD_ITEMS`, `sysadmin:modify` gate) |
 
 ---
 
