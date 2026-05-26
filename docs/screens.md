@@ -32,6 +32,8 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/admin` | Active | Admin dashboard shell (`AdminDashboardPage` placeholder) |
 | `/{locale}/instructor` | Active | Instructor dashboard shell (`InstructorDashboardPage` placeholder) |
 | `/{locale}/sysadmin` | Active | Sysadmin dashboard shell (`SysadminDashboardPage` placeholder) |
+| `/{locale}/admin/taxonomy/{resource}` | Active | Taxonomy CRUD list (`TaxonomyListPage`, resource = levels \| topics \| outcomes \| skills \| tags) |
+| `/{locale}/sysadmin/taxonomy/{resource}` | Active | Same as admin taxonomy (sysadmin menu + permissions) |
 
 > `PUBLIC_ROUTES` (`src/constants/route.ts`): `home`, `confirmEmail`, `logout`. Login/signup are **modal-only** via `LoginSignupPopup`; confirm/logout have dedicated routes.
 
@@ -71,6 +73,7 @@ Each layout layer adds a concern without re-rendering the parent:
 - **`src/screen/admin/`** — `AdminDashboardPage` (`page.tsx`); barrel: `src/screen/admin/index.ts`.
 - **`src/screen/instructor/`** — `InstructorDashboardPage`; barrel: `src/screen/instructor/index.ts`.
 - **`src/screen/sysadmin/`** — `SysadminDashboardPage`; barrel: `src/screen/sysadmin/index.ts`.
+- **`src/screen/taxonomy/`** — `TaxonomyListPage` (client); used by `admin/taxonomy/*` and `sysadmin/taxonomy/*` app routes.
 
 ---
 

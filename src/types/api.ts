@@ -92,6 +92,25 @@ export interface ApiPageInfo {
 }
 
 /**
+ * Optional ACTIVE / INACTIVE filter on BE list endpoints (taxonomy, media, …).
+ * Mirrors `status` query on `TaxonomyBaseFilter` and similar DTOs.
+ */
+export type ApiEntityStatus = "ACTIVE" | "INACTIVE";
+
+/**
+ * Shared paginated list query params for BE list APIs.
+ * Use `apiListQueryToRecord()` when building query strings with `buildQueryParams`.
+ */
+export interface ApiListQueryParams {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  status?: ApiEntityStatus;
+  sort_by?: string;
+  sort_desc?: boolean;
+}
+
+/**
  * Shape of `data` when the endpoint uses OKPaginated.
  *
  * Mirrors:

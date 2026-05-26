@@ -128,7 +128,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
 | `DashboardLayout` | `dashboard-layout.tsx` | Client | `SidebarProvider` + `HeaderDashboard` (`leading` burger `md:hidden`, `trailing` `DashboardHeaderLocale` on `lg+`) + left `Sidebar` (`!top-16`, `h-[calc(100svh-4rem)]`) + `SidebarInset` / `main`. Private helpers: `DashboardMenuTrigger`, `DashboardHeaderLocale`, `DashboardSidebarMobileHeader`, `DashboardSidebarLocaleFooter` (`lg:hidden`, mirrors `HeaderMobileSidebar` footer). Mobile nav via Radix `Sheet`; desktop footer `SidebarTrigger`. Sidebar mobile header brand `Link` uses shared `homeHref` and closes sheet before navigation. Filters `items` via `useFilteredDashboardItems`; gate via `permissions` / `isAuthorized`; loading uses `SidebarMenuSkeleton` with fixed `widthPercent` (SSR-safe). Unauthorized: header + locale + `DashboardUnauthorized`. `LoginSignupPopup` when authorized. |
-| `DashboardSidebar` | `dashboard-sidebar.tsx` | Client | Recursive nav tree (pattern from `BrowseSidebarMenu`). **Collapsed:** root icons only (no child subtrees). **Expanded:** full `Collapsible` + `SidebarMenuSub*`. Active route via `usePathname`. |
+| `DashboardSidebar` | `dashboard-sidebar.tsx` | Client | Recursive nav tree (pattern from `BrowseSidebarMenu`). Renders each item's Lucide `icon` from `DashboardItem` config (taxonomy uses `TAXONOMY_MENU_ICONS` — see `docs/taxonomy-admin.md`). **Collapsed:** root icons only (no child subtrees). **Expanded:** full `Collapsible` + `SidebarMenuSub*`. Active route via `usePathname`. |
 | `DashboardUnauthorized` | `dashboard-unauthorized.tsx` | Client | Compact access-denied message when layout permissions fail. |
 
 **`dashboard/index.ts` barrel:** `DashboardLayout`, `DashboardSidebar`, `DashboardUnauthorized`.
@@ -149,7 +149,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
 | `AuthLayout` | `auth-layout.tsx` | Client | `useGetMe()` — skeleton / `UserMenu` / `AuthButton`. Does **not** mount `LoginSignupPopup`. |
-| `UserMenuDropdownItems` | `user-menu-dropdown-items.tsx` | Client | Renders `useFilteredUserMenuGroups()` (permission-filtered `HEADER_DROPDOWN_ITEMS`) for `UserMenu` and sidebar footer; separators only between visible groups. |
+| `UserMenuDropdownItems` | `user-menu-dropdown-items.tsx` | Client | Renders `useFilteredUserMenuGroups()` (deep permission-filtered `HEADER_DROPDOWN_ITEMS`, including nested `UserMenuItem.children`) for `UserMenu` and sidebar footer; separators only between visible groups. |
 | `AuthButton` | `auth-button.tsx` | Client | "Sign In / Sign Up" CTA button. Calls `openLoginModal()` from `useAuthStore`. |
 | `UserMenu` | `user-menu.tsx` | Client | Avatar dropdown for authenticated users. Shows avatar, user name, logout option. |
 | `LoginSignupPopup` | `auth/login-signup-popup.tsx` | Client | Full-viewport centered dialog (`z-300`/`z-301`); card `max-w-200`; close button on card (`DialogClose`). |
@@ -191,7 +191,13 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | Component | File | Description |
 |-----------|------|-------------|
 | `PermissionGate` | `permission-gate.tsx` | Client wrapper: shows `children` when `useSatisfiesPermissions` passes; optional `fallback`. Props: `permissions`, `permissionMode` (`"all"` \| `"any"`). |
+| `ConfirmDeleteDialog` | `confirm-delete-dialog.tsx` | Alert dialog for soft-delete confirm; copy from `taxonomy.delete` namespace. |
+| `DataTable` | `data-table.tsx` | Generic sortable admin table (`columns`, `rows`, `sort`, `renderActions`). First used by taxonomy lists. |
+| `SortableList` | `sortable-list.tsx` | Vertical `@dnd-kit` reorder list; items need string `id`. |
+| `SortableTreeEditor` | `sortable-tree-editor.tsx` | Nested sortable tree (name + read-only slug); used by taxonomy topics/skills. |
 | `SearchBar` | `search-bar.tsx` | Global search input (UI stub). `visibility`: `"header"` (default, hidden below `md`) or `"sidebar"` (full-width flex for mobile sheet). |
+
+`src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog`, `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns).
 
 ---
 

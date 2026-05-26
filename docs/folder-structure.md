@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-05-25 (dashboard locale chrome, `LocaleSwitcher` pathname)._
+_Last audited: 2026-05-26 (taxonomy sidebar icons, dashboard constants)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -77,9 +77,12 @@ src/screen/
 ├── instructor/
 │   ├── index.ts
 │   └── page.tsx            # InstructorDashboardPage (placeholder)
-└── sysadmin/
+├── sysadmin/
+│   ├── index.ts
+│   └── page.tsx            # SysadminDashboardPage (placeholder)
+└── taxonomy/
     ├── index.ts
-    └── page.tsx            # SysadminDashboardPage (placeholder)
+    └── taxonomy-list-page.tsx  # TaxonomyListPage (client CRUD list)
 ```
 
 ### `src/components/` — React Components
@@ -107,8 +110,10 @@ src/components/
 │                           #   HeroSection, SearchSection, TopCoursesSection,
 │                           #   AdvancedPromoSection, TrendingCoursesSection,
 │                           #   UpcomingWebinarsSection, PromoSection, CourseCard
+├── features/
+│   └── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns
 ├── shared/                 # Cross-feature presentational components
-│                           #   PermissionGate, SearchBar (stub — no backend call)
+│                           #   PermissionGate, ConfirmDeleteDialog, DataTable, SortableList, SearchBar (stub)
 ├── providers/
 │   └── app-providers.tsx   # SWRConfig + EventsStreamProvider
 │                           # + MeSwrSync (useSyncMeFromAuth)
@@ -139,15 +144,19 @@ src/api/
 ├── instance.ts             # createApiInstance() — Axios instance + interceptors
 │                           #   Request: attach Authorization: Bearer <access_token>
 │                           #   Response: token refresh mutex, error reporting
-├── methods.ts              # apiFetch / apiPost / apiPut / apiDelete / apiOptions → ApiResult<T>
+├── methods.ts              # apiFetch / apiPost / apiPut / apiPatch / apiDelete / apiOptions → ApiResult<T>
 ├── raw-http.ts             # rawFetch / rawPost / … plain Axios (used by doTokenRefresh only)
 ├── cache.ts                # Dual-layer cache (IndexedDB + Map) — implemented but currently not wired in methods.ts
 ├── callers/
-│   └── auth/
-│       └── auth.ts         # loginService, getMeService, getMeEndpointKey
+│   ├── auth/
+│   │   └── auth.ts         # loginService, getMeService, getMeEndpointKey
+│   └── taxonomy/
+│       └── taxonomy.ts     # list/create/patch/delete taxonomy services
 └── hooks/
-    └── auth/
-        └── useAuth.ts      # SWR hook: { me, isLoading, error, mutate }
+    ├── auth/
+    │   └── useAuth.ts      # SWR hook: { me, isLoading, error, mutate }
+    └── taxonomy/
+        └── useTaxonomy.ts  # useTaxonomyList(resourceKey, filters)
 ```
 
 ### `src/store/` — Global State (Zustand)
@@ -227,7 +236,9 @@ src/events/
 
 ```
 src/types/
-├── api.ts                  # ApiResult<T>, ApiResponse<T>, ApiPageInfo, ApiErrorCode constant map
+├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiListQueryParams, ApiEntityStatus, ApiErrorCode
+├── taxonomy/
+│   └── index.ts            # Taxonomy entities; TaxonomyListFilters (= ApiListQueryParams)
 ├── browse-menu.ts          # BrowseMenuItem (recursive children?: BrowseMenuItem[])
 ├── user-menu.ts            # UserMenuItem, UserMenuGroup, UserMenuStatus (+ PermissionRequirement)
 ├── index.ts                # Re-exports domain types
@@ -266,6 +277,14 @@ src/constants/
 ├── permissions.ts          # PERMISSIONS — 40 canonical names (mirror BE AllPermissions)
 ├── permission-ids.ts       # PERMISSION_IDS — P1…P40
 ├── roles.ts                # ROLES — sysadmin, admin, instructor, learner
+├── dashboard/
+│   ├── index.ts            # ADMIN_DASHBOARD_ITEMS, INSTRUCTOR_*, SYSADMIN_* (barrel)
+│   ├── admin-items.ts      # Admin sidebar tree (includes taxonomy group + children)
+│   ├── sysadmin-items.ts   # Sysadmin sidebar tree
+│   ├── instructor-items.ts
+│   └── taxonomy-icons.ts   # TAXONOMY_MENU_ICONS — Lucide icons for taxonomy nav nodes
+├── taxonomy/
+│   └── resources.ts        # TAXONOMY_RESOURCES, TAXONOMY_GROUP_READ_PERMISSIONS, columns
 └── events/
     └── index.ts            # STREAM_EVENTS_LOG_MAX, STREAM_ENV_KEYS (SSE/WS/gRPC URLs)
 ```
@@ -288,10 +307,13 @@ src/lib/
 │   ├── index.ts            # Barrel: client-safe utils only (cn, url, cookie, …)
 │   ├── cn.ts               # cn() — clsx + tailwind-merge class combiner
 │   ├── url.ts              # buildQueryParams() — query string builder
+│   ├── list-query.ts       # apiListQueryToRecord() — BE list filter → query record
+│   ├── slug.ts             # slugifyName() — live slug normalization
 │   ├── react.ts            # useUniqueId() — stable ID generator for accessibility
 │   ├── user.ts             # pickCharacter() — avatar initial picker
 │   ├── cookie.ts           # isomorphic getCookieValue / setCookieValue; buildCookieOptions
-│   ├── permission.ts       # hasPermission, satisfiesPermissions, filterUserMenuGroups, id lookup
+│   ├── permission.ts       # satisfiesPermissions, filterPermissionNavTree, filterUserMenuGroups, id lookup
+│   ├── dashboard.ts        # filterDashboardItems (wraps filterPermissionNavTree)
 │   └── auth-session.ts     # SERVER ONLY — setAuthSessionCookies (import directly, not via barrel)
 ├── font.ts                 # next/font definitions: Roboto, Gilroy, GeistMono
 └── http.ts                 # Placeholder for future HTTP utilities

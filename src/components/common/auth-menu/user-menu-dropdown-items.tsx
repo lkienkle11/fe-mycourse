@@ -8,6 +8,51 @@ import { useFilteredUserMenuGroups } from "@/hooks/auth";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import type { MeResponse } from "@/types/auth";
+import type { UserMenuItem } from "@/types/user-menu";
+
+function UserMenuDropdownLinks({
+  items,
+  onItemClick,
+  nested = false,
+}: {
+  items: readonly UserMenuItem[];
+  onItemClick?: () => void;
+  nested?: boolean;
+}) {
+  return (
+    <>
+      {items.map((item) => (
+        <div key={`${item.href}-${item.title}`}>
+          <DropdownMenuItem
+            className={cn("p-0 px-2", nested && "pl-4")}
+            variant={item.status === "warning" ? "destructive" : "default"}
+          >
+            <Link
+              href={item.href}
+              onClick={onItemClick}
+              className={cn(
+                "block w-full py-2 text-base leading-[120%] transition-colors hover:opacity-85",
+                item.status === "warning"
+                  ? "text-alert-error"
+                  : "text-object-black/90",
+                item.itemClassName,
+              )}
+            >
+              {item.title}
+            </Link>
+          </DropdownMenuItem>
+          {item.children?.length ? (
+            <UserMenuDropdownLinks
+              items={item.children}
+              onItemClick={onItemClick}
+              nested
+            />
+          ) : null}
+        </div>
+      ))}
+    </>
+  );
+}
 
 interface UserMenuDropdownItemsProps {
   me?: MeResponse;
@@ -43,27 +88,10 @@ export function UserMenuDropdownItems({
           {(showUserHeader || index > 0) && (
             <DropdownMenuSeparator className="my-1 bg-object-black/10" />
           )}
-          {group.value.map((item) => (
-            <DropdownMenuItem
-              key={item.title}
-              className="p-0 px-2"
-              variant={item.status === "warning" ? "destructive" : "default"}
-            >
-              <Link
-                href={item.href}
-                onClick={onItemClick}
-                className={cn(
-                  "block w-full py-2 text-base leading-[120%] transition-colors hover:opacity-85",
-                  item.status === "warning"
-                    ? "text-alert-error"
-                    : "text-object-black/90",
-                  item.itemClassName,
-                )}
-              >
-                {item.title}
-              </Link>
-            </DropdownMenuItem>
-          ))}
+          <UserMenuDropdownLinks
+            items={group.value}
+            onItemClick={onItemClick}
+          />
         </div>
       ))}
     </>

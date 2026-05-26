@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-05-25 (`LocaleSwitcher` pathname rule)._
+_Last audited: 2026-05-26 (shared list query + slug input)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -364,7 +364,26 @@ import { setAuthSessionCookies } from "@/lib/utils/auth-session"; // not from @/
 
 ---
 
-## 10. Adding New Features Checklist
+## 10. Paginated list query params
+
+Do not redefine `page` / `per_page` / `sort_by` on each module. Use `ApiListQueryParams` from `src/types/api.ts` and `apiListQueryToRecord()` from `src/lib/utils/list-query.ts`:
+
+```ts
+import type { ApiListQueryParams } from "@/types/api";
+import { apiListQueryToRecord, buildQueryParams } from "@/lib/utils";
+
+export type CourseListFilters = ApiListQueryParams;
+
+const url = buildQueryParams("/api/v1/courses", apiListQueryToRecord(filters));
+```
+
+## 11. Slug fields
+
+Taxonomy slugs are **read-only** in the UI. Derive them with `slugifyName(name)` on submit (and show a live preview while typing the name). Do not expose an editable slug input.
+
+---
+
+## 12. Adding New Features Checklist
 
 Before writing code for a new feature:
 

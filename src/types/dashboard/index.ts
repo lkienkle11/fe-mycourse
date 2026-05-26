@@ -14,7 +14,10 @@ export type DashboardCustomStyles = {
  */
 export type DashboardItem = PermissionRequirement & {
   id: string;
+  /** Fallback label when `titleKey` is missing or translation is unavailable. */
   title: string;
+  /** i18n key under the `dashboard` namespace (e.g. `taxonomy.menu.levels`). */
+  titleKey?: string;
   href?: string;
   icon: LucideIcon;
   children?: DashboardItem[];

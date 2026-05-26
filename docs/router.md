@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-05-25 (dashboard locale chrome; no route changes)._
+_Last audited: 2026-05-26 (taxonomy admin/sysadmin routes)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
@@ -80,6 +80,8 @@ export const config = {
 /[locale]/instructor    → src/app/[locale]/instructor/page.tsx
 /[locale]/sysadmin      → src/app/[locale]/sysadmin/layout.tsx
 /[locale]/sysadmin      → src/app/[locale]/sysadmin/page.tsx
+/[locale]/admin/taxonomy/{levels,topics,outcomes,skills,tags}  → TaxonomyListPage
+/[locale]/sysadmin/taxonomy/{levels,topics,outcomes,skills,tags}  → TaxonomyListPage
 ```
 
 ### Route Groups
@@ -112,6 +114,8 @@ src/app/[locale]/
 | `/vi/instructor` | `[locale]/instructor/page.tsx` | `InstructorDashboardPage` | ✅ Shell + placeholder |
 | `/vi/sysadmin` | `[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` | ✅ Shell + placeholder |
 | `/vi/courses` | — | — | 🚧 Planned |
+| `/vi/admin/taxonomy/levels` (and topics, outcomes, skills, tags) | `admin/taxonomy/*/page.tsx` | `TaxonomyListPage` | ✅ Implemented |
+| `/vi/sysadmin/taxonomy/*` | `sysadmin/taxonomy/*/page.tsx` | `TaxonomyListPage` | ✅ Implemented |
 | `/vi/admin/users`, `/vi/admin/courses`, … | — | — | 🚧 Placeholder nav links only |
 
 ---

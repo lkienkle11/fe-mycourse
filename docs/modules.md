@@ -1,6 +1,6 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-05-21 (full source vs docs sync)._
+_Last audited: 2026-05-26 (taxonomy sidebar icons)._
 
 
 ## Module map
@@ -11,6 +11,7 @@ _Last audited: 2026-05-21 (full source vs docs sync)._
 - `State`: `src/store` (auth, language, api-error, events), `src/hooks/auth`, `src/hooks/language`
 - `Routing + i18n`: `src/app`, `src/i18n`, `src/proxy.ts`, `src/messages`
 - `Shared`: `src/lib/utils`, `src/constants`, `src/config`
+- `Taxonomy`: `src/types/taxonomy`, `src/constants/taxonomy`, `src/api/callers/taxonomy`, `src/components/features/taxonomy`, `src/screen/taxonomy`, admin/sysadmin `taxonomy/*` routes
 
 ## Responsibilities
 - `Ui` renders pages/sections and calls hooks/actions.
@@ -20,14 +21,25 @@ _Last audited: 2026-05-21 (full source vs docs sync)._
 - `State` stores auth modal state, `/me` sync, **language** (`useLanguageStore`), API errors, and stream event log.
 - `Routing + i18n` controls locale-prefixed navigation and message loading.
 - `Shared` exposes reusable helpers/types/constants (`lib/language`, `constants/browse-menu.ts`, …).
+- `Taxonomy` provides admin CRUD for levels/topics/outcomes/skills/tags; list filters use shared `ApiListQueryParams` + `apiListQueryToRecord`.
+
+## Taxonomy module
+
+- **Types**: `src/types/taxonomy/` — entities; `TaxonomyListFilters` aliases `ApiListQueryParams`.
+- **Config**: `src/constants/taxonomy/resources.ts` — per-resource permissions, columns, tree/description flags.
+- **Nav**: `src/constants/dashboard/taxonomy-icons.ts` (`TAXONOMY_MENU_ICONS`) + taxonomy nodes in `admin-items.ts` / `sysadmin-items.ts`; filtered by `useFilteredDashboardItems`.
+- **API**: `src/api/callers/taxonomy/taxonomy.ts`, `src/api/hooks/taxonomy/useTaxonomy.ts`.
+- **UI**: `src/screen/taxonomy/taxonomy-list-page.tsx`, `src/components/features/taxonomy/*`, `ConfirmDeleteDialog`.
+- **Docs**: `docs/taxonomy-admin.md` (routes, permissions, sidebar icons, slug, DnD).
 
 ## Authorization constants & hooks
 
 - **Constants**: `PERMISSIONS` (40 names), `PERMISSION_IDS` (P1–P40), `ROLES` in `src/constants/` — mirror BE `AllPermissions` and role tags.
 - **Types**: `PermissionName`, `PermissionId`, `RoleName`, `PERMISSION_NAME_TO_ID` in `src/types/permissions/`.
-- **Utils**: `src/lib/utils/permission.ts` — `hasAllPermissions` matches BE `RequirePermission` (AND semantics).
-- **Hooks**: `src/hooks/auth/use-permissions.ts` — `useHasPermission`, `useHasAll/AnyPermissions`, `useSatisfiesPermissions`, `useFilteredUserMenuGroups` over `useGetMe().mePermissions`.
-- **UI**: `PermissionGate` (`src/components/shared/permission-gate.tsx`); user menu filtered via `useFilteredUserMenuGroups` in `UserMenuDropdownItems`.
+- **Utils**: `src/lib/utils/permission.ts` — `hasAllPermissions` matches BE `RequirePermission` (AND semantics); `filterPermissionNavTree` deep-filters nested nav (dashboard + user menu).
+- **Utils**: `src/lib/utils/dashboard.ts` — `filterDashboardItems` wraps `filterPermissionNavTree` for `DashboardItem[]`.
+- **Hooks**: `src/hooks/auth/use-permissions.ts` — `useHasPermission`, `useHasAll/AnyPermissions`, `useSatisfiesPermissions`, `useFilteredUserMenuGroups`, `useFilteredDashboardItems` over `useGetMe().mePermissions`.
+- **UI**: `PermissionGate` (`src/components/shared/permission-gate.tsx`); user menu via `useFilteredUserMenuGroups` in `UserMenuDropdownItems`; dashboard sidebar via `useFilteredDashboardItems` in `DashboardLayout`.
 - **Note**: `MeResponse` has `permissions: string[]` only; no `roles[]` on `/me` yet — gate UI by permission, not role name alone.
 
 ## Cross-module contracts

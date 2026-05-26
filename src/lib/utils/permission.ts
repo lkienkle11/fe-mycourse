@@ -81,9 +81,66 @@ export function canShowWithPermissions(
   return satisfiesPermissions(set, { permissions, permissionMode: mode });
 }
 
+/** Nav node shape shared by dashboard sidebar and nested user menu items. */
+export type PermissionNavNode = PermissionRequirement & {
+  href?: string;
+  children?: PermissionNavNode[];
+};
+
 /**
- * Filter menu groups: group gate first, then items; drop empty groups.
- * Same rules for group and item (`permissions` empty/omitted => visible).
+ * Bottom-up permission filter for nested nav trees.
+ *
+ * 1. Recurse into `children` first (all depths).
+ * 2. Leaf with `href`: keep only when `satisfiesPermissions` passes on that node.
+ * 3. Branch without `href`: keep when any filtered descendant remains (parent
+ *    permissions do not hide permitted deep leaves).
+ */
+export function filterPermissionNavTree<T extends PermissionNavNode>(
+  set: ReadonlySet<string>,
+  items: readonly T[],
+): T[] {
+  const result: T[] = [];
+
+  for (const item of items) {
+    const filteredChildren = item.children?.length
+      ? filterPermissionNavTree(set, item.children)
+      : undefined;
+    const children =
+      filteredChildren && filteredChildren.length > 0
+        ? filteredChildren
+        : undefined;
+
+    const hasHref = Boolean(item.href);
+    const hasVisibleChildren = Boolean(children?.length);
+    const selfAllowed = satisfiesPermissions(set, item);
+
+    if (hasHref) {
+      if (!selfAllowed) {
+        continue;
+      }
+      result.push({ ...item, children });
+      continue;
+    }
+
+    if (hasVisibleChildren) {
+      result.push({ ...item, children });
+    }
+  }
+
+  return result;
+}
+
+/** Recursively filter user menu items (supports optional nested `children`). */
+export function filterUserMenuItems(
+  set: ReadonlySet<string>,
+  items: readonly UserMenuItem[],
+): UserMenuItem[] {
+  return filterPermissionNavTree(set, items) as UserMenuItem[];
+}
+
+/**
+ * Filter menu groups: deep-filter each group's items, drop empty groups.
+ * Group-level `permissions` are not used as a pre-gate (only descendants matter).
  */
 export function filterUserMenuGroups(
   set: ReadonlySet<string>,
@@ -92,12 +149,7 @@ export function filterUserMenuGroups(
   const result: UserMenuGroup[] = [];
 
   for (const group of groups) {
-    if (!satisfiesPermissions(set, group)) {
-      continue;
-    }
-    const value = group.value.filter((item: UserMenuItem) =>
-      satisfiesPermissions(set, item),
-    );
+    const value = filterUserMenuItems(set, group.value);
     if (value.length === 0) {
       continue;
     }
