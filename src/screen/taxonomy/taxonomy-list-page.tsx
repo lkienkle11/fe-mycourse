@@ -1,0 +1,263 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { deleteTaxonomyService } from "@/api/callers/taxonomy";
+import { useTaxonomyList } from "@/api/hooks/taxonomy/useTaxonomy";
+import { TaxonomyFormDialog } from "@/components/features/taxonomy";
+import { buildTaxonomyTableColumns } from "@/components/features/taxonomy/taxonomy-table-columns";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
+import { DataTable } from "@/components/shared/data-table";
+import { PermissionGate } from "@/components/shared/permission-gate";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getTaxonomyResourceConfig } from "@/constants/taxonomy/resources";
+import type { PermissionName } from "@/types/permissions";
+import type {
+  TaxonomyEntity,
+  TaxonomyListFilters,
+  TaxonomyResourceKey,
+  TaxonomyStatus,
+} from "@/types/taxonomy";
+
+export type TaxonomyListPageProps = {
+  resourceKey: TaxonomyResourceKey;
+  dashboardBasePath: "/admin" | "/sysadmin";
+};
+
+export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
+  const t = useTranslations("taxonomy");
+  const config = getTaxonomyResourceConfig(resourceKey);
+  const [filters, setFilters] = useState<TaxonomyListFilters>({
+    page: 1,
+    per_page: 20,
+    sort_by: config.listColumns.find((col) => col.sortKey)?.sortKey,
+    sort_desc: false,
+  });
+  const [searchInput, setSearchInput] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const [selectedRow, setSelectedRow] = useState<TaxonomyEntity | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<TaxonomyEntity | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const { rows, pageInfo, isLoading, mutate } = useTaxonomyList(
+    resourceKey,
+    filters,
+  );
+
+  const page = pageInfo?.page ?? filters.page ?? 1;
+  const totalPages = pageInfo?.total_pages ?? 1;
+
+  const permissions = useMemo(
+    () => ({
+      create: [config.permissions.create as PermissionName],
+      update: [config.permissions.update as PermissionName],
+      delete: [config.permissions.delete as PermissionName],
+    }),
+    [config],
+  );
+
+  const tableColumns = useMemo(
+    () => buildTaxonomyTableColumns(resourceKey, config.listColumns, t),
+    [resourceKey, config.listColumns, t],
+  );
+
+  const applySearch = () => {
+    setFilters((prev) => ({
+      ...prev,
+      page: 1,
+      search: searchInput.trim() || undefined,
+    }));
+  };
+
+  const handleSortChange = (sortBy: string) => {
+    setFilters((prev) => {
+      const sameColumn = prev.sort_by === sortBy;
+      return {
+        ...prev,
+        page: 1,
+        sort_by: sortBy,
+        sort_desc: sameColumn ? !prev.sort_desc : false,
+      };
+    });
+  };
+
+  const openCreate = () => {
+    setFormMode("create");
+    setSelectedRow(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (row: TaxonomyEntity) => {
+    setFormMode("edit");
+    setSelectedRow(row);
+    setFormOpen(true);
+  };
+
+  const openDelete = (row: TaxonomyEntity) => {
+    setDeleteTarget(row);
+    setDeleteOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await deleteTaxonomyService(resourceKey, deleteTarget.id);
+      toast.success(t("common.deleteSuccess"));
+      setDeleteOpen(false);
+      setDeleteTarget(null);
+      await mutate();
+    } catch {
+      toast.error(t("common.errorGeneric"));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold">
+          {t(`resources.${resourceKey}.title`)}
+        </h1>
+        <PermissionGate permissions={permissions.create}>
+          <Button type="button" onClick={openCreate}>
+            {t("common.add")}
+          </Button>
+        </PermissionGate>
+      </div>
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <Input
+          value={searchInput}
+          placeholder={t("common.searchPlaceholder")}
+          onChange={(event) => setSearchInput(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") applySearch();
+          }}
+          className="max-w-sm"
+        />
+        <Button type="button" variant="secondary" onClick={applySearch}>
+          {t("common.search")}
+        </Button>
+        <Select
+          value={filters.status ?? "ALL"}
+          onValueChange={(value) => {
+            setFilters((prev) => ({
+              ...prev,
+              page: 1,
+              status: value === "ALL" ? undefined : (value as TaxonomyStatus),
+            }));
+          }}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">{t("common.statusAll")}</SelectItem>
+            <SelectItem value="ACTIVE">{t("common.statusActive")}</SelectItem>
+            <SelectItem value="INACTIVE">
+              {t("common.statusInactive")}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+      ) : (
+        <DataTable
+          columns={tableColumns}
+          rows={rows}
+          sort={filters}
+          onSortChange={handleSortChange}
+          actionsHeader={t("common.actions")}
+          emptyMessage={t("common.empty")}
+          renderActions={(row) => (
+            <div className="flex gap-2">
+              <PermissionGate permissions={permissions.update}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openEdit(row)}
+                >
+                  {t("common.edit")}
+                </Button>
+              </PermissionGate>
+              <PermissionGate permissions={permissions.delete}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => openDelete(row)}
+                >
+                  {t("common.delete")}
+                </Button>
+              </PermissionGate>
+            </div>
+          )}
+        />
+      )}
+
+      <div className="flex items-center justify-between">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={page <= 1}
+          onClick={() =>
+            setFilters((prev) => ({ ...prev, page: Math.max(1, page - 1) }))
+          }
+        >
+          {t("common.previous")}
+        </Button>
+        <p className="text-sm text-muted-foreground">
+          {t("common.pageOf", {
+            page: String(page),
+            totalPages: String(totalPages),
+          })}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={page >= totalPages}
+          onClick={() =>
+            setFilters((prev) => ({
+              ...prev,
+              page: Math.min(totalPages, page + 1),
+            }))
+          }
+        >
+          {t("common.next")}
+        </Button>
+      </div>
+
+      <TaxonomyFormDialog
+        resourceKey={resourceKey}
+        mode={formMode}
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        initialData={selectedRow}
+        onSuccess={() => void mutate()}
+      />
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+      />
+    </div>
+  );
+}

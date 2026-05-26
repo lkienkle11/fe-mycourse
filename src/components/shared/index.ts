@@ -1,2 +1,6 @@
+export * from "./confirm-delete-dialog";
+export * from "./data-table";
 export * from "./permission-gate";
 export * from "./search-bar";
+export * from "./sortable-list";
+export * from "./sortable-tree-editor";

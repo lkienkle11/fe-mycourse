@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-05-25 (dashboard locale chrome, `LocaleSwitcher` asset)._
+_Last audited: 2026-05-26 (taxonomy sidebar icons, ApiListQueryParams, slug helpers)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -40,6 +40,14 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Paginated response shape — `result` array + `page_info`. Use as the generic for `ApiResponse` when the endpoint returns a list.
 - **Scope**: Any list endpoint.
 - **Dependencies**: `ApiPageInfo`.
+
+### Asset: ApiListQueryParams / ApiEntityStatus
+- **Name**: `ApiListQueryParams`, `ApiEntityStatus`
+- **Type**: Interface / Union
+- **Path**: `src/types/api.ts`
+- **Purpose**: Shared BE list query params (`page`, `per_page`, `search`, `status`, `sort_by`, `sort_desc`). Domain modules alias this (e.g. `TaxonomyListFilters`).
+- **Scope**: List API callers, list screens, SWR hooks.
+- **Dependencies**: none.
 
 ### Asset: MeResponse
 - **Name**: `MeResponse`
@@ -158,15 +166,15 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `UserMenuStatus`, `UserMenuItem`, `UserMenuGroup`
 - **Type**: TypeScript types
 - **Path**: `src/types/user-menu.ts` (barrel: `@/types` or `@/types/user-menu`)
-- **Purpose**: Dropdown menu config shape; extends `PermissionRequirement` for optional guards on groups and items.
-- **Scope**: `HEADER_DROPDOWN_ITEMS`, `filterUserMenuGroups`, auth menu UI.
+- **Purpose**: Dropdown menu config shape; extends `PermissionRequirement` for optional guards on items. `UserMenuItem` supports optional nested `children` (filtered recursively).
+- **Scope**: `HEADER_DROPDOWN_ITEMS`, `filterUserMenuGroups`, `filterUserMenuItems`, auth menu UI.
 - **Dependencies**: `PermissionRequirement` from `src/types/permissions/`.
 
 ### Asset: Permission utils (`hasPermission`, `hasAllPermissions`, …)
-- **Name**: `toPermissionSet`, `hasPermission`, `hasAllPermissions`, `hasAnyPermission`, `satisfiesPermissions`, `canShowWithPermissions`, `filterUserMenuGroups`, `parsePermissionName`, `permissionNameFromId`, `permissionIdFromName`, …
+- **Name**: `toPermissionSet`, `hasPermission`, `hasAllPermissions`, `hasAnyPermission`, `satisfiesPermissions`, `canShowWithPermissions`, `filterPermissionNavTree`, `filterUserMenuItems`, `filterUserMenuGroups`, `parsePermissionName`, `permissionNameFromId`, `permissionIdFromName`, …
 - **Type**: Pure functions
 - **Path**: `src/lib/utils/permission.ts` (barrel: `@/lib/utils`)
-- **Purpose**: Client-safe permission checks; `hasAllPermissions` / default `satisfiesPermissions` mode mirror BE `RequirePermission` (AND). Empty/omitted `permissions` on a requirement ⇒ allow. `filterUserMenuGroups` applies group gate then filters items and drops empty groups.
+- **Purpose**: Client-safe permission checks; `hasAllPermissions` / default `satisfiesPermissions` mode mirror BE `RequirePermission` (AND). Empty/omitted `permissions` on a requirement ⇒ allow. `filterPermissionNavTree` bottom-up filters nested nav: recurse children first; leaves with `href` require `satisfiesPermissions`; branch nodes without `href` stay when any permitted descendant remains. `filterUserMenuGroups` deep-filters items per group and drops empty groups (no group pre-gate).
 - **Scope**: Hooks, menu filtering, server/client guards, admin tooling.
 - **Dependencies**: `PERMISSIONS`, `PERMISSION_IDS`, permission types, `UserMenuGroup` from `src/types/user-menu.ts`.
 
@@ -182,9 +190,9 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `filterDashboardItems`
 - **Type**: Pure function
 - **Path**: `src/lib/utils/dashboard.ts` (barrel: `@/lib/utils`)
-- **Purpose**: Recursively filter `DashboardItem[]` by `satisfiesPermissions`; drop group-only parents with no `href` and empty children; keep leaves with `href`.
+- **Purpose**: Thin wrapper around `filterPermissionNavTree` for `DashboardItem[]` (deep bottom-up filter at every nesting level).
 - **Scope**: `useFilteredDashboardItems`, `DashboardSidebar`.
-- **Dependencies**: `satisfiesPermissions`, `DashboardItem`.
+- **Dependencies**: `filterPermissionNavTree`, `DashboardItem`.
 
 ### Asset: `useFilteredDashboardItems`
 - **Name**: `useFilteredDashboardItems`
@@ -194,13 +202,21 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `DashboardLayout` and any client dashboard nav.
 - **Dependencies**: `usePermissionSet`, `filterDashboardItems`.
 
+### Asset: `TAXONOMY_MENU_ICONS`
+- **Name**: `TAXONOMY_MENU_ICONS`
+- **Type**: Constant (`Record<"group" \| "levels" \| "topics" \| "outcomes" \| "skills" \| "tags", LucideIcon>`)
+- **Path**: `src/constants/dashboard/taxonomy-icons.ts`
+- **Purpose**: Shared Lucide icons for the taxonomy sidebar group and five child resources (`Network`, `Layers`, `BookMarked`, `Target`, `Brain`, `Tags`). Imported by `admin-items.ts` and `sysadmin-items.ts`.
+- **Scope**: Admin/sysadmin dashboard taxonomy nav only.
+- **Dependencies**: `lucide-react`, `LucideIcon`.
+
 ### Asset: Role dashboard menu constants
 - **Name**: `ADMIN_DASHBOARD_ITEMS`, `INSTRUCTOR_DASHBOARD_ITEMS`, `SYSADMIN_DASHBOARD_ITEMS`
 - **Type**: Constant (`DashboardItem[]`)
-- **Path**: `src/constants/dashboard/` (barrel: `@/constants/dashboard`)
-- **Purpose**: Placeholder nav trees per role with nested children and permission gates aligned to BE `permissions.go`.
+- **Path**: `src/constants/dashboard/` (`admin-items.ts`, `sysadmin-items.ts`, `instructor-items.ts`, `taxonomy-icons.ts`; barrel: `@/constants/dashboard`)
+- **Purpose**: Nav trees per role with nested children, Lucide `icon`, optional `titleKey`, and permission gates aligned to BE `permissions.go`. Taxonomy subtree uses `TAXONOMY_MENU_ICONS`.
 - **Scope**: App route layouts under `src/app/[locale]/{admin,instructor,sysadmin}/layout.tsx`.
-- **Dependencies**: `PERMISSIONS`, `DashboardItem`.
+- **Dependencies**: `PERMISSIONS`, `TAXONOMY_MENU_ICONS`, `TAXONOMY_GROUP_READ_PERMISSIONS`, `DashboardItem`.
 
 ### Asset: Dashboard shell components
 - **Name**: `DashboardLayout`, `DashboardSidebar`, `HeaderDashboard`, `DashboardUnauthorized`
@@ -279,6 +295,46 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: API callers (building endpoint keys), navigation helpers.
 - **Dependencies**: none.
 - **Reuse Rule**: Use whenever building a URL with dynamic segments or query params. Do not do manual string concatenation.
+
+### Asset: apiListQueryToRecord
+- **Name**: `apiListQueryToRecord(params: ApiListQueryParams): Record<string, string>`
+- **Type**: Utility function
+- **Path**: `src/lib/utils/list-query.ts`
+- **Purpose**: Convert shared list filters to query key/values for `buildQueryParams`. Use instead of per-module `filtersToQuery` helpers.
+- **Scope**: Taxonomy list caller; future paginated list callers.
+- **Dependencies**: `ApiListQueryParams`.
+
+### Asset: SortableList
+- **Name**: `SortableList`, `SortableListItem`
+- **Type**: React component
+- **Path**: `src/components/shared/sortable-list.tsx`
+- **Purpose**: Vertical drag-and-drop reorder via `@dnd-kit` (first DnD usage in the repo).
+- **Scope**: Taxonomy description editor, tree editor; any list with stable string `id`.
+- **Dependencies**: `@dnd-kit/core`, `@dnd-kit/sortable`.
+
+### Asset: SortableTreeEditor
+- **Name**: `SortableTreeEditor`, `SortableTreeNode`
+- **Type**: React component
+- **Path**: `src/components/shared/sortable-tree-editor.tsx`
+- **Purpose**: Nested drag-and-drop tree with name field and read-only slug preview per node.
+- **Scope**: Taxonomy topics/skills (`TaxonomyTreeEditor` wrapper); similar JSONB trees elsewhere.
+- **Dependencies**: `SortableList`, `slugifyName`.
+
+### Asset: DataTable
+- **Name**: `DataTable`, `DataTableColumn`
+- **Type**: React component
+- **Path**: `src/components/shared/data-table.tsx`
+- **Purpose**: Admin list table with optional column sort toggles and actions column.
+- **Scope**: Taxonomy list page; future paginated admin lists.
+- **Dependencies**: shadcn `Table`, `ApiListQueryParams` sort fields.
+
+### Asset: slugifyName
+- **Name**: `slugifyName(text: string): string`
+- **Type**: Utility function
+- **Path**: `src/lib/utils/slug.ts`
+- **Purpose**: Build slug from display name — lowercase, spaces → `-`, strip accents (e.g. `36 Thanh Hóa` → `36-thanh-hoa`). Used for read-only slug preview and API payloads.
+- **Scope**: Taxonomy form dialog, tree editor, submit handlers.
+- **Dependencies**: none.
 
 ### Asset: getCookieDomain
 - **Name**: `getCookieDomain(rawDomain?: string): string | undefined`

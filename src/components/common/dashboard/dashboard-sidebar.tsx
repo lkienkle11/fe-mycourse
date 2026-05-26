@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import {
   Collapsible,
@@ -39,6 +40,14 @@ function isItemActive(pathname: string, href?: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function useDashboardItemTitle() {
+  const t = useTranslations("dashboard");
+  return (item: DashboardItem) => {
+    if (!item.titleKey) return item.title;
+    return t(item.titleKey as Parameters<typeof t>[0]);
+  };
+}
+
 function DashboardItemIcon({ item }: { item: DashboardItem }) {
   const Icon = item.icon;
   return <Icon className="size-4 shrink-0" aria-hidden />;
@@ -75,15 +84,17 @@ function DashboardSidebarCollapsed({
   ...callbacks
 }: DashboardSidebarProps & { pathname: string }) {
   const { itemClassName, itemActiveClassName } = callbacks.customStyles ?? {};
+  const itemTitle = useDashboardItemTitle();
 
   return (
     <SidebarMenu>
       {items.map((item) => {
         const active = isItemActive(pathname, item.href);
+        const label = itemTitle(item);
         const content = (
           <>
             <DashboardItemIcon item={item} />
-            <span className="sr-only">{item.title}</span>
+            <span className="sr-only">{label}</span>
           </>
         );
 
@@ -93,7 +104,7 @@ function DashboardSidebarCollapsed({
               <SidebarMenuButton
                 asChild
                 isActive={active}
-                tooltip={item.title}
+                tooltip={label}
                 disabled={item.disabled}
                 className={cn(itemClassName, active && itemActiveClassName)}
               >
@@ -106,7 +117,7 @@ function DashboardSidebarCollapsed({
               </SidebarMenuButton>
             ) : (
               <SidebarMenuButton
-                tooltip={item.title}
+                tooltip={label}
                 disabled={item.disabled}
                 className={cn(itemClassName, active && itemActiveClassName)}
                 onClick={() => callbacks.onItemClick?.(item)}
@@ -128,12 +139,14 @@ function DashboardSidebarLevel({
   ...callbacks
 }: DashboardSidebarProps & { pathname: string; depth?: number }) {
   const { itemClassName, itemActiveClassName } = callbacks.customStyles ?? {};
+  const itemTitle = useDashboardItemTitle();
 
   return (
     <>
       {items.map((item) => {
         const active = isItemActive(pathname, item.href);
         const hasChildren = Boolean(item.children?.length);
+        const label = itemTitle(item);
 
         if (hasChildren) {
           return (
@@ -157,7 +170,7 @@ function DashboardSidebarLevel({
                     onBlur={() => callbacks.onBlur?.(item)}
                   >
                     <DashboardItemIcon item={item} />
-                    <span className="truncate">{item.title}</span>
+                    <span className="truncate">{label}</span>
                     <ChevronRight
                       data-slot="dashboard-chevron"
                       className="ml-auto size-4 shrink-0 transition-transform duration-200"
@@ -194,7 +207,7 @@ function DashboardSidebarLevel({
                   onClick={() => handleNavigate(item, callbacks)}
                 >
                   <DashboardItemIcon item={item} />
-                  <span className="truncate">{item.title}</span>
+                  <span className="truncate">{label}</span>
                 </Link>
               </SidebarMenuButton>
             ) : (
@@ -205,7 +218,7 @@ function DashboardSidebarLevel({
                 onBlur={() => callbacks.onBlur?.(item)}
               >
                 <DashboardItemIcon item={item} />
-                <span className="truncate">{item.title}</span>
+                <span className="truncate">{label}</span>
               </SidebarMenuButton>
             )}
           </SidebarMenuItem>
@@ -222,12 +235,14 @@ function DashboardSidebarSubLevel({
   ...callbacks
 }: DashboardSidebarProps & { pathname: string; depth?: number }) {
   const { itemClassName, itemActiveClassName } = callbacks.customStyles ?? {};
+  const itemTitle = useDashboardItemTitle();
 
   return (
     <>
       {items.map((item) => {
         const active = isItemActive(pathname, item.href);
         const hasChildren = Boolean(item.children?.length);
+        const label = itemTitle(item);
 
         if (hasChildren) {
           return (
@@ -251,7 +266,7 @@ function DashboardSidebarSubLevel({
                     onBlur={() => callbacks.onBlur?.(item)}
                   >
                     <DashboardItemIcon item={item} />
-                    <span className="truncate">{item.title}</span>
+                    <span className="truncate">{label}</span>
                     <ChevronRight
                       data-slot="dashboard-chevron"
                       className="ml-auto size-4 shrink-0 transition-transform duration-200"
@@ -298,7 +313,7 @@ function DashboardSidebarSubLevel({
                   }}
                 >
                   <DashboardItemIcon item={item} />
-                  <span className="truncate">{item.title}</span>
+                  <span className="truncate">{label}</span>
                 </Link>
               </SidebarMenuSubButton>
             ) : (
@@ -314,7 +329,7 @@ function DashboardSidebarSubLevel({
                   onClick={() => callbacks.onItemClick?.(item)}
                 >
                   <DashboardItemIcon item={item} />
-                  <span className="truncate">{item.title}</span>
+                  <span className="truncate">{label}</span>
                 </button>
               </SidebarMenuSubButton>
             )}

@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-05-21 (full source vs docs sync)._
+_Last audited: 2026-05-26 (shared list query types, taxonomy callers, apiPatch)._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -23,7 +23,7 @@ Set in `.env` or the deployment environment. Never hard-code these values.
 ```
 src/api/
 ├── instance.ts         # Axios instance + request/response interceptors
-├── methods.ts          # apiFetch / apiPost / apiPut / apiDelete / apiOptions
+├── methods.ts          # apiFetch / apiPost / apiPut / apiPatch / apiDelete / apiOptions
 ├── raw-http.ts         # rawFetch / rawPost (interceptor-free, for token refresh only)
 ├── callers/            # Domain-specific service functions
 └── hooks/              # SWR hooks built on top of service functions
@@ -264,12 +264,53 @@ interface ApiPageInfo {
 }
 ```
 
-Pass page params via query string using `buildQueryParams`:
+Shared list filters mirror BE pagination query params (`page`, `per_page`, `search`, `status`, `sort_by`, `sort_desc`):
 
 ```ts
-import { buildQueryParams } from "@/lib/utils";
-const url = `/api/v1/courses${buildQueryParams({ page: 1, page_size: 10 })}`;
+import type { ApiListQueryParams } from "@/types/api";
+import { apiListQueryToRecord, buildQueryParams } from "@/lib/utils";
+
+const filters: ApiListQueryParams = {
+  page: 1,
+  per_page: 20,
+  status: "ACTIVE",
+  sort_by: "name",
+  sort_desc: false,
+};
+
+const url = buildQueryParams("/api/v1/taxonomy/levels", apiListQueryToRecord(filters));
 ```
+
+Domain modules may alias this shape (e.g. `TaxonomyListFilters` = `ApiListQueryParams` in `src/types/taxonomy/index.ts`).
+
+---
+
+## Taxonomy (admin)
+
+Callers live in `src/api/callers/taxonomy/taxonomy.ts`. List data uses the paginated envelope (`data.result` + `data.page_info`).
+
+```ts
+import { listTaxonomyService, createTaxonomyService } from "@/api/callers/taxonomy";
+import { useTaxonomyList } from "@/api/hooks/taxonomy/useTaxonomy";
+
+// SWR list hook
+const { rows, pageInfo, mutate } = useTaxonomyList("levels", {
+  page: 1,
+  per_page: 20,
+  status: "ACTIVE",
+});
+
+// One-off service call
+await createTaxonomyService("tags", {
+  name: "React",
+  slug: "react",
+  status: "ACTIVE",
+});
+```
+
+Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource metadata (permissions, columns, tree fields) is in `src/constants/taxonomy/resources.ts`. List callers use `apiListQueryToRecord()` from `src/lib/utils/list-query.ts` — not a per-module duplicate.
+
+See also `docs/taxonomy-admin.md`.
 
 ---
 

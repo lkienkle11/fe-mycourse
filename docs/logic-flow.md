@@ -167,7 +167,7 @@ Source: GET /api/v1/me → MeResponse.permissions → useSyncMeFromAuth → useG
 
 Constants: PERMISSIONS, PERMISSION_IDS, ROLES, HEADER_DROPDOWN_ITEMS (+ per-item permissions)  [src/constants/]
 Types: PermissionName, PermissionRequirement, PermissionCheckMode  [src/types/permissions/]
-Utils: hasPermission, hasAllPermissions (AND), hasAnyPermission (OR), satisfiesPermissions, filterUserMenuGroups  [src/lib/utils/permission.ts]
+Utils: hasPermission, hasAllPermissions (AND), hasAnyPermission (OR), satisfiesPermissions, filterPermissionNavTree, filterUserMenuItems, filterUserMenuGroups  [src/lib/utils/permission.ts]
 Hooks: useHasPermission, useHasAll/AnyPermissions, useSatisfiesPermissions, useFilteredUserMenuGroups  [src/hooks/auth/use-permissions.ts]
 Component: PermissionGate  [src/components/shared/permission-gate.tsx]
 
@@ -179,9 +179,17 @@ Config rule (menu + PermissionRequirement):
 User menu filter flow:
   HEADER_DROPDOWN_ITEMS (constants/common.ts; UserMenuGroup types in types/user-menu.ts)
     → useFilteredUserMenuGroups() → filterUserMenuGroups(mePermissions set)
-    → group fails → entire group hidden
-    → group passes → each item filtered; empty groups dropped
-    → UserMenuDropdownItems renders visible groups; separators only between visible groups
+    → filterUserMenuItems / filterPermissionNavTree: recurse all nested children first
+    → leaf with href: requires satisfiesPermissions on that item
+    → branch without href: kept when any permitted descendant remains
+    → empty groups dropped
+    → UserMenuDropdownItems renders visible groups (recursive nested links); separators only between visible groups
+
+Dashboard nav filter flow:
+  ADMIN_DASHBOARD_ITEMS | INSTRUCTOR_* | SYSADMIN_* (constants/dashboard/)
+    → useFilteredDashboardItems() → filterDashboardItems → filterPermissionNavTree
+    → same bottom-up rules as user menu (all depths)
+    → DashboardSidebar renders filtered tree recursively
 
 Example (single permission):
   import { PERMISSIONS } from "@/constants/permissions";
