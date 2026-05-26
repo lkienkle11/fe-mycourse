@@ -109,9 +109,9 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
-| `Header` | `header.tsx` | Server | Sticky `z-100`. Desktop row (`lg+`) + `HeaderMobileBar`. `LoginSignupPopup` mounted after `</header>`. |
+| `Header` | `header.tsx` | Server | Sticky `z-100`. Desktop row (`lg+`) + `HeaderMobileBar`. Brand logo/title navigates home via shared `homeHref` helper. `LoginSignupPopup` mounted after `</header>`. |
 | `HeaderBrowseNav` | `browse-nav.tsx` | Client | Desktop-only (`lg+`) browse flyout (`NavigationMenu`). N-column hover via `activeStack`; private helper `MenuColumn`. |
-| `HeaderMobileBar` | `header-mobile-bar.tsx` | Client | Below `lg`: logo + burger opening `HeaderMobileSidebar`. |
+| `HeaderMobileBar` | `header-mobile-bar.tsx` | Client | Below `lg`: logo + burger opening `HeaderMobileSidebar`. Logo `Link` uses shared `homeHref`. |
 | `HeaderMobileSidebar` | `header-mobile-sidebar.tsx` | Client | Portal overlay `z-200`, panel `z-202`, `h-dvh`, slides from **right** (no Radix Sheet). Body: `overflow-y-auto` + `SearchBar` (`visibility="sidebar"`) + `BrowseSidebarMenu` + footer (`LocaleSwitcher`, `SidebarAuthFooter`). Locks `document.body` overflow while open; `Escape` closes. |
 | `BrowseSidebarMenu` | `browse-sidebar-menu.tsx` | Client | Mobile browse tree: `SidebarProvider` + `SidebarContent` + `Collapsible` / `SidebarMenu*`. Private helpers: `BrowseSidebarMenuLevel`, `BrowseSidebarMenuSubLevel`, `BrowseMenuLabel`. Props: `items`, `onLinkClick`. Imported directly by `HeaderMobileSidebar` (not in `header/index.ts` barrel). |
 | `SidebarAuthFooter` | `sidebar-auth-footer.tsx` | Client | Guest `AuthButton` or avatar + `UserMenuDropdownItems`. |
@@ -119,7 +119,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 **`header/index.ts` barrel:** `HeaderBrowseNav`, `Header`, `HeaderDashboard`, `HeaderMobileBar`, `HeaderMobileSidebar`, `SidebarAuthFooter`.
 
-| `HeaderDashboard` | `header-dashboard.tsx` | Client | Dashboard top bar (`h-16`, `z-20`): optional `leading` (e.g. mobile burger) + logo/title (`md+`) + optional `trailing` (locale slot from `DashboardLayout`) + `AuthLayout`. Does **not** embed `LocaleSwitcher` itself. |
+| `HeaderDashboard` | `header-dashboard.tsx` | Client | Dashboard top bar (`h-16`, `z-20`): optional `leading` (e.g. mobile burger) + logo/title (`md+`) + optional `trailing` (locale slot from `DashboardLayout`) + `AuthLayout`. Logo/title uses shared `navigateToHome(router)` helper. Does **not** embed `LocaleSwitcher` itself. |
 
 ### Dashboard shell
 
@@ -127,7 +127,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
-| `DashboardLayout` | `dashboard-layout.tsx` | Client | `SidebarProvider` + `HeaderDashboard` (`leading` burger `md:hidden`, `trailing` `DashboardHeaderLocale` on `lg+`) + left `Sidebar` (`!top-16`, `h-[calc(100svh-4rem)]`) + `SidebarInset` / `main`. Private helpers: `DashboardMenuTrigger`, `DashboardHeaderLocale`, `DashboardSidebarMobileHeader`, `DashboardSidebarLocaleFooter` (`lg:hidden`, mirrors `HeaderMobileSidebar` footer). Mobile nav via Radix `Sheet`; desktop footer `SidebarTrigger`. Filters `items` via `useFilteredDashboardItems`; gate via `permissions` / `isAuthorized`; loading uses `SidebarMenuSkeleton` with fixed `widthPercent` (SSR-safe). Unauthorized: header + locale + `DashboardUnauthorized`. `LoginSignupPopup` when authorized. |
+| `DashboardLayout` | `dashboard-layout.tsx` | Client | `SidebarProvider` + `HeaderDashboard` (`leading` burger `md:hidden`, `trailing` `DashboardHeaderLocale` on `lg+`) + left `Sidebar` (`!top-16`, `h-[calc(100svh-4rem)]`) + `SidebarInset` / `main`. Private helpers: `DashboardMenuTrigger`, `DashboardHeaderLocale`, `DashboardSidebarMobileHeader`, `DashboardSidebarLocaleFooter` (`lg:hidden`, mirrors `HeaderMobileSidebar` footer). Mobile nav via Radix `Sheet`; desktop footer `SidebarTrigger`. Sidebar mobile header brand `Link` uses shared `homeHref` and closes sheet before navigation. Filters `items` via `useFilteredDashboardItems`; gate via `permissions` / `isAuthorized`; loading uses `SidebarMenuSkeleton` with fixed `widthPercent` (SSR-safe). Unauthorized: header + locale + `DashboardUnauthorized`. `LoginSignupPopup` when authorized. |
 | `DashboardSidebar` | `dashboard-sidebar.tsx` | Client | Recursive nav tree (pattern from `BrowseSidebarMenu`). **Collapsed:** root icons only (no child subtrees). **Expanded:** full `Collapsible` + `SidebarMenuSub*`. Active route via `usePathname`. |
 | `DashboardUnauthorized` | `dashboard-unauthorized.tsx` | Client | Compact access-denied message when layout permissions fail. |
 

@@ -5,6 +5,8 @@ import { AuthLayout } from "@/components/common/auth-menu";
 import { LoginSignupPopup } from "@/components/common/auth-menu/auth/login-signup-popup";
 import { SearchBar } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
+import { homeHref } from "@/lib/navigation/home";
 import { HeaderBrowseNav } from "./browse-nav";
 import { HeaderMobileBar } from "./header-mobile-bar";
 import { LocaleSwitcher } from "./locale-switcher";
@@ -17,12 +19,15 @@ export const Header = async () => {
       <header className="w-full sticky top-0 z-100 bg-background shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)]">
         {/* Desktop / large tablet (lg+) */}
         <div className="container container-wrap mx-auto hidden w-full items-center justify-between py-4 xl:px-4 lg:flex">
-          <div className="flex cursor-pointer select-none items-center justify-center gap-1.5">
+          <Link
+            href={homeHref}
+            className="flex cursor-pointer select-none items-center justify-center gap-1.5"
+          >
             <MainLogo />
             <h1 className="text-xl font-bold bg-black bg-clip-text text-transparent">
               {t("header.title")}
             </h1>
-          </div>
+          </Link>
           <HeaderBrowseNav />
           <SearchBar
             placeholderText={t("search.placeholder")}

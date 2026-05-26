@@ -282,6 +282,8 @@ src/lib/language/
 
 ```
 src/lib/
+├── navigation/
+│   └── home.ts             # shared homeHref + navigateToHome(router) helper for header/dashboard brand touchpoints
 ├── utils/                  # Shared helper functions — import as @/lib/utils
 │   ├── index.ts            # Barrel: client-safe utils only (cn, url, cookie, …)
 │   ├── cn.ts               # cn() — clsx + tailwind-merge class combiner
