@@ -12,6 +12,7 @@ export {
   setCookieValue,
 } from "./cookie";
 export { filterDashboardItems } from "./dashboard";
+export { formatBytes } from "./format-bytes";
 export { apiListQueryToRecord } from "./list-query";
 export {
   canShowWithPermissions,
@@ -32,6 +33,18 @@ export {
 } from "./permission";
 export { useUniqueId } from "./react";
 export { isServer } from "./runtime";
+export {
+  classifyMediaTab,
+  formatMediaDate,
+  getMediaDeleteKey,
+  isImageMedia,
+  mediaTabToCategory,
+  mediaUploadErrorMessageKey,
+  parseMediaSortOption,
+  resolveMediaCollectionDefaultTab,
+  resolveVisibleMediaTabs,
+  validateMediaUploadBatch,
+} from "./media";
 export { slugifyName } from "./slug";
 export { buildQueryParams } from "./url";
 export { pickCharacter } from "./user";
