@@ -7,6 +7,8 @@ export type UserMenuItem = PermissionRequirement & {
   title: string;
   status: UserMenuStatus;
   itemClassName?: string;
+  /** Optional nested links; filtered recursively by `filterUserMenuItems`. */
+  children?: UserMenuItem[];
 };
 
 export type UserMenuGroup = PermissionRequirement & {
