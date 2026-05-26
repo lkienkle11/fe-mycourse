@@ -294,6 +294,37 @@ export async function apiPut<T, D = unknown>(
 }
 
 /**
+ * PATCH request. Returns `{ data, statusCode }`.
+ *
+ * @example
+ * const { data, statusCode } = await apiPatch<User, UpdateUserDto>("/users/1", payload);
+ */
+export async function apiPatch<T, D = unknown>(
+  url: string,
+  data?: D,
+  options: MutationApiOptions = {},
+): Promise<ApiResult<T>> {
+  const { otherAxiosInstance, ...rest } = options;
+  const {
+    data: responseData,
+    status: statusCode,
+    headers: rawHeaders,
+  } = await resolveInstance(otherAxiosInstance).patch<T>(
+    url,
+    data,
+    buildAxiosConfig(rest),
+  );
+  return {
+    data: responseData,
+    statusCode,
+    headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
+    cookies: parseSetCookies(
+      rawHeaders["set-cookie"] as string | string[] | undefined,
+    ),
+  };
+}
+
+/**
  * DELETE request. Returns `{ data, statusCode }`.
  *
  * @example
