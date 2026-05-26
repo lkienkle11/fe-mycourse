@@ -1,6 +1,6 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-05-26 (taxonomy sidebar icons)._
+_Last audited: 2026-05-26 (media module, shared list-query)._
 
 
 ## Module map
@@ -12,6 +12,7 @@ _Last audited: 2026-05-26 (taxonomy sidebar icons)._
 - `Routing + i18n`: `src/app`, `src/i18n`, `src/proxy.ts`, `src/messages`
 - `Shared`: `src/lib/utils`, `src/constants`, `src/config`
 - `Taxonomy`: `src/types/taxonomy`, `src/constants/taxonomy`, `src/api/callers/taxonomy`, `src/components/features/taxonomy`, `src/screen/taxonomy`, admin/sysadmin `taxonomy/*` routes
+- `Media`: `src/types/media`, `src/constants/media`, `src/api/callers/media`, `src/components/features/media` (collection popup; no dedicated route page yet)
 
 ## Responsibilities
 - `Ui` renders pages/sections and calls hooks/actions.
@@ -22,6 +23,7 @@ _Last audited: 2026-05-26 (taxonomy sidebar icons)._
 - `Routing + i18n` controls locale-prefixed navigation and message loading.
 - `Shared` exposes reusable helpers/types/constants (`lib/language`, `constants/browse-menu.ts`, …).
 - `Taxonomy` provides admin CRUD for levels/topics/outcomes/skills/tags; list filters use shared `ApiListQueryParams` + `apiListQueryToRecord`.
+- `Media` provides the reusable media library dialog (browse/upload/select); taxonomy cover images use it. List filters extend `ApiListQueryParams` with `category` / `sort_order`.
 
 ## Taxonomy module
 
@@ -31,6 +33,15 @@ _Last audited: 2026-05-26 (taxonomy sidebar icons)._
 - **API**: `src/api/callers/taxonomy/taxonomy.ts`, `src/api/hooks/taxonomy/useTaxonomy.ts`.
 - **UI**: `src/screen/taxonomy/taxonomy-list-page.tsx`, `src/components/features/taxonomy/*`, `ConfirmDeleteDialog`.
 - **Docs**: `docs/taxonomy-admin.md` (routes, permissions, sidebar icons, slug, DnD).
+
+## Media module
+
+- **Types**: `src/types/media/` — `MediaFile`, `MediaListFilters` (= `ApiListQueryParams` + media fields).
+- **Constants**: `src/constants/media/file-rules.ts` — upload limits, accept strings, `MEDIA_IMAGE_EXTENSIONS`, `isImageFilename`.
+- **Shared utils**: `formatBytes` (`src/lib/utils/format-bytes.ts`) for upload size labels; not in `media.ts`.
+- **API**: `src/api/callers/media/media.ts`, `src/api/hooks/media/useMediaFiles.ts`; routes in `API_PRIVATE_ROUTES.media`.
+- **UI**: `src/components/features/media/*`; embedded from `taxonomy-form-dialog.tsx`.
+- **Docs**: `docs/media-collection.md`.
 
 ## Authorization constants & hooks
 

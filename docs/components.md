@@ -199,6 +199,8 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 
 `src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog`, `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns).
 
+`src/components/features/media/` — media library popup: `MediaCollectionDialog`, `MediaUploadDialog` (uses shared `formatBytes` from `@/lib/utils`), `MediaItemCard`, `MediaTabPanel`. See `docs/media-collection.md`.
+
 ---
 
 ## Hooks (`src/hooks/`)

@@ -377,6 +377,10 @@ export type CourseListFilters = ApiListQueryParams;
 const url = buildQueryParams("/api/v1/courses", apiListQueryToRecord(filters));
 ```
 
+Media lists add optional `category` and `sort_order` on the same type (`MediaListFilters` = `ApiListQueryParams` + narrowed fields). Taxonomy uses `sort_desc`; media uses `sort_order` — both are emitted by `apiListQueryToRecord()` when set.
+
+For human-readable file sizes in the UI, use `formatBytes()` from `src/lib/utils/format-bytes.ts` (exported via `@/lib/utils`). Do not copy byte-formatting logic into feature components.
+
 ## 11. Slug fields
 
 Taxonomy slugs are **read-only** in the UI. Derive them with `slugifyName(name)` on submit (and show a live preview while typing the name). Do not expose an editable slug input.

@@ -173,6 +173,9 @@ fe/
 │   │   │   ├── index.ts            # Re-exports
 │   │   │   ├── cn.ts               # cn() (clsx + tailwind-merge)
 │   │   │   ├── url.ts              # buildQueryParams()
+│   │   │   ├── list-query.ts       # apiListQueryToRecord()
+│   │   │   ├── format-bytes.ts     # formatBytes()
+│   │   │   ├── media.ts            # media upload/list helpers
 │   │   │   ├── react.ts            # useUniqueId()
 │   │   │   ├── user.ts             # pickCharacter()
 │   │   │   └── cookie.ts           # cookie types, domain, build options, isomorphic get/set
@@ -257,6 +260,8 @@ All HTTP communication and token lifecycle management:
 | `apiFetch` / `apiPost` / `apiPut` / `apiDelete` / `apiOptions` | `api/methods.ts` | Low-level helpers on `apiInstance` → `ApiResult<T>` |
 | `getMeService` | `api/callers/auth/auth.ts` | `GET /api/v1/me` → `MeResponse \| null` |
 | `loginService` | `api/callers/auth/auth.ts` | `POST /api/v1/auth/login` |
+| `listMediaFiles` / `uploadMediaFiles` / `deleteMediaFile` | `api/callers/media/media.ts` | Media library CRUD (multipart upload, delete by `object_key`) |
+| `useMediaFiles` | `api/hooks/media/useMediaFiles.ts` | SWR hook for paginated media list |
 | `useAuth` | `api/hooks/auth/useAuth.ts` | SWR hook for current user |
 | `useApiError` | `store/api-error-store.ts` | Global error store (max 20 entries) |
 | `ApiResult<T>` / `ApiResponse<T>` | `types/api.ts` | Shared envelope types |
@@ -268,7 +273,7 @@ Design-system primitives and presentational components:
 | Area | Files |
 |------|-------|
 | Radix/shadcn primitives | Full set in `src/components/ui/` (54 modules) — see [`docs/components.md`](./components.md) inventory table |
-| Layout utilities | `cn()` (clsx + tailwind-merge), `buildQueryParams()` |
+| Layout utilities | `cn()`, `buildQueryParams()`, `apiListQueryToRecord()`, `formatBytes()` |
 | Home sections | `HeroSection`, `SearchSection`, `TopCoursesSection`, `AdvancedPromoSection`, `TrendingCoursesSection`, `UpcomingWebinarsSection`, `PromoSection`, `CourseCard` |
 | Header / global | `Header`, `HeaderDashboard`, `DashboardLayout`, `LocaleSwitcher`, `SearchBar`, `Footer`, `FooterSocial` |
 

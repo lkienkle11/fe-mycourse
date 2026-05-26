@@ -300,9 +300,18 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `apiListQueryToRecord(params: ApiListQueryParams): Record<string, string>`
 - **Type**: Utility function
 - **Path**: `src/lib/utils/list-query.ts`
-- **Purpose**: Convert shared list filters to query key/values for `buildQueryParams`. Use instead of per-module `filtersToQuery` helpers.
-- **Scope**: Taxonomy list caller; future paginated list callers.
+- **Purpose**: Convert shared list filters to query key/values for `buildQueryParams`. Use instead of per-module `filtersToQuery` helpers. Supports `sort_desc` (taxonomy), `sort_order` + `category` (media).
+- **Scope**: Taxonomy and media list callers; future paginated list callers.
 - **Dependencies**: `ApiListQueryParams`.
+
+### Asset: formatBytes
+- **Name**: `formatBytes(bytes: number): string`
+- **Type**: Utility function
+- **Path**: `src/lib/utils/format-bytes.ts`
+- **Purpose**: Format a byte count as `B`, `KB`, `MB`, or `GB` for display (one decimal for KB/MB, two for GB).
+- **Scope**: `MediaUploadDialog` file list and total size; any UI showing file or storage size.
+- **Dependencies**: none.
+- **Reuse Rule**: Import from `@/lib/utils` (barrel). Do not duplicate inline formatters in feature components.
 
 ### Asset: SortableList
 - **Name**: `SortableList`, `SortableListItem`
