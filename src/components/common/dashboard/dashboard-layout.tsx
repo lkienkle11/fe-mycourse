@@ -25,6 +25,7 @@ import {
   useSatisfiesPermissions,
 } from "@/hooks/auth";
 import { Link } from "@/i18n/navigation";
+import { homeHref } from "@/lib/navigation/home";
 import { cn } from "@/lib/utils";
 import type { DashboardLayoutProps } from "@/types/dashboard";
 
@@ -96,7 +97,7 @@ function DashboardSidebarMobileHeader() {
   return (
     <SidebarHeader className="flex flex-row items-center justify-between gap-2 border-b border-black/8 p-0 px-4 py-4 md:hidden">
       <Link
-        href="/"
+        href={homeHref}
         onClick={close}
         className="flex min-w-0 flex-row items-center gap-1.5"
       >
