@@ -100,6 +100,7 @@ export type ApiEntityStatus = "ACTIVE" | "INACTIVE";
 /**
  * Shared paginated list query params for BE list APIs.
  * Use `apiListQueryToRecord()` when building query strings with `buildQueryParams`.
+ * Taxonomy lists use `sort_desc`; media lists use `sort_order` and `category`.
  */
 export interface ApiListQueryParams {
   page?: number;
@@ -107,7 +108,12 @@ export interface ApiListQueryParams {
   search?: string;
   status?: ApiEntityStatus;
   sort_by?: string;
+  /** Taxonomy-style lists (BE `sort_desc` boolean). */
   sort_desc?: boolean;
+  /** Media-style lists (BE `sort_order` asc|desc). */
+  sort_order?: "asc" | "desc";
+  /** Media tab filter (BE `category`). */
+  category?: string;
 }
 
 /**

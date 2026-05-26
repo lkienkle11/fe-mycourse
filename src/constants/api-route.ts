@@ -22,4 +22,9 @@ export const API_PRIVATE_ROUTES = {
     tags: "/api/v1/taxonomy/tags",
     byId: "/api/v1/taxonomy/:segment/:id",
   },
+  media: {
+    files: "/api/v1/media/files",
+    fileById: "/api/v1/media/files/:objectKey",
+    batchDelete: "/api/v1/media/files/batch-delete",
+  },
 } as const;
