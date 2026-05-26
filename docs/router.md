@@ -167,6 +167,13 @@ router.push(PUBLIC_ROUTES.home);
 
 Never hard-code path strings in components.
 
+For reusable home navigation touchpoints (logo/title in header/dashboard), use `src/lib/navigation/home.ts`:
+
+```ts
+import { homeHref, navigateToHome } from "@/lib/navigation/home";
+import { Link, useRouter } from "@/i18n/navigation";
+```
+
 ---
 
 ## Adding a New Page
