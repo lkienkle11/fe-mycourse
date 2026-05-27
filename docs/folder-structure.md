@@ -151,6 +151,7 @@ src/api/
 ├── instance.ts             # createApiInstance() — Axios instance + interceptors
 │                           #   Request: attach Authorization: Bearer <access_token>
 │                           #   Response: token refresh mutex, error reporting
+├── axios-helpers.ts        # normalizeHeaders, parseSetCookies, buildAxiosConfigWithCookies (methods + raw-http)
 ├── methods.ts              # apiFetch / apiPost / apiPut / apiPatch / apiDelete / apiOptions → ApiResult<T>
 ├── raw-http.ts             # rawFetch / rawPost / … plain Axios (used by doTokenRefresh only)
 ├── cache.ts                # Dual-layer cache (IndexedDB + Map) — implemented but currently not wired in methods.ts

@@ -1,6 +1,6 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (jscpd ignores `src/components/ui/**`; CI `test` job: `quality:deps`)._
+_Last audited: 2026-05-27 (full local gate pass; jscpd ignores `src/components/ui/**`)._
 
 Checks for **circular imports** (Madge) and **duplicate code** (jscpd) under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs them via `npm run quality:deps` in the **`test`** job **before** `npm run build` (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 
@@ -62,22 +62,38 @@ jscpd may still **print** clone pairs on success (informational). Failures list 
 | `**/src/components/ui/**` | shadcn/ui primitives from upstream (`npx shadcn add`); shared across the app — not copy-paste debt in feature code |
 | `**/.next/**`, `**/node_modules/**`, … | Generated / vendor / lockfiles |
 
-**Informational clones (still scanned):** login vs signup forms, internal blocks in `dashboard-sidebar.tsx`, shared helpers in `api/methods.ts` ↔ `api/raw-http.ts`. Tune `minLines` / `threshold` only after team review — do **not** lower threshold to hide real duplication in `src/components/common/` or `src/api/`.
+**Do not** lower `threshold` / `minLines` to hide duplication in feature code — extract shared modules instead (see refactors below).
 
 ---
 
 ## Baseline run (2026-05-27)
 
+### Full local gate
+
+| Command | Result | Notes |
+|---------|--------|-------|
+| `npm run lint:biome` | **Pass** | 1 **warning** (non-blocking): `src/components/ui/sidebar.tsx` `noDocumentCookie` — shadcn upstream; `biome.json` sets `noDocumentCookie` to `warn` under `src/components/ui/**` |
+| `npm run lint` | **Pass** | ESLint (Next.js config) |
+| `npx tsc --noEmit` | **Pass** | Strict TypeScript |
+| `npm run quality:deps` | **Pass** | Madge + jscpd (see below) |
+| `npm run build` | **Pass** | `next build` (Next.js 16.2.1) |
+
+Recommended before PR: run the table above (or at minimum `lint:biome`, `tsc`, `quality:deps`, `build`).
+
+### `quality:deps` only
+
 | Check | Result | Notes |
 |-------|--------|-------|
 | `npm run cycles` | **Pass** | 307 files processed; no circular dependency |
-| `npm run dupl` | **Pass** | **209** files analyzed (UI primitives excluded); 5 clones (~**1.17%** duplicated lines); under 80% threshold |
+| `npm run dupl` | **Pass** | **212** files analyzed (UI primitives excluded); **0 clones** (0% duplicated lines) |
 
-Known clones (informational, no action required unless refactoring):
+**jscpd dedup refactors (2026-05-27):**
 
-- `login-content.tsx` ↔ `signup-content.tsx` (auth forms)
-- `dashboard-sidebar.tsx` (internal repeated blocks)
-- `api/methods.ts` ↔ `api/raw-http.ts` (shared HTTP helpers)
+| Was duplicated | Extracted to |
+|----------------|--------------|
+| `api/methods.ts` ↔ `api/raw-http.ts` header/cookie helpers | `src/api/axios-helpers.ts` |
+| Login ↔ signup email/password fields | `src/components/common/auth-menu/auth/auth-form-fields.tsx` (`AuthEmailPasswordFields`, …) |
+| `DashboardSidebarLevel` ↔ `DashboardSidebarSubLevel` | Single `DashboardSidebarTree` with `level: "root" \| "sub"` in `dashboard-sidebar.tsx` |
 
 ---
 
@@ -88,7 +104,7 @@ Known clones (informational, no action required unless refactoring):
 | **CI (`dev` deploy)** | `test` | `npm ci`, `npm run quality:deps` (`cycles` + `dupl`) |
 | **CI (`dev` deploy)** | `build` | `npm ci`, `npm run build` (after `test` passes) |
 | **CI (`dev` deploy)** | `deploy` | SSH → VPS `npm ci` + `npm run build` + PM2 reload (quality checks are **not** re-run on the server) |
-| **Recommended local** | — | `npm run lint`, `npm run lint:biome`, `npm run build`; use `npm run quality:deps` before large refactors |
+| **Recommended local** | — | `lint:biome`, `lint`, `tsc --noEmit`, `quality:deps`, `build` (see **Full local gate** above) |
 
 Do **not** use backend `make check-dupl` or `make check-architecture` in this frontend repo — use the npm scripts above instead.
 

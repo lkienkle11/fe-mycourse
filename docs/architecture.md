@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (jscpd excludes shadcn `src/components/ui/**`; CI `quality:deps` on `dev`)._
+_Last audited: 2026-05-27 (local gate: biome, eslint, tsc, quality:deps, build — all pass)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -136,6 +136,7 @@ fe/
 │   │   ├── instance.ts             # createApiInstance + singleton apiInstance
 │   │   │                           # Interceptors: Bearer token attach, token refresh
 │   │   ├── methods.ts              # apiFetch / apiPost / apiPut / apiDelete / apiOptions → ApiResult<T>
+│   │   ├── axios-helpers.ts        # Shared header/cookie helpers for methods + raw-http
 │   │   ├── raw-http.ts             # rawFetch / rawPost / … plain Axios (used by doTokenRefresh)
 │   │   ├── cache.ts                # (DISABLED) Client IndexedDB + server Map cache layer
 │   │   ├── callers/
@@ -393,7 +394,7 @@ The cache integration in `apiFetch` is currently commented out (`// TODO: re-ena
 
 ## Quality gates
 
-Lint (`eslint`, `biome`), TypeScript, and `npm run build` are the primary local checks. Import-cycle and duplication gates (see [`docs/quality.md`](./quality.md)):
+Lint (`eslint`, `biome`), `npx tsc --noEmit`, and `npm run build` are the primary local checks (baseline **2026-05-27** — all pass; Biome: one shadcn `sidebar.tsx` cookie warning only). Import-cycle and duplication gates (see [`docs/quality.md`](./quality.md)):
 
 - `npm run cycles` — Madge circular import detection (uses `tsconfig` path aliases).
 - `npm run dupl` — jscpd clone detection against `src/` (skips shadcn `src/components/ui/**`; see [`quality.md`](./quality.md)).

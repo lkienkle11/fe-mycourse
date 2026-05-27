@@ -24,6 +24,8 @@ Open the URL Next.js prints (default [http://localhost:3000](http://localhost:30
 | `npm run dupl` | Duplicate code check (jscpd; excludes shadcn `src/components/ui/**`) |
 | `npm run quality:deps` | `cycles` then `dupl` (also runs in CI `test` job on `dev`) |
 
+**Pre-PR local gate (2026-05-27):** `npm run lint:biome && npm run lint && npx tsc --noEmit && npm run quality:deps && npm run build` — details in [`docs/quality.md`](docs/quality.md).
+
 ## Documentation Convention (Mandatory)
 
 The `docs/` folder is the **primary and authoritative documentation source** for this project.
