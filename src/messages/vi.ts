@@ -262,6 +262,8 @@ const messages = {
         document: "Thêm tài liệu",
         video: "Thêm video",
       },
+      searchPlaceholder: "Tìm theo tên tệp…",
+      search: "Tìm",
       empty: "Chưa có tệp trong danh mục này.",
       previous: "Trước",
       next: "Sau",
