@@ -45,7 +45,7 @@ export type MediaCollectionDialogProps = {
   defaultTab?: MediaTab;
   selectionMode?: "single" | "none";
   selectedFileId?: string;
-  onSelect?: (file: MediaFile) => void;
+  onSelect?: (file: MediaFile, type: MediaTab) => void;
 };
 
 export function MediaCollectionDialog({
@@ -113,7 +113,7 @@ export function MediaCollectionDialog({
   const currentPage = pageInfo?.page ?? page;
 
   const handleSelect = (file: MediaFile) => {
-    onSelect?.(file);
+    onSelect?.(file, activeTab);
     onOpenChange(false);
   };
 

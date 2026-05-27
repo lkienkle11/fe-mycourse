@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { MediaItemCard } from "@/components/features/media/media-item-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { MediaFile } from "@/types/media";
 
 export type MediaTabPanelProps = {
@@ -45,18 +46,20 @@ export function MediaTabPanel({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-      {files.map((file) => (
-        <MediaItemCard
-          key={file.id ?? file.object_key}
-          file={file}
-          selectionMode={selectionMode}
-          selected={selectedId != null && file.id === selectedId}
-          onSelect={onSelect}
-          onDelete={onDelete}
-          canDelete={canDelete}
-        />
-      ))}
-    </div>
+    <TooltipProvider delayDuration={150}>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+        {files.map((file) => (
+          <MediaItemCard
+            key={file.id ?? file.object_key}
+            file={file}
+            selectionMode={selectionMode}
+            selected={selectedId != null && file.id === selectedId}
+            onSelect={onSelect}
+            onDelete={onDelete}
+            canDelete={canDelete}
+          />
+        ))}
+      </div>
+    </TooltipProvider>
   );
 }

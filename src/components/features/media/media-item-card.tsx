@@ -16,6 +16,11 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { formatMediaDate, isImageMedia } from "@/lib/utils/media";
 import type { MediaFile } from "@/types/media";
@@ -55,6 +60,19 @@ export function MediaItemCard({
       onSelect(file);
     }
   };
+
+  const labelNode = selectable ? (
+    <button
+      type="button"
+      className="pointer-events-auto w-full truncate text-left text-sm font-medium"
+      onClick={handleSelect}
+      tabIndex={-1}
+    >
+      {label}
+    </button>
+  ) : (
+    <p className="truncate text-sm font-medium">{label}</p>
+  );
 
   const actionMenu = canDelete ? (
     <div className="pointer-events-auto absolute top-1 right-1 z-20">
@@ -115,9 +133,12 @@ export function MediaItemCard({
         )}
       </div>
       <div className="space-y-0.5 p-2">
-        <p className="truncate text-sm font-medium" title={file.filename}>
-          {label}
-        </p>
+        <Tooltip>
+          <TooltipTrigger asChild>{labelNode}</TooltipTrigger>
+          <TooltipContent side="top" sideOffset={4}>
+            {label}
+          </TooltipContent>
+        </Tooltip>
         <p className="text-xs text-muted-foreground">
           {formatMediaDate(file.created_at)}
         </p>
