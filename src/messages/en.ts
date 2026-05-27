@@ -265,8 +265,7 @@ const messages = {
       next: "Next",
       pageOf: "Page {page} of {totalPages}",
       deleteTitle: "Delete file?",
-      deleteDescription:
-        'Remove "{name}" from storage? This cannot be undone.',
+      deleteDescription: 'Remove "{name}" from storage? This cannot be undone.',
       deleteSuccess: "File deleted.",
       deleteError: "Could not delete the file.",
     },
@@ -288,8 +287,7 @@ const messages = {
         tooMany: "You can upload at most 5 files at once.",
         fileTooLarge: "Each file must be 2 GB or smaller.",
         totalTooLarge: "Combined size must be 2 GB or less per request.",
-        executableRejected:
-          "Executable and script files are not allowed.",
+        executableRejected: "Executable and script files are not allowed.",
         generic: "Upload failed. Please try again.",
       },
     },

@@ -266,8 +266,7 @@ const messages = {
       next: "Sau",
       pageOf: "Trang {page} / {totalPages}",
       deleteTitle: "Xóa tệp?",
-      deleteDescription:
-        'Xóa "{name}" khỏi lưu trữ? Không thể hoàn tác.',
+      deleteDescription: 'Xóa "{name}" khỏi lưu trữ? Không thể hoàn tác.',
       deleteSuccess: "Đã xóa tệp.",
       deleteError: "Không thể xóa tệp.",
     },
