@@ -243,6 +243,72 @@ const messages = {
       },
     },
   },
+  media: {
+    collection: {
+      title: "Media library",
+      tabs: {
+        image: "Images",
+        document: "Documents",
+        video: "Videos",
+      },
+      sort: {
+        newest: "Newest first",
+        nameAsc: "Name (A–Z)",
+      },
+      add: {
+        image: "Add images",
+        document: "Add documents",
+        video: "Add videos",
+      },
+      empty: "No files in this category yet.",
+      previous: "Previous",
+      next: "Next",
+      pageOf: "Page {page} of {totalPages}",
+      deleteTitle: "Delete file?",
+      deleteDescription:
+        'Remove "{name}" from storage? This cannot be undone.',
+      deleteSuccess: "File deleted.",
+      deleteError: "Could not delete the file.",
+    },
+    upload: {
+      title: {
+        image: "Upload images",
+        document: "Upload documents",
+        video: "Upload videos",
+      },
+      dropHint: "Drag and drop files here, or choose files",
+      chooseFiles: "Choose files",
+      limits: "Up to {maxFiles} files, {maxSize} total per request",
+      totalSize: "Selected: {size}",
+      cancel: "Cancel",
+      upload: "Upload",
+      uploading: "Uploading…",
+      success: "Upload complete.",
+      errors: {
+        tooMany: "You can upload at most 5 files at once.",
+        fileTooLarge: "Each file must be 2 GB or smaller.",
+        totalTooLarge: "Combined size must be 2 GB or less per request.",
+        executableRejected:
+          "Executable and script files are not allowed.",
+        generic: "Upload failed. Please try again.",
+      },
+    },
+    item: {
+      untitled: "Untitled",
+      noPreview: "No preview",
+      rename: "Rename",
+      renameComingSoon: "Coming soon",
+      delete: "Delete",
+    },
+    picker: {
+      browse: "Browse media",
+      clear: "Clear",
+      previewAlt: "Selected image",
+      selectImageOnly: "Please select an image file.",
+      imageLabel: "Cover image",
+      noImageSelected: "No image selected",
+    },
+  },
   taxonomy: {
     common: {
       statusActive: "Active",
@@ -280,8 +346,8 @@ const messages = {
       slug: "Slug",
       shortDescription: "Short description",
       status: "Status",
-      imageFileId: "Image file ID (UUID)",
-      imageFileIdHint: "Optional. Media upload UI is not available yet.",
+      imageFileId: "Cover image",
+      imageFileIdHint: "Optional. Choose an image from the media library.",
       validation: {
         nameRequired: "Name is required.",
         slugRequired: "Slug is required.",

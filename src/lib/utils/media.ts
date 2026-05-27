@@ -1,0 +1,118 @@
+import {
+  isExecutableExtension,
+  isImageFilename,
+  MEDIA_MAX_BYTES_PER_FILE,
+  MEDIA_MAX_BYTES_PER_REQUEST,
+  MEDIA_MAX_FILES_PER_REQUEST,
+} from "@/constants/media/file-rules";
+import {
+  MEDIA_COLLECTION_ALL_TABS,
+  type MediaCategory,
+  type MediaFile,
+  type MediaListFilters,
+  type MediaSortOption,
+  type MediaTab,
+} from "@/types/media";
+
+export function mediaTabToCategory(tab: MediaTab): MediaCategory {
+  return tab;
+}
+
+/** Keeps canonical tab order; ignores unknown entries. Default = all tabs. */
+export function resolveVisibleMediaTabs(
+  visibleTabs?: readonly MediaTab[],
+): readonly MediaTab[] {
+  if (!visibleTabs?.length) return MEDIA_COLLECTION_ALL_TABS;
+  const allowed = new Set(visibleTabs);
+  return MEDIA_COLLECTION_ALL_TABS.filter((tab) => allowed.has(tab));
+}
+
+export function resolveMediaCollectionDefaultTab(
+  defaultTab: MediaTab,
+  visibleTabs: readonly MediaTab[],
+): MediaTab {
+  if (visibleTabs.includes(defaultTab)) return defaultTab;
+  return visibleTabs[0] ?? "image";
+}
+
+export function classifyMediaTab(file: MediaFile): MediaTab {
+  if (file.kind === "VIDEO") return "video";
+  if (isImageMedia(file)) return "image";
+  return "document";
+}
+
+/** Aligns with BE `IsImageMIMEOrExt`. */
+export function isImageMedia(
+  file: Pick<MediaFile, "mime_type" | "filename">,
+): boolean {
+  const mime = (file.mime_type ?? "").toLowerCase();
+  if (mime.startsWith("image/")) return true;
+  return isImageFilename(file.filename ?? "");
+}
+
+/** DELETE path uses object_key, not row id. */
+export function getMediaDeleteKey(file: MediaFile): string {
+  return file.object_key;
+}
+
+export function formatMediaDate(unixSeconds: number | undefined): string {
+  if (!unixSeconds) return "—";
+  return new Date(unixSeconds * 1000).toLocaleString();
+}
+
+export function parseMediaSortOption(
+  option: MediaSortOption,
+): Pick<MediaListFilters, "sort_by" | "sort_order"> {
+  switch (option) {
+    case "filename_asc":
+      return { sort_by: "filename", sort_order: "asc" };
+    default:
+      return { sort_by: "created_at", sort_order: "desc" };
+  }
+}
+
+export type MediaUploadValidationIssue = {
+  code: "too_many" | "file_too_large" | "total_too_large" | "executable";
+  messageKey: string;
+};
+
+export function validateMediaUploadBatch(
+  files: File[],
+  tab: MediaTab,
+): MediaUploadValidationIssue | null {
+  if (files.length > MEDIA_MAX_FILES_PER_REQUEST) {
+    return { code: "too_many", messageKey: "tooMany" };
+  }
+  let total = 0;
+  for (const file of files) {
+    if (file.size > MEDIA_MAX_BYTES_PER_FILE) {
+      return { code: "file_too_large", messageKey: "fileTooLarge" };
+    }
+    total += file.size;
+    if (tab === "document" && isExecutableExtension(file.name)) {
+      return { code: "executable", messageKey: "executableRejected" };
+    }
+  }
+  if (total > MEDIA_MAX_BYTES_PER_REQUEST) {
+    return { code: "total_too_large", messageKey: "totalTooLarge" };
+  }
+  return null;
+}
+
+/** Maps BE errcode numbers surfaced on upload failures. */
+export function mediaUploadErrorMessageKey(
+  apiCode: number | undefined,
+): string {
+  switch (apiCode) {
+    case 2003:
+      return "fileTooLarge";
+    case 2004:
+      return "executableRejected";
+    case 2005:
+      return "totalTooLarge";
+    case 2006:
+      return "tooMany";
+    default:
+      return "generic";
+  }
+}

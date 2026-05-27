@@ -51,3 +51,6 @@ next-env.d.ts
 AGENTS.md
 CLAUDE.md
 
+# jscpd duplicate-detection reports
+.jscpd-report/
+

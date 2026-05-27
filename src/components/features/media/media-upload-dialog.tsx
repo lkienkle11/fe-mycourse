@@ -1,0 +1,239 @@
+"use client";
+
+import type { AxiosError } from "axios";
+import { Upload, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useCallback, useRef, useState } from "react";
+import { toast } from "sonner";
+import { uploadMediaFiles } from "@/api/callers/media";
+import { PermissionGate } from "@/components/shared/permission-gate";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { MEDIA_TAB_ACCEPT } from "@/constants/media/file-rules";
+import { PERMISSIONS } from "@/constants/permissions";
+import { formatBytes } from "@/lib/utils";
+import {
+  mediaUploadErrorMessageKey,
+  validateMediaUploadBatch,
+} from "@/lib/utils/media";
+import type { ApiResponse } from "@/types/api";
+import type { MediaTab } from "@/types/media";
+
+export type MediaUploadDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  tab: MediaTab;
+  onUploaded: () => void | Promise<void>;
+};
+
+type UploadErrorKey =
+  | "tooMany"
+  | "fileTooLarge"
+  | "totalTooLarge"
+  | "executableRejected"
+  | "generic";
+
+function uploadErrorMessage(
+  t: ReturnType<typeof useTranslations<"media.upload">>,
+  key: UploadErrorKey,
+): string {
+  switch (key) {
+    case "tooMany":
+      return t("errors.tooMany");
+    case "fileTooLarge":
+      return t("errors.fileTooLarge");
+    case "totalTooLarge":
+      return t("errors.totalTooLarge");
+    case "executableRejected":
+      return t("errors.executableRejected");
+    default:
+      return t("errors.generic");
+  }
+}
+
+export function MediaUploadDialog({
+  open,
+  onOpenChange,
+  tab,
+  onUploaded,
+}: MediaUploadDialogProps) {
+  const t = useTranslations("media.upload");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+
+  const reset = useCallback(() => {
+    setFiles([]);
+    setIsDragging(false);
+  }, []);
+
+  const addFiles = (incoming: FileList | File[]) => {
+    const next = [...files, ...Array.from(incoming)];
+    const issue = validateMediaUploadBatch(next, tab);
+    if (issue) {
+      toast.error(uploadErrorMessage(t, issue.messageKey as UploadErrorKey));
+      return;
+    }
+    setFiles(next);
+  };
+
+  const handleUpload = async () => {
+    const issue = validateMediaUploadBatch(files, tab);
+    if (issue) {
+      toast.error(uploadErrorMessage(t, issue.messageKey as UploadErrorKey));
+      return;
+    }
+    setIsUploading(true);
+    try {
+      await uploadMediaFiles(files);
+      toast.success(t("success"));
+      reset();
+      onOpenChange(false);
+      await onUploaded();
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
+      const code = axiosError.response?.data?.code;
+      const key = mediaUploadErrorMessageKey(code) as UploadErrorKey;
+      toast.error(uploadErrorMessage(t, key));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) reset();
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t(`title.${tab}`)}</DialogTitle>
+        </DialogHeader>
+
+        <PermissionGate permissions={[PERMISSIONS.MediaFileCreate]}>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop upload zone */}
+          <div
+            className={`flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8 text-center transition-colors ${
+              isDragging
+                ? "border-primary bg-muted/50"
+                : "border-muted-foreground/30"
+            }`}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(event) => {
+              event.preventDefault();
+              setIsDragging(false);
+              if (event.dataTransfer.files.length) {
+                addFiles(event.dataTransfer.files);
+              }
+            }}
+          >
+            <Upload className="size-8 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">{t("dropHint")}</p>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => inputRef.current?.click()}
+              disabled={isUploading}
+            >
+              {t("chooseFiles")}
+            </Button>
+            <input
+              ref={inputRef}
+              type="file"
+              multiple
+              accept={MEDIA_TAB_ACCEPT[tab]}
+              className="hidden"
+              onChange={(event) => {
+                if (event.target.files?.length) {
+                  addFiles(event.target.files);
+                }
+                event.target.value = "";
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("limits", { maxFiles: "5", maxSize: "2 GB" })}
+            </p>
+          </div>
+        </PermissionGate>
+
+        {files.length > 0 ? (
+          <ul className="max-h-48 space-y-2 overflow-y-auto">
+            {files.map((file) => (
+              <li
+                key={`${file.name}-${file.size}-${file.lastModified}`}
+                className="flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-sm"
+              >
+                <span className="truncate">{file.name}</span>
+                <span className="shrink-0 text-muted-foreground">
+                  {formatBytes(file.size)}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 shrink-0"
+                  disabled={isUploading}
+                  onClick={() =>
+                    setFiles((prev) =>
+                      prev.filter(
+                        (item) =>
+                          item.name !== file.name ||
+                          item.size !== file.size ||
+                          item.lastModified !== file.lastModified,
+                      ),
+                    )
+                  }
+                >
+                  <X className="size-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {files.length > 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {t("totalSize", { size: formatBytes(totalBytes) })}
+          </p>
+        ) : null}
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isUploading}
+          >
+            {t("cancel")}
+          </Button>
+          <PermissionGate permissions={[PERMISSIONS.MediaFileCreate]}>
+            <Button
+              type="button"
+              disabled={files.length === 0 || isUploading}
+              onClick={() => void handleUpload()}
+            >
+              {isUploading ? t("uploading") : t("upload")}
+            </Button>
+          </PermissionGate>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

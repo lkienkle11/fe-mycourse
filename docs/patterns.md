@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-05-26 (shared list query + slug input)._
+_Last audited: 2026-05-27 (shared list query; local quality gates)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -377,6 +377,10 @@ export type CourseListFilters = ApiListQueryParams;
 const url = buildQueryParams("/api/v1/courses", apiListQueryToRecord(filters));
 ```
 
+Media lists add optional `category` and `sort_order` on the same type (`MediaListFilters` = `ApiListQueryParams` + narrowed fields). Taxonomy uses `sort_desc`; media uses `sort_order` — both are emitted by `apiListQueryToRecord()` when set.
+
+For human-readable file sizes in the UI, use `formatBytes()` from `src/lib/utils/format-bytes.ts` (exported via `@/lib/utils`). Do not copy byte-formatting logic into feature components.
+
 ## 11. Slug fields
 
 Taxonomy slugs are **read-only** in the UI. Derive them with `slugifyName(name)` on submit (and show a live preview while typing the name). Do not expose an editable slug input.
@@ -389,6 +393,7 @@ Before writing code for a new feature:
 
 - [ ] Read `docs/` — check architecture, flow, components, patterns
 - [ ] Run `npx gitnexus analyze --force` — understand impact
+- [ ] For large refactors: `npm run cycles` / `npm run dupl` — see [`quality.md`](./quality.md)
 - [ ] Reuse utilities from `src/lib/utils/` (barrel) or direct paths for server-only files (`auth-session.ts`)
 - [ ] Place server data fetching in `src/api/callers/<domain>/`
 - [ ] Place SWR hooks in `src/api/hooks/<domain>/`
