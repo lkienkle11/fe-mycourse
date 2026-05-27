@@ -1,6 +1,6 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (taxonomy + media modules unchanged; docs sync)._
+_Last audited: 2026-05-27 (media card/dialog a11y fix; docs sync)._
 
 
 ## Module map

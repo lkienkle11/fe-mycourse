@@ -246,6 +246,7 @@ const messages = {
   media: {
     collection: {
       title: "Media library",
+      description: "Browse, upload, and select files from your media library.",
       tabs: {
         image: "Images",
         document: "Documents",
@@ -265,8 +266,7 @@ const messages = {
       next: "Next",
       pageOf: "Page {page} of {totalPages}",
       deleteTitle: "Delete file?",
-      deleteDescription:
-        'Remove "{name}" from storage? This cannot be undone.',
+      deleteDescription: 'Remove "{name}" from storage? This cannot be undone.',
       deleteSuccess: "File deleted.",
       deleteError: "Could not delete the file.",
     },
@@ -276,6 +276,7 @@ const messages = {
         document: "Upload documents",
         video: "Upload videos",
       },
+      description: "Drag and drop files here, or choose files to upload.",
       dropHint: "Drag and drop files here, or choose files",
       chooseFiles: "Choose files",
       limits: "Up to {maxFiles} files, {maxSize} total per request",
@@ -288,8 +289,7 @@ const messages = {
         tooMany: "You can upload at most 5 files at once.",
         fileTooLarge: "Each file must be 2 GB or smaller.",
         totalTooLarge: "Combined size must be 2 GB or less per request.",
-        executableRejected:
-          "Executable and script files are not allowed.",
+        executableRejected: "Executable and script files are not allowed.",
         generic: "Upload failed. Please try again.",
       },
     },

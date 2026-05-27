@@ -26,8 +26,12 @@
  *     single request (no fallback merging).
  */
 
-import type { AxiosInstance, AxiosRequestConfig } from "axios";
+import type { AxiosInstance } from "axios";
 import type { ApiResult } from "@/types/api";
+import {
+  buildAxiosConfigWithCookies,
+  parseAxiosResponseMeta,
+} from "./axios-helpers";
 // TODO: re-enable cache imports when caching is turned back on
 // import {
 //   DEFAULT_CACHE_MS,
@@ -91,61 +95,6 @@ function resolveInstance(other?: AxiosInstance): AxiosInstance {
   return other ?? apiInstance;
 }
 
-/**
- * Flattens Axios response headers into a plain `Record<string, string>`.
- * Multi-value headers (arrays) are joined with ", ".
- * `set-cookie` is intentionally excluded — use `parseSetCookies` instead.
- */
-function normalizeHeaders(
-  raw: Record<string, unknown>,
-): Record<string, string> {
-  const result: Record<string, string> = {};
-  for (const [k, v] of Object.entries(raw)) {
-    if (k.toLowerCase() === "set-cookie") continue;
-    if (typeof v === "string") result[k] = v;
-    else if (Array.isArray(v)) result[k] = (v as string[]).join(", ");
-  }
-  return result;
-}
-
-/**
- * Parses `Set-Cookie` header value(s) into a `Record<name, rawValue>`.
- * Cookie attributes (Path, HttpOnly, SameSite, …) are stripped.
- */
-function parseSetCookies(
-  raw: string | string[] | undefined,
-): Record<string, string> {
-  if (!raw) return {};
-  const result: Record<string, string> = {};
-  for (const entry of Array.isArray(raw) ? raw : [raw]) {
-    const [pair] = entry.split(";");
-    const eqIdx = pair.indexOf("=");
-    if (eqIdx === -1) continue;
-    result[pair.slice(0, eqIdx).trim()] = pair.slice(eqIdx + 1).trim();
-  }
-  return result;
-}
-
-function buildAxiosConfig(
-  options: Omit<BaseApiOptions, "otherAxiosInstance"> & {
-    params?: Record<string, string>;
-  },
-): AxiosRequestConfig {
-  const { headers = {}, cookies = {}, params } = options;
-
-  const cookieHeader = Object.entries(cookies)
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-    .join("; ");
-
-  return {
-    params,
-    headers: {
-      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
-      ...headers,
-    },
-  };
-}
-
 // TODO: re-enable when caching is turned back on
 // /**
 //  * Deterministic cache key: URL + sorted query-param string.
@@ -192,7 +141,7 @@ export async function apiFetch<T>(
   const { caching, otherAxiosInstance, ...rest } = options;
   void caching;
   const instance = resolveInstance(otherAxiosInstance);
-  const axiosConfig = buildAxiosConfig(rest);
+  const axiosConfig = buildAxiosConfigWithCookies(rest);
 
   // TODO: re-enable caching block below when cache is turned back on
   // const ttlMs = resolveTTLMs(_caching);
@@ -224,10 +173,7 @@ export async function apiFetch<T>(
   return {
     data,
     statusCode,
-    headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
-    cookies: parseSetCookies(
-      rawHeaders["set-cookie"] as string | string[] | undefined,
-    ),
+    ...parseAxiosResponseMeta(rawHeaders as Record<string, unknown>),
   };
 }
 
@@ -250,15 +196,12 @@ export async function apiPost<T, D = unknown>(
   } = await resolveInstance(otherAxiosInstance).post<T>(
     url,
     data,
-    buildAxiosConfig(rest),
+    buildAxiosConfigWithCookies(rest),
   );
   return {
     data: responseData,
     statusCode,
-    headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
-    cookies: parseSetCookies(
-      rawHeaders["set-cookie"] as string | string[] | undefined,
-    ),
+    ...parseAxiosResponseMeta(rawHeaders as Record<string, unknown>),
   };
 }
 
@@ -281,15 +224,12 @@ export async function apiPut<T, D = unknown>(
   } = await resolveInstance(otherAxiosInstance).put<T>(
     url,
     data,
-    buildAxiosConfig(rest),
+    buildAxiosConfigWithCookies(rest),
   );
   return {
     data: responseData,
     statusCode,
-    headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
-    cookies: parseSetCookies(
-      rawHeaders["set-cookie"] as string | string[] | undefined,
-    ),
+    ...parseAxiosResponseMeta(rawHeaders as Record<string, unknown>),
   };
 }
 
@@ -312,15 +252,12 @@ export async function apiPatch<T, D = unknown>(
   } = await resolveInstance(otherAxiosInstance).patch<T>(
     url,
     data,
-    buildAxiosConfig(rest),
+    buildAxiosConfigWithCookies(rest),
   );
   return {
     data: responseData,
     statusCode,
-    headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
-    cookies: parseSetCookies(
-      rawHeaders["set-cookie"] as string | string[] | undefined,
-    ),
+    ...parseAxiosResponseMeta(rawHeaders as Record<string, unknown>),
   };
 }
 
@@ -341,15 +278,12 @@ export async function apiDelete<T>(
     headers: rawHeaders,
   } = await resolveInstance(otherAxiosInstance).delete<T>(
     url,
-    buildAxiosConfig(rest),
+    buildAxiosConfigWithCookies(rest),
   );
   return {
     data,
     statusCode,
-    headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
-    cookies: parseSetCookies(
-      rawHeaders["set-cookie"] as string | string[] | undefined,
-    ),
+    ...parseAxiosResponseMeta(rawHeaders as Record<string, unknown>),
   };
 }
 
@@ -372,14 +306,11 @@ export async function apiOptions<T>(
   } = await resolveInstance(otherAxiosInstance).request<T>({
     url,
     method: "OPTIONS",
-    ...buildAxiosConfig(rest),
+    ...buildAxiosConfigWithCookies(rest),
   });
   return {
     data: data as T,
     statusCode,
-    headers: normalizeHeaders(rawHeaders as Record<string, unknown>),
-    cookies: parseSetCookies(
-      rawHeaders["set-cookie"] as string | string[] | undefined,
-    ),
+    ...parseAxiosResponseMeta(rawHeaders as Record<string, unknown>),
   };
 }

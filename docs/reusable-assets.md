@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-05-27 (assets inventory verified vs src)._
+_Last audited: 2026-05-27 (jscpd 0 clones; `axios-helpers`, `auth-form-fields` assets)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -523,13 +523,29 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ## API Layer Functions
 
+### Asset: axios-helpers (normalizeHeaders / parseSetCookies / buildAxiosConfigWithCookies)
+- **Name**: `normalizeHeaders`, `parseSetCookies`, `buildAxiosConfigWithCookies`, `parseAxiosResponseMeta`
+- **Type**: HTTP header/cookie utilities
+- **Path**: `src/api/axios-helpers.ts`
+- **Purpose**: Shared Axios config and response meta parsing for `methods.ts` and `raw-http.ts` (no `apiInstance` import — safe for refresh path).
+- **Scope**: `src/api/methods.ts`, `src/api/raw-http.ts` only. **Do not duplicate** these helpers elsewhere.
+- **Dependencies**: `axios` types only.
+
 ### Asset: apiFetch / apiPost / apiPut / apiDelete / apiOptions
 - **Name**: `apiFetch<T>`, `apiPost<T,D>`, `apiPut<T,D>`, `apiDelete<T>`, `apiOptions<T>`
 - **Type**: HTTP method wrappers
 - **Path**: `src/api/methods.ts`
 - **Purpose**: Thin wrappers around the shared Axios `apiInstance`. All return `ApiResult<T>` (data + statusCode + headers + cookies). Support `headers`, `cookies` (server-side forwarding), `params`, and `otherAxiosInstance` options.
 - **Scope**: All API callers in `src/api/callers/**`. **Do not call `apiInstance.get/post/...` directly.**
-- **Dependencies**: `apiInstance`, `ApiResult`.
+- **Dependencies**: `apiInstance`, `ApiResult`, `axios-helpers`.
+
+### Asset: AuthEmailPasswordFields / AuthFullNameField
+- **Name**: `AuthEmailPasswordFields`, `AuthFullNameField`, `AuthEmailField`, `AuthPasswordField`
+- **Type**: Auth form field components
+- **Path**: `src/components/common/auth-menu/auth/auth-form-fields.tsx`
+- **Purpose**: Shared styled inputs for login/signup modals.
+- **Scope**: `login-content.tsx`, `signup-content.tsx`. **Do not copy** email/password markup into new auth forms.
+- **Dependencies**: `InputGroup`, lucide icons, react-hook-form register props.
 
 ### Asset: apiInstance
 - **Name**: `apiInstance`

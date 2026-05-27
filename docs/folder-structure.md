@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (Madge/jscpd config, taxonomy app routes)._
+_Last audited: 2026-05-27 (`.jscpd.json` ignores shadcn `components/ui`; taxonomy routes)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -24,7 +24,9 @@ fe-mycourse/
 ├── tailwind.config.ts      # Tailwind CSS configuration (if present)
 ├── postcss.config.mjs      # PostCSS configuration (@tailwindcss/postcss)
 ├── package.json            # Project dependencies and npm scripts
-├── .jscpd.json             # jscpd duplicate-detection config (npm run dupl)
+├── ecosystem.config.cjs    # PM2 apps: mycourse-web-dev / staging / prod
+├── .github/workflows/      # CI: enforce-main-from-dev.yml, deploy-dev.yml (test → build → deploy)
+├── .jscpd.json             # jscpd config (npm run dupl); ignores src/components/ui/** (shadcn upstream)
 ├── .jscpd-report/          # jscpd JSON reports (gitignored)
 └── README.md               # Project overview and quick-start guide
 ```
@@ -149,6 +151,7 @@ src/api/
 ├── instance.ts             # createApiInstance() — Axios instance + interceptors
 │                           #   Request: attach Authorization: Bearer <access_token>
 │                           #   Response: token refresh mutex, error reporting
+├── axios-helpers.ts        # normalizeHeaders, parseSetCookies, buildAxiosConfigWithCookies (methods + raw-http)
 ├── methods.ts              # apiFetch / apiPost / apiPut / apiPatch / apiDelete / apiOptions → ApiResult<T>
 ├── raw-http.ts             # rawFetch / rawPost / … plain Axios (used by doTokenRefresh only)
 ├── cache.ts                # Dual-layer cache (IndexedDB + Map) — implemented but currently not wired in methods.ts
@@ -418,5 +421,6 @@ docs/
 ├── router.md               # Routing structure and navigation conventions
 ├── patterns.md             # Coding patterns and conventions
 ├── dependencies.md         # Key libraries and their roles
+├── quality.md              # Madge / jscpd scripts; CI test job (quality:deps)
 └── reusable-assets.md      # Reusable utilities, types, hooks, and constants
 ```

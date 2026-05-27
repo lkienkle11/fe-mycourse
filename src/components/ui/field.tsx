@@ -83,7 +83,6 @@ function Field({
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
   return (
-    // biome-ignore lint/a11y/useSemanticElements: <>
     <div
       role="group"
       data-slot="field"
@@ -210,8 +209,7 @@ function FieldError({
           if (!error?.message) {
             return null;
           }
-          // biome-ignore lint/suspicious/noArrayIndexKey: <>
-          return <li key={index}>{error.message}</li>;
+          return <li key={`${index}-${error.message}`}>{error.message}</li>;
         })}
       </ul>
     );

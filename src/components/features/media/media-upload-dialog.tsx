@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -120,6 +121,9 @@ export function MediaUploadDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{t(`title.${tab}`)}</DialogTitle>
+          <DialogDescription className="sr-only">
+            {t("description")}
+          </DialogDescription>
         </DialogHeader>
 
         <PermissionGate permissions={[PERMISSIONS.MediaFileCreate]}>
