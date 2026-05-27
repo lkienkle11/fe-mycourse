@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-05-27 (Madge + jscpd devDependencies)._
+_Last audited: 2026-05-27 (jscpd excludes `src/components/ui/**` in `.jscpd.json`)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -146,7 +146,7 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 | `@commitlint/config-conventional` | ^20.5.0 | Conventional Commits ruleset |
 | `shadcn` | 4.2.0 | CLI tool for adding shadcn/ui components to `src/components/ui/` |
 | `madge` | ^8.0.0 | Circular dependency analysis — `npm run cycles` / `cycles:json`; CI via `quality:deps` |
-| `jscpd` | ^4.2.4 | Copy-paste / clone detection — `npm run dupl` (`.jscpd.json`); CI via `quality:deps` |
+| `jscpd` | ^4.2.4 | Clone detection — `npm run dupl` (`.jscpd.json`, excludes shadcn `src/components/ui/**`); CI via `quality:deps` |
 
 ---
 

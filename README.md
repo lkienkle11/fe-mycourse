@@ -21,7 +21,7 @@ Open the URL Next.js prints (default [http://localhost:3000](http://localhost:30
 | `npm run lint:biome` / `npm run format:biome` | Biome check / format |
 | `npm run cycles` | Circular import check (Madge on `src/`) — run before large refactors |
 | `npm run cycles:json` | Same as `cycles`, JSON output |
-| `npm run dupl` | Duplicate code check (jscpd) |
+| `npm run dupl` | Duplicate code check (jscpd; excludes shadcn `src/components/ui/**`) |
 | `npm run quality:deps` | `cycles` then `dupl` (also runs in CI `test` job on `dev`) |
 
 ## Documentation Convention (Mandatory)

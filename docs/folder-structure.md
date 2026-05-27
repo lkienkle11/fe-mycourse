@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (Madge/jscpd config, taxonomy app routes)._
+_Last audited: 2026-05-27 (`.jscpd.json` ignores shadcn `components/ui`; taxonomy routes)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -26,7 +26,7 @@ fe-mycourse/
 ├── package.json            # Project dependencies and npm scripts
 ├── ecosystem.config.cjs    # PM2 apps: mycourse-web-dev / staging / prod
 ├── .github/workflows/      # CI: enforce-main-from-dev.yml, deploy-dev.yml (test → build → deploy)
-├── .jscpd.json             # jscpd duplicate-detection config (npm run dupl)
+├── .jscpd.json             # jscpd config (npm run dupl); ignores src/components/ui/** (shadcn upstream)
 ├── .jscpd-report/          # jscpd JSON reports (gitignored)
 └── README.md               # Project overview and quick-start guide
 ```

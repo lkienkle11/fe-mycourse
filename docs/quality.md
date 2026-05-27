@@ -1,8 +1,8 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (CI `test` job: `quality:deps`; `minLines` 10 in `.jscpd.json`)._
+_Last audited: 2026-05-27 (jscpd ignores `src/components/ui/**`; CI `test` job: `quality:deps`)._
 
-Checks for **circular imports** (Madge) and **duplicate code** (jscpd) under `src/`. On push to **`dev`**, CI runs them via `npm run quality:deps` in the **`test`** job **before** `npm run build` (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
+Checks for **circular imports** (Madge) and **duplicate code** (jscpd) under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs them via `npm run quality:deps` in the **`test`** job **before** `npm run build` (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 
 > **Not the backend:** `be-mycourse` uses `make check-architecture` / `make check-dupl` (Go). This repo uses **npm scripts** below.
 
@@ -25,7 +25,7 @@ Checks for **circular imports** (Madge) and **duplicate code** (jscpd) under `sr
 |--------|---------|---------|
 | `cycles` | `madge --circular … src` | Detect circular **static** import chains under `src/` |
 | `cycles:json` | Same + `--json` | JSON output for tooling |
-| `dupl` | `jscpd src --config .jscpd.json` | Duplicate code detection |
+| `dupl` | `jscpd src --config .jscpd.json` | Duplicate code detection (excludes paths in `ignore`; see below) |
 | `quality:deps` | `npm run cycles && npm run dupl` | Run both gates in sequence |
 
 Madge reads path aliases from `tsconfig.json` (`@/*` → `./src/*`) via `--ts-config ./tsconfig.json`.
@@ -53,9 +53,16 @@ jscpd may still **print** clone pairs on success (informational). Failures list 
 | `minLines` | `10` | Ignore clones shorter than 10 lines |
 | `minTokens` | `100` | Ignore token-small clones |
 | `reporters` | `console`, `json` | Terminal + `.jscpd-report/jscpd-report.json` |
-| `ignore` | `.next`, `node_modules`, lockfiles, `*.d.ts`, … | See `.jscpd.json` |
+| `ignore` | build artifacts, lockfiles, `*.d.ts`, **`src/components/ui/**`** | See [`.jscpd.json`](../.jscpd.json) |
 
-**False positives:** shadcn/ui boilerplate or similar login/signup forms may appear as clones; tune `minLines` / `threshold` only after team review.
+### Ignored paths (intentional)
+
+| Pattern | Reason |
+|---------|--------|
+| `**/src/components/ui/**` | shadcn/ui primitives from upstream (`npx shadcn add`); shared across the app — not copy-paste debt in feature code |
+| `**/.next/**`, `**/node_modules/**`, … | Generated / vendor / lockfiles |
+
+**Informational clones (still scanned):** login vs signup forms, internal blocks in `dashboard-sidebar.tsx`, shared helpers in `api/methods.ts` ↔ `api/raw-http.ts`. Tune `minLines` / `threshold` only after team review — do **not** lower threshold to hide real duplication in `src/components/common/` or `src/api/`.
 
 ---
 
@@ -64,7 +71,7 @@ jscpd may still **print** clone pairs on success (informational). Failures list 
 | Check | Result | Notes |
 |-------|--------|-------|
 | `npm run cycles` | **Pass** | 307 files processed; no circular dependency |
-| `npm run dupl` | **Pass** | 5 clones reported (~0.68% duplicated lines); under 80% threshold |
+| `npm run dupl` | **Pass** | **209** files analyzed (UI primitives excluded); 5 clones (~**1.17%** duplicated lines); under 80% threshold |
 
 Known clones (informational, no action required unless refactoring):
 

@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (Madge/jscpd; CI `test` job runs `quality:deps` on `dev`)._
+_Last audited: 2026-05-27 (jscpd excludes shadcn `src/components/ui/**`; CI `quality:deps` on `dev`)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -32,7 +32,7 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Linter / formatter | ESLint 9 + Biome 2 | — | Two toolchains: ESLint for Next rules, Biome for formatting |
 | Commit lint | commitlint | 20.x | Conventional Commits via `lint:commit` script |
 | Dependency graph | madge | 8.x | `npm run cycles` — circular static imports in `src/`; CI via `quality:deps` |
-| Clone detection | jscpd | 4.x | `npm run dupl` — config `.jscpd.json`; CI via `quality:deps` |
+| Clone detection | jscpd | 4.x | `npm run dupl` — `.jscpd.json` (excludes `src/components/ui/**`); CI via `quality:deps` |
 
 ### Fonts
 
@@ -396,7 +396,7 @@ The cache integration in `apiFetch` is currently commented out (`// TODO: re-ena
 Lint (`eslint`, `biome`), TypeScript, and `npm run build` are the primary local checks. Import-cycle and duplication gates (see [`docs/quality.md`](./quality.md)):
 
 - `npm run cycles` — Madge circular import detection (uses `tsconfig` path aliases).
-- `npm run dupl` — jscpd clone detection against `src/`.
+- `npm run dupl` — jscpd clone detection against `src/` (skips shadcn `src/components/ui/**`; see [`quality.md`](./quality.md)).
 - `npm run quality:deps` — both in sequence.
 
 On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs `npm run quality:deps` in the **`test`** job before **`build`** (same pattern as backend `test` → `build` in `be-mycourse`).
