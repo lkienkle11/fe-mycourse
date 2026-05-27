@@ -1,6 +1,6 @@
 # Media collection (FE)
 
-_Last audited: 2026-05-27 (media popup search + selection click fix + wider dialog)._
+_Last audited: 2026-05-27 (onSelect type payload + filename tooltip)._
 
 Reusable media library popup for browsing, uploading, and selecting files. Wired into taxonomy topic/outcome forms for cover images.
 
@@ -10,7 +10,7 @@ Reusable media library popup for browsing, uploading, and selecting files. Wired
 |------|------|
 | `src/components/features/media/media-collection-dialog.tsx` | Main dialog: tabs, filename search, sort, pagination, upload entry |
 | `src/components/features/media/media-upload-dialog.tsx` | Nested upload (max 5 files, 2 GiB total) |
-| `src/components/features/media/media-item-card.tsx` | Grid card: preview, overflow menu, single-select via full-card overlay `button` (menu stays clickable above overlay) |
+| `src/components/features/media/media-item-card.tsx` | Grid card: preview, overflow menu, single-select via full-card overlay `button` (menu stays clickable above overlay), filename tooltip with full text |
 | `src/components/features/media/media-tab-panel.tsx` | Grid + loading skeleton + empty state |
 
 Dialog width: `MediaCollectionDialog` uses `max-w-5xl` for a wider browsing surface.
@@ -68,7 +68,7 @@ Helpers: `resolveVisibleMediaTabs()`, `resolveMediaCollectionDefaultTab()` in `s
 
 ## Taxonomy integration
 
-`taxonomy-form-dialog.tsx` passes `visibleTabs={["image"]}` so document/video tabs never appear. `selectionMode="single"`; `isImageMedia` still guards selection. Stored value is `image_file_id` (media row UUID).
+`taxonomy-form-dialog.tsx` passes `visibleTabs={["image"]}` so document/video tabs never appear. `selectionMode="single"`; picker callback receives `type` from active tab and guards `type === "image"` before setting form state. Stored value is `image_file_id` (media row UUID).
 
 Permissions: `media_file:read` (browse), `media_file:create` (upload), `media_file:delete` (card menu).
 
@@ -82,7 +82,8 @@ Permissions: `media_file:read` (browse), `media_file:create` (upload), `media_fi
 ## Display behavior
 
 - Media items in the popup show `file.filename` as the visible label.
-- Selection still stores and emits `file.id` (`image_file_id` in taxonomy forms).
+- Hovering truncated filename shows a tooltip with the full filename.
+- Selection still stores `file.id` (`image_file_id` in taxonomy forms); selection callback also emits tab `type` (`image`/`document`/`video`).
 
 ## Accessibility
 
