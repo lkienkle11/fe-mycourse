@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -12,7 +11,7 @@ import {
   updateTaxonomyService,
 } from "@/api/callers/taxonomy";
 import { MediaCollectionDialog } from "@/components/features/media";
-import { PermissionGate } from "@/components/shared/permission-gate";
+import { ImageFileField } from "@/components/shared/image-file-field";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -110,6 +109,7 @@ export function TaxonomyFormDialog({
   const [description, setDescription] = useState<string[]>([]);
   const [mediaOpen, setMediaOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<MediaFile | null>(null);
+  const [initialImageFileURL, setInitialImageFileURL] = useState("");
 
   const schema = useMemo(() => {
     if (resourceKey === "outcomes") return outcomeSchema;
@@ -145,6 +145,8 @@ export function TaxonomyFormDialog({
         status: row?.status ?? "ACTIVE",
       } as FormValues);
       setDescription(row?.description?.length ? row.description : [""]);
+      setImagePreview(null);
+      setInitialImageFileURL(row?.image_file_url ?? "");
       return;
     }
 
@@ -159,6 +161,11 @@ export function TaxonomyFormDialog({
     } as FormValues);
     setTree(getTreeFromEntity(resourceKey, initialData));
     setImagePreview(null);
+    setInitialImageFileURL(
+      resourceKey === "topics"
+        ? ((initialData as CourseTopic | undefined)?.image_file_url ?? "")
+        : "",
+    );
   }, [open, initialData, resourceKey, form]);
 
   const imageFileId = form.watch("image_file_id" as keyof FormValues) as
@@ -258,6 +265,7 @@ export function TaxonomyFormDialog({
 
   const nameValue = (form.watch("name" as keyof FormValues) as string) ?? "";
   const derivedSlug = slugifyName(nameValue);
+  const imagePreviewURL = imagePreview?.url || initialImageFileURL;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -318,60 +326,31 @@ export function TaxonomyFormDialog({
           </div>
 
           {config.supportsImage ? (
-            <div className="space-y-2">
-              <Label>{tForm("imageFileId")}</Label>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
-                  {imagePreview?.url ? (
-                    <Image
-                      src={imagePreview.url}
-                      alt={tMedia("previewAlt")}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <span className="px-2 text-center text-xs text-muted-foreground">
-                      {imageFileId
-                        ? imageFileId.slice(0, 8)
-                        : tMedia("noImageSelected")}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <PermissionGate permissions={[PERMISSIONS.MediaFileRead]}>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => setMediaOpen(true)}
-                    >
-                      {tMedia("browse")}
-                    </Button>
-                  </PermissionGate>
-                  {imageFileId ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        (
-                          form.setValue as (
-                            name: "image_file_id",
-                            value: string,
-                          ) => void
-                        )("image_file_id", "");
-                        setImagePreview(null);
-                      }}
-                    >
-                      {tMedia("clear")}
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {tForm("imageFileIdHint")}
-              </p>
-              <input type="hidden" {...form.register("image_file_id")} />
-            </div>
+            <ImageFileField
+              label={tForm("imageFileId")}
+              hint={tForm("imageFileIdHint")}
+              browseLabel={tMedia("browse")}
+              clearLabel={tMedia("clear")}
+              previewAlt={tMedia("previewAlt")}
+              noImageSelectedLabel={tMedia("noImageSelected")}
+              imageFileId={imageFileId}
+              previewUrl={imagePreviewURL}
+              browsePermissions={[PERMISSIONS.MediaFileRead]}
+              onBrowse={() => setMediaOpen(true)}
+              onClear={() => {
+                (
+                  form.setValue as (
+                    name: "image_file_id",
+                    value: string,
+                  ) => void
+                )("image_file_id", "");
+                setImagePreview(null);
+                setInitialImageFileURL("");
+              }}
+              hiddenInput={
+                <input type="hidden" {...form.register("image_file_id")} />
+              }
+            />
           ) : null}
 
           {config.hasTree ? (
@@ -428,6 +407,7 @@ export function TaxonomyFormDialog({
             file.id,
           );
           setImagePreview(file);
+          setInitialImageFileURL("");
         }}
       />
     </Dialog>
