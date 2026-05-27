@@ -1,8 +1,8 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (`minLines` 10 in `.jscpd.json`)._
+_Last audited: 2026-05-27 (CI `test` job: `quality:deps`; `minLines` 10 in `.jscpd.json`)._
 
-Optional **local** checks for import cycles and duplicated source. They are **not** run in CI today (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml): `npm ci` + `npm run build` only).
+Checks for **circular imports** (Madge) and **duplicate code** (jscpd) under `src/`. On push to **`dev`**, CI runs them via `npm run quality:deps` in the **`test`** job **before** `npm run build` (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 
 > **Not the backend:** `be-mycourse` uses `make check-architecture` / `make check-dupl` (Go). This repo uses **npm scripts** below.
 
@@ -76,12 +76,14 @@ Known clones (informational, no action required unless refactoring):
 
 ## CI / production quality gate
 
-| Stage | What runs |
-|-------|-----------|
-| **CI (`dev` deploy)** | `npm ci`, `npm run build` |
-| **Recommended local** | `npm run lint`, `npm run lint:biome`, `tsc --noEmit` (if used), `npm run build`, optionally `npm run cycles` / `npm run dupl` |
+| Stage | Job | What runs |
+|-------|-----|-----------|
+| **CI (`dev` deploy)** | `test` | `npm ci`, `npm run quality:deps` (`cycles` + `dupl`) |
+| **CI (`dev` deploy)** | `build` | `npm ci`, `npm run build` (after `test` passes) |
+| **CI (`dev` deploy)** | `deploy` | SSH → VPS `npm ci` + `npm run build` + PM2 reload (quality checks are **not** re-run on the server) |
+| **Recommended local** | — | `npm run lint`, `npm run lint:biome`, `npm run build`; use `npm run quality:deps` before large refactors |
 
-Do **not** document `make check-dupl` or `make check-architecture` for this frontend repo.
+Do **not** use backend `make check-dupl` or `make check-architecture` in this frontend repo — use the npm scripts above instead.
 
 ---
 

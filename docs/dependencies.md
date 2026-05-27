@@ -145,8 +145,8 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 | `@commitlint/cli` | ^20.5.0 | Commit message linting |
 | `@commitlint/config-conventional` | ^20.5.0 | Conventional Commits ruleset |
 | `shadcn` | 4.2.0 | CLI tool for adding shadcn/ui components to `src/components/ui/` |
-| `madge` | ^8.0.0 | Circular dependency analysis — `npm run cycles` / `cycles:json` |
-| `jscpd` | ^4.2.4 | Copy-paste / clone detection — `npm run dupl` (config: `.jscpd.json`) |
+| `madge` | ^8.0.0 | Circular dependency analysis — `npm run cycles` / `cycles:json`; CI via `quality:deps` |
+| `jscpd` | ^4.2.4 | Copy-paste / clone detection — `npm run dupl` (`.jscpd.json`); CI via `quality:deps` |
 
 ---
 
@@ -168,4 +168,4 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 6. **Icons**: Always import icons from `lucide-react`. Do not add other icon libraries.
 7. **Toasts**: Use `sonner` (`toast.success`, `toast.error`, etc.) for user-facing notifications.
 8. **Stream events**: Subscribe with `hooks/events/*`; send WS via `postSocketOutbound`, broadcast via `postBroadcastOutbound`. Do not add a second WebSocket/SSE library without updating [`delivery.md`](./delivery.md).
-9. **Import / duplication checks**: Before large refactors or PRs that touch many modules, run `npm run cycles` and/or `npm run dupl` (or `npm run quality:deps`). See [`quality.md`](./quality.md). Not enforced in CI; do not use backend `make check-dupl`.
+9. **Import / duplication checks**: Run `npm run quality:deps` (or `cycles` / `dupl` individually) before large refactors. CI on **`dev`** enforces `quality:deps` in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml). See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.

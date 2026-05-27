@@ -24,6 +24,8 @@ fe-mycourse/
 ├── tailwind.config.ts      # Tailwind CSS configuration (if present)
 ├── postcss.config.mjs      # PostCSS configuration (@tailwindcss/postcss)
 ├── package.json            # Project dependencies and npm scripts
+├── ecosystem.config.cjs    # PM2 apps: mycourse-web-dev / staging / prod
+├── .github/workflows/      # CI: enforce-main-from-dev.yml, deploy-dev.yml (test → build → deploy)
 ├── .jscpd.json             # jscpd duplicate-detection config (npm run dupl)
 ├── .jscpd-report/          # jscpd JSON reports (gitignored)
 └── README.md               # Project overview and quick-start guide
@@ -418,5 +420,6 @@ docs/
 ├── router.md               # Routing structure and navigation conventions
 ├── patterns.md             # Coding patterns and conventions
 ├── dependencies.md         # Key libraries and their roles
+├── quality.md              # Madge / jscpd scripts; CI test job (quality:deps)
 └── reusable-assets.md      # Reusable utilities, types, hooks, and constants
 ```
