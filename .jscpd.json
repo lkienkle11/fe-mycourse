@@ -1,0 +1,18 @@
+{
+  "threshold": 80,
+  "minLines": 10,
+  "minTokens": 100,
+  "reporters": ["console", "json"],
+  "output": ".jscpd-report",
+  "ignore": [
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/out/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/package-lock.json",
+    "**/pnpm-lock.yaml",
+    "**/yarn.lock",
+    "**/*.d.ts"
+  ]
+}
