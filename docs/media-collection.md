@@ -1,6 +1,6 @@
 # Media collection (FE)
 
-_Last updated: 2026-05-26 (`formatBytes` moved to `src/lib/utils/format-bytes.ts`)._
+_Last audited: 2026-05-27 (media module verified vs src)._
 
 Reusable media library popup for browsing, uploading, and selecting files. Wired into taxonomy topic/outcome forms for cover images.
 

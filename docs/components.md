@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-05-25 (dashboard locale chrome, `LocaleSwitcher` pathname, sidebar `TooltipProvider`)._
+_Last audited: 2026-05-27 (components inventory verified vs src)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.

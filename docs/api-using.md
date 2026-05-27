@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-05-26 (shared list query types, taxonomy callers, apiPatch)._
+_Last audited: 2026-05-27 (API patterns verified vs src)._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.

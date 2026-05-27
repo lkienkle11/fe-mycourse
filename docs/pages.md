@@ -1,7 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-05-21 (full source vs docs sync)._
-
+_Last audited: 2026-05-27 (dashboard + taxonomy routes; quality tooling)._
 
 ## Current pages
 
@@ -11,12 +10,18 @@ _Last audited: 2026-05-21 (full source vs docs sync)._
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | `HomePage` (`src/screen/common/home/page.tsx`) | Implemented |
 | `/{locale}/confirm-email` | `src/app/[locale]/(web)/confirm-email/page.tsx` | `ConfirmEmailContent` → `confirmAction` | Implemented |
 | `/{locale}/logout` | `src/app/[locale]/(web)/logout/page.tsx` | `LogoutContent` → `logoutAction` (+ cross-tab `broadcast:logout`) | Implemented |
+| `/{locale}/admin` | `src/app/[locale]/admin/page.tsx` | `AdminDashboardPage` (placeholder dashboard) | Implemented |
+| `/{locale}/instructor` | `src/app/[locale]/instructor/page.tsx` | `InstructorDashboardPage` (placeholder) | Implemented |
+| `/{locale}/sysadmin` | `src/app/[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` (placeholder) | Implemented |
+| `/{locale}/admin/taxonomy/{resource}` | `src/app/[locale]/admin/taxonomy/*/page.tsx` | `TaxonomyListPage` — resource: levels, topics, outcomes, skills, tags | Implemented |
+| `/{locale}/sysadmin/taxonomy/{resource}` | `src/app/[locale]/sysadmin/taxonomy/*/page.tsx` | Same `TaxonomyListPage` (sysadmin menu) | Implemented |
 
 ## Layout chain
 
 - `src/app/layout.tsx` — fonts, Sonner `<Toaster />`
 - `src/app/[locale]/layout.tsx` — `NextIntlClientProvider`, `AppProviders`
-- `src/app/[locale]/(web)/layout.tsx` — `Header`, `<main>`, `Footer`
+- `src/app/[locale]/(web)/layout.tsx` — `Header`, `<main>`, `Footer` (web routes only)
+- `src/app/[locale]/admin|instructor|sysadmin/layout.tsx` — `DashboardLayout` (no site footer)
 
 ## Auth UX (not dedicated login/signup pages)
 
@@ -28,11 +33,13 @@ _Last audited: 2026-05-21 (full source vs docs sync)._
 
 `PUBLIC_ROUTES` (`src/constants/route.ts`): `home`, `confirmEmail`, `logout` — no `auth.login` / `auth.signup` route constants.
 
-## Planned pages
+## Planned / not implemented
 
 | URL | Notes |
 |-----|-------|
 | `/{locale}/auth/login` | Optional future page; today login is modal-based |
+| `/{locale}/courses` | Marketing/courses listing (nav placeholders only) |
 | Dedicated signup page | Not planned — `SignupContent` stays in `LoginSignupPopup` |
-| `/{locale}/admin/*` | Planned (`src/screen/admin/`) |
-| `/{locale}/instructor/*` | Planned (`src/screen/instructor/`) |
+| Further `/{locale}/admin/*` beyond taxonomy | Placeholder sidebar links only (users, courses, …) |
+
+See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-admin.md`](./taxonomy-admin.md).

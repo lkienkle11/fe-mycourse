@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-05-26 (shared list query + slug input)._
+_Last audited: 2026-05-27 (shared list query; local quality gates)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -393,6 +393,7 @@ Before writing code for a new feature:
 
 - [ ] Read `docs/` — check architecture, flow, components, patterns
 - [ ] Run `npx gitnexus analyze --force` — understand impact
+- [ ] For large refactors: `npm run cycles` / `npm run dupl` — see [`quality.md`](./quality.md)
 - [ ] Reuse utilities from `src/lib/utils/` (barrel) or direct paths for server-only files (`auth-session.ts`)
 - [ ] Place server data fetching in `src/api/callers/<domain>/`
 - [ ] Place SWR hooks in `src/api/hooks/<domain>/`

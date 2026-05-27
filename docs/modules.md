@@ -1,6 +1,6 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-05-26 (media module, shared list-query)._
+_Last audited: 2026-05-27 (taxonomy + media modules unchanged; docs sync)._
 
 
 ## Module map

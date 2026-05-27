@@ -1,6 +1,6 @@
 # Taxonomy admin (FE)
 
-_Last audited: 2026-05-26 (sidebar Lucide icons)._
+_Last audited: 2026-05-27 (taxonomy admin/sysadmin verified vs src)._
 
 Admin and sysadmin dashboards can manage five taxonomy resources aligned with BE `/api/v1/taxonomy/*`:
 

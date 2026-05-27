@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-05-26 (taxonomy sidebar icons, ApiListQueryParams, slug helpers)._
+_Last audited: 2026-05-27 (assets inventory verified vs src)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.

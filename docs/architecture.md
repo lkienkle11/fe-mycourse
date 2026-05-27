@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-25 (dashboard locale chrome, `LocaleSwitcher` pathname)._
+_Last audited: 2026-05-27 (local Madge/jscpd quality tools)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -31,6 +31,8 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Type checker | TypeScript | 5.x | Strict mode |
 | Linter / formatter | ESLint 9 + Biome 2 | — | Two toolchains: ESLint for Next rules, Biome for formatting |
 | Commit lint | commitlint | 20.x | Conventional Commits via `lint:commit` script |
+| Dependency graph (local) | madge | 8.x | `npm run cycles` — circular static imports in `src/` |
+| Clone detection (local) | jscpd | 4.x | `npm run dupl` — config `.jscpd.json`; not in CI |
 
 ### Fonts
 
@@ -389,10 +391,23 @@ The cache integration in `apiFetch` is currently commented out (`// TODO: re-ena
 
 ---
 
+## Local quality gates (optional)
+
+Lint (`eslint`, `biome`), TypeScript, and `npm run build` are the primary checks. **Additionally** (local only, see [`docs/quality.md`](./quality.md)):
+
+- `npm run cycles` — Madge circular import detection (uses `tsconfig` path aliases).
+- `npm run dupl` — jscpd clone detection against `src/`.
+- `npm run quality:deps` — both in sequence.
+
+CI ([`deploy-dev.yml`](../.github/workflows/deploy-dev.yml)) does **not** run these yet.
+
+---
+
 ## Related Docs
 
 | Doc | Contents |
 |-----|----------|
+| [`docs/quality.md`](quality.md) | Madge / jscpd scripts, thresholds, baseline results |
 | [`docs/flow.md`](flow.md) | Auth and API execution flows with sequence diagrams |
 | [`docs/screens.md`](screens.md) | App Router routes, layouts, and UI surfaces |
 | [`docs/deploy.md`](deploy.md) | Production deployment runbook (Ubuntu 24.04, PM2, Nginx, TLS) |

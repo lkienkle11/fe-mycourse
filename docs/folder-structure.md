@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-05-26 (media collection, shared list-query helper)._
+_Last audited: 2026-05-27 (Madge/jscpd config, taxonomy app routes)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -24,6 +24,8 @@ fe-mycourse/
 ├── tailwind.config.ts      # Tailwind CSS configuration (if present)
 ├── postcss.config.mjs      # PostCSS configuration (@tailwindcss/postcss)
 ├── package.json            # Project dependencies and npm scripts
+├── .jscpd.json             # jscpd duplicate-detection config (npm run dupl)
+├── .jscpd-report/          # jscpd JSON reports (gitignored)
 └── README.md               # Project overview and quick-start guide
 ```
 
@@ -51,13 +53,15 @@ src/app/
     │   └── logout/page.tsx
     ├── admin/              # Admin dashboard (DashboardLayout)
     │   ├── layout.tsx
-    │   └── page.tsx
+    │   ├── page.tsx
+    │   └── taxonomy/       # levels, topics, outcomes, skills, tags → TaxonomyListPage
     ├── instructor/
     │   ├── layout.tsx
     │   └── page.tsx
     └── sysadmin/
         ├── layout.tsx
-        └── page.tsx
+        ├── page.tsx
+        └── taxonomy/       # Same taxonomy CRUD as admin (sysadmin menu)
 ```
 
 ### `src/screen/` — Page-Level Screen Components
