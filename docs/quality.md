@@ -84,8 +84,10 @@ Recommended before PR: run the table above (or at minimum `lint:biome`, `tsc`, `
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| `npm run cycles` | **Pass** | 307 files processed; no circular dependency |
+| `npm run cycles` | **Pass** | 309 files processed; no circular dependency |
 | `npm run dupl` | **Pass** | **212** files analyzed (UI primitives excluded); **0 clones** (0% duplicated lines) |
+
+_Re-run after media library a11y fix (2026-05-27): same results — `lint:biome`, `lint`, `tsc --noEmit`, `quality:deps`, `build` all pass._
 
 **jscpd dedup refactors (2026-05-27):**
 
