@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -44,7 +45,7 @@ export type MediaCollectionDialogProps = {
   defaultTab?: MediaTab;
   selectionMode?: "single" | "none";
   selectedFileId?: string;
-  onSelect?: (file: MediaFile) => void;
+  onSelect?: (file: MediaFile, type: MediaTab) => void;
 };
 
 export function MediaCollectionDialog({
@@ -70,6 +71,8 @@ export function MediaCollectionDialog({
   const [activeTab, setActiveTab] = useState<MediaTab>(initialTab);
   const [sortOption, setSortOption] =
     useState<MediaSortOption>("created_at_desc");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MediaFile | null>(null);
@@ -79,10 +82,11 @@ export function MediaCollectionDialog({
     () => ({
       page,
       per_page: 20,
+      search: search || undefined,
       category: mediaTabToCategory(activeTab),
       ...parseMediaSortOption(sortOption),
     }),
-    [activeTab, page, sortOption],
+    [activeTab, page, search, sortOption],
   );
 
   const { rows, pageInfo, isLoading, mutate } = useMediaFiles(listFilters);
@@ -93,6 +97,8 @@ export function MediaCollectionDialog({
   useEffect(() => {
     if (!open) return;
     setActiveTab(resolveMediaCollectionDefaultTab(defaultTab, visibleTabs));
+    setSearchInput("");
+    setSearch("");
     setPage(1);
   }, [open, defaultTab, visibleTabs]);
 
@@ -107,7 +113,7 @@ export function MediaCollectionDialog({
   const currentPage = pageInfo?.page ?? page;
 
   const handleSelect = (file: MediaFile) => {
-    onSelect?.(file);
+    onSelect?.(file, activeTab);
     onOpenChange(false);
   };
 
@@ -124,6 +130,11 @@ export function MediaCollectionDialog({
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const applySearch = () => {
+    setSearch(searchInput.trim());
+    setPage(1);
   };
 
   const toolbar = (
@@ -144,6 +155,23 @@ export function MediaCollectionDialog({
         </TabsList>
       ) : null}
       <div className="flex flex-wrap items-center gap-2">
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            applySearch();
+          }}
+        >
+          <Input
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder={t("searchPlaceholder")}
+            className="h-9 w-[220px]"
+          />
+          <Button type="submit" size="sm" variant="secondary">
+            {t("search")}
+          </Button>
+        </form>
         <Select
           value={sortOption}
           onValueChange={(value) => {
@@ -189,7 +217,7 @@ export function MediaCollectionDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col gap-0 overflow-hidden p-0">
+        <DialogContent className="flex max-h-[90vh] max-w-5xl sm:max-w-3xl flex-col gap-0 overflow-hidden p-0">
           <DialogHeader className="space-y-0 border-b px-6 py-4">
             <DialogTitle>{t("title")}</DialogTitle>
             <DialogDescription className="sr-only">

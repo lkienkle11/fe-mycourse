@@ -16,6 +16,11 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { formatMediaDate, isImageMedia } from "@/lib/utils/media";
 import type { MediaFile } from "@/types/media";
@@ -56,6 +61,19 @@ export function MediaItemCard({
     }
   };
 
+  const labelNode = selectable ? (
+    <button
+      type="button"
+      className="pointer-events-auto w-full truncate text-left text-sm font-medium"
+      onClick={handleSelect}
+      tabIndex={-1}
+    >
+      {label}
+    </button>
+  ) : (
+    <p className="truncate text-sm font-medium">{label}</p>
+  );
+
   const actionMenu = canDelete ? (
     <div className="pointer-events-auto absolute top-1 right-1 z-20">
       <DropdownMenu>
@@ -89,12 +107,7 @@ export function MediaItemCard({
 
   const content = (
     <>
-      <div
-        className={cn(
-          "relative aspect-video w-full bg-muted",
-          selectable && "pointer-events-none",
-        )}
-      >
+      <div className="relative aspect-video w-full bg-muted">
         {previewUrl ? (
           <Image
             src={previewUrl}
@@ -118,14 +131,14 @@ export function MediaItemCard({
             </EmptyDescription>
           </Empty>
         )}
-        {actionMenu}
       </div>
-      <div
-        className={cn("space-y-0.5 p-2", selectable && "pointer-events-none")}
-      >
-        <p className="truncate text-sm font-medium" title={file.filename}>
-          {label}
-        </p>
+      <div className="space-y-0.5 p-2">
+        <Tooltip>
+          <TooltipTrigger asChild>{labelNode}</TooltipTrigger>
+          <TooltipContent side="top" sideOffset={4}>
+            {label}
+          </TooltipContent>
+        </Tooltip>
         <p className="text-xs text-muted-foreground">
           {formatMediaDate(file.created_at)}
         </p>
@@ -142,10 +155,16 @@ export function MediaItemCard({
           onClick={handleSelect}
           aria-label={label}
         />
-        <div className="relative z-10">{content}</div>
+        <div className="pointer-events-none relative z-10">{content}</div>
+        {actionMenu}
       </div>
     );
   }
 
-  return <div className={cardClassName(false, selected)}>{content}</div>;
+  return (
+    <div className={cardClassName(false, selected)}>
+      {content}
+      {actionMenu}
+    </div>
+  );
 }

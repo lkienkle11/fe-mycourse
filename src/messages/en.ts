@@ -261,6 +261,8 @@ const messages = {
         document: "Add documents",
         video: "Add videos",
       },
+      searchPlaceholder: "Search filename…",
+      search: "Search",
       empty: "No files in this category yet.",
       previous: "Previous",
       next: "Next",

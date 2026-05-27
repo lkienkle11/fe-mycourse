@@ -1,6 +1,6 @@
 # Media collection (FE)
 
-_Last audited: 2026-05-27 (media a11y: card selection overlay + dialog descriptions)._
+_Last audited: 2026-05-27 (onSelect type payload + filename tooltip)._
 
 Reusable media library popup for browsing, uploading, and selecting files. Wired into taxonomy topic/outcome forms for cover images.
 
@@ -8,10 +8,12 @@ Reusable media library popup for browsing, uploading, and selecting files. Wired
 
 | File | Role |
 |------|------|
-| `src/components/features/media/media-collection-dialog.tsx` | Main dialog: tabs, sort, pagination, upload entry |
+| `src/components/features/media/media-collection-dialog.tsx` | Main dialog: tabs, filename search, sort, pagination, upload entry |
 | `src/components/features/media/media-upload-dialog.tsx` | Nested upload (max 5 files, 2 GiB total) |
-| `src/components/features/media/media-item-card.tsx` | Grid card: preview, overflow menu, single-select via full-card overlay `button` (menu stays clickable above overlay) |
+| `src/components/features/media/media-item-card.tsx` | Grid card: preview, overflow menu, single-select via full-card overlay `button` (menu stays clickable above overlay), filename tooltip with full text |
 | `src/components/features/media/media-tab-panel.tsx` | Grid + loading skeleton + empty state |
+
+Dialog width: `MediaCollectionDialog` uses `max-w-5xl` for a wider browsing surface.
 
 ## API layer
 
@@ -23,12 +25,12 @@ Reusable media library popup for browsing, uploading, and selecting files. Wired
 | `src/types/media/index.ts` | `MediaFile`, filters, tab types |
 | `src/constants/media/file-rules.ts` | Accept rules, size limits |
 | `src/lib/utils/media.ts` | Validation, `getMediaDeleteKey`, `isImageMedia` (no list-query helper — uses shared `apiListQueryToRecord`) |
-| `src/lib/utils/list-query.ts` | `apiListQueryToRecord()` — `page`, `per_page`, `sort_by`, `sort_order`, `category` |
+| `src/lib/utils/list-query.ts` | `apiListQueryToRecord()` — `page`, `per_page`, `search`, `sort_by`, `sort_order`, `category` |
 | `src/lib/utils/format-bytes.ts` | `formatBytes()` — per-file and total size labels in upload dialog |
 
 ## List filters (FE)
 
-`MediaListFilters` extends `ApiListQueryParams` (`src/types/media/index.ts`) with `category` and `sort_order`. Query strings are built with `apiListQueryToRecord()` — same helper as taxonomy (`src/lib/utils/list-query.ts`), not a duplicate `mediaListFiltersToRecord`.
+`MediaListFilters` extends `ApiListQueryParams` (`src/types/media/index.ts`) with `category` and `sort_order`. Query strings are built with `apiListQueryToRecord()` — same helper as taxonomy (`src/lib/utils/list-query.ts`), not a duplicate `mediaListFiltersToRecord`. The popup applies filename search via `search`.
 
 ## BE list query params
 
@@ -37,6 +39,7 @@ Reusable media library popup for browsing, uploading, and selecting files. Wired
 | Param | Values |
 |-------|--------|
 | `page`, `per_page` | Pagination |
+| `search` | filename contains (case-insensitive) |
 | `category` | `image`, `document`, `video` |
 | `sort_by` | `created_at`, `updated_at`, `filename`, `size_bytes` |
 | `sort_order` | `asc`, `desc` |
@@ -65,9 +68,22 @@ Helpers: `resolveVisibleMediaTabs()`, `resolveMediaCollectionDefaultTab()` in `s
 
 ## Taxonomy integration
 
-`taxonomy-form-dialog.tsx` passes `visibleTabs={["image"]}` so document/video tabs never appear. `selectionMode="single"`; `isImageMedia` still guards selection. Stored value is `image_file_id` (media row UUID).
+`taxonomy-form-dialog.tsx` passes `visibleTabs={["image"]}` so document/video tabs never appear. `selectionMode="single"`; picker callback receives `type` from active tab and guards `type === "image"` before setting form state. Stored value is `image_file_id` (media row UUID).
 
 Permissions: `media_file:read` (browse), `media_file:create` (upload), `media_file:delete` (card menu).
+
+## Search behavior
+
+- Search input and button are in `MediaCollectionDialog` toolbar.
+- Search value is sent as `search` query param to `GET /api/v1/media/files`.
+- Search is filename-based and respects active tab category (`image` / `document` / `video`).
+- Applying search resets pagination to page 1.
+
+## Display behavior
+
+- Media items in the popup show `file.filename` as the visible label.
+- Hovering truncated filename shows a tooltip with the full filename.
+- Selection still stores `file.id` (`image_file_id` in taxonomy forms); selection callback also emits tab `type` (`image`/`document`/`video`).
 
 ## Accessibility
 
