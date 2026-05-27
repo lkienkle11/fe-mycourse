@@ -132,14 +132,25 @@ function DashboardSidebarCollapsed({
   );
 }
 
-function DashboardSidebarLevel({
+type DashboardNavLevel = "root" | "sub";
+
+function DashboardSidebarTree({
   items,
+  level,
   depth = 0,
   pathname,
   ...callbacks
-}: DashboardSidebarProps & { pathname: string; depth?: number }) {
+}: DashboardSidebarProps & {
+  pathname: string;
+  level: DashboardNavLevel;
+  depth?: number;
+}) {
   const { itemClassName, itemActiveClassName } = callbacks.customStyles ?? {};
   const itemTitle = useDashboardItemTitle();
+  const Item = level === "root" ? SidebarMenuItem : SidebarMenuSubItem;
+  const Btn = level === "root" ? SidebarMenuButton : SidebarMenuSubButton;
+  const chevronOpenClass =
+    "data-[state=open]:*:data-[slot=dashboard-chevron]:rotate-90";
 
   return (
     <>
@@ -159,13 +170,13 @@ function DashboardSidebarLevel({
                 else callbacks.onCollapse?.(item);
               }}
             >
-              <SidebarMenuItem>
+              <Item>
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton
+                  <Btn
                     className={cn(
                       itemClassName,
                       active && itemActiveClassName,
-                      "data-[state=open]:*:data-[slot=dashboard-chevron]:rotate-90",
+                      chevronOpenClass,
                     )}
                     onBlur={() => callbacks.onBlur?.(item)}
                   >
@@ -175,43 +186,72 @@ function DashboardSidebarLevel({
                       data-slot="dashboard-chevron"
                       className="ml-auto size-4 shrink-0 transition-transform duration-200"
                     />
-                  </SidebarMenuButton>
+                  </Btn>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarMenuSub className="mx-0 mr-0 ml-2 pl-2">
-                    <DashboardSidebarSubLevel
+                    <DashboardSidebarTree
                       items={item.children ?? []}
+                      level="sub"
                       depth={depth + 1}
                       pathname={pathname}
                       {...callbacks}
                     />
                   </SidebarMenuSub>
                 </CollapsibleContent>
-              </SidebarMenuItem>
+              </Item>
             </Collapsible>
           );
         }
 
         return (
-          <SidebarMenuItem key={item.id}>
+          <Item key={item.id}>
             {item.href ? (
-              <SidebarMenuButton
-                asChild
-                isActive={active}
-                disabled={item.disabled}
-                className={cn(itemClassName, active && itemActiveClassName)}
-                onBlur={() => callbacks.onBlur?.(item)}
-              >
-                <Link
-                  href={item.href}
-                  onClick={() => handleNavigate(item, callbacks)}
+              level === "root" ? (
+                <Btn
+                  asChild
+                  isActive={active}
+                  disabled={item.disabled}
+                  className={cn(itemClassName, active && itemActiveClassName)}
+                  onBlur={() => callbacks.onBlur?.(item)}
                 >
-                  <DashboardItemIcon item={item} />
-                  <span className="truncate">{label}</span>
-                </Link>
-              </SidebarMenuButton>
-            ) : (
-              <SidebarMenuButton
+                  <Link
+                    href={item.href}
+                    onClick={() => handleNavigate(item, callbacks)}
+                  >
+                    <DashboardItemIcon item={item} />
+                    <span className="truncate">{label}</span>
+                  </Link>
+                </Btn>
+              ) : (
+                <Btn
+                  asChild
+                  isActive={active}
+                  className={cn(
+                    itemClassName,
+                    active && itemActiveClassName,
+                    item.disabled && "pointer-events-none opacity-50",
+                  )}
+                  onBlur={() => callbacks.onBlur?.(item)}
+                >
+                  <Link
+                    href={item.href}
+                    aria-disabled={item.disabled}
+                    onClick={(event) => {
+                      if (item.disabled) {
+                        event.preventDefault();
+                        return;
+                      }
+                      handleNavigate(item, callbacks);
+                    }}
+                  >
+                    <DashboardItemIcon item={item} />
+                    <span className="truncate">{label}</span>
+                  </Link>
+                </Btn>
+              )
+            ) : level === "root" ? (
+              <Btn
                 disabled={item.disabled}
                 className={cn(itemClassName, active && itemActiveClassName)}
                 onClick={() => callbacks.onItemClick?.(item)}
@@ -219,105 +259,9 @@ function DashboardSidebarLevel({
               >
                 <DashboardItemIcon item={item} />
                 <span className="truncate">{label}</span>
-              </SidebarMenuButton>
-            )}
-          </SidebarMenuItem>
-        );
-      })}
-    </>
-  );
-}
-
-function DashboardSidebarSubLevel({
-  items,
-  depth = 0,
-  pathname,
-  ...callbacks
-}: DashboardSidebarProps & { pathname: string; depth?: number }) {
-  const { itemClassName, itemActiveClassName } = callbacks.customStyles ?? {};
-  const itemTitle = useDashboardItemTitle();
-
-  return (
-    <>
-      {items.map((item) => {
-        const active = isItemActive(pathname, item.href);
-        const hasChildren = Boolean(item.children?.length);
-        const label = itemTitle(item);
-
-        if (hasChildren) {
-          return (
-            <Collapsible
-              key={item.id}
-              defaultOpen={active}
-              onOpenChange={(open) => {
-                callbacks.onToggle?.(item);
-                if (open) callbacks.onExpand?.(item);
-                else callbacks.onCollapse?.(item);
-              }}
-            >
-              <SidebarMenuSubItem>
-                <CollapsibleTrigger asChild>
-                  <SidebarMenuSubButton
-                    className={cn(
-                      itemClassName,
-                      active && itemActiveClassName,
-                      "data-[state=open]:*:data-[slot=dashboard-chevron]:rotate-90",
-                    )}
-                    onBlur={() => callbacks.onBlur?.(item)}
-                  >
-                    <DashboardItemIcon item={item} />
-                    <span className="truncate">{label}</span>
-                    <ChevronRight
-                      data-slot="dashboard-chevron"
-                      className="ml-auto size-4 shrink-0 transition-transform duration-200"
-                    />
-                  </SidebarMenuSubButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <SidebarMenuSub className="mx-0 mr-0 ml-2 pl-2">
-                    <DashboardSidebarSubLevel
-                      items={item.children ?? []}
-                      depth={depth + 1}
-                      pathname={pathname}
-                      {...callbacks}
-                    />
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </SidebarMenuSubItem>
-            </Collapsible>
-          );
-        }
-
-        return (
-          <SidebarMenuSubItem key={item.id}>
-            {item.href ? (
-              <SidebarMenuSubButton
-                asChild
-                isActive={active}
-                className={cn(
-                  itemClassName,
-                  active && itemActiveClassName,
-                  item.disabled && "pointer-events-none opacity-50",
-                )}
-                onBlur={() => callbacks.onBlur?.(item)}
-              >
-                <Link
-                  href={item.href}
-                  aria-disabled={item.disabled}
-                  onClick={(event) => {
-                    if (item.disabled) {
-                      event.preventDefault();
-                      return;
-                    }
-                    handleNavigate(item, callbacks);
-                  }}
-                >
-                  <DashboardItemIcon item={item} />
-                  <span className="truncate">{label}</span>
-                </Link>
-              </SidebarMenuSubButton>
+              </Btn>
             ) : (
-              <SidebarMenuSubButton
+              <Btn
                 asChild
                 className={cn(itemClassName, active && itemActiveClassName)}
                 onBlur={() => callbacks.onBlur?.(item)}
@@ -331,9 +275,9 @@ function DashboardSidebarSubLevel({
                   <DashboardItemIcon item={item} />
                   <span className="truncate">{label}</span>
                 </button>
-              </SidebarMenuSubButton>
+              </Btn>
             )}
-          </SidebarMenuSubItem>
+          </Item>
         );
       })}
     </>
@@ -384,8 +328,9 @@ export function DashboardSidebar({
         />
       ) : (
         <SidebarMenu>
-          <DashboardSidebarLevel
+          <DashboardSidebarTree
             items={items}
+            level="root"
             pathname={pathname}
             {...callbacks}
           />
