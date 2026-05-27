@@ -23,6 +23,7 @@ Set in `.env` or the deployment environment. Never hard-code these values.
 ```
 src/api/
 ├── instance.ts         # Axios instance + request/response interceptors
+├── axios-helpers.ts    # Shared header/cookie helpers (methods + raw-http)
 ├── methods.ts          # apiFetch / apiPost / apiPut / apiPatch / apiDelete / apiOptions
 ├── raw-http.ts         # rawFetch / rawPost (interceptor-free, for token refresh only)
 ├── callers/            # Domain-specific service functions

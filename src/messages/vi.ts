@@ -247,6 +247,7 @@ const messages = {
   media: {
     collection: {
       title: "Thư viện media",
+      description: "Duyệt, tải lên và chọn tệp từ thư viện media của bạn.",
       tabs: {
         image: "Hình ảnh",
         document: "Tài liệu",
@@ -266,8 +267,7 @@ const messages = {
       next: "Sau",
       pageOf: "Trang {page} / {totalPages}",
       deleteTitle: "Xóa tệp?",
-      deleteDescription:
-        'Xóa "{name}" khỏi lưu trữ? Không thể hoàn tác.',
+      deleteDescription: 'Xóa "{name}" khỏi lưu trữ? Không thể hoàn tác.',
       deleteSuccess: "Đã xóa tệp.",
       deleteError: "Không thể xóa tệp.",
     },
@@ -277,6 +277,7 @@ const messages = {
         document: "Tải tài liệu lên",
         video: "Tải video lên",
       },
+      description: "Kéo thả tệp vào đây hoặc chọn tệp để tải lên.",
       dropHint: "Kéo thả tệp vào đây hoặc chọn tệp",
       chooseFiles: "Chọn tệp",
       limits: "Tối đa {maxFiles} tệp, tổng {maxSize} mỗi lần",
