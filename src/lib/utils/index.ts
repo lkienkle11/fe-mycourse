@@ -45,7 +45,7 @@ export {
 } from "./permission";
 export { useUniqueId } from "./react";
 export { isServer } from "./runtime";
-export { slugifyName } from "./slug";
+export { generateSlug, slugifyName } from "./slug";
 export { buildQueryParams } from "./url";
 export { pickCharacter } from "./user";
 

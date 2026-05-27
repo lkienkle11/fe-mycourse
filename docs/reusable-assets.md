@@ -329,6 +329,14 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Taxonomy topics/skills (`TaxonomyTreeEditor` wrapper); similar JSONB trees elsewhere.
 - **Dependencies**: `SortableList`, `slugifyName`.
 
+### Asset: ImageFileField
+- **Name**: `ImageFileField`, `ImageFileFieldProps`
+- **Type**: React component
+- **Path**: `src/components/shared/image-file-field.tsx`
+- **Purpose**: Shared image picker/preview field with optional permission gate for the browse action and clear/reset support.
+- **Scope**: Taxonomy forms today; reusable for any form that stores `image_file_id` + preview URL.
+- **Dependencies**: `PermissionGate` (optional), `Button`, `Label`, `next/image`.
+
 ### Asset: DataTable
 - **Name**: `DataTable`, `DataTableColumn`
 - **Type**: React component
@@ -341,7 +349,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `slugifyName(text: string): string`
 - **Type**: Utility function
 - **Path**: `src/lib/utils/slug.ts`
-- **Purpose**: Build slug from display name — lowercase, spaces → `-`, strip accents (e.g. `36 Thanh Hóa` → `36-thanh-hoa`). Used for read-only slug preview and API payloads.
+- **Purpose**: Build slug from display name (`generateSlug` + `slugifyName` alias): trim, lowercase, remove Vietnamese accents (`đ/Đ -> d`), spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes. Used for read-only slug preview and API payloads.
 - **Scope**: Taxonomy form dialog, tree editor, submit handlers.
 - **Dependencies**: none.
 
@@ -778,4 +786,3 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - Purpose: Shared same-site cookie policy enum type.
 - Reusability scope: Cookie option definitions.
 - Dependencies: none.
-

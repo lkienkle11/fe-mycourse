@@ -120,7 +120,7 @@ src/components/
 │   ├── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns
 │   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
 ├── shared/                 # Cross-feature presentational components
-│                           #   PermissionGate, ConfirmDeleteDialog, DataTable, SortableList, SearchBar (stub)
+│                           #   PermissionGate, ConfirmDeleteDialog, DataTable, SortableList, SearchBar (stub), ImageFileField
 ├── providers/
 │   └── app-providers.tsx   # SWRConfig + EventsStreamProvider
 │                           # + MeSwrSync (useSyncMeFromAuth)
@@ -326,7 +326,7 @@ src/lib/
 │   ├── list-query.ts       # apiListQueryToRecord() — BE list filter → query record (taxonomy + media)
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
 │   ├── media.ts            # isImageMedia, validateMediaUploadBatch, getMediaDeleteKey, …
-│   ├── slug.ts             # slugifyName() — live slug normalization
+│   ├── slug.ts             # generateSlug() + slugifyName() — live slug normalization
 │   ├── react.ts            # useUniqueId() — stable ID generator for accessibility
 │   ├── user.ts             # pickCharacter() — avatar initial picker
 │   ├── cookie.ts           # isomorphic getCookieValue / setCookieValue; buildCookieOptions
