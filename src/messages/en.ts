@@ -246,6 +246,7 @@ const messages = {
   media: {
     collection: {
       title: "Media library",
+      description: "Browse, upload, and select files from your media library.",
       tabs: {
         image: "Images",
         document: "Documents",
@@ -275,6 +276,7 @@ const messages = {
         document: "Upload documents",
         video: "Upload videos",
       },
+      description: "Drag and drop files here, or choose files to upload.",
       dropHint: "Drag and drop files here, or choose files",
       chooseFiles: "Choose files",
       limits: "Up to {maxFiles} files, {maxSize} total per request",

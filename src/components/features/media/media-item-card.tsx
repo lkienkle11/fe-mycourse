@@ -48,6 +48,7 @@ export function MediaItemCard({
   const isImage = isImageMedia(file);
   const previewUrl = isImage ? file.url : file.thumbnail_url;
   const selectable = selectionMode === "single";
+  const label = file.filename ?? t("untitled");
 
   const handleSelect = () => {
     if (selectable && onSelect) {
@@ -55,13 +56,49 @@ export function MediaItemCard({
     }
   };
 
-  const body = (
+  const actionMenu = canDelete ? (
+    <div className="pointer-events-auto absolute top-1 right-1 z-20">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            size="icon"
+            variant="secondary"
+            className="size-7"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <MoreVertical className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem disabled title={t("renameComingSoon")}>
+            <Pencil className="mr-2 size-4" />
+            {t("rename")}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={() => onDelete?.(file)}
+          >
+            <Trash2 className="mr-2 size-4" />
+            {t("delete")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  ) : null;
+
+  const content = (
     <>
-      <div className="relative aspect-video w-full bg-muted">
+      <div
+        className={cn(
+          "relative aspect-video w-full bg-muted",
+          selectable && "pointer-events-none",
+        )}
+      >
         {previewUrl ? (
           <Image
             src={previewUrl}
-            alt={file.filename ?? t("untitled")}
+            alt={label}
             fill
             className="object-cover"
             unoptimized
@@ -81,40 +118,13 @@ export function MediaItemCard({
             </EmptyDescription>
           </Empty>
         )}
-        {canDelete ? (
-          <div className="absolute top-1 right-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="secondary"
-                  className="size-7"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <MoreVertical className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem disabled title={t("renameComingSoon")}>
-                  <Pencil className="mr-2 size-4" />
-                  {t("rename")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => onDelete?.(file)}
-                >
-                  <Trash2 className="mr-2 size-4" />
-                  {t("delete")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ) : null}
+        {actionMenu}
       </div>
-      <div className="space-y-0.5 p-2">
+      <div
+        className={cn("space-y-0.5 p-2", selectable && "pointer-events-none")}
+      >
         <p className="truncate text-sm font-medium" title={file.filename}>
-          {file.filename ?? t("untitled")}
+          {label}
         </p>
         <p className="text-xs text-muted-foreground">
           {formatMediaDate(file.created_at)}
@@ -125,15 +135,17 @@ export function MediaItemCard({
 
   if (selectable) {
     return (
-      <button
-        type="button"
-        className={cardClassName(true, selected)}
-        onClick={handleSelect}
-      >
-        {body}
-      </button>
+      <div className={cardClassName(true, selected)}>
+        <button
+          type="button"
+          className="absolute inset-0 z-0 rounded-lg"
+          onClick={handleSelect}
+          aria-label={label}
+        />
+        <div className="relative z-10">{content}</div>
+      </div>
     );
   }
 
-  return <div className={cardClassName(false, selected)}>{body}</div>;
+  return <div className={cardClassName(false, selected)}>{content}</div>;
 }

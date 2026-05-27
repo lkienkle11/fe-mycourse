@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -191,6 +192,9 @@ export function MediaCollectionDialog({
         <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col gap-0 overflow-hidden p-0">
           <DialogHeader className="space-y-0 border-b px-6 py-4">
             <DialogTitle>{t("title")}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {t("description")}
+            </DialogDescription>
           </DialogHeader>
 
           {showTabBar ? (
