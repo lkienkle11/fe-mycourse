@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-25 (dashboard locale chrome, `LocaleSwitcher` pathname)._
+_Last audited: 2026-05-27 (local Madge/jscpd quality tools)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -31,6 +31,8 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Type checker | TypeScript | 5.x | Strict mode |
 | Linter / formatter | ESLint 9 + Biome 2 | — | Two toolchains: ESLint for Next rules, Biome for formatting |
 | Commit lint | commitlint | 20.x | Conventional Commits via `lint:commit` script |
+| Dependency graph (local) | madge | 8.x | `npm run cycles` — circular static imports in `src/` |
+| Clone detection (local) | jscpd | 4.x | `npm run dupl` — config `.jscpd.json`; not in CI |
 
 ### Fonts
 
@@ -173,6 +175,9 @@ fe/
 │   │   │   ├── index.ts            # Re-exports
 │   │   │   ├── cn.ts               # cn() (clsx + tailwind-merge)
 │   │   │   ├── url.ts              # buildQueryParams()
+│   │   │   ├── list-query.ts       # apiListQueryToRecord()
+│   │   │   ├── format-bytes.ts     # formatBytes()
+│   │   │   ├── media.ts            # media upload/list helpers
 │   │   │   ├── react.ts            # useUniqueId()
 │   │   │   ├── user.ts             # pickCharacter()
 │   │   │   └── cookie.ts           # cookie types, domain, build options, isomorphic get/set
@@ -257,6 +262,8 @@ All HTTP communication and token lifecycle management:
 | `apiFetch` / `apiPost` / `apiPut` / `apiDelete` / `apiOptions` | `api/methods.ts` | Low-level helpers on `apiInstance` → `ApiResult<T>` |
 | `getMeService` | `api/callers/auth/auth.ts` | `GET /api/v1/me` → `MeResponse \| null` |
 | `loginService` | `api/callers/auth/auth.ts` | `POST /api/v1/auth/login` |
+| `listMediaFiles` / `uploadMediaFiles` / `deleteMediaFile` | `api/callers/media/media.ts` | Media library CRUD (multipart upload, delete by `object_key`) |
+| `useMediaFiles` | `api/hooks/media/useMediaFiles.ts` | SWR hook for paginated media list |
 | `useAuth` | `api/hooks/auth/useAuth.ts` | SWR hook for current user |
 | `useApiError` | `store/api-error-store.ts` | Global error store (max 20 entries) |
 | `ApiResult<T>` / `ApiResponse<T>` | `types/api.ts` | Shared envelope types |
@@ -268,7 +275,7 @@ Design-system primitives and presentational components:
 | Area | Files |
 |------|-------|
 | Radix/shadcn primitives | Full set in `src/components/ui/` (54 modules) — see [`docs/components.md`](./components.md) inventory table |
-| Layout utilities | `cn()` (clsx + tailwind-merge), `buildQueryParams()` |
+| Layout utilities | `cn()`, `buildQueryParams()`, `apiListQueryToRecord()`, `formatBytes()` |
 | Home sections | `HeroSection`, `SearchSection`, `TopCoursesSection`, `AdvancedPromoSection`, `TrendingCoursesSection`, `UpcomingWebinarsSection`, `PromoSection`, `CourseCard` |
 | Header / global | `Header`, `HeaderDashboard`, `DashboardLayout`, `LocaleSwitcher`, `SearchBar`, `Footer`, `FooterSocial` |
 
@@ -384,10 +391,23 @@ The cache integration in `apiFetch` is currently commented out (`// TODO: re-ena
 
 ---
 
+## Local quality gates (optional)
+
+Lint (`eslint`, `biome`), TypeScript, and `npm run build` are the primary checks. **Additionally** (local only, see [`docs/quality.md`](./quality.md)):
+
+- `npm run cycles` — Madge circular import detection (uses `tsconfig` path aliases).
+- `npm run dupl` — jscpd clone detection against `src/`.
+- `npm run quality:deps` — both in sequence.
+
+CI ([`deploy-dev.yml`](../.github/workflows/deploy-dev.yml)) does **not** run these yet.
+
+---
+
 ## Related Docs
 
 | Doc | Contents |
 |-----|----------|
+| [`docs/quality.md`](quality.md) | Madge / jscpd scripts, thresholds, baseline results |
 | [`docs/flow.md`](flow.md) | Auth and API execution flows with sequence diagrams |
 | [`docs/screens.md`](screens.md) | App Router routes, layouts, and UI surfaces |
 | [`docs/deploy.md`](deploy.md) | Production deployment runbook (Ubuntu 24.04, PM2, Nginx, TLS) |

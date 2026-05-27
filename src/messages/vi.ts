@@ -244,6 +244,71 @@ const messages = {
       },
     },
   },
+  media: {
+    collection: {
+      title: "Thư viện media",
+      tabs: {
+        image: "Hình ảnh",
+        document: "Tài liệu",
+        video: "Video",
+      },
+      sort: {
+        newest: "Mới nhất",
+        nameAsc: "Tên (A–Z)",
+      },
+      add: {
+        image: "Thêm hình ảnh",
+        document: "Thêm tài liệu",
+        video: "Thêm video",
+      },
+      empty: "Chưa có tệp trong danh mục này.",
+      previous: "Trước",
+      next: "Sau",
+      pageOf: "Trang {page} / {totalPages}",
+      deleteTitle: "Xóa tệp?",
+      deleteDescription:
+        'Xóa "{name}" khỏi lưu trữ? Không thể hoàn tác.',
+      deleteSuccess: "Đã xóa tệp.",
+      deleteError: "Không thể xóa tệp.",
+    },
+    upload: {
+      title: {
+        image: "Tải hình ảnh lên",
+        document: "Tải tài liệu lên",
+        video: "Tải video lên",
+      },
+      dropHint: "Kéo thả tệp vào đây hoặc chọn tệp",
+      chooseFiles: "Chọn tệp",
+      limits: "Tối đa {maxFiles} tệp, tổng {maxSize} mỗi lần",
+      totalSize: "Đã chọn: {size}",
+      cancel: "Hủy",
+      upload: "Tải lên",
+      uploading: "Đang tải lên…",
+      success: "Tải lên thành công.",
+      errors: {
+        tooMany: "Tối đa 5 tệp mỗi lần tải.",
+        fileTooLarge: "Mỗi tệp tối đa 2 GB.",
+        totalTooLarge: "Tổng dung lượng tối đa 2 GB mỗi lần.",
+        executableRejected: "Không cho phép tệp thực thi hoặc script.",
+        generic: "Tải lên thất bại. Vui lòng thử lại.",
+      },
+    },
+    item: {
+      untitled: "Không tên",
+      noPreview: "Không có xem trước",
+      rename: "Đổi tên",
+      renameComingSoon: "Sắp có",
+      delete: "Xóa",
+    },
+    picker: {
+      browse: "Chọn từ thư viện",
+      clear: "Xóa chọn",
+      previewAlt: "Ảnh đã chọn",
+      selectImageOnly: "Vui lòng chọn tệp hình ảnh.",
+      imageLabel: "Ảnh bìa",
+      noImageSelected: "Chưa chọn ảnh",
+    },
+  },
   taxonomy: {
     common: {
       statusActive: "Đang hoạt động",
@@ -281,8 +346,8 @@ const messages = {
       slug: "Slug",
       shortDescription: "Mô tả ngắn",
       status: "Trạng thái",
-      imageFileId: "ID file ảnh (UUID)",
-      imageFileIdHint: "Tùy chọn. Chưa có giao diện tải media.",
+      imageFileId: "Ảnh bìa",
+      imageFileIdHint: "Tùy chọn. Chọn ảnh từ thư viện media.",
       validation: {
         nameRequired: "Vui lòng nhập tên.",
         slugRequired: "Vui lòng nhập slug.",

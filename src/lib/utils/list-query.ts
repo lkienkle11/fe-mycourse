@@ -16,5 +16,7 @@ export function apiListQueryToRecord(
   if (params.sort_desc != null) {
     query.sort_desc = String(params.sort_desc);
   }
+  if (params.sort_order) query.sort_order = params.sort_order;
+  if (params.category) query.category = params.category;
   return query;
 }

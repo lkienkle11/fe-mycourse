@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-05-26 (taxonomy sidebar icons, dashboard constants)._
+_Last audited: 2026-05-27 (Madge/jscpd config, taxonomy app routes)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -24,6 +24,8 @@ fe-mycourse/
 ├── tailwind.config.ts      # Tailwind CSS configuration (if present)
 ├── postcss.config.mjs      # PostCSS configuration (@tailwindcss/postcss)
 ├── package.json            # Project dependencies and npm scripts
+├── .jscpd.json             # jscpd duplicate-detection config (npm run dupl)
+├── .jscpd-report/          # jscpd JSON reports (gitignored)
 └── README.md               # Project overview and quick-start guide
 ```
 
@@ -51,13 +53,15 @@ src/app/
     │   └── logout/page.tsx
     ├── admin/              # Admin dashboard (DashboardLayout)
     │   ├── layout.tsx
-    │   └── page.tsx
+    │   ├── page.tsx
+    │   └── taxonomy/       # levels, topics, outcomes, skills, tags → TaxonomyListPage
     ├── instructor/
     │   ├── layout.tsx
     │   └── page.tsx
     └── sysadmin/
         ├── layout.tsx
-        └── page.tsx
+        ├── page.tsx
+        └── taxonomy/       # Same taxonomy CRUD as admin (sysadmin menu)
 ```
 
 ### `src/screen/` — Page-Level Screen Components
@@ -111,7 +115,8 @@ src/components/
 │                           #   AdvancedPromoSection, TrendingCoursesSection,
 │                           #   UpcomingWebinarsSection, PromoSection, CourseCard
 ├── features/
-│   └── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns
+│   ├── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns
+│   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DataTable, SortableList, SearchBar (stub)
 ├── providers/
@@ -150,13 +155,17 @@ src/api/
 ├── callers/
 │   ├── auth/
 │   │   └── auth.ts         # loginService, getMeService, getMeEndpointKey
-│   └── taxonomy/
-│       └── taxonomy.ts     # list/create/patch/delete taxonomy services
+│   ├── taxonomy/
+│   │   └── taxonomy.ts     # list/create/patch/delete taxonomy services
+│   └── media/
+│       └── media.ts        # list/upload/delete media services
 └── hooks/
     ├── auth/
     │   └── useAuth.ts      # SWR hook: { me, isLoading, error, mutate }
-    └── taxonomy/
-        └── useTaxonomy.ts  # useTaxonomyList(resourceKey, filters)
+    ├── taxonomy/
+    │   └── useTaxonomy.ts  # useTaxonomyList(resourceKey, filters)
+    └── media/
+        └── useMediaFiles.ts # useMediaFiles(filters)
 ```
 
 ### `src/store/` — Global State (Zustand)
@@ -239,6 +248,8 @@ src/types/
 ├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiListQueryParams, ApiEntityStatus, ApiErrorCode
 ├── taxonomy/
 │   └── index.ts            # Taxonomy entities; TaxonomyListFilters (= ApiListQueryParams)
+├── media/
+│   └── index.ts            # MediaFile, MediaListFilters (= ApiListQueryParams + category/sort_order)
 ├── browse-menu.ts          # BrowseMenuItem (recursive children?: BrowseMenuItem[])
 ├── user-menu.ts            # UserMenuItem, UserMenuGroup, UserMenuStatus (+ PermissionRequirement)
 ├── index.ts                # Re-exports domain types
@@ -270,7 +281,7 @@ src/schema/
 
 ```
 src/constants/
-├── api-route.ts            # API_PUBLIC_ROUTES (login, register, confirm, refresh, logout), getMe
+├── api-route.ts            # API_PUBLIC_ROUTES + API_PRIVATE_ROUTES (me, taxonomy, media.files, …)
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
 ├── route.ts                # PUBLIC_ROUTES — client-side navigation path constants
 ├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (values only)
@@ -285,6 +296,8 @@ src/constants/
 │   └── taxonomy-icons.ts   # TAXONOMY_MENU_ICONS — Lucide icons for taxonomy nav nodes
 ├── taxonomy/
 │   └── resources.ts        # TAXONOMY_RESOURCES, TAXONOMY_GROUP_READ_PERMISSIONS, columns
+├── media/
+│   └── file-rules.ts       # MEDIA_TAB_ACCEPT, upload limits, MEDIA_IMAGE_EXTENSIONS
 └── events/
     └── index.ts            # STREAM_EVENTS_LOG_MAX, STREAM_ENV_KEYS (SSE/WS/gRPC URLs)
 ```
@@ -307,7 +320,9 @@ src/lib/
 │   ├── index.ts            # Barrel: client-safe utils only (cn, url, cookie, …)
 │   ├── cn.ts               # cn() — clsx + tailwind-merge class combiner
 │   ├── url.ts              # buildQueryParams() — query string builder
-│   ├── list-query.ts       # apiListQueryToRecord() — BE list filter → query record
+│   ├── list-query.ts       # apiListQueryToRecord() — BE list filter → query record (taxonomy + media)
+│   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
+│   ├── media.ts            # isImageMedia, validateMediaUploadBatch, getMediaDeleteKey, …
 │   ├── slug.ts             # slugifyName() — live slug normalization
 │   ├── react.ts            # useUniqueId() — stable ID generator for accessibility
 │   ├── user.ts             # pickCharacter() — avatar initial picker

@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-05-26 (shared list query types, taxonomy callers, apiPatch)._
+_Last audited: 2026-05-27 (API patterns verified vs src)._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -264,7 +264,7 @@ interface ApiPageInfo {
 }
 ```
 
-Shared list filters mirror BE pagination query params (`page`, `per_page`, `search`, `status`, `sort_by`, `sort_desc`):
+Shared list filters mirror BE pagination query params (`page`, `per_page`, `search`, `status`, `sort_by`, `sort_desc`, and for media also `sort_order`, `category`):
 
 ```ts
 import type { ApiListQueryParams } from "@/types/api";
@@ -311,6 +311,32 @@ await createTaxonomyService("tags", {
 Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource metadata (permissions, columns, tree fields) is in `src/constants/taxonomy/resources.ts`. List callers use `apiListQueryToRecord()` from `src/lib/utils/list-query.ts` — not a per-module duplicate.
 
 See also `docs/taxonomy-admin.md`.
+
+---
+
+## Media (library popup)
+
+Callers live in `src/api/callers/media/media.ts`. List uses the same `apiListQueryToRecord()` helper as taxonomy.
+
+```ts
+import { listMediaFiles, uploadMediaFiles, deleteMediaFile } from "@/api/callers/media";
+import { useMediaFiles } from "@/api/hooks/media/useMediaFiles";
+
+const { rows, mutate } = useMediaFiles({
+  page: 1,
+  per_page: 20,
+  category: "image",
+  sort_by: "created_at",
+  sort_order: "desc",
+});
+
+await uploadMediaFiles(fileList); // multipart field `files`
+await deleteMediaFile(objectKey); // path param is object_key, not UUID
+```
+
+Routes: `API_PRIVATE_ROUTES.media` (`files`, `fileById`). Batch delete route constant exists for future use; UI deletes one file at a time via `DELETE .../:objectKey`.
+
+See `docs/media-collection.md`.
 
 ---
 

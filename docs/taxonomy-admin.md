@@ -1,6 +1,6 @@
 # Taxonomy admin (FE)
 
-_Last audited: 2026-05-26 (sidebar Lucide icons)._
+_Last audited: 2026-05-27 (taxonomy admin/sysadmin verified vs src)._
 
 Admin and sysadmin dashboards can manage five taxonomy resources aligned with BE `/api/v1/taxonomy/*`:
 
@@ -52,7 +52,7 @@ Taxonomy strings live under `taxonomy.*` in `src/messages/vi.ts` and `en.ts`. Us
 
 ## Image fields
 
-Topics and outcomes support optional `image_file_id` (UUID text field). There is no media upload picker yet.
+Topics and outcomes support optional `image_file_id` (media file UUID). The form dialog opens **Browse media** (`MediaCollectionDialog` with `visibleTabs={["image"]}` only — no document/video tabs) when the user has `media_file:read`. Selection stores the file `id` and shows a thumbnail when picked in-session. See [media-collection.md](./media-collection.md).
 
 ## Slug (read-only)
 

@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-05-25 (dashboard locale chrome, `LocaleSwitcher` pathname, sidebar `TooltipProvider`)._
+_Last audited: 2026-05-27 (components inventory verified vs src)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -198,6 +198,8 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | `SearchBar` | `search-bar.tsx` | Global search input (UI stub). `visibility`: `"header"` (default, hidden below `md`) or `"sidebar"` (full-width flex for mobile sheet). |
 
 `src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog`, `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns).
+
+`src/components/features/media/` — media library popup: `MediaCollectionDialog`, `MediaUploadDialog` (uses shared `formatBytes` from `@/lib/utils`), `MediaItemCard`, `MediaTabPanel`. See `docs/media-collection.md`.
 
 ---
 

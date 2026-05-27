@@ -9,7 +9,11 @@
     "lint": "eslint",
     "lint:biome": "biome check .",
     "format:biome": "biome format --write .",
-    "lint:commit": "commitlint --from=HEAD~1 --to=HEAD"
+    "lint:commit": "commitlint --from=HEAD~1 --to=HEAD",
+    "cycles": "madge --circular --extensions ts,tsx,js,jsx --ts-config ./tsconfig.json src",
+    "cycles:json": "madge --circular --extensions ts,tsx,js,jsx --ts-config ./tsconfig.json src --json",
+    "dupl": "jscpd src --config .jscpd.json",
+    "quality:deps": "npm run cycles && npm run dupl"
   },
   "dependencies": {
     "@dnd-kit/accessibility": "3.1.1",
@@ -69,6 +73,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "jscpd": "4.2.4",
+    "madge": "8.0.0",
     "shadcn": "4.2.0",
     "tailwindcss": "^4",
     "typescript": "^5"
