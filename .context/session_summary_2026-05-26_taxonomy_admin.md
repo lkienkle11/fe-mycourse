@@ -23,7 +23,7 @@ Full admin + sysadmin taxonomy CRUD UI for five BE resources: levels, topics, ou
 | i18n | `taxonomy.*`, `dashboard.taxonomy.menu.*` in `en.ts` / `vi.ts` |
 | Docs | `docs/taxonomy-admin.md` |
 | Shared list query | `ApiListQueryParams`, `apiListQueryToRecord`, `TaxonomyListFilters` alias |
-| Slug UX | Read-only from name via `slugifyName()` (spaces → `-`) |
+| Slug UX | Read-only from name via `generateSlug()` / `slugifyName()` (Vietnamese-normalized, Unicode-safe) |
 
 ### API endpoints
 

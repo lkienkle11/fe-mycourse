@@ -33,7 +33,7 @@ export type SlugStatusTaxonomy = {
 
 export type CourseTopic = SlugStatusTaxonomy & {
   image_file_id?: string;
-  image_url?: string;
+  image_file_url?: string;
   child_topics: TaxonomyTreeNode[];
 };
 
@@ -46,7 +46,7 @@ export type CourseOutcome = {
   short_description: string;
   description: string[];
   image_file_id?: string;
-  image_url?: string;
+  image_file_url?: string;
   status: TaxonomyStatus;
   created_by?: number;
   created_at: number;
