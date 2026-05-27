@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LockKeyhole, LockKeyholeOpen, Mail } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -9,11 +8,6 @@ import { registerAction } from "@/actions/auth";
 import { Button } from "@/components/ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field } from "@/components/ui/field";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { useAuthStore, useGetMe } from "@/hooks";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -21,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { type LoginFormValues, loginSchema } from "@/schema/auth";
 import { ApiErrorCode } from "@/types/api";
 import { AuthSocialLogin } from "../auth-social-login";
+import { AuthEmailPasswordFields } from "./auth-form-fields";
 import { handleAuthSubmit } from "./auth-form-handler";
 
 export function LoginContent({ className }: { className?: string }) {
@@ -99,47 +94,20 @@ export function LoginContent({ className }: { className?: string }) {
   return (
     <div className={cn("space-y-3", className)}>
       <form onSubmit={handleSubmit(onSubmit)} className="contents space-y-3">
-        <div className="space-y-1">
-          <InputGroup className="h-12 border-none shadow-0 shadow-none bg-object-white/90 has-[[data-slot=input-group-control]:focus-visible]:ring-0">
-            <InputGroupInput
-              className="placeholder:text-object-black/10 placeholder:text-base text-base px-4"
-              type="email"
-              placeholder={t("email")}
-              {...register("email")}
-            />
-            <InputGroupAddon align="inline-end" className="mr-2">
-              <Mail />
-            </InputGroupAddon>
-          </InputGroup>
-          {errors.email ? (
-            <p className="text-xs text-destructive px-1">
-              {t(errors.email.message as "validation.email")}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="space-y-1">
-          <InputGroup className="h-12 border-none shadow-0 shadow-none bg-object-white/90 has-[[data-slot=input-group-control]:focus-visible]:ring-0">
-            <InputGroupInput
-              className="placeholder:text-object-black/10 placeholder:text-base text-base px-4"
-              type={showPassword ? "text" : "password"}
-              placeholder={t("password")}
-              {...register("password")}
-            />
-            <InputGroupAddon
-              align="inline-end"
-              className="mr-2 hover:cursor-pointer"
-              onClick={() => setShowPassword((prev) => !prev)}
-            >
-              {showPassword ? <LockKeyholeOpen /> : <LockKeyhole />}
-            </InputGroupAddon>
-          </InputGroup>
-          {errors.password ? (
-            <p className="text-xs text-destructive px-1">
-              {t(errors.password.message as "validation.password")}
-            </p>
-          ) : null}
-        </div>
+        <AuthEmailPasswordFields
+          registerEmail={register("email")}
+          registerPassword={register("password")}
+          emailPlaceholder={t("email")}
+          passwordPlaceholder={t("password")}
+          emailError={errors.email}
+          passwordError={errors.password}
+          emailErrorMessage={t(errors.email?.message as "validation.email")}
+          passwordErrorMessage={t(
+            errors.password?.message as "validation.password",
+          )}
+          showPassword={showPassword}
+          onToggleShowPassword={() => setShowPassword((prev) => !prev)}
+        />
 
         <div className="flex justify-between items-center">
           <Field
