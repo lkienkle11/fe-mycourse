@@ -33,7 +33,6 @@ import {
 import { PERMISSIONS } from "@/constants/permissions";
 import { getTaxonomyResourceConfig } from "@/constants/taxonomy/resources";
 import { slugifyName } from "@/lib/utils";
-import { isImageMedia } from "@/lib/utils/media";
 import type { MediaFile } from "@/types/media";
 import type {
   CourseOutcome,
@@ -415,8 +414,8 @@ export function TaxonomyFormDialog({
         defaultTab="image"
         selectionMode="single"
         selectedFileId={imageFileId}
-        onSelect={(file) => {
-          if (!isImageMedia(file)) {
+        onSelect={(file, type) => {
+          if (type !== "image") {
             toast.error(tMedia("selectImageOnly"));
             return;
           }
