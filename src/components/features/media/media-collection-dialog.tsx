@@ -217,7 +217,7 @@ export function MediaCollectionDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="flex max-h-[90vh] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+        <DialogContent className="flex max-h-[90vh] max-w-5xl sm:max-w-3xl flex-col gap-0 overflow-hidden p-0">
           <DialogHeader className="space-y-0 border-b px-6 py-4">
             <DialogTitle>{t("title")}</DialogTitle>
             <DialogDescription className="sr-only">
