@@ -383,7 +383,7 @@ For human-readable file sizes in the UI, use `formatBytes()` from `src/lib/utils
 
 ## 11. Slug fields
 
-Taxonomy slugs are **read-only** in the UI. Derive them with `slugifyName(name)` on submit (and show a live preview while typing the name). Do not expose an editable slug input.
+Taxonomy slugs are **read-only** in the UI. Derive them with `generateSlug(name)` / `slugifyName(name)` on submit (and show a live preview while typing the name). Normalization includes Vietnamese accent removal, `đ/Đ -> d`, spaces/underscores → `-`, and Unicode-safe filtering. Do not expose an editable slug input.
 
 ---
 

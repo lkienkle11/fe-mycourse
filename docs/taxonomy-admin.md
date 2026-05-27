@@ -52,11 +52,11 @@ Taxonomy strings live under `taxonomy.*` in `src/messages/vi.ts` and `en.ts`. Us
 
 ## Image fields
 
-Topics and outcomes support optional `image_file_id` (media file UUID). The form dialog opens **Browse media** (`MediaCollectionDialog` with `visibleTabs={["image"]}` only — no document/video tabs) when the user has `media_file:read`. Selection callback receives both the selected `file` and active-tab `type`; taxonomy accepts only `type === "image"`, then stores `file.id` and shows a thumbnail when picked in-session. See [media-collection.md](./media-collection.md).
+Topics and outcomes support optional `image_file_id` (media file UUID). The form dialog opens **Browse media** (`MediaCollectionDialog` with `visibleTabs={["image"]}` only — no document/video tabs) when the user has `media_file:read`. Selection callback receives both the selected `file` and active-tab `type`; taxonomy accepts only `type === "image"`, then stores `file.id` and shows a thumbnail when picked in-session. On edit, preview also hydrates from API field `image_file_url`. The preview/picker UI is implemented via shared component `ImageFileField` at `src/components/shared/image-file-field.tsx`. See [media-collection.md](./media-collection.md).
 
 ## Slug (read-only)
 
-- Computed from **Name** via `slugifyName()` in `src/lib/utils/slug.ts` (spaces become `-`, e.g. `36 Thanh Hóa` → `36-thanh-hoa`).
+- Computed from **Name** via `generateSlug()` / `slugifyName()` in `src/lib/utils/slug.ts` (trim, lowercase, remove Vietnamese accents, `đ/Đ -> d`, spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes).
 - Slug field is **read-only** on create and edit; users only type the name.
 - Tree nodes: name is editable, slug preview is read-only and updated when the name changes.
 
