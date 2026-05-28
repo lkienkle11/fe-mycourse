@@ -1,8 +1,8 @@
 {
-  "threshold": 80,
+  "threshold": 10,
   "minLines": 10,
   "minTokens": 100,
-  "reporters": ["console", "json"],
+  "reporters": ["console", "json", "html"],
   "output": ".jscpd-report",
   "ignore": [
     "**/node_modules/**",
