@@ -19,12 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getTaxonomyResourceConfig } from "@/constants/taxonomy/resources";
+import {
+  getTaxonomyResourceConfig,
+  getTaxonomySearchableColumns,
+} from "@/constants/taxonomy/resources";
 import type { PermissionName } from "@/types/permissions";
 import type {
   TaxonomyEntity,
   TaxonomyListFilters,
   TaxonomyResourceKey,
+  TaxonomySearchBy,
   TaxonomyStatus,
 } from "@/types/taxonomy";
 
@@ -36,6 +40,7 @@ export type TaxonomyListPageProps = {
 export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
   const t = useTranslations("taxonomy");
   const config = getTaxonomyResourceConfig(resourceKey);
+  const searchableColumns = getTaxonomySearchableColumns(resourceKey);
   const [filters, setFilters] = useState<TaxonomyListFilters>({
     page: 1,
     per_page: 20,
@@ -44,7 +49,7 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
   });
   const [searchInput, setSearchInput] = useState("");
   const [selectedFilterBy, setSelectedFilterBy] = useState<string>(
-    config.listColumns[0]?.id ?? "status",
+    searchableColumns[0] ?? "status",
   );
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
@@ -97,23 +102,33 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
       </Select>
     );
 
-    return tableColumns.map((column) => ({
-      value: column.id,
-      label: column.header,
-      customInputComponent:
-        column.id === "status" ? statusCustomInput : undefined,
-    }));
-  }, [filters.status, tableColumns, t]);
+    const searchableSet = new Set<string>(searchableColumns);
+    return tableColumns
+      .filter(
+        (column) => column.id === "status" || searchableSet.has(column.id),
+      )
+      .map((column) => ({
+        value: column.id,
+        label: column.header,
+        customInputComponent:
+          column.id === "status" ? statusCustomInput : undefined,
+      }));
+  }, [filters.status, searchableColumns, tableColumns, t]);
 
   useEffect(() => {
-    setSelectedFilterBy(config.listColumns[0]?.id ?? "status");
-  }, [config.listColumns]);
+    setSelectedFilterBy(searchableColumns[0] ?? "status");
+  }, [searchableColumns]);
 
   const applySearch = () => {
+    const isStatusFilter = selectedFilterBy === "status";
+    const value = searchInput.trim();
     setFilters((prev) => ({
       ...prev,
       page: 1,
-      search: searchInput.trim() || undefined,
+      search_by: isStatusFilter
+        ? undefined
+        : (selectedFilterBy as TaxonomySearchBy),
+      search_value: isStatusFilter ? undefined : value || undefined,
     }));
   };
 
@@ -135,12 +150,11 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
     setFilters((prev) => ({
       ...prev,
       page: 1,
-      search: isCustomInputOption ? undefined : prev.search,
+      search_by: isCustomInputOption ? undefined : (value as TaxonomySearchBy),
+      search_value: undefined,
       status: isCustomInputOption ? prev.status : undefined,
     }));
-    if (isCustomInputOption) {
-      setSearchInput("");
-    }
+    setSearchInput("");
   };
 
   const openCreate = () => {

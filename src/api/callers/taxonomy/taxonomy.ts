@@ -23,10 +23,10 @@ export function getTaxonomyListKey(
   resourceKey: TaxonomyResourceKey,
   filters: TaxonomyListFilters,
 ): string | null {
-  return buildQueryParams(
-    taxonomyBasePath(resourceKey),
-    apiListQueryToRecord(filters),
-  );
+  const query = apiListQueryToRecord(filters);
+  if (filters.search_by) query.search_by = filters.search_by;
+  if (filters.search_value) query.search_value = filters.search_value;
+  return buildQueryParams(taxonomyBasePath(resourceKey), query);
 }
 
 export async function listTaxonomyService<K extends TaxonomyResourceKey>(
