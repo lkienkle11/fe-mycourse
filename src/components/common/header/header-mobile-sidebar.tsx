@@ -115,7 +115,7 @@ export function HeaderMobileSidebar({
                 </Button>
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+              <div className="scrollbar-app min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
                 <div className="flex flex-col gap-4 px-4 py-4">
                   <SearchBar
                     visibility="sidebar"
