@@ -19,3 +19,22 @@
     max-width: 1200px;
   }
 }
+
+@utility scrollbar-app {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(156 163 175) transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgb(156 163 175);
+    border-radius: 9999px;
+  }
+}

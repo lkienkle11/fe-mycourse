@@ -316,6 +316,7 @@ const messages = {
       statusActive: "Active",
       statusInactive: "Inactive",
       statusAll: "All statuses",
+      filterBy: "Filter by",
       searchPlaceholder: "Search…",
       search: "Search",
       add: "Add",

@@ -3,6 +3,14 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -24,6 +32,12 @@ export type DataTableColumn<TRow extends DataTableRow> = {
   cell: (row: TRow) => ReactNode;
 };
 
+export type DataTableFilterByOption = {
+  value: string;
+  label: ReactNode;
+  customInputComponent?: ReactNode;
+};
+
 export type DataTableProps<TRow extends DataTableRow> = {
   columns: DataTableColumn<TRow>[];
   rows: TRow[];
@@ -33,6 +47,15 @@ export type DataTableProps<TRow extends DataTableRow> = {
   actionsHeader?: ReactNode;
   emptyMessage?: ReactNode;
   actionsColumnClassName?: string;
+  filterByOptions?: DataTableFilterByOption[];
+  selectedFilterBy?: string;
+  onFilterByChange?: (value: string) => void;
+  filterByLabel?: ReactNode;
+  searchValue?: string;
+  searchPlaceholder?: string;
+  searchButtonLabel?: ReactNode;
+  onSearchValueChange?: (value: string) => void;
+  onSearchSubmit?: () => void;
 };
 
 /** Sortable-column data table for admin list screens. */
@@ -45,11 +68,80 @@ export function DataTable<TRow extends DataTableRow>({
   actionsHeader = "Actions",
   emptyMessage = "No items found.",
   actionsColumnClassName = "w-[140px]",
+  filterByOptions,
+  selectedFilterBy,
+  onFilterByChange,
+  filterByLabel = "Filter by",
+  searchValue = "",
+  searchPlaceholder = "Search...",
+  searchButtonLabel = "Search",
+  onSearchValueChange,
+  onSearchSubmit,
 }: DataTableProps<TRow>) {
   const showActions = Boolean(renderActions);
+  const showFilterBy = Boolean(filterByOptions?.length && onFilterByChange);
+  const selectedFilterOption = filterByOptions?.find(
+    (option) => option.value === selectedFilterBy,
+  );
+  const customInputComponent = selectedFilterOption?.customInputComponent;
+  const showCustomInput =
+    customInputComponent !== null && customInputComponent !== undefined;
+  const showSearch = !showCustomInput && Boolean(onSearchValueChange);
+  const showSearchButton = showSearch && Boolean(onSearchSubmit);
+  const showToolbar = showFilterBy || showCustomInput || showSearch;
 
   return (
     <div className="rounded-md border">
+      {showToolbar ? (
+        <div className="flex flex-col gap-2 border-b p-3 sm:flex-row sm:items-center">
+          {showFilterBy ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {filterByLabel}
+              </span>
+              <Select value={selectedFilterBy} onValueChange={onFilterByChange}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {filterByOptions?.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+          {showSearch ? (
+            <div className="flex w-full gap-2 sm:ml-auto sm:w-auto">
+              <Input
+                value={searchValue}
+                placeholder={searchPlaceholder}
+                onChange={(event) => onSearchValueChange?.(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") onSearchSubmit?.();
+                }}
+                className="max-w-sm"
+              />
+              {showSearchButton ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={onSearchSubmit}
+                >
+                  {searchButtonLabel}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+          {showCustomInput ? (
+            <div className="w-full sm:ml-auto sm:w-auto">
+              {customInputComponent}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <Table>
         <TableHeader>
           <TableRow>

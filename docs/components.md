@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (jscpd excludes `src/components/ui/**`; inventory vs src)._
+_Last audited: 2026-05-28 (DataTable filter toolbar + shared scrollbar utility synced)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -194,7 +194,7 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 |-----------|------|-------------|
 | `PermissionGate` | `permission-gate.tsx` | Client wrapper: shows `children` when `useSatisfiesPermissions` passes; optional `fallback`. Props: `permissions`, `permissionMode` (`"all"` \| `"any"`). |
 | `ConfirmDeleteDialog` | `confirm-delete-dialog.tsx` | Alert dialog for soft-delete confirm; copy from `taxonomy.delete` namespace. |
-| `DataTable` | `data-table.tsx` | Generic sortable admin table (`columns`, `rows`, `sort`, `renderActions`). First used by taxonomy lists. |
+| `DataTable` | `data-table.tsx` | Generic sortable admin table (`columns`, `rows`, `sort`, `renderActions`) with optional built-in filter toolbar (`FilterBy`, search, per-option custom input via `DataTableFilterByOption.customInputComponent`). First used by taxonomy lists. |
 | `SortableList` | `sortable-list.tsx` | Vertical `@dnd-kit` reorder list; items need string `id`. |
 | `SortableTreeEditor` | `sortable-tree-editor.tsx` | Nested sortable tree (name + read-only slug); used by taxonomy topics/skills. |
 | `SearchBar` | `search-bar.tsx` | Global search input (UI stub). `visibility`: `"header"` (default, hidden below `md`) or `"sidebar"` (full-width flex for mobile sheet). |
@@ -263,6 +263,7 @@ Null-render sync components in `app-providers.tsx`: `MeSwrSync` (SWR `useAuth` â
   <div className={cn("base-class", condition && "conditional-class")} />
   ```
 - Do not use inline `style={{}}` for layout â€” prefer Tailwind utilities.
+- Scrollable containers in components should use the shared Tailwind utility `scrollbar-app` (defined in `src/app/utils.css`) for a consistent 4px gray scrollbar across horizontal and vertical axes.
 
 ### i18n
 

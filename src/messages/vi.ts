@@ -317,6 +317,7 @@ const messages = {
       statusActive: "Đang hoạt động",
       statusInactive: "Ngừng hoạt động",
       statusAll: "Tất cả trạng thái",
+      filterBy: "Lọc theo",
       searchPlaceholder: "Tìm kiếm…",
       search: "Tìm kiếm",
       add: "Thêm",
