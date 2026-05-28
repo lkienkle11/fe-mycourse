@@ -22,12 +22,12 @@ _Last audited: 2026-05-27 (media card/dialog a11y fix; docs sync)._
 - `State` stores auth modal state, `/me` sync, **language** (`useLanguageStore`), API errors, and stream event log.
 - `Routing + i18n` controls locale-prefixed navigation and message loading.
 - `Shared` exposes reusable helpers/types/constants (`lib/language`, `constants/browse-menu.ts`, …).
-- `Taxonomy` provides admin CRUD for levels/topics/outcomes/skills/tags; list filters use shared `ApiListQueryParams` + `apiListQueryToRecord`.
+- `Taxonomy` provides admin CRUD for levels/topics/outcomes/skills/tags; list filters reuse `ApiListQueryParams` and extend with taxonomy typed-search (`search_by`, `search_value`).
 - `Media` provides the reusable media library dialog (browse/upload/select); taxonomy cover images use it. List filters extend `ApiListQueryParams` with `category` / `sort_order`.
 
 ## Taxonomy module
 
-- **Types**: `src/types/taxonomy/` — entities; `TaxonomyListFilters` aliases `ApiListQueryParams`.
+- **Types**: `src/types/taxonomy/` — entities; `TaxonomyListFilters` extends `ApiListQueryParams` with `search_by` / `search_value`.
 - **Config**: `src/constants/taxonomy/resources.ts` — per-resource permissions, columns, tree/description flags.
 - **Nav**: `src/constants/dashboard/taxonomy-icons.ts` (`TAXONOMY_MENU_ICONS`) + taxonomy nodes in `admin-items.ts` / `sysadmin-items.ts`; filtered by `useFilteredDashboardItems`.
 - **API**: `src/api/callers/taxonomy/taxonomy.ts`, `src/api/hooks/taxonomy/useTaxonomy.ts`.

@@ -45,7 +45,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `ApiListQueryParams`, `ApiEntityStatus`
 - **Type**: Interface / Union
 - **Path**: `src/types/api.ts`
-- **Purpose**: Shared BE list query params (`page`, `per_page`, `search`, `status`, `sort_by`, `sort_desc`). Domain modules alias this (e.g. `TaxonomyListFilters`).
+- **Purpose**: Shared BE list query params (`page`, `per_page`, `search`, `status`, `sort_by`, `sort_desc`) used directly or extended by domain modules (taxonomy extends with typed-search fields).
 - **Scope**: List API callers, list screens, SWR hooks.
 - **Dependencies**: none.
 
@@ -300,7 +300,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `apiListQueryToRecord(params: ApiListQueryParams): Record<string, string>`
 - **Type**: Utility function
 - **Path**: `src/lib/utils/list-query.ts`
-- **Purpose**: Convert shared list filters to query key/values for `buildQueryParams`. Use instead of per-module `filtersToQuery` helpers. Supports `sort_desc` (taxonomy), `sort_order` + `category` (media).
+- **Purpose**: Convert shared list filters to query key/values for `buildQueryParams`. Use instead of per-module full `filtersToQuery` helpers. Supports `sort_desc` (taxonomy), `sort_order` + `category` (media); taxonomy caller appends typed-search keys (`search_by`, `search_value`) after base conversion.
 - **Scope**: Taxonomy and media list callers; future paginated list callers.
 - **Dependencies**: `ApiListQueryParams`.
 

@@ -18,8 +18,13 @@ export type TaxonomyResourceKey =
   | "skills"
   | "tags";
 
-/** List query params for taxonomy list endpoints (shared BE pagination shape). */
-export type TaxonomyListFilters = ApiListQueryParams;
+export type TaxonomySearchBy = "name" | "slug" | "short_description";
+
+/** List query params for taxonomy list endpoints. */
+export type TaxonomyListFilters = ApiListQueryParams & {
+  search_by?: TaxonomySearchBy;
+  search_value?: string;
+};
 
 export type SlugStatusTaxonomy = {
   id: number;

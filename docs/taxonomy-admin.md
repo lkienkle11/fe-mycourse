@@ -62,17 +62,22 @@ Topics and outcomes support optional `image_file_id` (media file UUID). The form
 
 ## List query types
 
-`TaxonomyListFilters` is a type alias of `ApiListQueryParams` (`src/types/api.ts`). Query strings are built with `apiListQueryToRecord()` (`src/lib/utils/list-query.ts`).
+`TaxonomyListFilters` extends shared `ApiListQueryParams` with typed-search fields:
+- `search_by`: `name | slug | short_description`
+- `search_value`: text value used with `search_by`
+
+Query strings are built from shared `apiListQueryToRecord()` plus taxonomy-specific `search_by`/`search_value` keys in `src/api/callers/taxonomy/taxonomy.ts`.
 
 ## List toolbar (FilterBy)
 
 Taxonomy list screens now use the built-in `DataTable` toolbar instead of a page-local search/status row:
 
-- `FilterBy` options are derived from the table column list (`config.listColumns` → `DataTable` options).
+- `FilterBy` options are derived from table columns and constrained by resource searchable-field config.
 - The `status` filter option provides `customInputComponent` directly on its `DataTableFilterByOption`.
 - When `FilterBy` points to an option with `customInputComponent` (currently `status`), the default search input is hidden and that custom input is shown (`All statuses`, `Active`, `Inactive`).
 - When `FilterBy` is not `status`, the search input + search action are shown.
-- Status/search updates keep existing behavior: update list filters and reset to page `1`.
+- Status behavior is unchanged.
+- Text search sends `search_by` + `search_value` and resets page to `1`.
 
 ## Sample data
 

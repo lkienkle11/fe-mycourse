@@ -282,7 +282,7 @@ const filters: ApiListQueryParams = {
 const url = buildQueryParams("/api/v1/taxonomy/levels", apiListQueryToRecord(filters));
 ```
 
-Domain modules may alias this shape (e.g. `TaxonomyListFilters` = `ApiListQueryParams` in `src/types/taxonomy/index.ts`).
+Domain modules may alias or extend this shape. Taxonomy extends it with `search_by` + `search_value`.
 
 ---
 
@@ -309,7 +309,7 @@ await createTaxonomyService("tags", {
 });
 ```
 
-Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource metadata (permissions, columns, tree fields) is in `src/constants/taxonomy/resources.ts`. List callers use `apiListQueryToRecord()` from `src/lib/utils/list-query.ts` — not a per-module duplicate.
+Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource metadata (permissions, columns, tree fields, searchable fields) is in `src/constants/taxonomy/resources.ts`. List callers reuse `apiListQueryToRecord()` and append taxonomy typed-search fields (`search_by`, `search_value`) in caller scope.
 
 See also `docs/taxonomy-admin.md`.
 
