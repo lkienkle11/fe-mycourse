@@ -1,6 +1,6 @@
 # Taxonomy admin (FE)
 
-_Last audited: 2026-05-27 (taxonomy admin/sysadmin verified vs src)._
+_Last audited: 2026-05-28 (taxonomy list toolbar moved into shared DataTable)._
 
 Admin and sysadmin dashboards can manage five taxonomy resources aligned with BE `/api/v1/taxonomy/*`:
 
@@ -63,6 +63,16 @@ Topics and outcomes support optional `image_file_id` (media file UUID). The form
 ## List query types
 
 `TaxonomyListFilters` is a type alias of `ApiListQueryParams` (`src/types/api.ts`). Query strings are built with `apiListQueryToRecord()` (`src/lib/utils/list-query.ts`).
+
+## List toolbar (FilterBy)
+
+Taxonomy list screens now use the built-in `DataTable` toolbar instead of a page-local search/status row:
+
+- `FilterBy` options are derived from the table column list (`config.listColumns` → `DataTable` options).
+- The `status` filter option provides `customInputComponent` directly on its `DataTableFilterByOption`.
+- When `FilterBy` points to an option with `customInputComponent` (currently `status`), the default search input is hidden and that custom input is shown (`All statuses`, `Active`, `Inactive`).
+- When `FilterBy` is not `status`, the search input + search action are shown.
+- Status/search updates keep existing behavior: update list filters and reset to page `1`.
 
 ## Sample data
 
