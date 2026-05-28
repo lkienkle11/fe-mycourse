@@ -341,7 +341,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `DataTable`, `DataTableColumn`
 - **Type**: React component
 - **Path**: `src/components/shared/data-table.tsx`
-- **Purpose**: Admin list table with optional column sort toggles and actions column.
+- **Purpose**: Admin list table with optional column sort toggles, actions column, and optional toolbar (`FilterBy`, search). Custom filter UI is defined per option via `DataTableFilterByOption.customInputComponent` (e.g. taxonomy status dropdown).
 - **Scope**: Taxonomy list page; future paginated admin lists.
 - **Dependencies**: shadcn `Table`, `ApiListQueryParams` sort fields.
 

@@ -44,7 +44,7 @@ export function LoginSignupPopup({
       >
         <div
           className={cn(
-            "relative w-full max-w-200 overflow-y-auto rounded-xl bg-popover ring-1 ring-foreground/10",
+            "scrollbar-app relative w-full max-w-200 overflow-y-auto rounded-xl bg-popover ring-1 ring-foreground/10",
             "max-h-[min(100dvh-2rem,56rem)]",
           )}
         >

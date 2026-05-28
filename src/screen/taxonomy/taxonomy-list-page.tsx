@@ -1,17 +1,17 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { deleteTaxonomyService } from "@/api/callers/taxonomy";
 import { useTaxonomyList } from "@/api/hooks/taxonomy/useTaxonomy";
 import { TaxonomyFormDialog } from "@/components/features/taxonomy";
 import { buildTaxonomyTableColumns } from "@/components/features/taxonomy/taxonomy-table-columns";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
+import type { DataTableFilterByOption } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { PermissionGate } from "@/components/shared/permission-gate";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -43,6 +43,9 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
     sort_desc: false,
   });
   const [searchInput, setSearchInput] = useState("");
+  const [selectedFilterBy, setSelectedFilterBy] = useState<string>(
+    config.listColumns[0]?.id ?? "status",
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [selectedRow, setSelectedRow] = useState<TaxonomyEntity | null>(null);
@@ -71,6 +74,40 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
     () => buildTaxonomyTableColumns(resourceKey, config.listColumns, t),
     [resourceKey, config.listColumns, t],
   );
+  const filterByOptions = useMemo<DataTableFilterByOption[]>(() => {
+    const statusCustomInput = (
+      <Select
+        value={filters.status ?? "ALL"}
+        onValueChange={(value) => {
+          setFilters((prev) => ({
+            ...prev,
+            page: 1,
+            status: value === "ALL" ? undefined : (value as TaxonomyStatus),
+          }));
+        }}
+      >
+        <SelectTrigger className="w-[180px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="ALL">{t("common.statusAll")}</SelectItem>
+          <SelectItem value="ACTIVE">{t("common.statusActive")}</SelectItem>
+          <SelectItem value="INACTIVE">{t("common.statusInactive")}</SelectItem>
+        </SelectContent>
+      </Select>
+    );
+
+    return tableColumns.map((column) => ({
+      value: column.id,
+      label: column.header,
+      customInputComponent:
+        column.id === "status" ? statusCustomInput : undefined,
+    }));
+  }, [filters.status, tableColumns, t]);
+
+  useEffect(() => {
+    setSelectedFilterBy(config.listColumns[0]?.id ?? "status");
+  }, [config.listColumns]);
 
   const applySearch = () => {
     setFilters((prev) => ({
@@ -90,6 +127,20 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
         sort_desc: sameColumn ? !prev.sort_desc : false,
       };
     });
+  };
+  const handleFilterByChange = (value: string) => {
+    setSelectedFilterBy(value);
+    const nextOption = filterByOptions.find((option) => option.value === value);
+    const isCustomInputOption = Boolean(nextOption?.customInputComponent);
+    setFilters((prev) => ({
+      ...prev,
+      page: 1,
+      search: isCustomInputOption ? undefined : prev.search,
+      status: isCustomInputOption ? prev.status : undefined,
+    }));
+    if (isCustomInputOption) {
+      setSearchInput("");
+    }
   };
 
   const openCreate = () => {
@@ -138,42 +189,6 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
         </PermissionGate>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <Input
-          value={searchInput}
-          placeholder={t("common.searchPlaceholder")}
-          onChange={(event) => setSearchInput(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") applySearch();
-          }}
-          className="max-w-sm"
-        />
-        <Button type="button" variant="secondary" onClick={applySearch}>
-          {t("common.search")}
-        </Button>
-        <Select
-          value={filters.status ?? "ALL"}
-          onValueChange={(value) => {
-            setFilters((prev) => ({
-              ...prev,
-              page: 1,
-              status: value === "ALL" ? undefined : (value as TaxonomyStatus),
-            }));
-          }}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">{t("common.statusAll")}</SelectItem>
-            <SelectItem value="ACTIVE">{t("common.statusActive")}</SelectItem>
-            <SelectItem value="INACTIVE">
-              {t("common.statusInactive")}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
       ) : (
@@ -184,6 +199,15 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
           onSortChange={handleSortChange}
           actionsHeader={t("common.actions")}
           emptyMessage={t("common.empty")}
+          filterByOptions={filterByOptions}
+          selectedFilterBy={selectedFilterBy}
+          onFilterByChange={handleFilterByChange}
+          filterByLabel={t("common.filterBy")}
+          searchValue={searchInput}
+          searchPlaceholder={t("common.searchPlaceholder")}
+          searchButtonLabel={t("common.search")}
+          onSearchValueChange={setSearchInput}
+          onSearchSubmit={applySearch}
           renderActions={(row) => (
             <div className="flex gap-2">
               <PermissionGate permissions={permissions.update}>

@@ -143,7 +143,10 @@ function TypographyA({ className, ...props }: React.ComponentProps<"a">) {
 
 function TypographyTable({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div className={cn("my-6 w-full overflow-y-auto", className)} {...props} />
+    <div
+      className={cn("scrollbar-app my-6 w-full overflow-y-auto", className)}
+      {...props}
+    />
   );
 }
 

@@ -178,7 +178,7 @@ export function MediaUploadDialog({
         </PermissionGate>
 
         {files.length > 0 ? (
-          <ul className="max-h-48 space-y-2 overflow-y-auto">
+          <ul className="scrollbar-app max-h-48 space-y-2 overflow-y-auto">
             {files.map((file) => (
               <li
                 key={`${file.name}-${file.size}-${file.lastModified}`}

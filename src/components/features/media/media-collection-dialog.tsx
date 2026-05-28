@@ -200,7 +200,7 @@ export function MediaCollectionDialog({
     <TabsContent
       key={tab}
       value={tab}
-      className="mt-0 min-h-0 flex-1 overflow-y-auto px-6 py-4"
+      className="scrollbar-app mt-0 min-h-0 flex-1 overflow-y-auto px-6 py-4"
     >
       <MediaTabPanel
         files={tab === activeTab ? rows : []}
@@ -240,7 +240,7 @@ export function MediaCollectionDialog({
           ) : (
             <div className="flex min-h-0 flex-1 flex-col gap-0">
               {toolbar}
-              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+              <div className="scrollbar-app min-h-0 flex-1 overflow-y-auto px-6 py-4">
                 <MediaTabPanel
                   files={rows}
                   isLoading={isLoading}
