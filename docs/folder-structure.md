@@ -250,7 +250,7 @@ src/events/
 src/types/
 ├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiListQueryParams, ApiEntityStatus, ApiErrorCode
 ├── taxonomy/
-│   └── index.ts            # Taxonomy entities; TaxonomyListFilters (= ApiListQueryParams)
+│   └── index.ts            # Taxonomy entities; TaxonomyListFilters (= ApiListQueryParams + search_by/search_value)
 ├── media/
 │   └── index.ts            # MediaFile, MediaListFilters (= ApiListQueryParams + category/sort_order)
 ├── browse-menu.ts          # BrowseMenuItem (recursive children?: BrowseMenuItem[])
@@ -298,7 +298,7 @@ src/constants/
 │   ├── instructor-items.ts
 │   └── taxonomy-icons.ts   # TAXONOMY_MENU_ICONS — Lucide icons for taxonomy nav nodes
 ├── taxonomy/
-│   └── resources.ts        # TAXONOMY_RESOURCES, TAXONOMY_GROUP_READ_PERMISSIONS, columns
+│   └── resources.ts        # TAXONOMY_RESOURCES, TAXONOMY_GROUP_READ_PERMISSIONS, columns, searchable-field map
 ├── media/
 │   └── file-rules.ts       # MEDIA_TAB_ACCEPT, upload limits, MEDIA_IMAGE_EXTENSIONS
 └── events/

@@ -142,10 +142,26 @@ export const TAXONOMY_RESOURCES: Record<
   },
 };
 
+const TAXONOMY_SEARCHABLE_COLUMNS: Readonly<
+  Record<TaxonomyResourceKey, readonly TaxonomyListColumnId[]>
+> = {
+  levels: ["name", "slug"],
+  tags: ["name", "slug"],
+  topics: ["name", "slug"],
+  skills: ["name", "slug"],
+  outcomes: ["short_description"],
+};
+
 export function getTaxonomyResourceConfig(
   resourceKey: TaxonomyResourceKey,
 ): TaxonomyResourceConfig {
   return TAXONOMY_RESOURCES[resourceKey];
+}
+
+export function getTaxonomySearchableColumns(
+  resourceKey: TaxonomyResourceKey,
+): readonly TaxonomyListColumnId[] {
+  return TAXONOMY_SEARCHABLE_COLUMNS[resourceKey];
 }
 
 /** Any taxonomy read permission — used to show the sidebar group. */
