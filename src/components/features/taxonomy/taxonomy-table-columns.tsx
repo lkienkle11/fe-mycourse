@@ -1,7 +1,8 @@
+"use client";
+
 import type { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { DataTableColumn } from "@/components/shared/data-table";
-import { countTaxonomyTreeNodes } from "@/lib/utils/taxonomy";
 import type {
   CourseOutcome,
   CourseSkill,
@@ -11,6 +12,7 @@ import type {
   TaxonomyListColumn,
   TaxonomyResourceKey,
 } from "@/types/taxonomy";
+import { TaxonomyTreeViewButton } from "./taxonomy-tree-view-button";
 
 type TaxonomyTranslate = ReturnType<typeof useTranslations<"taxonomy">>;
 
@@ -32,10 +34,10 @@ function columnLabel(
       return t("columns.shortDescription");
     case "status":
       return t("columns.status");
-    case "child_count":
+    case "child_render":
       return resourceKey === "skills"
-        ? t("columns.childCountSkills")
-        : t("columns.childCount");
+        ? t("columns.childRenderSkills")
+        : t("columns.childRender");
     case "updated_at":
       return t("columns.updatedAt");
     default:
@@ -75,14 +77,24 @@ function renderCell(
       return slugRow.status === "ACTIVE"
         ? t("common.statusActive")
         : t("common.statusInactive");
-    case "child_count":
+    case "child_render":
       if (resourceKey === "topics") {
-        return countTaxonomyTreeNodes((row as CourseTopic).child_topics);
+        return (
+          <TaxonomyTreeViewButton
+            resourceKey="topics"
+            row={row as CourseTopic}
+          />
+        );
       }
       if (resourceKey === "skills") {
-        return countTaxonomyTreeNodes((row as CourseSkill).children);
+        return (
+          <TaxonomyTreeViewButton
+            resourceKey="skills"
+            row={row as CourseSkill}
+          />
+        );
       }
-      return 0;
+      return "—";
     case "updated_at":
       return formatUnix(slugRow.updated_at);
     default:

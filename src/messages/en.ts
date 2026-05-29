@@ -311,6 +311,11 @@ const messages = {
       noImageSelected: "No image selected",
     },
   },
+  dagreTree: {
+    layoutVertical: "Vertical",
+    layoutHorizontal: "Horizontal",
+    empty: "No child nodes to display.",
+  },
   taxonomy: {
     common: {
       statusActive: "Active",
@@ -386,9 +391,13 @@ const messages = {
       slug: "Slug",
       shortDescription: "Short description",
       status: "Status",
-      childCount: "Sub-topics",
-      childCountSkills: "Sub-skills",
+      childRender: "Sub-topics",
+      childRenderSkills: "Sub-skills",
       updatedAt: "Updated",
+    },
+    treeView: {
+      button: "View tree",
+      dialogTitle: "{name} — tree",
     },
     tree: {
       addChild: "Add sub-topic",
