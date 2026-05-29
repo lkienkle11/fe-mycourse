@@ -18,9 +18,15 @@ export const MEDIA_IMAGE_EXTENSIONS = [
   ".webp",
 ] as const;
 
-const VIDEO_EXTENSIONS = [".mp4", ".mov", ".mkv", ".avi", ".webm"] as const;
+export const MEDIA_VIDEO_EXTENSIONS = [
+  ".mp4",
+  ".mov",
+  ".mkv",
+  ".avi",
+  ".webm",
+] as const;
 
-const DOCUMENT_EXTENSIONS = [
+export const MEDIA_DOCUMENT_EXTENSIONS = [
   ".pdf",
   ".doc",
   ".docx",
@@ -37,7 +43,7 @@ const DOCUMENT_EXTENSIONS = [
 ] as const;
 
 /** Executable/script extensions rejected on document uploads (BE denylist subset). */
-const EXECUTABLE_EXTENSIONS = [
+export const MEDIA_EXECUTABLE_EXTENSIONS = [
   ".exe",
   ".bat",
   ".cmd",
@@ -55,29 +61,15 @@ const EXECUTABLE_EXTENSIONS = [
   ".rpm",
 ] as const;
 
-export function isImageFilename(filename: string): boolean {
-  const lower = filename.toLowerCase();
-  return MEDIA_IMAGE_EXTENSIONS.some((ext) => lower.endsWith(ext));
-}
-
 export const MEDIA_TAB_ACCEPT: Record<MediaTab, string> = {
   image: ["image/*", ...MEDIA_IMAGE_EXTENSIONS].join(","),
-  video: ["video/*", ...VIDEO_EXTENSIONS].join(","),
-  document: DOCUMENT_EXTENSIONS.join(","),
+  video: ["video/*", ...MEDIA_VIDEO_EXTENSIONS].join(","),
+  document: MEDIA_DOCUMENT_EXTENSIONS.join(","),
 };
 
-export function getMediaTabExtensions(tab: MediaTab): readonly string[] {
-  switch (tab) {
-    case "image":
-      return MEDIA_IMAGE_EXTENSIONS;
-    case "video":
-      return VIDEO_EXTENSIONS;
-    case "document":
-      return DOCUMENT_EXTENSIONS;
-  }
-}
-
-export function isExecutableExtension(filename: string): boolean {
-  const lower = filename.toLowerCase();
-  return EXECUTABLE_EXTENSIONS.some((ext) => lower.endsWith(ext));
-}
+/** All tabs in display order (subset passed via `visibleTabs` on the dialog). */
+export const MEDIA_COLLECTION_ALL_TABS: readonly MediaTab[] = [
+  "image",
+  "document",
+  "video",
+] as const;
