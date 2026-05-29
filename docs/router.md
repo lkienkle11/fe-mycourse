@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (taxonomy routes unchanged)._
+_Last audited: 2026-05-29 (taxonomy screen layer: common + admin/sysadmin wrappers)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
@@ -80,8 +80,8 @@ export const config = {
 /[locale]/instructor    → src/app/[locale]/instructor/page.tsx
 /[locale]/sysadmin      → src/app/[locale]/sysadmin/layout.tsx
 /[locale]/sysadmin      → src/app/[locale]/sysadmin/page.tsx
-/[locale]/admin/taxonomy/{levels,topics,outcomes,skills,tags}  → TaxonomyListPage
-/[locale]/sysadmin/taxonomy/{levels,topics,outcomes,skills,tags}  → TaxonomyListPage
+/[locale]/admin/taxonomy/{levels,topics,outcomes,skills,tags}  → AdminTaxonomy*Page → TaxonomyListPage
+/[locale]/sysadmin/taxonomy/{levels,topics,outcomes,skills,tags}  → SysadminTaxonomy*Page → TaxonomyListPage
 ```
 
 ### Route Groups
@@ -114,8 +114,8 @@ src/app/[locale]/
 | `/vi/instructor` | `[locale]/instructor/page.tsx` | `InstructorDashboardPage` | ✅ Shell + placeholder |
 | `/vi/sysadmin` | `[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` | ✅ Shell + placeholder |
 | `/vi/courses` | — | — | 🚧 Planned |
-| `/vi/admin/taxonomy/levels` (and topics, outcomes, skills, tags) | `admin/taxonomy/*/page.tsx` | `TaxonomyListPage` | ✅ Implemented |
-| `/vi/sysadmin/taxonomy/*` | `sysadmin/taxonomy/*/page.tsx` | `TaxonomyListPage` | ✅ Implemented |
+| `/vi/admin/taxonomy/levels` (and topics, outcomes, skills, tags) | `admin/taxonomy/*/page.tsx` | `AdminTaxonomy*Page` → `TaxonomyListPage` | ✅ Implemented |
+| `/vi/sysadmin/taxonomy/*` | `sysadmin/taxonomy/*/page.tsx` | `SysadminTaxonomy*Page` → `TaxonomyListPage` | ✅ Implemented |
 | `/vi/admin/users`, `/vi/admin/courses`, … | — | — | 🚧 Placeholder nav links only |
 
 ---
@@ -184,7 +184,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 
 1. Create the directory under `src/app/[locale]/(web)/` (or the appropriate route group).
 2. Add a `page.tsx` file — this becomes the route.
-3. Create a screen component in `src/screen/<role>/<feature>/page.tsx` for the page body.
+3. Create a screen component in `src/screen/<role>/<feature>/page.tsx` for the page body (or reuse a shared screen under `src/screen/common/` when multiple roles share the same UI).
 4. Import and render the screen component from the route page.
 5. Add the path constant to `src/constants/route.ts`.
 6. Update `docs/screens.md` with the new route entry.
@@ -192,6 +192,10 @@ import { Link, useRouter } from "@/i18n/navigation";
 Example:
 
 ```
-src/app/[locale]/(web)/courses/page.tsx     → route: /vi/courses
-src/screen/common/courses/page.tsx          → CoursesPage screen component
+src/app/[locale]/(web)/courses/page.tsx           → route: /vi/courses
+src/screen/common/courses/page.tsx                → CoursesPage screen component (shared)
+
+src/app/[locale]/admin/taxonomy/levels/page.tsx   → route: /vi/admin/taxonomy/levels
+src/screen/admin/taxonomy/levels/page.tsx         → AdminTaxonomyLevelsPage (wraps shared TaxonomyListPage)
+src/screen/common/taxonomy/taxonomy-list-page.tsx → TaxonomyListPage (shared CRUD UI)
 ```

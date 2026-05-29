@@ -1,6 +1,6 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (type-only types; constants/utils split complete)._
+_Last audited: 2026-05-29 (taxonomy screen layer: common + admin/sysadmin wrappers; TAXONOMY_RESOURCE_KEYS)._
 
 
 ## Module map
@@ -11,7 +11,7 @@ _Last audited: 2026-05-29 (type-only types; constants/utils split complete)._
 - `State`: `src/store` (auth, language, api-error, events), `src/hooks/auth`, `src/hooks/language`
 - `Routing + i18n`: `src/app`, `src/i18n`, `src/proxy.ts`, `src/messages`
 - `Shared`: `src/lib/utils`, `src/constants`, `src/config`
-- `Taxonomy`: `src/types/taxonomy`, `src/constants/taxonomy`, `src/api/callers/taxonomy`, `src/components/features/taxonomy`, `src/screen/taxonomy`, admin/sysadmin `taxonomy/*` routes
+- `Taxonomy`: `src/types/taxonomy`, `src/constants/taxonomy`, `src/api/callers/taxonomy`, `src/components/features/taxonomy`, `src/screen/common/taxonomy`, `src/screen/{admin,sysadmin}/taxonomy/*`, app routes under `admin/taxonomy/*` and `sysadmin/taxonomy/*`
 - `Media`: `src/types/media`, `src/constants/media`, `src/api/callers/media`, `src/components/features/media` (collection popup; no dedicated route page yet)
 
 ## Responsibilities
@@ -28,11 +28,11 @@ _Last audited: 2026-05-29 (type-only types; constants/utils split complete)._
 ## Taxonomy module
 
 - **Types**: `src/types/taxonomy/` — entities, `TaxonomyResourceConfig`, `TaxonomyListColumn`; `TaxonomyListFilters` extends `ApiListQueryParams` with `search_by` / `search_value`.
-- **Constants**: `src/constants/taxonomy/resources.ts` — `TAXONOMY_RESOURCES`, `TAXONOMY_GROUP_READ_PERMISSIONS` (data only).
+- **Constants**: `src/constants/taxonomy/resources.ts` — `TAXONOMY_RESOURCES`, `TAXONOMY_RESOURCE_KEYS`, `TAXONOMY_GROUP_READ_PERMISSIONS` (data only).
 - **Utils**: `src/lib/utils/taxonomy.ts` — `getTaxonomyResourceConfig()`, `getTaxonomySearchableColumns()`, `countTaxonomyTreeNodes()`.
 - **Nav**: `src/constants/dashboard/taxonomy-icons.ts` (`TAXONOMY_MENU_ICONS`) + taxonomy nodes in `admin-items.ts` / `sysadmin-items.ts`; filtered by `useFilteredDashboardItems`.
 - **API**: `src/api/callers/taxonomy/taxonomy.ts`, `src/api/hooks/taxonomy/useTaxonomy.ts`.
-- **UI**: `src/screen/taxonomy/taxonomy-list-page.tsx`, `src/components/features/taxonomy/*`, `ConfirmDeleteDialog`.
+- **UI**: `src/screen/common/taxonomy/taxonomy-list-page.tsx` (`TaxonomyListPage`), `src/screen/admin/taxonomy/*/page.tsx`, `src/screen/sysadmin/taxonomy/*/page.tsx`, `src/components/features/taxonomy/*`, `ConfirmDeleteDialog`.
 - **Docs**: `docs/taxonomy-admin.md` (routes, permissions, sidebar icons, slug, DnD).
 
 ## Media module
