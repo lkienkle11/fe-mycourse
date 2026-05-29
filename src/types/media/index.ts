@@ -3,13 +3,6 @@ import type { ApiListQueryParams } from "@/types/api";
 /** UI tab keys for the media collection dialog. */
 export type MediaTab = "image" | "document" | "video";
 
-/** All tabs in display order (subset passed via `visibleTabs` on the dialog). */
-export const MEDIA_COLLECTION_ALL_TABS: readonly MediaTab[] = [
-  "image",
-  "document",
-  "video",
-] as const;
-
 /** BE list `category` query param (same values as MediaTab). */
 export type MediaCategory = MediaTab;
 

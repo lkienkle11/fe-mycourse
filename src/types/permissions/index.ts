@@ -1,5 +1,5 @@
-import { PERMISSION_IDS } from "@/constants/permission-ids";
-import { PERMISSIONS } from "@/constants/permissions";
+import type { PERMISSION_IDS } from "@/constants/permission-ids";
+import type { PERMISSIONS } from "@/constants/permissions";
 import type { ROLES } from "@/constants/roles";
 
 export type PermissionName = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -27,11 +27,3 @@ export type PermissionRequirement = {
   permissions?: readonly PermissionName[];
   permissionMode?: PermissionCheckMode;
 };
-
-/** Bidirectional map: permission name ↔ DB permission_id (for admin UI). */
-export const PERMISSION_NAME_TO_ID = Object.fromEntries(
-  (Object.keys(PERMISSIONS) as (keyof typeof PERMISSIONS)[]).map((key) => [
-    PERMISSIONS[key],
-    PERMISSION_IDS[key],
-  ]),
-) as Record<PermissionName, PermissionId>;

@@ -1,6 +1,6 @@
 # BroadcastChannel Delivery
 
-_Last audited: 2026-05-19._
+_Last audited: 2026-05-29 (stub unchanged)._
 
 ---
 

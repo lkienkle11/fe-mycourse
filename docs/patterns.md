@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (shared list query; local quality gates)._
+_Last audited: 2026-05-29 (`src/constants` + `src/types` ESLint rules)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -381,19 +381,29 @@ Media lists add optional `category` and `sort_order` on the same type (`MediaLis
 
 For human-readable file sizes in the UI, use `formatBytes()` from `src/lib/utils/format-bytes.ts` (exported via `@/lib/utils`). Do not copy byte-formatting logic into feature components.
 
-## 11. Slug fields
+## 11. `src/constants/` — values only
+
+[`eslint.config.mjs`](../eslint.config.mjs) enforces **data-only** modules under `src/constants/` (no functions, type exports, or `.tsx`). Put runtime helpers in `src/lib/utils/` and shared types in `src/types/`. Details: [`docs/quality.md`](./quality.md#eslint-eslintconfigmjs).
+
+## 12. `src/types/` — types only
+
+Same ESLint config enforces **type-only** files under `src/types/` (no `const`, functions, or `export *`). Exception: value imports from `@/constants/**` are allowed when deriving types (e.g. `PermissionName`, `ApiErrorCodeValue`). Runtime maps like `ApiErrorCode` live in `src/constants/`; helpers like `isApiSuccess()` live in `src/lib/utils/`.
+
+---
+
+## 13. Slug fields
 
 Taxonomy slugs are **read-only** in the UI. Derive them with `generateSlug(name)` / `slugifyName(name)` on submit (and show a live preview while typing the name). Normalization includes Vietnamese accent removal, `đ/Đ -> d`, spaces/underscores → `-`, and Unicode-safe filtering. Do not expose an editable slug input.
 
 ---
 
-## 12. Adding New Features Checklist
+## 14. Adding New Features Checklist
 
 Before writing code for a new feature:
 
 - [ ] Read `docs/` — check architecture, flow, components, patterns
 - [ ] Run `npx gitnexus analyze --force` — understand impact
-- [ ] For large refactors: `npm run cycles` / `npm run dupl` — see [`quality.md`](./quality.md)
+- [ ] Before PR: `npm run quality:deps` and `npm run lint` (CI `test` on `dev` runs both) — see [`quality.md`](./quality.md)
 - [ ] Reuse utilities from `src/lib/utils/` (barrel) or direct paths for server-only files (`auth-session.ts`)
 - [ ] Place server data fetching in `src/api/callers/<domain>/`
 - [ ] Place SWR hooks in `src/api/hooks/<domain>/`

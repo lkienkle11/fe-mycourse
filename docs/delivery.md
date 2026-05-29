@@ -1,6 +1,6 @@
 # Delivery Surfaces (`fe-mycourse`)
 
-_Last audited: 2026-05-19 (commit `16cfa594` — stream events v1 + follow-up type/ping docs sync)._
+_Last audited: 2026-05-29 (stubs unchanged; not affected by constants refactor)._
 
 
 Index of **non-REST** realtime channels exposed to the browser. REST/Axios usage remains in [`api-using.md`](./api-using.md) and [`api-overview.md`](./api-overview.md).
