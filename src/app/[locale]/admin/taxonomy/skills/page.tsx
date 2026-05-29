@@ -1,5 +1,3 @@
-import { TaxonomyListPage } from "@/screen/taxonomy";
+import { AdminTaxonomySkillsPage } from "@/screen/admin/taxonomy/skills/page";
 
-export default function AdminTaxonomySkillsPage() {
-  return <TaxonomyListPage resourceKey="skills" dashboardBasePath="/admin" />;
-}
+export default AdminTaxonomySkillsPage;

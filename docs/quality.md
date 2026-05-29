@@ -85,6 +85,8 @@ Files under `src/constants/` must hold **plain values only** (no runtime logic i
 
 Put helpers in `src/lib/utils/` and types in `src/types/`. `import type` from types into constants is fine when building typed constant objects.
 
+**2026-05-29 refactor (screens):** `TaxonomyListPage` moved from `src/screen/taxonomy/` → `src/screen/common/taxonomy/`; admin/sysadmin get thin `taxonomy/{resource}/page.tsx` wrappers; removed unused `dashboardBasePath` prop.
+
 **2026-05-29 refactor (constants):** `isImageFilename` / extension helpers → `src/lib/utils/media.ts`; taxonomy config types → `src/types/taxonomy/`; `getTaxonomyResourceConfig` / `getTaxonomySearchableColumns` → `src/lib/utils/taxonomy.ts`.
 
 ### `src/types/**` — type-only modules

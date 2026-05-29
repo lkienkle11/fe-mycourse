@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (dashboard + taxonomy routes unchanged)._
+_Last audited: 2026-05-29 (taxonomy screen layer: common + admin/sysadmin wrappers)._
 
 ## Current pages
 
@@ -13,8 +13,8 @@ _Last audited: 2026-05-29 (dashboard + taxonomy routes unchanged)._
 | `/{locale}/admin` | `src/app/[locale]/admin/page.tsx` | `AdminDashboardPage` (placeholder dashboard) | Implemented |
 | `/{locale}/instructor` | `src/app/[locale]/instructor/page.tsx` | `InstructorDashboardPage` (placeholder) | Implemented |
 | `/{locale}/sysadmin` | `src/app/[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` (placeholder) | Implemented |
-| `/{locale}/admin/taxonomy/{resource}` | `src/app/[locale]/admin/taxonomy/*/page.tsx` | `TaxonomyListPage` — resource: levels, topics, outcomes, skills, tags | Implemented |
-| `/{locale}/sysadmin/taxonomy/{resource}` | `src/app/[locale]/sysadmin/taxonomy/*/page.tsx` | Same `TaxonomyListPage` (sysadmin menu) | Implemented |
+| `/{locale}/admin/taxonomy/{resource}` | `src/app/[locale]/admin/taxonomy/*/page.tsx` | `AdminTaxonomy*Page` → `TaxonomyListPage` (`src/screen/common/taxonomy/`) — resource: levels, topics, outcomes, skills, tags | Implemented |
+| `/{locale}/sysadmin/taxonomy/{resource}` | `src/app/[locale]/sysadmin/taxonomy/*/page.tsx` | `SysadminTaxonomy*Page` → same `TaxonomyListPage` (sysadmin menu) | Implemented |
 
 ## Layout chain
 

@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (type-only `src/types/**`; `ApiErrorCode`, `MEDIA_COLLECTION_ALL_TABS` in constants)._
+_Last audited: 2026-05-29 (taxonomy screen layer: common + admin/sysadmin wrappers)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -56,14 +56,14 @@ src/app/
     ├── admin/              # Admin dashboard (DashboardLayout)
     │   ├── layout.tsx
     │   ├── page.tsx
-    │   └── taxonomy/       # levels, topics, outcomes, skills, tags → TaxonomyListPage
+    │   └── taxonomy/       # App routes → admin screen pages (AdminTaxonomy*Page)
     ├── instructor/
     │   ├── layout.tsx
     │   └── page.tsx
     └── sysadmin/
         ├── layout.tsx
         ├── page.tsx
-        └── taxonomy/       # Same taxonomy CRUD as admin (sysadmin menu)
+        └── taxonomy/       # App routes → sysadmin screen pages (SysadminTaxonomy*Page)
 ```
 
 ### `src/screen/` — Page-Level Screen Components
@@ -74,21 +74,33 @@ Async server components that assemble sections into a full page. Acts as the bri
 src/screen/
 ├── index.ts                # Barrel: re-exports common, admin, instructor, sysadmin
 ├── common/
-│   ├── index.ts            # Barrel: shared web screens
-│   └── home/
-│       └── page.tsx        # HomePage — assembles all home section components
+│   ├── index.ts            # Barrel: shared screens (home, taxonomy)
+│   ├── home/
+│   │   └── page.tsx        # HomePage — assembles all home section components
+│   └── taxonomy/
+│       ├── index.ts
+│       └── taxonomy-list-page.tsx  # TaxonomyListPage (client CRUD list, shared by admin + sysadmin)
 ├── admin/
 │   ├── index.ts
-│   └── page.tsx            # AdminDashboardPage (placeholder)
+│   ├── page.tsx            # AdminDashboardPage (placeholder)
+│   └── taxonomy/           # Thin role wrappers → TaxonomyListPage
+│       ├── levels/page.tsx     # AdminTaxonomyLevelsPage
+│       ├── topics/page.tsx     # AdminTaxonomyTopicsPage
+│       ├── outcomes/page.tsx   # AdminTaxonomyOutcomesPage
+│       ├── skills/page.tsx     # AdminTaxonomySkillsPage
+│       └── tags/page.tsx       # AdminTaxonomyTagsPage
 ├── instructor/
 │   ├── index.ts
 │   └── page.tsx            # InstructorDashboardPage (placeholder)
-├── sysadmin/
-│   ├── index.ts
-│   └── page.tsx            # SysadminDashboardPage (placeholder)
-└── taxonomy/
+└── sysadmin/
     ├── index.ts
-    └── taxonomy-list-page.tsx  # TaxonomyListPage (client CRUD list)
+    ├── page.tsx            # SysadminDashboardPage (placeholder)
+    └── taxonomy/           # Thin role wrappers → TaxonomyListPage
+        ├── levels/page.tsx     # SysadminTaxonomyLevelsPage
+        ├── topics/page.tsx     # SysadminTaxonomyTopicsPage
+        ├── outcomes/page.tsx   # SysadminTaxonomyOutcomesPage
+        ├── skills/page.tsx     # SysadminTaxonomySkillsPage
+        └── tags/page.tsx       # SysadminTaxonomyTagsPage
 ```
 
 ### `src/components/` — React Components
@@ -304,7 +316,7 @@ src/constants/
 │   ├── instructor-items.ts
 │   └── taxonomy-icons.ts   # TAXONOMY_MENU_ICONS — Lucide icons for taxonomy nav nodes
 ├── taxonomy/
-│   └── resources.ts        # TAXONOMY_RESOURCES, TAXONOMY_GROUP_READ_PERMISSIONS (data only)
+│   └── resources.ts        # TAXONOMY_RESOURCES, TAXONOMY_RESOURCE_KEYS, TAXONOMY_GROUP_READ_PERMISSIONS (data only)
 ├── media/
 │   └── file-rules.ts       # MEDIA_TAB_ACCEPT, MEDIA_COLLECTION_ALL_TABS, upload limits, extension lists
 └── events/

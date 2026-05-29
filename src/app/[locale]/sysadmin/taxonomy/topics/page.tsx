@@ -1,7 +1,3 @@
-import { TaxonomyListPage } from "@/screen/taxonomy";
+import { SysadminTaxonomyTopicsPage } from "@/screen/sysadmin/taxonomy/topics/page";
 
-export default function SysadminTaxonomyTopicsPage() {
-  return (
-    <TaxonomyListPage resourceKey="topics" dashboardBasePath="/sysadmin" />
-  );
-}
+export default SysadminTaxonomyTopicsPage;
