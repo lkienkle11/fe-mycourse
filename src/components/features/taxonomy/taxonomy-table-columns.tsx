@@ -1,14 +1,15 @@
 import type { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { DataTableColumn } from "@/components/shared/data-table";
-import type { TaxonomyListColumn } from "@/constants/taxonomy/resources";
-import type { TaxonomyEntity, TaxonomyResourceKey } from "@/types/taxonomy";
-import {
-  type CourseOutcome,
-  type CourseSkill,
-  type CourseTopic,
-  countTaxonomyTreeNodes,
-  type SlugStatusTaxonomy,
+import { countTaxonomyTreeNodes } from "@/lib/utils/taxonomy";
+import type {
+  CourseOutcome,
+  CourseSkill,
+  CourseTopic,
+  SlugStatusTaxonomy,
+  TaxonomyEntity,
+  TaxonomyListColumn,
+  TaxonomyResourceKey,
 } from "@/types/taxonomy";
 
 type TaxonomyTranslate = ReturnType<typeof useTranslations<"taxonomy">>;

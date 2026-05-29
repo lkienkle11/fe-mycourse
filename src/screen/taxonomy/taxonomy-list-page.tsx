@@ -22,7 +22,7 @@ import {
 import {
   getTaxonomyResourceConfig,
   getTaxonomySearchableColumns,
-} from "@/constants/taxonomy/resources";
+} from "@/lib/utils/taxonomy";
 import type { PermissionName } from "@/types/permissions";
 import type {
   TaxonomyEntity,

@@ -30,8 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PERMISSIONS } from "@/constants/permissions";
-import { getTaxonomyResourceConfig } from "@/constants/taxonomy/resources";
 import { slugifyName } from "@/lib/utils";
+import { getTaxonomyResourceConfig } from "@/lib/utils/taxonomy";
 import type { MediaFile } from "@/types/media";
 import type {
   CourseOutcome,
