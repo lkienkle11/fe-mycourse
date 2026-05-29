@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (type-only types; import paths synced)._
+_Last audited: 2026-05-29 (dagre tree name-only labels; shared DnD/tree wrappers documented)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -94,12 +94,13 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `scrollbar` CLI | Does not exist | `ScrollArea` |
 | [Sonner](https://ui.shadcn.com/docs/components/radix/sonner) UI wrapper | Optional — app uses `sonner` directly | `import { Toaster } from "sonner"` in layout |
 
-### Drag-and-drop (npm only — no wrapper components yet)
+### Drag-and-drop & tree visualization
 
-| Package | Role |
-|---------|------|
-| `@dnd-kit/core`, `sortable`, `utilities`, `modifiers`, `accessibility` | Modern DnD toolkit |
-| `@nosferatu500/react-sortable-tree` + `react-dnd` + `react-dnd-html5-backend` | Tree reorder (React 19 fork); separate from dnd-kit |
+| Package | Role | App wrapper |
+|---------|------|-------------|
+| `@dnd-kit/core`, `sortable`, `utilities`, `modifiers`, `accessibility` | Modern DnD toolkit | `SortableList`, `SortableTreeEditor` |
+| `@nosferatu500/react-sortable-tree` + `react-dnd` + `react-dnd-html5-backend` | Legacy tree pkg (installed) | Taxonomy form uses `@dnd-kit` wrappers instead |
+| `@xyflow/react` + `dagre` | Graph layout (optional node drag) | `DagreTreeDialog` (`nodesDraggable`, default `true`) |
 
 ## `common/` — Layout Chrome
 
@@ -196,10 +197,11 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | `ConfirmDeleteDialog` | `confirm-delete-dialog.tsx` | Alert dialog for soft-delete confirm; copy from `taxonomy.delete` namespace. |
 | `DataTable` | `data-table.tsx` | Generic sortable admin table (`columns`, `rows`, `sort`, `renderActions`) with optional built-in filter toolbar (`FilterBy`, search, per-option custom input via `DataTableFilterByOption.customInputComponent`). First used by taxonomy lists. |
 | `SortableList` | `sortable-list.tsx` | Vertical `@dnd-kit` reorder list; items need string `id`. |
-| `SortableTreeEditor` | `sortable-tree-editor.tsx` | Nested sortable tree (name + read-only slug); used by taxonomy topics/skills. |
+| `SortableTreeEditor` | `sortable-tree-editor.tsx` | Nested sortable tree (name + read-only slug); used by taxonomy topics/skills form editor. |
+| `DagreTreeDialog` | `dagre-tree-dialog.tsx` | Dagre layout popup (`@xyflow/react` + `dagre`); `nodesDraggable` prop (default `true`); node labels **name only**; vertical/horizontal toggle; CSS in this file. Taxonomy passes `nodesDraggable={false}`. |
 | `SearchBar` | `search-bar.tsx` | Global search input (UI stub). `visibility`: `"header"` (default, hidden below `md`) or `"sidebar"` (full-width flex for mobile sheet). |
 
-`src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog`, `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns).
+`src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog`, `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns; `child_render` column opens tree view).
 
 `src/components/features/media/` — media library popup: `MediaCollectionDialog`, `MediaUploadDialog` (sr-only `DialogDescription`; uses shared `formatBytes` from `@/lib/utils`), `MediaItemCard` (overlay select button + menu above + full-filename tooltip; see a11y in `docs/media-collection.md`), `MediaTabPanel`. See `docs/media-collection.md`.
 

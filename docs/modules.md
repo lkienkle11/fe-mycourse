@@ -29,10 +29,10 @@ _Last audited: 2026-05-29 (taxonomy screen layer: common + admin/sysadmin wrappe
 
 - **Types**: `src/types/taxonomy/` — entities, `TaxonomyResourceConfig`, `TaxonomyListColumn`; `TaxonomyListFilters` extends `ApiListQueryParams` with `search_by` / `search_value`.
 - **Constants**: `src/constants/taxonomy/resources.ts` — `TAXONOMY_RESOURCES`, `TAXONOMY_RESOURCE_KEYS`, `TAXONOMY_GROUP_READ_PERMISSIONS` (data only).
-- **Utils**: `src/lib/utils/taxonomy.ts` — `getTaxonomyResourceConfig()`, `getTaxonomySearchableColumns()`, `countTaxonomyTreeNodes()`.
+- **Utils**: `src/lib/utils/taxonomy.ts` — `getTaxonomyResourceConfig()`, `getTaxonomySearchableColumns()`, `getTaxonomyTreeFromEntity()`, `buildTaxonomyDagreRoot()`, `countTaxonomyTreeNodes()`; `src/lib/utils/dagre-tree.ts` — read-only tree layout helpers.
 - **Nav**: `src/constants/dashboard/taxonomy-icons.ts` (`TAXONOMY_MENU_ICONS`) + taxonomy nodes in `admin-items.ts` / `sysadmin-items.ts`; filtered by `useFilteredDashboardItems`.
 - **API**: `src/api/callers/taxonomy/taxonomy.ts`, `src/api/hooks/taxonomy/useTaxonomy.ts`.
-- **UI**: `src/screen/common/taxonomy/taxonomy-list-page.tsx` (`TaxonomyListPage`), `src/screen/admin/taxonomy/*/page.tsx`, `src/screen/sysadmin/taxonomy/*/page.tsx`, `src/components/features/taxonomy/*`, `ConfirmDeleteDialog`.
+- **UI**: `src/screen/common/taxonomy/taxonomy-list-page.tsx` (`TaxonomyListPage`), `src/screen/admin/taxonomy/*/page.tsx`, `src/screen/sysadmin/taxonomy/*/page.tsx`, `src/components/features/taxonomy/*` (incl. `TaxonomyTreeViewButton` with `nodesDraggable={false}`, `child_render` column), shared `DagreTreeDialog`, `ConfirmDeleteDialog`.
 - **Docs**: `docs/taxonomy-admin.md` (routes, permissions, sidebar icons, slug, DnD).
 
 ## Media module

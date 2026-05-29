@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-05-29 (deps unchanged; quality gate pass)._
+_Last audited: 2026-05-29 (added @xyflow/react, dagre, @types/dagre for read-only tree popup)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -104,18 +104,20 @@ Envelope validation uses existing **`zod`** (see `src/events/core/normalize-inbo
 
 All UI primitives live in `src/components/ui/` and are re-exported from `src/components/ui/index.ts`.
 
-### Drag-and-drop & tree (install-only)
+### Drag-and-drop, tree edit & read-only graph
 
 | Package | Version | Role |
 |---------|---------|------|
-| `@dnd-kit/core` | ^6.3.1 | DnD context, sensors, collision |
+| `@dnd-kit/core` | ^6.3.1 | DnD context — `SortableList`, `SortableTreeEditor` |
 | `@dnd-kit/sortable` | ^10.0.0 | Sortable lists |
 | `@dnd-kit/utilities` | ^3.2.2 | CSS transform helpers |
 | `@dnd-kit/modifiers` | ^9.0.0 | Drag modifiers |
 | `@dnd-kit/accessibility` | ^3.1.1 | Screen reader announcements |
-| `@nosferatu500/react-sortable-tree` | ^5.0.0 | Nested tree UI (React 19 fork) |
+| `@nosferatu500/react-sortable-tree` | ^5.0.0 | Legacy nested tree pkg (installed; taxonomy uses `@dnd-kit` wrappers) |
 | `react-dnd` | ^16.0.1 | Peer for sortable-tree |
 | `react-dnd-html5-backend` | ^16.0.1 | HTML5 backend for react-dnd |
+| `@xyflow/react` | 12.10.2 | Tree graph UI (`DagreTreeDialog`; optional `nodesDraggable`) |
+| `dagre` | 0.8.5 | Graph layout for dagre tree popup |
 
 ---
 
@@ -137,6 +139,7 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 | `@types/react` | ^19 | React 19 type definitions |
 | `@types/react-dom` | ^19 | ReactDOM type definitions |
 | `@types/js-cookie` | ^3.0.6 | Type definitions for `js-cookie` |
+| `@types/dagre` | 0.7.54 | Type definitions for `dagre` |
 | `tailwindcss` | ^4 | Dev CSS build (PostCSS pipeline) |
 | `@tailwindcss/postcss` | ^4 | Tailwind PostCSS plugin for v4 |
 | `eslint` | ^9 | Linter (`npm run lint`; CI `test` job on `dev`) |
