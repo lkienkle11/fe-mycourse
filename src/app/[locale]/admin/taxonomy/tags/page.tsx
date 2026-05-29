@@ -1,5 +1,3 @@
-import { TaxonomyListPage } from "@/screen/taxonomy";
+import { AdminTaxonomyTagsPage } from "@/screen/admin/taxonomy/tags/page";
 
-export default function AdminTaxonomyTagsPage() {
-  return <TaxonomyListPage resourceKey="tags" dashboardBasePath="/admin" />;
-}
+export default AdminTaxonomyTagsPage;

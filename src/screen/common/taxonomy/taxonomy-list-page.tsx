@@ -34,7 +34,6 @@ import type {
 
 export type TaxonomyListPageProps = {
   resourceKey: TaxonomyResourceKey;
-  dashboardBasePath: "/admin" | "/sysadmin";
 };
 
 export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {

@@ -309,7 +309,7 @@ await createTaxonomyService("tags", {
 });
 ```
 
-Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource tables live in `src/constants/taxonomy/resources.ts` (`TAXONOMY_RESOURCES`); lookup helpers are `getTaxonomyResourceConfig()` / `getTaxonomySearchableColumns()` in `src/lib/utils/taxonomy.ts`. Types (`TaxonomyResourceConfig`, `TaxonomyListColumn`, …) are in `src/types/taxonomy/`. List callers reuse `apiListQueryToRecord()` and append taxonomy typed-search fields (`search_by`, `search_value`) in caller scope.
+Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource tables live in `src/constants/taxonomy/resources.ts` (`TAXONOMY_RESOURCES`, `TAXONOMY_RESOURCE_KEYS`); lookup helpers are `getTaxonomyResourceConfig()` / `getTaxonomySearchableColumns()` in `src/lib/utils/taxonomy.ts`. Types (`TaxonomyResourceConfig`, `TaxonomyListColumn`, …) are in `src/types/taxonomy/`. List callers reuse `apiListQueryToRecord()` and append taxonomy typed-search fields (`search_by`, `search_value`) in caller scope. UI entry points: `src/screen/common/taxonomy/taxonomy-list-page.tsx` via role wrappers in `src/screen/{admin,sysadmin}/taxonomy/*/page.tsx`.
 
 See also `docs/taxonomy-admin.md`.
 

@@ -1,5 +1,3 @@
-import { TaxonomyListPage } from "@/screen/taxonomy";
+import { AdminTaxonomyLevelsPage } from "@/screen/admin/taxonomy/levels/page";
 
-export default function AdminTaxonomyLevelsPage() {
-  return <TaxonomyListPage resourceKey="levels" dashboardBasePath="/admin" />;
-}
+export default AdminTaxonomyLevelsPage;

@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-05-29 (routes unchanged; quality gate in quality.md)._
+_Last audited: 2026-05-29 (taxonomy screen layer: common + admin/sysadmin wrappers)._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -32,8 +32,8 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/admin` | Active | Admin dashboard shell (`AdminDashboardPage` placeholder) |
 | `/{locale}/instructor` | Active | Instructor dashboard shell (`InstructorDashboardPage` placeholder) |
 | `/{locale}/sysadmin` | Active | Sysadmin dashboard shell (`SysadminDashboardPage` placeholder) |
-| `/{locale}/admin/taxonomy/{resource}` | Active | Taxonomy CRUD list (`TaxonomyListPage`, resource = levels \| topics \| outcomes \| skills \| tags) |
-| `/{locale}/sysadmin/taxonomy/{resource}` | Active | Same as admin taxonomy (sysadmin menu + permissions) |
+| `/{locale}/admin/taxonomy/{resource}` | Active | `AdminTaxonomy*Page` → shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags) |
+| `/{locale}/sysadmin/taxonomy/{resource}` | Active | `SysadminTaxonomy*Page` → same shared `TaxonomyListPage` (sysadmin menu + permissions) |
 
 > `PUBLIC_ROUTES` (`src/constants/route.ts`): `home`, `confirmEmail`, `logout`. Login/signup are **modal-only** via `LoginSignupPopup`; confirm/logout have dedicated routes.
 
@@ -69,11 +69,10 @@ Each layout layer adds a concern without re-rendering the parent:
 ## Screen barrels (`src/screen/`)
 
 - **`src/screen/index.ts`** — re-exports `common`, `admin`, `instructor`, and `sysadmin` barrels.
-- **`src/screen/common/`** — shared web-facing screens (e.g. marketing home). Barrel: `src/screen/common/index.ts`.
-- **`src/screen/admin/`** — `AdminDashboardPage` (`page.tsx`); barrel: `src/screen/admin/index.ts`.
+- **`src/screen/common/`** — shared screens used by multiple roles (e.g. marketing `HomePage`, shared `TaxonomyListPage`). Barrel: `src/screen/common/index.ts`.
+- **`src/screen/admin/`** — `AdminDashboardPage` (`page.tsx`) plus role-specific routes such as `taxonomy/{resource}/page.tsx` (`AdminTaxonomy*Page` wrappers). Barrel: `src/screen/admin/index.ts`.
 - **`src/screen/instructor/`** — `InstructorDashboardPage`; barrel: `src/screen/instructor/index.ts`.
-- **`src/screen/sysadmin/`** — `SysadminDashboardPage`; barrel: `src/screen/sysadmin/index.ts`.
-- **`src/screen/taxonomy/`** — `TaxonomyListPage` (client); used by `admin/taxonomy/*` and `sysadmin/taxonomy/*` app routes.
+- **`src/screen/sysadmin/`** — `SysadminDashboardPage` plus `taxonomy/{resource}/page.tsx` (`SysadminTaxonomy*Page` wrappers). Barrel: `src/screen/sysadmin/index.ts`.
 
 ---
 

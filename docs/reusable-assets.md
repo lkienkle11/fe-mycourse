@@ -329,6 +329,22 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Taxonomy list page, form dialog, table columns, API callers.
 - **Dependencies**: `TAXONOMY_RESOURCES` (`src/constants/taxonomy/resources.ts`), `TaxonomyTreeNode` type.
 
+### Asset: `TAXONOMY_RESOURCE_KEYS`
+- **Name**: `TAXONOMY_RESOURCE_KEYS`
+- **Type**: Constant array
+- **Path**: `src/constants/taxonomy/resources.ts`
+- **Purpose**: Canonical ordered list of taxonomy resource keys (`levels`, `topics`, `outcomes`, `skills`, `tags`) typed as `readonly TaxonomyResourceKey[]`.
+- **Scope**: Route/screen generation, iteration over resources; keep in sync with `TAXONOMY_RESOURCES` keys.
+- **Dependencies**: `TaxonomyResourceKey` type.
+
+### Asset: `TaxonomyListPage`
+- **Name**: `TaxonomyListPage`, `TaxonomyListPageProps`
+- **Type**: React component (client)
+- **Path**: `src/screen/common/taxonomy/taxonomy-list-page.tsx`
+- **Purpose**: Shared admin CRUD list for all five taxonomy resources (DataTable toolbar, form dialog, delete confirm, pagination).
+- **Scope**: Wrapped by `AdminTaxonomy*Page` / `SysadminTaxonomy*Page` in `src/screen/{admin,sysadmin}/taxonomy/*/page.tsx`; app routes re-export those role screens.
+- **Dependencies**: `useTaxonomyList`, `TaxonomyFormDialog`, `DataTable`, `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`.
+
 ### Asset: Media filename / extension helpers
 - **Name**: `isImageFilename`, `getMediaTabExtensions`, `isExecutableExtension`
 - **Type**: Utility functions

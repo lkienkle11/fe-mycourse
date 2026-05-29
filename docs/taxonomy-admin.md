@@ -1,6 +1,6 @@
 # Taxonomy admin (FE)
 
-_Last audited: 2026-05-29 (countTaxonomyTreeNodes in lib/utils/taxonomy)._
+_Last audited: 2026-05-29 (taxonomy screen moved to common + role wrappers)._
 
 Admin and sysadmin dashboards can manage five taxonomy resources aligned with BE `/api/v1/taxonomy/*`:
 
@@ -11,6 +11,20 @@ Admin and sysadmin dashboards can manage five taxonomy resources aligned with BE
 | Outcomes | `/admin/taxonomy/outcomes` | `/sysadmin/taxonomy/outcomes` |
 | Skills | `/admin/taxonomy/skills` | `/sysadmin/taxonomy/skills` |
 | Tags | `/admin/taxonomy/tags` | `/sysadmin/taxonomy/tags` |
+
+## Screen layer
+
+Taxonomy follows the standard **app route → role screen → shared screen** pattern:
+
+| Layer | Path | Role |
+|-------|------|------|
+| App route | `src/app/[locale]/admin/taxonomy/{resource}/page.tsx` | Re-exports `AdminTaxonomy*Page` |
+| App route | `src/app/[locale]/sysadmin/taxonomy/{resource}/page.tsx` | Re-exports `SysadminTaxonomy*Page` |
+| Role screen | `src/screen/admin/taxonomy/{resource}/page.tsx` | Thin wrapper: `<TaxonomyListPage resourceKey="…" />` |
+| Role screen | `src/screen/sysadmin/taxonomy/{resource}/page.tsx` | Same wrapper for sysadmin |
+| Shared screen | `src/screen/common/taxonomy/taxonomy-list-page.tsx` | `TaxonomyListPage` — client CRUD list (DataTable, form dialog, delete confirm) |
+
+Resource keys match `TAXONOMY_RESOURCE_KEYS` in `src/constants/taxonomy/resources.ts` (`levels`, `topics`, `outcomes`, `skills`, `tags`).
 
 ## Sidebar navigation
 

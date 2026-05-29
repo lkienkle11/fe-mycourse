@@ -1,5 +1,3 @@
-import { TaxonomyListPage } from "@/screen/taxonomy";
+import { AdminTaxonomyOutcomesPage } from "@/screen/admin/taxonomy/outcomes/page";
 
-export default function AdminTaxonomyOutcomesPage() {
-  return <TaxonomyListPage resourceKey="outcomes" dashboardBasePath="/admin" />;
-}
+export default AdminTaxonomyOutcomesPage;

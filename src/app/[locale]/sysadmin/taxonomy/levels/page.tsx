@@ -1,7 +1,3 @@
-import { TaxonomyListPage } from "@/screen/taxonomy";
+import { SysadminTaxonomyLevelsPage } from "@/screen/sysadmin/taxonomy/levels/page";
 
-export default function SysadminTaxonomyLevelsPage() {
-  return (
-    <TaxonomyListPage resourceKey="levels" dashboardBasePath="/sysadmin" />
-  );
-}
+export default SysadminTaxonomyLevelsPage;

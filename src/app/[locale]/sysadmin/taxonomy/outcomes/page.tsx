@@ -1,7 +1,3 @@
-import { TaxonomyListPage } from "@/screen/taxonomy";
+import { SysadminTaxonomyOutcomesPage } from "@/screen/sysadmin/taxonomy/outcomes/page";
 
-export default function SysadminTaxonomyOutcomesPage() {
-  return (
-    <TaxonomyListPage resourceKey="outcomes" dashboardBasePath="/sysadmin" />
-  );
-}
+export default SysadminTaxonomyOutcomesPage;
