@@ -53,10 +53,18 @@ Taxonomy strings live under `taxonomy.*` in `src/messages/vi.ts` and `en.ts`. Us
 
 | Context | Vietnamese | English |
 |---------|------------|---------|
-| Topics table column `child_count` | Chủ đề con | Sub-topics |
-| Skills table column `child_count` | Kỹ năng con | Sub-skills |
+| Topics table column `child_render` | Chủ đề con | Sub-topics |
+| Skills table column `child_render` | Kỹ năng con | Sub-skills |
+| Tree view button / dialog | Xem cây / `{name} — cây` | View tree / `{name} — tree` |
+| Shared `dagreTree.*` (layout toggles, empty state) | Dọc, Ngang, … | Vertical, Horizontal, … |
 | Topics tree editor | Thêm chủ đề con, Tên chủ đề con, … | Add sub-topic, … |
 | Skills tree editor | Thêm kỹ năng con, … | Add sub-skill, … |
+
+## Tree visualization (read-only)
+
+Topics and skills list rows with nested `child_topics` / `children` show a **View tree** button in the `child_render` column. It opens shared `DagreTreeDialog` with `nodesDraggable={false}` (read-only layout; no manual node repositioning). The list row is the graph root; descendants use `@xyflow/react` + `dagre`. Each node shows **name only** (no slug). Layout toggles: vertical (default) or horizontal. Rows with no child nodes show a disabled button with tooltip.
+
+Edit/reorder still uses `SortableTreeEditor` in the form dialog — separate from the read-only dagre popup.
 
 ## Drag-and-drop
 

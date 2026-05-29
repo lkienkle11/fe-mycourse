@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (type-only `src/types/**`; `ApiErrorCode` in constants)._
+_Last audited: 2026-05-29 (dagre tree popup; name-only node labels)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -17,7 +17,9 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Component primitives | Radix UI (`radix-ui` + legacy `@radix-ui/*`) | various | Headless primitives; shadcn v4 batch uses unified `radix-ui` package |
 | Design system | shadcn | 4.2.0 | `components.json` style `radix-nova`; **54** files under `src/components/ui/`; **no Base UI**; full catalog except Combobox |
 | Charts / carousel / calendar | recharts, embla-carousel-react, react-day-picker | 3.x / 8.x / 10.x | Installed via shadcn `chart`, `carousel`, `calendar` |
-| DnD / tree | @dnd-kit/*, @nosferatu500/react-sortable-tree | 6.x / 5.x | npm install only; no app wrappers yet |
+| DnD / tree edit | @dnd-kit/* | 6.x | `SortableList`, `SortableTreeEditor` in `src/components/shared/` |
+| Tree graph | @xyflow/react, dagre | 12.x / 0.8.x | `DagreTreeDialog` (`nodesDraggable` default true) + `dagre-tree.ts` |
+| Legacy tree pkg | @nosferatu500/react-sortable-tree | 5.x | Installed; taxonomy form uses `SortableTreeEditor` (@dnd-kit) instead |
 | Forms | react-hook-form + zod | 7.x / 4.x | `@hookform/resolvers` bridges the two |
 | i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` |
 | Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup) for hooks under the provider; `useAuth` sets its own SWR options |

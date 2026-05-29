@@ -1,5 +1,9 @@
 import { TAXONOMY_RESOURCES } from "@/constants/taxonomy/resources";
+import type { DagreTreeRoot } from "@/lib/utils/dagre-tree";
 import type {
+  CourseSkill,
+  CourseTopic,
+  TaxonomyEntity,
   TaxonomyListColumnId,
   TaxonomyResourceConfig,
   TaxonomyResourceKey,
@@ -28,7 +32,35 @@ export function getTaxonomySearchableColumns(
   return TAXONOMY_SEARCHABLE_COLUMNS[resourceKey];
 }
 
-/** Count nodes in a taxonomy tree (for list column display). */
+/** Extract nested tree nodes from a taxonomy entity (topics/skills only). */
+export function getTaxonomyTreeFromEntity(
+  resourceKey: TaxonomyResourceKey,
+  entity: TaxonomyEntity | null | undefined,
+): TaxonomyTreeNode[] {
+  if (!entity) return [];
+  if (resourceKey === "topics") {
+    return (entity as CourseTopic).child_topics ?? [];
+  }
+  if (resourceKey === "skills") {
+    return (entity as CourseSkill).children ?? [];
+  }
+  return [];
+}
+
+/** Build a dagre root with the list row as root and nested nodes as children. */
+export function buildTaxonomyDagreRoot(
+  resourceKey: TaxonomyResourceKey,
+  row: CourseTopic | CourseSkill,
+): DagreTreeRoot {
+  return {
+    id: String(row.id),
+    name: row.name,
+    slug: row.slug,
+    children: getTaxonomyTreeFromEntity(resourceKey, row),
+  };
+}
+
+/** Count nodes in a taxonomy tree (for button hints and disabled state). */
 export function countTaxonomyTreeNodes(
   nodes: TaxonomyTreeNode[] | undefined,
 ): number {
