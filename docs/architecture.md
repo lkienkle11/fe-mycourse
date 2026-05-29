@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (local gate: biome, eslint, tsc, quality:deps, build — all pass)._
+_Last audited: 2026-05-29 (CI `test`: quality:deps + lint; local gate: biome, eslint, tsc, build)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -33,6 +33,7 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Commit lint | commitlint | 20.x | Conventional Commits via `lint:commit` script |
 | Dependency graph | madge | 8.x | `npm run cycles` — circular static imports in `src/`; CI via `quality:deps` |
 | Clone detection | jscpd | 4.x | `npm run dupl` — `.jscpd.json` (excludes `src/components/ui/**`); CI via `quality:deps` |
+| ESLint (CI) | eslint + eslint-config-next | 9 / 16.2.1 | `npm run lint` in CI `test` job; `src/constants/**` data-only rules — [`quality.md`](./quality.md) |
 
 ### Fonts
 
@@ -400,7 +401,7 @@ Lint (`eslint`, `biome`), `npx tsc --noEmit`, and `npm run build` are the primar
 - `npm run dupl` — jscpd clone detection against `src/` (skips shadcn `src/components/ui/**`; see [`quality.md`](./quality.md)).
 - `npm run quality:deps` — both in sequence.
 
-On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs `npm run quality:deps` in the **`test`** job before **`build`** (same pattern as backend `test` → `build` in `be-mycourse`).
+On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs `npm run quality:deps` then **`npm run lint`** in the **`test`** job before **`build`** (same pattern as backend `test` → `build` in `be-mycourse`).
 
 ---
 

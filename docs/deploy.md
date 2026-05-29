@@ -1,6 +1,6 @@
 # Deploying MyCourse Frontend on Ubuntu 24.04
 
-_Last audited: 2026-05-27 (CI `test` job: `npm run quality:deps` before `build`)._
+_Last audited: 2026-05-29 (CI `test` job: `quality:deps` + `lint` before `build`)._
 
 
 This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.
@@ -588,7 +588,7 @@ File: **`.github/workflows/enforce-main-from-dev.yml`**. Trigger: **pull request
 
 File: **`.github/workflows/deploy-dev.yml`**. Trigger: **push to `dev`**. Concurrency: `fe-deploy-${{ github.ref }}` with **`cancel-in-progress: true`**.
 
-This workflow differs from the backend: there is **no artifact rsync** — the **`deploy`** job SSHs into the VPS, syncs git, does a **clean `node_modules`**, runs **`npm ci` + `npm run build` on the server**, then **`pm2 reload mycourse-web-dev`** (or starts `ecosystem.config.cjs --only mycourse-web-dev`). Like the backend, CI uses **`test` → `build` → `deploy`**: **`test`** runs `npm run quality:deps` (Madge + jscpd); **`build`** runs `npm ci` + `npm run build` on the runner so a broken mainline fails before SSH. Production bundles on the VPS come from the **server** build (ensure `NEXT_PUBLIC_API_URL` and related vars exist in the server env file referenced by PM2, e.g. `env_file` in `ecosystem.config.cjs`). Quality checks are **not** re-run on the VPS.
+This workflow differs from the backend: there is **no artifact rsync** — the **`deploy`** job SSHs into the VPS, syncs git, does a **clean `node_modules`**, runs **`npm ci` + `npm run build` on the server**, then **`pm2 reload mycourse-web-dev`** (or starts `ecosystem.config.cjs --only mycourse-web-dev`). Like the backend, CI uses **`test` → `build` → `deploy`**: **`test`** runs `npm run quality:deps` (Madge + jscpd) then **`npm run lint`**; **`build`** runs `npm ci` + `npm run build` on the runner so a broken mainline fails before SSH. Production bundles on the VPS come from the **server** build (ensure `NEXT_PUBLIC_API_URL` and related vars exist in the server env file referenced by PM2, e.g. `env_file` in `ecosystem.config.cjs`). Quality checks are **not** re-run on the VPS.
 
 ### Required GitHub Secrets (frontend)
 
@@ -603,7 +603,7 @@ This workflow differs from the backend: there is **no artifact rsync** — the *
 
 | Job | Responsibility |
 |-----|----------------|
-| `test` | Checkout, Node 22 (`cache: npm`), `npm ci` + **`npm run quality:deps`** — fails on circular imports or jscpd threshold breach |
+| `test` | Checkout, Node 22 (`cache: npm`), `npm ci` + **`npm run quality:deps`** + **`npm run lint`** — fails on cycles, jscpd threshold, or ESLint errors |
 | `build` | After `test`: `npm ci` + `npm run build` — fails if the app does not compile |
 | `deploy` | After `build`: SSH → `cd $DEPLOY_PATH_DEV` → `git stash -u`, `git checkout dev`, `git pull`, **`rm -rf node_modules`**, `npm ci`, `npm run build`, PM2 reload/start **`mycourse-web-dev`** |
 
@@ -638,6 +638,7 @@ jobs:
         run: |
           npm ci
           npm run quality:deps
+          npm run lint
 
   build:
     needs: test
@@ -688,7 +689,7 @@ jobs:
 - **`NEXT_PUBLIC_*` on the server** — must be present when **`npm run build`** runs on the VPS (e.g. `.env.production.local`, `.env.local`, or env injected before build). Changing them without rebuilding leaves a stale client bundle.
 - **`AUTH_COOKIE_DOMAIN`** — runtime / server-side for cookies; keep on the server, not required in GitHub Actions for this workflow.
 - **Backend CI** — **`test` → `build` → `deploy`**, branch **`master`**, **`rsync`** binary to `DEPLOY_PATH_DEV/bin/` — see [backend Appendix C](../../be-mycourse/docs/deploy.md#appendix-c--cicd-with-github-actions).
-- **Frontend quality in CI** — [`docs/quality.md`](./quality.md) (`cycles`, `dupl`, `quality:deps`).
+- **Frontend quality in CI** — [`docs/quality.md`](./quality.md) (`cycles`, `dupl`, `quality:deps`, `lint`).
 
 ---
 

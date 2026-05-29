@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (`.jscpd.json` ignores shadcn `components/ui`; taxonomy routes)._
+_Last audited: 2026-05-29 (CI `test`: quality:deps + lint; eslint `src/constants` rules)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -18,7 +18,7 @@ fe-mycourse/
 ├── next.config.ts          # Next.js configuration (next-intl plugin, env)
 ├── components.json         # shadcn/ui configuration
 ├── biome.json              # Biome linter/formatter configuration
-├── eslint.config.mjs       # ESLint configuration (Next.js rules)
+├── eslint.config.mjs       # ESLint: Next.js + src/constants/** data-only rules (see docs/quality.md)
 ├── commitlint.config.cjs    # Conventional Commits lint configuration
 ├── tsconfig.json           # TypeScript compiler options (strict mode, path aliases)
 ├── tailwind.config.ts      # Tailwind CSS configuration (if present)
@@ -282,6 +282,8 @@ src/schema/
 
 ### `src/constants/` — Application Constants
 
+**ESLint:** only plain values — no functions, types, or `.tsx` files. Helpers → `src/lib/utils/`; types → `src/types/`. See [`docs/quality.md`](./quality.md#eslint-eslintconfigmjs).
+
 ```
 src/constants/
 ├── api-route.ts            # API_PUBLIC_ROUTES + API_PRIVATE_ROUTES (me, taxonomy, media.files, …)
@@ -421,6 +423,6 @@ docs/
 ├── router.md               # Routing structure and navigation conventions
 ├── patterns.md             # Coding patterns and conventions
 ├── dependencies.md         # Key libraries and their roles
-├── quality.md              # Madge / jscpd scripts; CI test job (quality:deps)
+├── quality.md              # ESLint, Madge / jscpd; CI test job (quality:deps + lint)
 └── reusable-assets.md      # Reusable utilities, types, hooks, and constants
 ```

@@ -139,8 +139,8 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 | `@types/js-cookie` | ^3.0.6 | Type definitions for `js-cookie` |
 | `tailwindcss` | ^4 | Dev CSS build (PostCSS pipeline) |
 | `@tailwindcss/postcss` | ^4 | Tailwind PostCSS plugin for v4 |
-| `eslint` | ^9 | Linter |
-| `eslint-config-next` | 16.2.1 | ESLint rules for Next.js |
+| `eslint` | ^9 | Linter (`npm run lint`; CI `test` job on `dev`) |
+| `eslint-config-next` | 16.2.1 | ESLint rules for Next.js; extended in [`eslint.config.mjs`](../eslint.config.mjs) (`src/constants/**` data-only) |
 | `@biomejs/biome` | ^2.4.9 | Fast formatter + linter (`npm run lint:biome`, `npm run format:biome`) |
 | `@commitlint/cli` | ^20.5.0 | Commit message linting |
 | `@commitlint/config-conventional` | ^20.5.0 | Conventional Commits ruleset |
@@ -168,4 +168,4 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 6. **Icons**: Always import icons from `lucide-react`. Do not add other icon libraries.
 7. **Toasts**: Use `sonner` (`toast.success`, `toast.error`, etc.) for user-facing notifications.
 8. **Stream events**: Subscribe with `hooks/events/*`; send WS via `postSocketOutbound`, broadcast via `postBroadcastOutbound`. Do not add a second WebSocket/SSE library without updating [`delivery.md`](./delivery.md).
-9. **Import / duplication checks**: Run `npm run quality:deps` (or `cycles` / `dupl` individually) before large refactors. CI on **`dev`** enforces `quality:deps` in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml). See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.
+9. **Quality gates**: Run `npm run quality:deps` and `npm run lint` (or individual scripts) before large refactors. CI on **`dev`** enforces both in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.
