@@ -23,7 +23,7 @@ export type TaxonomyListColumnId =
   | "slug"
   | "short_description"
   | "status"
-  | "child_count"
+  | "child_render"
   | "updated_at";
 
 export type TaxonomyListColumn = {

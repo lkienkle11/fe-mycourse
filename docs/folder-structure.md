@@ -129,10 +129,11 @@ src/components/
 │                           #   AdvancedPromoSection, TrendingCoursesSection,
 │                           #   UpcomingWebinarsSection, PromoSection, CourseCard
 ├── features/
-│   ├── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns
+│   ├── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
 │   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
 ├── shared/                 # Cross-feature presentational components
-│                           #   PermissionGate, ConfirmDeleteDialog, DataTable, SortableList, SearchBar (stub), ImageFileField
+│                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
+│                           #   SortableList, SortableTreeEditor, SearchBar (stub), ImageFileField
 ├── providers/
 │   └── app-providers.tsx   # SWRConfig + EventsStreamProvider
 │                           # + MeSwrSync (useSyncMeFromAuth)
@@ -345,7 +346,8 @@ src/lib/
 │   ├── api.ts              # isApiSuccess() — ApiResponse success type guard
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
 │   ├── media.ts            # isImageFilename, isExecutableExtension, validateMediaUploadBatch, isImageMedia, …
-│   ├── taxonomy.ts         # getTaxonomyResourceConfig, getTaxonomySearchableColumns, countTaxonomyTreeNodes
+│   ├── dagre-tree.ts       # treeToFlowElements, getLayoutedElements (React Flow + dagre)
+│   ├── taxonomy.ts         # getTaxonomyResourceConfig, getTaxonomySearchableColumns, getTaxonomyTreeFromEntity, buildTaxonomyDagreRoot, countTaxonomyTreeNodes
 │   ├── slug.ts             # generateSlug() + slugifyName() — live slug normalization
 │   ├── react.ts            # useUniqueId() — stable ID generator for accessibility
 │   ├── user.ts             # pickCharacter() — avatar initial picker

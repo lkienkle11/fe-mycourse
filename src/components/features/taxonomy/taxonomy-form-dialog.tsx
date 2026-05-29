@@ -31,11 +31,13 @@ import {
 } from "@/components/ui/select";
 import { PERMISSIONS } from "@/constants/permissions";
 import { slugifyName } from "@/lib/utils";
-import { getTaxonomyResourceConfig } from "@/lib/utils/taxonomy";
+import {
+  getTaxonomyResourceConfig,
+  getTaxonomyTreeFromEntity,
+} from "@/lib/utils/taxonomy";
 import type { MediaFile } from "@/types/media";
 import type {
   CourseOutcome,
-  CourseSkill,
   CourseTopic,
   SlugStatusTaxonomy,
   TaxonomyEntity,
@@ -77,21 +79,6 @@ export type TaxonomyFormDialogProps = {
   initialData?: TaxonomyEntity | null;
   onSuccess: () => void;
 };
-
-function getTreeFromEntity(
-  resourceKey: TaxonomyResourceKey,
-  entity: TaxonomyEntity | null | undefined,
-): TaxonomyTreeNode[] {
-  if (!entity) return [];
-  if (resourceKey === "topics") {
-    return (entity as CourseTopic).child_topics ?? [];
-  }
-  if (resourceKey === "skills") {
-    return (entity as CourseSkill).children ?? [];
-  }
-  return [];
-}
-
 export function TaxonomyFormDialog({
   resourceKey,
   mode,
@@ -159,7 +146,7 @@ export function TaxonomyFormDialog({
           ? ((initialData as CourseTopic | undefined)?.image_file_id ?? "")
           : "",
     } as FormValues);
-    setTree(getTreeFromEntity(resourceKey, initialData));
+    setTree(getTaxonomyTreeFromEntity(resourceKey, initialData));
     setImagePreview(null);
     setInitialImageFileURL(
       resourceKey === "topics"

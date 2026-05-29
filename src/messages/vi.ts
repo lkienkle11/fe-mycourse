@@ -312,6 +312,11 @@ const messages = {
       noImageSelected: "Chưa chọn ảnh",
     },
   },
+  dagreTree: {
+    layoutVertical: "Dọc",
+    layoutHorizontal: "Ngang",
+    empty: "Không có nút con để hiển thị.",
+  },
   taxonomy: {
     common: {
       statusActive: "Đang hoạt động",
@@ -387,9 +392,13 @@ const messages = {
       slug: "Slug",
       shortDescription: "Mô tả ngắn",
       status: "Trạng thái",
-      childCount: "Chủ đề con",
-      childCountSkills: "Kỹ năng con",
+      childRender: "Chủ đề con",
+      childRenderSkills: "Kỹ năng con",
       updatedAt: "Cập nhật",
+    },
+    treeView: {
+      button: "Xem cây",
+      dialogTitle: "{name} — cây",
     },
     tree: {
       addChild: "Thêm chủ đề con",

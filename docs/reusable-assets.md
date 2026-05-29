@@ -322,12 +322,12 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `TaxonomyResourceKey`.
 
 ### Asset: Taxonomy config helpers
-- **Name**: `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`, `countTaxonomyTreeNodes`
+- **Name**: `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`, `getTaxonomyTreeFromEntity`, `buildTaxonomyDagreRoot`, `countTaxonomyTreeNodes`
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/taxonomy.ts`
-- **Purpose**: Resolve `TAXONOMY_RESOURCES` entry, searchable column ids per resource key, and count nested tree nodes for list columns.
-- **Scope**: Taxonomy list page, form dialog, table columns, API callers.
-- **Dependencies**: `TAXONOMY_RESOURCES` (`src/constants/taxonomy/resources.ts`), `TaxonomyTreeNode` type.
+- **Purpose**: Resolve `TAXONOMY_RESOURCES` entry, searchable column ids, extract nested tree from entity, build dagre root for read-only popup, count nested nodes for button state.
+- **Scope**: Taxonomy list page, form dialog, table columns, tree view button.
+- **Dependencies**: `TAXONOMY_RESOURCES` (`src/constants/taxonomy/resources.ts`), `TaxonomyTreeNode`, `DagreTreeRoot` (`dagre-tree.ts`).
 
 ### Asset: `TAXONOMY_RESOURCE_KEYS`
 - **Name**: `TAXONOMY_RESOURCE_KEYS`
@@ -360,6 +360,22 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Vertical drag-and-drop reorder via `@dnd-kit` (first DnD usage in the repo).
 - **Scope**: Taxonomy description editor, tree editor; any list with stable string `id`.
 - **Dependencies**: `@dnd-kit/core`, `@dnd-kit/sortable`.
+
+### Asset: DagreTreeDialog
+- **Name**: `DagreTreeDialog`, `DagreTreeDialogProps`, `DagreTreeDialogLabels`
+- **Type**: React component
+- **Path**: `src/components/shared/dagre-tree-dialog.tsx`
+- **Purpose**: Tree visualization in a dialog via `@xyflow/react` + `dagre` (vertical default, horizontal toggle). Props: `nodesDraggable` (default `true` — drag nodes, edges stay attached; `false` locks positions). Node labels: **name only**.
+- **Scope**: Taxonomy topics/skills (`TaxonomyTreeViewButton` with `nodesDraggable={false}`); reusable for any `{ id, name, children? }` tree.
+- **Dependencies**: `Dialog`, `ToggleGroup`, `useNodesState` / `useEdgesState`, `treeToFlowElements` in `src/lib/utils/dagre-tree.ts`. CSS: `@xyflow/react/dist/style.css` in the dialog file.
+
+### Asset: dagre-tree utils
+- **Name**: `DagreTreeRoot`, `treeToFlowElements`, `getLayoutedElements`
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/dagre-tree.ts`
+- **Purpose**: Walk a minimal tree shape (`id`, `name`, optional `children`) and produce layouted React Flow nodes/edges via dagre. Node `data.label` = `name` only.
+- **Scope**: `DagreTreeDialog`; structurally compatible with `TaxonomyTreeNode` (no taxonomy import).
+- **Dependencies**: `@xyflow/react`, `dagre`.
 
 ### Asset: SortableTreeEditor
 - **Name**: `SortableTreeEditor`, `SortableTreeNode`
