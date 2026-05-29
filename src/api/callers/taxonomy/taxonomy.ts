@@ -1,7 +1,7 @@
 import { apiDelete, apiFetch, apiPatch, apiPost } from "@/api/methods";
 import { API_PRIVATE_ROUTES } from "@/constants/api-route";
-import { getTaxonomyResourceConfig } from "@/constants/taxonomy/resources";
 import { apiListQueryToRecord, buildQueryParams } from "@/lib/utils";
+import { getTaxonomyResourceConfig } from "@/lib/utils/taxonomy";
 import type {
   ApiPaginatedData,
   ApiPaginatedResponse,

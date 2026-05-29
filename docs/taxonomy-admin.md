@@ -1,6 +1,6 @@
 # Taxonomy admin (FE)
 
-_Last audited: 2026-05-28 (taxonomy list toolbar moved into shared DataTable)._
+_Last audited: 2026-05-29 (countTaxonomyTreeNodes in lib/utils/taxonomy)._
 
 Admin and sysadmin dashboards can manage five taxonomy resources aligned with BE `/api/v1/taxonomy/*`:
 
@@ -31,7 +31,7 @@ To change icons, edit `taxonomy-icons.ts` only — do not duplicate imports in `
 
 ## Permissions
 
-Sidebar items and actions use RBAC keys from `src/constants/permissions.ts` (e.g. `course_level:read`, `topic:create`). Group visibility uses `TAXONOMY_GROUP_READ_PERMISSIONS` with `permissionMode: "any"` on the parent node; each child has its own read permission.
+Sidebar items and actions use RBAC keys from `src/constants/permissions.ts` (e.g. `course_level:read`, `topic:create`). Group visibility uses `TAXONOMY_GROUP_READ_PERMISSIONS` (`src/constants/taxonomy/resources.ts`) with `permissionMode: "any"` on the parent node; each child has its own read permission. Per-resource columns, tree flags, and searchable fields: `TAXONOMY_RESOURCES` + `getTaxonomyResourceConfig()` / `getTaxonomySearchableColumns()` / `countTaxonomyTreeNodes()` (`src/lib/utils/taxonomy.ts`).
 
 ## UI copy (i18n)
 

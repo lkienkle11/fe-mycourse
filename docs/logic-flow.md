@@ -1,6 +1,6 @@
 # Logic Flow
 
-_Last audited: 2026-05-21 (full source vs docs sync)._
+_Last audited: 2026-05-29 (permission utils paths synced)._
 
 
 Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifecycle, data fetching, and form submission patterns.
@@ -29,7 +29,7 @@ loginService(payload)   [src/api/callers/auth/auth.ts]
   → returns { data: ApiResponse<LoginResponse>, cookies: Set-Cookie parsed }
   ↓
 Server Action reads response:
-  - data.code === ApiErrorCode.Success?
+  - data.code === ApiErrorCode.Success?   [ApiErrorCode from src/constants/api-error-code.ts]
     YES → set 3 cookies on browser via next/headers cookies().set():
             access_token   (non-HttpOnly, so client can attach to Authorization header)
             refresh_token  (non-HttpOnly, maxAge=30d if rememberMe)
@@ -167,6 +167,7 @@ Source: GET /api/v1/me → MeResponse.permissions → useSyncMeFromAuth → useG
 
 Constants: PERMISSIONS, PERMISSION_IDS, ROLES, HEADER_DROPDOWN_ITEMS (+ per-item permissions)  [src/constants/]
 Types: PermissionName, PermissionRequirement, PermissionCheckMode  [src/types/permissions/]
+Utils: PERMISSION_NAME_TO_ID, permissionIdFromName  [src/lib/utils/permission.ts]
 Utils: hasPermission, hasAllPermissions (AND), hasAnyPermission (OR), satisfiesPermissions, filterPermissionNavTree, filterUserMenuItems, filterUserMenuGroups  [src/lib/utils/permission.ts]
 Hooks: useHasPermission, useHasAll/AnyPermissions, useSatisfiesPermissions, useFilteredUserMenuGroups  [src/hooks/auth/use-permissions.ts]
 Component: PermissionGate  [src/components/shared/permission-gate.tsx]

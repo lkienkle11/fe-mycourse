@@ -1,18 +1,41 @@
 import {
-  isExecutableExtension,
-  isImageFilename,
+  MEDIA_COLLECTION_ALL_TABS,
+  MEDIA_DOCUMENT_EXTENSIONS,
+  MEDIA_EXECUTABLE_EXTENSIONS,
+  MEDIA_IMAGE_EXTENSIONS,
   MEDIA_MAX_BYTES_PER_FILE,
   MEDIA_MAX_BYTES_PER_REQUEST,
   MEDIA_MAX_FILES_PER_REQUEST,
+  MEDIA_VIDEO_EXTENSIONS,
 } from "@/constants/media/file-rules";
-import {
-  MEDIA_COLLECTION_ALL_TABS,
-  type MediaCategory,
-  type MediaFile,
-  type MediaListFilters,
-  type MediaSortOption,
-  type MediaTab,
+import type {
+  MediaCategory,
+  MediaFile,
+  MediaListFilters,
+  MediaSortOption,
+  MediaTab,
 } from "@/types/media";
+
+export function isImageFilename(filename: string): boolean {
+  const lower = filename.toLowerCase();
+  return MEDIA_IMAGE_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+export function getMediaTabExtensions(tab: MediaTab): readonly string[] {
+  switch (tab) {
+    case "image":
+      return MEDIA_IMAGE_EXTENSIONS;
+    case "video":
+      return MEDIA_VIDEO_EXTENSIONS;
+    case "document":
+      return MEDIA_DOCUMENT_EXTENSIONS;
+  }
+}
+
+export function isExecutableExtension(filename: string): boolean {
+  const lower = filename.toLowerCase();
+  return MEDIA_EXECUTABLE_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
 
 export function mediaTabToCategory(tab: MediaTab): MediaCategory {
   return tab;

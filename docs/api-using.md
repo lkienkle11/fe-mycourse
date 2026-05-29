@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (API patterns verified vs src)._
+_Last audited: 2026-05-29 (`ApiErrorCode` → constants; type-only `src/types/**`)._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -44,10 +44,10 @@ interface ApiResponse<T> {
 }
 ```
 
-The `ApiErrorCode` constant map in `src/types/api.ts` mirrors `be/pkg/errcode/codes.go`.
+The `ApiErrorCode` constant map in `src/constants/api-error-code.ts` mirrors `be/pkg/errcode/codes.go`.
 
 ```ts
-import { ApiErrorCode } from "@/types/api";
+import { ApiErrorCode } from "@/constants/api-error-code";
 if (result.code === ApiErrorCode.Unknown) { ... }
 ```
 
@@ -309,7 +309,7 @@ await createTaxonomyService("tags", {
 });
 ```
 
-Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource metadata (permissions, columns, tree fields, searchable fields) is in `src/constants/taxonomy/resources.ts`. List callers reuse `apiListQueryToRecord()` and append taxonomy typed-search fields (`search_by`, `search_value`) in caller scope.
+Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource tables live in `src/constants/taxonomy/resources.ts` (`TAXONOMY_RESOURCES`); lookup helpers are `getTaxonomyResourceConfig()` / `getTaxonomySearchableColumns()` in `src/lib/utils/taxonomy.ts`. Types (`TaxonomyResourceConfig`, `TaxonomyListColumn`, …) are in `src/types/taxonomy/`. List callers reuse `apiListQueryToRecord()` and append taxonomy typed-search fields (`search_by`, `search_value`) in caller scope.
 
 See also `docs/taxonomy-admin.md`.
 

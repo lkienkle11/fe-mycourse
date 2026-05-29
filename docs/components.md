@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-05-28 (DataTable filter toolbar + shared scrollbar utility synced)._
+_Last audited: 2026-05-29 (type-only types; import paths synced)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.

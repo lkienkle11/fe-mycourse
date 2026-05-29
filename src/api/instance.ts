@@ -5,11 +5,11 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import Cookies from "js-cookie";
+import { ApiErrorCode } from "@/constants/api-error-code";
 import { API_PUBLIC_ROUTES } from "@/constants/api-route";
 import { getCookieValue, isServer, setCookieValue } from "@/lib/utils";
 import { useApiError } from "@/store/api-error-store";
 import type { ApiResponse } from "@/types/api";
-import { ApiErrorCode } from "@/types/api";
 import type { RefreshTokenResponse } from "@/types/auth";
 import { rawPost } from "./raw-http";
 

@@ -1,37 +1,10 @@
 import { PERMISSIONS } from "@/constants/permissions";
 import type { PermissionName } from "@/types/permissions";
-import type { TaxonomyResourceKey } from "@/types/taxonomy";
-
-export type TaxonomyListColumnId =
-  | "name"
-  | "slug"
-  | "short_description"
-  | "status"
-  | "child_count"
-  | "updated_at";
-
-export type TaxonomyListColumn = {
-  id: TaxonomyListColumnId;
-  /** BE `sort_by` value; omit when column is not sortable. */
-  sortKey?: string;
-};
-
-export type TaxonomyResourceConfig = {
-  key: TaxonomyResourceKey;
-  apiSegment: string;
-  permissions: {
-    read: string;
-    create: string;
-    update: string;
-    delete: string;
-  };
-  hasTree: boolean;
-  /** JSON field name on create/update payloads when `hasTree` is true. */
-  treeField?: "child_topics" | "children";
-  hasDescriptionList: boolean;
-  supportsImage: boolean;
-  listColumns: TaxonomyListColumn[];
-};
+import type {
+  TaxonomyListColumn,
+  TaxonomyResourceConfig,
+  TaxonomyResourceKey,
+} from "@/types/taxonomy";
 
 export const TAXONOMY_RESOURCE_KEYS = [
   "levels",
@@ -142,30 +115,11 @@ export const TAXONOMY_RESOURCES: Record<
   },
 };
 
-const TAXONOMY_SEARCHABLE_COLUMNS: Readonly<
-  Record<TaxonomyResourceKey, readonly TaxonomyListColumnId[]>
-> = {
-  levels: ["name", "slug"],
-  tags: ["name", "slug"],
-  topics: ["name", "slug"],
-  skills: ["name", "slug"],
-  outcomes: ["short_description"],
-};
-
-export function getTaxonomyResourceConfig(
-  resourceKey: TaxonomyResourceKey,
-): TaxonomyResourceConfig {
-  return TAXONOMY_RESOURCES[resourceKey];
-}
-
-export function getTaxonomySearchableColumns(
-  resourceKey: TaxonomyResourceKey,
-): readonly TaxonomyListColumnId[] {
-  return TAXONOMY_SEARCHABLE_COLUMNS[resourceKey];
-}
-
 /** Any taxonomy read permission — used to show the sidebar group. */
-export const TAXONOMY_GROUP_READ_PERMISSIONS: readonly PermissionName[] =
-  TAXONOMY_RESOURCE_KEYS.map(
-    (key) => TAXONOMY_RESOURCES[key].permissions.read as PermissionName,
-  );
+export const TAXONOMY_GROUP_READ_PERMISSIONS = [
+  PERMISSIONS.CourseLevelRead,
+  PERMISSIONS.TopicRead,
+  PERMISSIONS.CourseOutcomeRead,
+  PERMISSIONS.CourseSkillRead,
+  PERMISSIONS.TagRead,
+] as const satisfies readonly PermissionName[];

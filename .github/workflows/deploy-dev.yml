@@ -26,6 +26,7 @@ jobs:
         run: |
           npm ci
           npm run quality:deps
+          npm run lint
 
   build:
     needs: test

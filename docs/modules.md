@@ -1,12 +1,12 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (media card/dialog a11y fix; docs sync)._
+_Last audited: 2026-05-29 (type-only types; constants/utils split complete)._
 
 
 ## Module map
 - `Ui`: `src/components`, `src/screen`, `src/app/[locale]/(web)`, `src/app/[locale]/{admin,instructor,sysadmin}` (dashboard shells)
 - `Auth`: `src/actions/auth`, `src/components/common/auth-menu`, `src/schema/auth`, `src/types/auth`
-- `Api`: `src/api`, `src/constants/api-route.ts`, `src/types/api.ts`
+- `Api`: `src/api`, `src/constants/api-route.ts`, `src/constants/api-error-code.ts`, `src/types/api.ts`, `src/lib/utils/api.ts`
 - `Events`: `src/events`, `src/hooks/events`, `src/store/events`, `src/types/events`, `src/config/events`
 - `State`: `src/store` (auth, language, api-error, events), `src/hooks/auth`, `src/hooks/language`
 - `Routing + i18n`: `src/app`, `src/i18n`, `src/proxy.ts`, `src/messages`
@@ -27,8 +27,9 @@ _Last audited: 2026-05-27 (media card/dialog a11y fix; docs sync)._
 
 ## Taxonomy module
 
-- **Types**: `src/types/taxonomy/` — entities; `TaxonomyListFilters` extends `ApiListQueryParams` with `search_by` / `search_value`.
-- **Config**: `src/constants/taxonomy/resources.ts` — per-resource permissions, columns, tree/description flags.
+- **Types**: `src/types/taxonomy/` — entities, `TaxonomyResourceConfig`, `TaxonomyListColumn`; `TaxonomyListFilters` extends `ApiListQueryParams` with `search_by` / `search_value`.
+- **Constants**: `src/constants/taxonomy/resources.ts` — `TAXONOMY_RESOURCES`, `TAXONOMY_GROUP_READ_PERMISSIONS` (data only).
+- **Utils**: `src/lib/utils/taxonomy.ts` — `getTaxonomyResourceConfig()`, `getTaxonomySearchableColumns()`, `countTaxonomyTreeNodes()`.
 - **Nav**: `src/constants/dashboard/taxonomy-icons.ts` (`TAXONOMY_MENU_ICONS`) + taxonomy nodes in `admin-items.ts` / `sysadmin-items.ts`; filtered by `useFilteredDashboardItems`.
 - **API**: `src/api/callers/taxonomy/taxonomy.ts`, `src/api/hooks/taxonomy/useTaxonomy.ts`.
 - **UI**: `src/screen/taxonomy/taxonomy-list-page.tsx`, `src/components/features/taxonomy/*`, `ConfirmDeleteDialog`.
@@ -37,8 +38,9 @@ _Last audited: 2026-05-27 (media card/dialog a11y fix; docs sync)._
 ## Media module
 
 - **Types**: `src/types/media/` — `MediaFile`, `MediaListFilters` (= `ApiListQueryParams` + media fields).
-- **Constants**: `src/constants/media/file-rules.ts` — upload limits, accept strings, `MEDIA_IMAGE_EXTENSIONS`, `isImageFilename`.
-- **Shared utils**: `formatBytes` (`src/lib/utils/format-bytes.ts`) for upload size labels; not in `media.ts`.
+- **Constants**: `src/constants/media/file-rules.ts` — upload limits, accept strings, extension lists, `MEDIA_TAB_ACCEPT`, `MEDIA_COLLECTION_ALL_TABS`.
+- **Utils**: `src/lib/utils/media.ts` — `isImageFilename`, `getMediaTabExtensions`, `isExecutableExtension`, validation, `isImageMedia`, …
+- **Shared utils**: `formatBytes` (`src/lib/utils/format-bytes.ts`) for upload size labels.
 - **API**: `src/api/callers/media/media.ts`, `src/api/hooks/media/useMediaFiles.ts`; routes in `API_PRIVATE_ROUTES.media`.
 - **UI**: `src/components/features/media/*`; embedded from `taxonomy-form-dialog.tsx`.
 - **Docs**: `docs/media-collection.md`.
@@ -46,7 +48,8 @@ _Last audited: 2026-05-27 (media card/dialog a11y fix; docs sync)._
 ## Authorization constants & hooks
 
 - **Constants**: `PERMISSIONS` (40 names), `PERMISSION_IDS` (P1–P40), `ROLES` in `src/constants/` — mirror BE `AllPermissions` and role tags.
-- **Types**: `PermissionName`, `PermissionId`, `RoleName`, `PERMISSION_NAME_TO_ID` in `src/types/permissions/`.
+- **Types**: `PermissionName`, `PermissionId`, `RoleName` in `src/types/permissions/`.
+- **Utils**: `PERMISSION_NAME_TO_ID`, `permissionIdFromName`, `permissionNameFromId` in `src/lib/utils/permission.ts`.
 - **Utils**: `src/lib/utils/permission.ts` — `hasAllPermissions` matches BE `RequirePermission` (AND semantics); `filterPermissionNavTree` deep-filters nested nav (dashboard + user menu).
 - **Utils**: `src/lib/utils/dashboard.ts` — `filterDashboardItems` wraps `filterPermissionNavTree` for `DashboardItem[]`.
 - **Hooks**: `src/hooks/auth/use-permissions.ts` — `useHasPermission`, `useHasAll/AnyPermissions`, `useSatisfiesPermissions`, `useFilteredUserMenuGroups`, `useFilteredDashboardItems` over `useGetMe().mePermissions`.

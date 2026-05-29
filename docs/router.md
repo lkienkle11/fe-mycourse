@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (taxonomy routes verified; optional npm quality gates)._
+_Last audited: 2026-05-29 (taxonomy routes unchanged)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.

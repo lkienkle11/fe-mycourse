@@ -193,6 +193,14 @@ export function isWritePermission(name: string): boolean {
   return parsed !== null && WRITE_ACTIONS.includes(parsed.action);
 }
 
+/** Bidirectional map: permission name ↔ DB permission_id (for admin UI). */
+export const PERMISSION_NAME_TO_ID = Object.fromEntries(
+  (Object.keys(PERMISSIONS) as (keyof typeof PERMISSIONS)[]).map((key) => [
+    PERMISSIONS[key],
+    PERMISSION_IDS[key],
+  ]),
+) as Record<PermissionName, PermissionId>;
+
 /** Lookup permission name from DB id (e.g. `P5` → `course:read`). */
 export function permissionNameFromId(id: PermissionId): PermissionName | null {
   const key = (

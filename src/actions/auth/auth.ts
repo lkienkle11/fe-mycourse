@@ -12,11 +12,11 @@ import {
   logoutService,
   registerService,
 } from "@/api/callers/auth";
+import { ApiErrorCode } from "@/constants/api-error-code";
 import {
   clearAuthSessionCookies,
   setAuthSessionCookies,
 } from "@/lib/utils/auth-session";
-import { ApiErrorCode } from "@/types/api";
 
 export interface AuthActionResult {
   success: boolean;

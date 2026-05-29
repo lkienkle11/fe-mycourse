@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-05-27 (dashboard + taxonomy routes; quality tooling)._
+_Last audited: 2026-05-29 (dashboard + taxonomy routes unchanged)._
 
 ## Current pages
 

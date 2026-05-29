@@ -18,6 +18,37 @@ export type TaxonomyResourceKey =
   | "skills"
   | "tags";
 
+export type TaxonomyListColumnId =
+  | "name"
+  | "slug"
+  | "short_description"
+  | "status"
+  | "child_count"
+  | "updated_at";
+
+export type TaxonomyListColumn = {
+  id: TaxonomyListColumnId;
+  /** BE `sort_by` value; omit when column is not sortable. */
+  sortKey?: string;
+};
+
+export type TaxonomyResourceConfig = {
+  key: TaxonomyResourceKey;
+  apiSegment: string;
+  permissions: {
+    read: string;
+    create: string;
+    update: string;
+    delete: string;
+  };
+  hasTree: boolean;
+  /** JSON field name on create/update payloads when `hasTree` is true. */
+  treeField?: "child_topics" | "children";
+  hasDescriptionList: boolean;
+  supportsImage: boolean;
+  listColumns: TaxonomyListColumn[];
+};
+
 export type TaxonomySearchBy = "name" | "slug" | "short_description";
 
 /** List query params for taxonomy list endpoints. */
@@ -133,16 +164,3 @@ export type UpdateTaxonomyPayloadMap = {
   skills: UpdateSkillPayload;
   outcomes: UpdateOutcomePayload;
 };
-
-/** Count nodes in a taxonomy tree (for list column display). */
-export function countTaxonomyTreeNodes(
-  nodes: TaxonomyTreeNode[] | undefined,
-): number {
-  if (!nodes?.length) return 0;
-  let count = 0;
-  for (const node of nodes) {
-    count += 1;
-    count += countTaxonomyTreeNodes(node.children);
-  }
-  return count;
-}
