@@ -1,6 +1,6 @@
 # Deploying MyCourse Frontend on Ubuntu 24.04
 
-_Last audited: 2026-05-29 (CI `test` job: `quality:deps` + `lint` before `build`)._
+_Last audited: 2026-05-29 (CI `test`: quality:deps + lint; local gate includes biome + build)._
 
 
 This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.

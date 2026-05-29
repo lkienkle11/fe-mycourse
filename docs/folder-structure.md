@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (CI `test`: quality:deps + lint; eslint `src/constants` rules)._
+_Last audited: 2026-05-29 (type-only `src/types/**`; `ApiErrorCode`, `MEDIA_COLLECTION_ALL_TABS` in constants)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -18,7 +18,7 @@ fe-mycourse/
 ├── next.config.ts          # Next.js configuration (next-intl plugin, env)
 ├── components.json         # shadcn/ui configuration
 ├── biome.json              # Biome linter/formatter configuration
-├── eslint.config.mjs       # ESLint: Next.js + src/constants/** data-only rules (see docs/quality.md)
+├── eslint.config.mjs       # ESLint: Next.js + src/constants/** + src/types/** rules (see docs/quality.md)
 ├── commitlint.config.cjs    # Conventional Commits lint configuration
 ├── tsconfig.json           # TypeScript compiler options (strict mode, path aliases)
 ├── tailwind.config.ts      # Tailwind CSS configuration (if present)
@@ -246,20 +246,23 @@ src/events/
 
 ### `src/types/` — TypeScript Type Definitions
 
+**ESLint:** type-only — no runtime values, functions, or `export *` (use `export type *`). Value imports from `@/constants/**` are allowed when deriving types (e.g. `ApiErrorCodeValue`). See [`docs/quality.md`](./quality.md#eslint-eslintconfigmjs).
+
 ```
 src/types/
-├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiListQueryParams, ApiEntityStatus, ApiErrorCode
+├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiListQueryParams, ApiEntityStatus, ApiErrorCodeValue
 ├── taxonomy/
-│   └── index.ts            # Taxonomy entities; TaxonomyListFilters (= ApiListQueryParams + search_by/search_value)
+│   └── index.ts            # Taxonomy entities, config types; TaxonomyListFilters (= ApiListQueryParams + search_by/search_value)
 ├── media/
-│   └── index.ts            # MediaFile, MediaListFilters (= ApiListQueryParams + category/sort_order)
+│   └── index.ts            # MediaFile, MediaTab, MediaListFilters (= ApiListQueryParams + category/sort_order)
 ├── browse-menu.ts          # BrowseMenuItem (recursive children?: BrowseMenuItem[])
 ├── user-menu.ts            # UserMenuItem, UserMenuGroup, UserMenuStatus (+ PermissionRequirement)
-├── index.ts                # Re-exports domain types
+├── index.ts                # `export type *` barrel (domain types only)
 ├── auth/
+│   ├── index.ts            # `export type * from "./auth"`
 │   └── auth.ts             # MeResponse, LoginResponse, RefreshTokenResponse
 ├── permissions/
-│   └── index.ts            # PermissionName, PermissionId, PermissionRequirement, PERMISSION_NAME_TO_ID
+│   └── index.ts            # PermissionName, PermissionId, PermissionRequirement (types only)
 └── events/
     ├── index.ts            # Barrel: stream-events + per-channel types
     ├── common.ts           # StreamEventSource, metadata, StreamInboundEventOf, StreamOutboundEventOf
@@ -287,6 +290,7 @@ src/schema/
 ```
 src/constants/
 ├── api-route.ts            # API_PUBLIC_ROUTES + API_PRIVATE_ROUTES (me, taxonomy, media.files, …)
+├── api-error-code.ts       # ApiErrorCode — mirrors be/pkg/errcode/codes.go
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
 ├── route.ts                # PUBLIC_ROUTES — client-side navigation path constants
 ├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (values only)
@@ -300,9 +304,9 @@ src/constants/
 │   ├── instructor-items.ts
 │   └── taxonomy-icons.ts   # TAXONOMY_MENU_ICONS — Lucide icons for taxonomy nav nodes
 ├── taxonomy/
-│   └── resources.ts        # TAXONOMY_RESOURCES, TAXONOMY_GROUP_READ_PERMISSIONS, columns, searchable-field map
+│   └── resources.ts        # TAXONOMY_RESOURCES, TAXONOMY_GROUP_READ_PERMISSIONS (data only)
 ├── media/
-│   └── file-rules.ts       # MEDIA_TAB_ACCEPT, upload limits, MEDIA_IMAGE_EXTENSIONS
+│   └── file-rules.ts       # MEDIA_TAB_ACCEPT, MEDIA_COLLECTION_ALL_TABS, upload limits, extension lists
 └── events/
     └── index.ts            # STREAM_EVENTS_LOG_MAX, STREAM_ENV_KEYS (SSE/WS/gRPC URLs)
 ```
@@ -326,13 +330,15 @@ src/lib/
 │   ├── cn.ts               # cn() — clsx + tailwind-merge class combiner
 │   ├── url.ts              # buildQueryParams() — query string builder
 │   ├── list-query.ts       # apiListQueryToRecord() — BE list filter → query record (taxonomy + media)
+│   ├── api.ts              # isApiSuccess() — ApiResponse success type guard
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
-│   ├── media.ts            # isImageMedia, validateMediaUploadBatch, getMediaDeleteKey, …
+│   ├── media.ts            # isImageFilename, isExecutableExtension, validateMediaUploadBatch, isImageMedia, …
+│   ├── taxonomy.ts         # getTaxonomyResourceConfig, getTaxonomySearchableColumns, countTaxonomyTreeNodes
 │   ├── slug.ts             # generateSlug() + slugifyName() — live slug normalization
 │   ├── react.ts            # useUniqueId() — stable ID generator for accessibility
 │   ├── user.ts             # pickCharacter() — avatar initial picker
 │   ├── cookie.ts           # isomorphic getCookieValue / setCookieValue; buildCookieOptions
-│   ├── permission.ts       # satisfiesPermissions, filterPermissionNavTree, filterUserMenuGroups, id lookup
+│   ├── permission.ts       # satisfiesPermissions, PERMISSION_NAME_TO_ID, filterPermissionNavTree, id lookup
 │   ├── dashboard.ts        # filterDashboardItems (wraps filterPermissionNavTree)
 │   └── auth-session.ts     # SERVER ONLY — setAuthSessionCookies (import directly, not via barrel)
 ├── font.ts                 # next/font definitions: Roboto, Gilroy, GeistMono

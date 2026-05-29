@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-05-27 (jscpd 0 clones; `axios-helpers`, `auth-form-fields` assets)._
+_Last audited: 2026-05-29 (type-only `src/types/**`; `ApiErrorCode` → constants; helpers → lib/utils)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -96,11 +96,11 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: ApiErrorCode
 - **Name**: `ApiErrorCode`
 - **Type**: Constant object (mirrors `be/pkg/errcode/codes.go`)
-- **Path**: `src/types/api.ts`
+- **Path**: `src/constants/api-error-code.ts` (barrel: `@/constants`)
 - **Purpose**: FE-side mirror of BE application error codes. Use to compare `response.code` in callers and Server Actions instead of hardcoding numeric values.
 - **Scope**: All API callers, Server Actions, interceptors.
 - **Dependencies**: none.
-- **Current Usage**: `src/api/instance.ts`, `src/actions/auth/auth.ts`, `src/api/callers/auth/auth.ts`.
+- **Current Usage**: `src/api/instance.ts`, `src/actions/auth/auth.ts`, login/signup UI.
 - **Reuse Rule**: Always import from here. Never hardcode `code === 0` or `code === 3002` inline.
 
 ### Asset: API_PUBLIC_ROUTES
@@ -155,12 +155,12 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: none.
 
 ### Asset: Permission types (`PermissionName`, `PermissionId`, `RoleName`, …)
-- **Name**: `PermissionName`, `PermissionId`, `RoleName`, `PermissionAction`, `ParsedPermission`, `PermissionCheckMode`, `PermissionRequirement`, `PERMISSION_NAME_TO_ID`
-- **Type**: TypeScript types + map
+- **Name**: `PermissionName`, `PermissionId`, `RoleName`, `PermissionAction`, `ParsedPermission`, `PermissionCheckMode`, `PermissionRequirement`
+- **Type**: TypeScript types
 - **Path**: `src/types/permissions/index.ts`
-- **Purpose**: Typed permission names, config-driven guard shape (`PermissionRequirement`), and bidirectional name ↔ id map for admin UI.
+- **Purpose**: Typed permission names and config-driven guard shape (`PermissionRequirement`).
 - **Scope**: Hooks, utils, menu constants, `PermissionGate`.
-- **Dependencies**: `PERMISSIONS`, `PERMISSION_IDS`, `ROLES`.
+- **Dependencies**: `PERMISSIONS`, `PERMISSION_IDS`, `ROLES` (value imports from `@/constants` allowed in type files per ESLint).
 
 ### Asset: User menu types (`UserMenuItem`, `UserMenuGroup`, `UserMenuStatus`)
 - **Name**: `UserMenuStatus`, `UserMenuItem`, `UserMenuGroup`
@@ -171,10 +171,10 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `PermissionRequirement` from `src/types/permissions/`.
 
 ### Asset: Permission utils (`hasPermission`, `hasAllPermissions`, …)
-- **Name**: `toPermissionSet`, `hasPermission`, `hasAllPermissions`, `hasAnyPermission`, `satisfiesPermissions`, `canShowWithPermissions`, `filterPermissionNavTree`, `filterUserMenuItems`, `filterUserMenuGroups`, `parsePermissionName`, `permissionNameFromId`, `permissionIdFromName`, …
+- **Name**: `toPermissionSet`, `hasPermission`, `hasAllPermissions`, `hasAnyPermission`, `satisfiesPermissions`, `canShowWithPermissions`, `filterPermissionNavTree`, `filterUserMenuItems`, `filterUserMenuGroups`, `parsePermissionName`, `permissionNameFromId`, `permissionIdFromName`, `PERMISSION_NAME_TO_ID`, …
 - **Type**: Pure functions
 - **Path**: `src/lib/utils/permission.ts` (barrel: `@/lib/utils`)
-- **Purpose**: Client-safe permission checks; `hasAllPermissions` / default `satisfiesPermissions` mode mirror BE `RequirePermission` (AND). Empty/omitted `permissions` on a requirement ⇒ allow. `filterPermissionNavTree` bottom-up filters nested nav: recurse children first; leaves with `href` require `satisfiesPermissions`; branch nodes without `href` stay when any permitted descendant remains. `filterUserMenuGroups` deep-filters items per group and drops empty groups (no group pre-gate).
+- **Purpose**: Client-safe permission checks; `PERMISSION_NAME_TO_ID` is the bidirectional name ↔ id map for admin UI. `hasAllPermissions` / default `satisfiesPermissions` mode mirror BE `RequirePermission` (AND). Empty/omitted `permissions` on a requirement ⇒ allow. `filterPermissionNavTree` bottom-up filters nested nav: recurse children first; leaves with `href` require `satisfiesPermissions`; branch nodes without `href` stay when any permitted descendant remains. `filterUserMenuGroups` deep-filters items per group and drops empty groups (no group pre-gate).
 - **Scope**: Hooks, menu filtering, server/client guards, admin tooling.
 - **Dependencies**: `PERMISSIONS`, `PERMISSION_IDS`, permission types, `UserMenuGroup` from `src/types/user-menu.ts`.
 
@@ -312,6 +312,30 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `MediaUploadDialog` file list and total size; any UI showing file or storage size.
 - **Dependencies**: none.
 - **Reuse Rule**: Import from `@/lib/utils` (barrel). Do not duplicate inline formatters in feature components.
+
+### Asset: Taxonomy config types
+- **Name**: `TaxonomyListColumnId`, `TaxonomyListColumn`, `TaxonomyResourceConfig`
+- **Type**: Type aliases
+- **Path**: `src/types/taxonomy/index.ts`
+- **Purpose**: Column and per-resource admin config shapes for taxonomy list screens and API callers.
+- **Scope**: `taxonomy-table-columns`, `TAXONOMY_RESOURCES` constant object (typed via `import type`).
+- **Dependencies**: `TaxonomyResourceKey`.
+
+### Asset: Taxonomy config helpers
+- **Name**: `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`, `countTaxonomyTreeNodes`
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/taxonomy.ts`
+- **Purpose**: Resolve `TAXONOMY_RESOURCES` entry, searchable column ids per resource key, and count nested tree nodes for list columns.
+- **Scope**: Taxonomy list page, form dialog, table columns, API callers.
+- **Dependencies**: `TAXONOMY_RESOURCES` (`src/constants/taxonomy/resources.ts`), `TaxonomyTreeNode` type.
+
+### Asset: Media filename / extension helpers
+- **Name**: `isImageFilename`, `getMediaTabExtensions`, `isExecutableExtension`
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/media.ts`
+- **Purpose**: Extension checks for upload validation and `isImageMedia`; tab accept lists come from `src/constants/media/file-rules.ts`.
+- **Scope**: `validateMediaUploadBatch`, `isImageMedia`, upload dialog accept strings via constants.
+- **Dependencies**: `MEDIA_*_EXTENSIONS` constants in `file-rules.ts`.
 
 ### Asset: SortableList
 - **Name**: `SortableList`, `SortableListItem`
@@ -606,10 +630,10 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: isApiSuccess
 - **Name**: `isApiSuccess<T>(res: ApiResponse<T>): boolean`
 - **Type**: Type guard function
-- **Path**: `src/types/api.ts`
+- **Path**: `src/lib/utils/api.ts`
 - **Purpose**: Returns `true` and narrows type to `ApiResponse<T> & { data: T }` when `res.code === 0`. Use instead of comparing `res.code === ApiErrorCode.Success` directly.
 - **Scope**: All API service functions and Server Actions that check response success.
-- **Dependencies**: `ApiErrorCode`.
+- **Dependencies**: `ApiErrorCode` (`src/constants/api-error-code.ts`), `ApiResponse` type.
 
 ---
 
@@ -753,7 +777,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - File path: `src/types/api.ts`
 - Purpose: Union of all values inside `ApiErrorCode` map.
 - Reusability scope: Any typed API error handling code.
-- Dependencies: `ApiErrorCode`.
+- Dependencies: `ApiErrorCode` from `src/constants/api-error-code.ts` (value import allowed in type files).
 
 ### Asset: ApiHealthResponse
 - Name: `ApiHealthResponse`

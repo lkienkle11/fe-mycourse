@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-05-27 (jscpd excludes `src/components/ui/**` in `.jscpd.json`)._
+_Last audited: 2026-05-29 (deps unchanged; quality gate pass)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -140,7 +140,7 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 | `tailwindcss` | ^4 | Dev CSS build (PostCSS pipeline) |
 | `@tailwindcss/postcss` | ^4 | Tailwind PostCSS plugin for v4 |
 | `eslint` | ^9 | Linter (`npm run lint`; CI `test` job on `dev`) |
-| `eslint-config-next` | 16.2.1 | ESLint rules for Next.js; extended in [`eslint.config.mjs`](../eslint.config.mjs) (`src/constants/**` data-only) |
+| `eslint-config-next` | 16.2.1 | ESLint rules for Next.js; extended in [`eslint.config.mjs`](../eslint.config.mjs) (`src/constants/**` data-only, `src/types/**` type-only) |
 | `@biomejs/biome` | ^2.4.9 | Fast formatter + linter (`npm run lint:biome`, `npm run format:biome`) |
 | `@commitlint/cli` | ^20.5.0 | Commit message linting |
 | `@commitlint/config-conventional` | ^20.5.0 | Conventional Commits ruleset |

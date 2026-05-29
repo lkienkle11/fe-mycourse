@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (CI `test`: quality:deps + lint; local gate: biome, eslint, tsc, build)._
+_Last audited: 2026-05-29 (type-only `src/types/**`; `ApiErrorCode` in constants)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -159,7 +159,7 @@ fe/
 │   │   └── use-mobile.ts           # useIsMobile
 │   │
 │   ├── types/
-│   │   ├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiErrorCode
+│   │   ├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiErrorCodeValue (types only)
 │   │   └── auth/auth.ts            # MeResponse, LoginResponse, RefreshTokenResponse
 │   │
 │   ├── schema/
@@ -167,6 +167,7 @@ fe/
 │   │
 │   ├── constants/
 │   │   ├── api-route.ts            # API_PUBLIC_ROUTES, API_PRIVATE_ROUTES
+│   │   ├── api-error-code.ts       # ApiErrorCode (mirrors be/pkg/errcode/codes.go)
 │   │   ├── route.ts                # PUBLIC_ROUTES (home, confirmEmail, logout)
 │   │   ├── browse-menu.ts          # BROWSE_MENU_ITEMS
 │   │   └── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (types: types/user-menu.ts)
@@ -326,7 +327,7 @@ Realtime messages from BroadcastChannel, SSE, WebSocket, and NDJSON gRPC share o
 
 ### 8. API Response Envelope
 
-All Go API endpoints return a standard `{ code, message, data }` envelope (mirroring `be/pkg/response/response.go`). `code === 0` means success; any other value is an application error. The `ApiErrorCode` constant map in `src/types/api.ts` mirrors `be/pkg/errcode/codes.go`.
+All Go API endpoints return a standard `{ code, message, data }` envelope (mirroring `be/pkg/response/response.go`). `code === 0` means success; any other value is an application error. The `ApiErrorCode` constant map in `src/constants/api-error-code.ts` mirrors `be/pkg/errcode/codes.go`. Success checks: `isApiSuccess()` in `src/lib/utils/api.ts`.
 
 ---
 

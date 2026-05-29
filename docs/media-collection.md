@@ -1,6 +1,6 @@
 # Media collection (FE)
 
-_Last audited: 2026-05-27 (onSelect type payload + filename tooltip)._
+_Last audited: 2026-05-29 (`MEDIA_COLLECTION_ALL_TABS` in constants)._
 
 Reusable media library popup for browsing, uploading, and selecting files. Wired into taxonomy topic/outcome forms for cover images.
 
@@ -23,8 +23,8 @@ Dialog width: `MediaCollectionDialog` uses `max-w-5xl` for a wider browsing surf
 | `src/api/hooks/media/useMediaFiles.ts` | SWR list + `mutate` |
 | `src/constants/api-route.ts` | `media.files`, `media.fileById` |
 | `src/types/media/index.ts` | `MediaFile`, filters, tab types |
-| `src/constants/media/file-rules.ts` | Accept rules, size limits |
-| `src/lib/utils/media.ts` | Validation, `getMediaDeleteKey`, `isImageMedia` (no list-query helper — uses shared `apiListQueryToRecord`) |
+| `src/constants/media/file-rules.ts` | Accept rules, size limits, extension lists, `MEDIA_COLLECTION_ALL_TABS` |
+| `src/lib/utils/media.ts` | `isImageFilename`, `getMediaTabExtensions`, `isExecutableExtension`, validation, `getMediaDeleteKey`, `isImageMedia` (uses shared `apiListQueryToRecord`) |
 | `src/lib/utils/list-query.ts` | `apiListQueryToRecord()` — `page`, `per_page`, `search`, `sort_by`, `sort_order`, `category` |
 | `src/lib/utils/format-bytes.ts` | `formatBytes()` — per-file and total size labels in upload dialog |
 
@@ -50,7 +50,7 @@ Delete uses **object key**: `DELETE /api/v1/media/files/:object_key`.
 
 `visibleTabs?: readonly MediaTab[]` — subset of `image` | `document` | `video`. Omitted = all three tabs. Tabs not in the list are hidden (no switcher when only one tab remains).
 
-Helpers: `resolveVisibleMediaTabs()`, `resolveMediaCollectionDefaultTab()` in `src/lib/utils/media.ts`. Canonical order: `MEDIA_COLLECTION_ALL_TABS` in `src/types/media/index.ts`.
+Helpers: `resolveVisibleMediaTabs()`, `resolveMediaCollectionDefaultTab()` in `src/lib/utils/media.ts`. Canonical tab order: `MEDIA_COLLECTION_ALL_TABS` in `src/constants/media/file-rules.ts`.
 
 ```tsx
 // Full library (default)

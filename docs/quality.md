@@ -1,6 +1,6 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (CI `test` job: `quality:deps` + `lint`; jscpd ignores `src/components/ui/**`)._
+_Last audited: 2026-05-29 (constants + types ESLint rules documented)._
 
 Checks for **circular imports** (Madge), **duplicate code** (jscpd), and **ESLint** under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs `npm run quality:deps` then **`npm run lint`** in the **`test`** job **before** `npm run build` (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 
@@ -85,16 +85,35 @@ Files under `src/constants/` must hold **plain values only** (no runtime logic i
 
 Put helpers in `src/lib/utils/` and types in `src/types/`. `import type` from types into constants is fine when building typed constant objects.
 
+**2026-05-29 refactor (constants):** `isImageFilename` / extension helpers → `src/lib/utils/media.ts`; taxonomy config types → `src/types/taxonomy/`; `getTaxonomyResourceConfig` / `getTaxonomySearchableColumns` → `src/lib/utils/taxonomy.ts`.
+
+### `src/types/**` — type-only modules
+
+Files under `src/types/` must hold **types/interfaces only** (no runtime logic):
+
+| Rule | Forbidden in `src/types/**/*.ts` |
+|------|----------------------------------|
+| File type | `.tsx` files |
+| Runtime values | `const`, `let`, `var`, assignments |
+| Functions | declarations, expressions, arrow functions |
+| Exports | `export *`, default exports, non-type named exports |
+| Imports | value imports except from `@/constants/**` (for derived types like `PermissionName`, `ApiErrorCodeValue`) |
+
+Allowed: `export type`, `interface`, `export type * from`, `declare module "next-intl"` in `i18n.d.ts`.
+
+**2026-05-29 refactor (types):** `ApiErrorCode` → `src/constants/api-error-code.ts`; `isApiSuccess` → `src/lib/utils/api.ts`; `MEDIA_COLLECTION_ALL_TABS` → `src/constants/media/file-rules.ts`; `PERMISSION_NAME_TO_ID` → `src/lib/utils/permission.ts`; `countTaxonomyTreeNodes` → `src/lib/utils/taxonomy.ts`; barrels use `export type *`.
+
 ---
 
-## Baseline run (2026-05-27)
+## Baseline run (2026-05-29)
 
 ### Full local gate
 
 | Command | Result | Notes |
 |---------|--------|-------|
-| `npm run lint:biome` | **Pass** | 1 **warning** (non-blocking): `src/components/ui/sidebar.tsx` `noDocumentCookie` — shadcn upstream; `biome.json` sets `noDocumentCookie` to `warn` under `src/components/ui/**` |
-| `npm run lint` | **Pass** | ESLint (Next.js config) |
+| `npm run format:biome` | **Pass** | Biome format |
+| `npm run lint:biome` | **Pass** | 1 **warning** (non-blocking): `src/components/ui/sidebar.tsx` `noDocumentCookie` — shadcn upstream |
+| `npm run lint` | **Pass** | ESLint; `src/constants/**` data-only; `src/types/**` type-only |
 | `npx tsc --noEmit` | **Pass** | Strict TypeScript |
 | `npm run quality:deps` | **Pass** | Madge + jscpd (see below) |
 | `npm run build` | **Pass** | `next build` (Next.js 16.2.1) |
@@ -105,8 +124,8 @@ Recommended before PR: run the table above (or at minimum `lint:biome`, `tsc`, `
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| `npm run cycles` | **Pass** | 309 files processed; no circular dependency |
-| `npm run dupl` | **Pass** | **212** files analyzed (UI primitives excluded); **0 clones** (0% duplicated lines) |
+| `npm run cycles` | **Pass** | 311 files processed; no circular dependency |
+| `npm run dupl` | **Pass** | **215** files analyzed (UI primitives excluded); **0 clones** (0% duplicated lines) |
 
 _Re-run after media library a11y fix (2026-05-27): same results — `lint:biome`, `lint`, `tsc --noEmit`, `quality:deps`, `build` all pass._
 

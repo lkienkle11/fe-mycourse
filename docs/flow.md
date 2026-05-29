@@ -1,6 +1,6 @@
 # Execution Flows (`fe`)
 
-_Last audited: 2026-05-21 (full source vs docs sync)._
+_Last audited: 2026-05-29 (ApiErrorCode import path in auth flow)._
 
 
 This document traces the major user-visible and technical flows in the MyCourse frontend. Flows are derived from the **GitNexus** process index for repo **`fe-mycourse`** (12 tracked execution chains across the **Auth** and **Api** clusters) and from direct source inspection. Regenerate the graph after large UI changes with `npx gitnexus analyze --force` from the **fe-mycourse** repo root.

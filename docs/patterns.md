@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (CI `test`: quality:deps + lint; `src/constants` ESLint rules)._
+_Last audited: 2026-05-29 (`src/constants` + `src/types` ESLint rules)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -385,15 +385,19 @@ For human-readable file sizes in the UI, use `formatBytes()` from `src/lib/utils
 
 [`eslint.config.mjs`](../eslint.config.mjs) enforces **data-only** modules under `src/constants/` (no functions, type exports, or `.tsx`). Put runtime helpers in `src/lib/utils/` and shared types in `src/types/`. Details: [`docs/quality.md`](./quality.md#eslint-eslintconfigmjs).
 
+## 12. `src/types/` — types only
+
+Same ESLint config enforces **type-only** files under `src/types/` (no `const`, functions, or `export *`). Exception: value imports from `@/constants/**` are allowed when deriving types (e.g. `PermissionName`, `ApiErrorCodeValue`). Runtime maps like `ApiErrorCode` live in `src/constants/`; helpers like `isApiSuccess()` live in `src/lib/utils/`.
+
 ---
 
-## 12. Slug fields
+## 13. Slug fields
 
 Taxonomy slugs are **read-only** in the UI. Derive them with `generateSlug(name)` / `slugifyName(name)` on submit (and show a live preview while typing the name). Normalization includes Vietnamese accent removal, `đ/Đ -> d`, spaces/underscores → `-`, and Unicode-safe filtering. Do not expose an editable slug input.
 
 ---
 
-## 13. Adding New Features Checklist
+## 14. Adding New Features Checklist
 
 Before writing code for a new feature:
 

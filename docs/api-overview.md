@@ -1,6 +1,6 @@
 # API Overview (`fe-mycourse`)
 
-_Last audited: 2026-05-21 (full source vs docs sync)._
+_Last audited: 2026-05-29 (`ApiErrorCode` in constants; types in `src/types/api.ts`)._
 
 
 ## Scope
@@ -16,7 +16,8 @@ Frontend API layer lives in `src/api/` and is used by `src/actions/` and client 
 ## Contracts
 - Response envelope: `ApiResponse<T>` in `src/types/api.ts`.
 - Low-level helper return type: `ApiResult<T>` with `data/statusCode/headers/cookies`.
-- Error code map: `ApiErrorCode`.
+- Error code map: `ApiErrorCode` in `src/constants/api-error-code.ts`.
+- Success type guard: `isApiSuccess()` in `src/lib/utils/api.ts`.
 
 ## Auth routes used
 - `POST /api/v1/auth/login`
