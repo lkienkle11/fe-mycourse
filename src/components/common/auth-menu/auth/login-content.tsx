@@ -101,10 +101,6 @@ export function LoginContent({ className }: { className?: string }) {
           passwordPlaceholder={t("password")}
           emailError={errors.email}
           passwordError={errors.password}
-          emailErrorMessage={t(errors.email?.message as "validation.email")}
-          passwordErrorMessage={t(
-            errors.password?.message as "validation.password",
-          )}
           showPassword={showPassword}
           onToggleShowPassword={() => setShowPassword((prev) => !prev)}
         />
