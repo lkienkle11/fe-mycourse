@@ -160,8 +160,8 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `ConfirmEmailContent` | `auth/confirm-email-content.tsx` | Client | Email confirm page body → `confirmAction`. |
 | `LogoutContent` | `auth/logout-content.tsx` | Client | Logout page → `logoutAction`. |
 | `handleAuthSubmit` | `auth/auth-form-handler.ts` | Utility | Routes `"login"` → `loginAction`, `"signup"` → **`registerAction`**. |
-| `AuthEmailPasswordFields` | `auth/auth-form-fields.tsx` | Shared UI | Email + password inputs for login/signup (jscpd dedup). |
-| `AuthFullNameField` | `auth/auth-form-fields.tsx` | Shared UI | Full name input (signup). |
+| `AuthEmailPasswordFields` | `auth/auth-form-fields.tsx` | Shared UI | Email + password for login/signup; translates Zod i18n keys when `emailError` / `passwordError` set. |
+| `AuthFullNameField` | `auth/auth-form-fields.tsx` | Shared UI | Full name (signup); same validation translation pattern. |
 | `AuthConfirmTabSync` | `providers/auth-confirm-tab-sync.tsx` | Client | Reload tabs after email confirm elsewhere. |
 | `AuthLogoutTabSync` | `providers/auth-logout-tab-sync.tsx` | Client | Cross-tab logout via `broadcast:logout`. |
 | `auth-social-login/` | `auth/auth-social-login/` | Client | Social auth buttons (UI stub). |

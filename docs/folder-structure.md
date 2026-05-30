@@ -147,6 +147,7 @@ src/components/
 │                           #   AuthLayout, AuthButton, LoginSignupPopup, user-menu-dropdown-items,
 │                           #   LoginContent, SignupContent, UserMenu,
 │                           #   auth-form-handler.ts (dispatcher),
+│                           #   auth/auth-form-fields.tsx (Zod i18n validation translate),
 │                           #   auth-social-login/ (social auth buttons)
 ├── home/                   # Home page section components
 │                           #   HeroSection, SearchSection, TopCoursesSection,
@@ -322,7 +323,7 @@ src/types/
 src/schema/
 └── auth/
     └── auth.ts             # loginSchema (email, password, rememberMe), signupSchema
-                            # Error messages use i18n keys (e.g. "validation.email")
+                            # Error messages use i18n keys; translated in auth-form-fields.tsx
 ```
 
 ### `src/constants/` — Application Constants
