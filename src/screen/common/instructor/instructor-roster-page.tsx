@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -19,9 +20,10 @@ import { DataTable } from "@/components/shared/data-table";
 import { PermissionGate } from "@/components/shared/permission-gate";
 import { Button } from "@/components/ui/button";
 import { PERMISSIONS } from "@/constants/permissions";
+import { pickCharacter } from "@/lib/utils";
 import type {
   InstructorListFilters,
-  InstructorProfilePayload,
+  InstructorProfile,
   InstructorRosterMember,
 } from "@/types/instructor";
 import { InstructorListPagination } from "./instructor-list-pagination";
@@ -41,8 +43,8 @@ export function InstructorRosterPage() {
     useState<InstructorRosterMember | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [profilePayload, setProfilePayload] =
-    useState<InstructorProfilePayload | null>(null);
+  const [selectedProfile, setSelectedProfile] =
+    useState<InstructorProfile | null>(null);
   const [profileTitle, setProfileTitle] = useState("");
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
@@ -53,6 +55,36 @@ export function InstructorRosterPage() {
 
   const columns = useMemo<DataTableColumn<InstructorRosterMember>[]>(
     () => [
+      {
+        id: "avatar",
+        header: t("columns.avatar"),
+        cell: (row) => {
+          const { label, color, backgroundColor } = pickCharacter(
+            row.full_name,
+          );
+          return row.avatar ? (
+            <Image
+              src={row.avatar}
+              alt={`${row.full_name} avatar`}
+              width={32}
+              height={32}
+              className="size-8 rounded-full object-cover"
+            />
+          ) : (
+            <div
+              className="flex size-8 items-center justify-center rounded-full"
+              style={{ backgroundColor }}
+            >
+              <span
+                style={{ color }}
+                className="text-xs font-semibold leading-none"
+              >
+                {label}
+              </span>
+            </div>
+          );
+        },
+      },
       {
         id: "full_name",
         header: t("columns.name"),
@@ -90,7 +122,7 @@ export function InstructorRosterPage() {
     setIsLoadingProfile(true);
     try {
       const profile = await getInstructorProfileByUserService(row.id);
-      setProfilePayload(profile.profile);
+      setSelectedProfile(profile);
       setProfileTitle(row.full_name);
       setProfileOpen(true);
     } catch {
@@ -204,7 +236,9 @@ export function InstructorRosterPage() {
       <InstructorProfileViewDialog
         open={profileOpen}
         onOpenChange={setProfileOpen}
-        profile={profilePayload}
+        profile={selectedProfile?.profile ?? null}
+        fullName={selectedProfile?.full_name}
+        avatarUrl={selectedProfile?.avatar}
         title={profileTitle}
       />
     </div>

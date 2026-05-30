@@ -350,6 +350,7 @@ const messages = {
     },
     profileView: {
       title: "Hồ sơ giảng viên",
+      userName: "Họ tên",
       headline: "Tiêu đề",
       bio: "Giới thiệu",
       yearsOfExperience: "Số năm kinh nghiệm",
@@ -368,6 +369,7 @@ const messages = {
       viewProfile: "Xem hồ sơ",
       profileNotFound: "Không tìm thấy hồ sơ cho giảng viên này.",
       columns: {
+        avatar: "Ảnh đại diện",
         name: "Họ tên",
         email: "Email",
         phone: "Điện thoại",

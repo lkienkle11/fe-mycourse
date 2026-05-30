@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import {
   Dialog,
@@ -7,12 +8,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { pickCharacter } from "@/lib/utils";
 import type { InstructorProfilePayload } from "@/types/instructor";
 
 export type InstructorProfileViewDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   profile: InstructorProfilePayload | null;
+  fullName?: string;
+  avatarUrl?: string;
   title?: string;
 };
 
@@ -20,9 +24,12 @@ export function InstructorProfileViewDialog({
   open,
   onOpenChange,
   profile,
+  fullName = "",
+  avatarUrl = "",
   title,
 }: InstructorProfileViewDialogProps) {
   const t = useTranslations("instructor.profileView");
+  const { label, color, backgroundColor } = pickCharacter(fullName || "User");
 
   if (!profile) return null;
 
@@ -32,6 +39,35 @@ export function InstructorProfileViewDialog({
         <DialogHeader>
           <DialogTitle>{title ?? t("title")}</DialogTitle>
         </DialogHeader>
+        {fullName ? (
+          <div className="mb-1 flex items-center gap-3 rounded-md border p-3">
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt={`${fullName} avatar`}
+                width={40}
+                height={40}
+                className="size-10 rounded-full object-cover"
+              />
+            ) : (
+              <div
+                className="flex size-10 items-center justify-center rounded-full"
+                style={{ backgroundColor }}
+              >
+                <span
+                  style={{ color }}
+                  className="text-sm font-semibold leading-none"
+                >
+                  {label}
+                </span>
+              </div>
+            )}
+            <div>
+              <p className="text-xs text-muted-foreground">{t("userName")}</p>
+              <p className="font-medium">{fullName}</p>
+            </div>
+          </div>
+        ) : null}
         <dl className="grid gap-3 text-sm">
           <Field label={t("headline")} value={profile.headline} />
           <Field label={t("bio")} value={profile.bio} />

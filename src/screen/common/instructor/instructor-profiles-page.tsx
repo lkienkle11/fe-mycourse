@@ -132,6 +132,8 @@ export function InstructorProfilesPage() {
         open={profileOpen}
         onOpenChange={setProfileOpen}
         profile={selected?.profile ?? null}
+        fullName={selected?.full_name}
+        avatarUrl={selected?.avatar}
         title={t("profileTitle", { id: String(selected?.user_id ?? "") })}
       />
 

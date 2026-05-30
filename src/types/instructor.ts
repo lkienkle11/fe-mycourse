@@ -27,6 +27,11 @@ export type InstructorProfilePayload = {
   intro_video_file_id: string;
 };
 
+export type InstructorUserIdentity = {
+  full_name: string;
+  avatar: string;
+};
+
 export type InstructorRosterMember = {
   id: number;
   full_name: string;
@@ -35,7 +40,7 @@ export type InstructorRosterMember = {
   avatar: string;
 };
 
-export type InstructorApplication = {
+export type InstructorApplication = InstructorUserIdentity & {
   id: number;
   user_id: number;
   review_status: InstructorReviewStatus | string;

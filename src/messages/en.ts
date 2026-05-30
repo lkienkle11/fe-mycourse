@@ -349,6 +349,7 @@ const messages = {
     },
     profileView: {
       title: "Instructor profile",
+      userName: "Name",
       headline: "Headline",
       bio: "Bio",
       yearsOfExperience: "Years of experience",
@@ -367,6 +368,7 @@ const messages = {
       viewProfile: "View profile",
       profileNotFound: "No profile found for this instructor.",
       columns: {
+        avatar: "Avatar",
         name: "Name",
         email: "Email",
         phone: "Phone",
