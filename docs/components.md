@@ -203,6 +203,8 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 
 `src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog`, `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns; `child_render` column opens tree view).
 
+`src/components/features/instructor/` — instructor management: `InstructorProfileViewDialog`, `ConfirmAddInstructorDialog`, `InstructorApprovalActions` (reject requires reason). See `docs/instructor-admin.md`.
+
 `src/components/features/media/` — media library popup: `MediaCollectionDialog`, `MediaUploadDialog` (sr-only `DialogDescription`; uses shared `formatBytes` from `@/lib/utils`), `MediaItemCard` (overlay select button + menu above + full-filename tooltip; see a11y in `docs/media-collection.md`), `MediaTabPanel`. See `docs/media-collection.md`.
 
 ---

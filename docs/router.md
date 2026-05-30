@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (taxonomy screen layer: common + admin/sysadmin wrappers)._
+_Last audited: 2026-05-29 (taxonomy + instructor management routes)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
@@ -76,12 +76,15 @@ export const config = {
 /[locale]/logout        → src/app/[locale]/(web)/logout/page.tsx         Logout
 /[locale]/admin         → src/app/[locale]/admin/layout.tsx   DashboardLayout (admin items)
 /[locale]/admin         → src/app/[locale]/admin/page.tsx     AdminDashboardPage
-/[locale]/instructor    → src/app/[locale]/instructor/layout.tsx
-/[locale]/instructor    → src/app/[locale]/instructor/page.tsx
+/[locale]/instructor              → src/app/[locale]/instructor/layout.tsx
+/[locale]/instructor              → src/app/[locale]/instructor/page.tsx
+/[locale]/instructor/tickets      → InstructorTicketsPage
 /[locale]/sysadmin      → src/app/[locale]/sysadmin/layout.tsx
 /[locale]/sysadmin      → src/app/[locale]/sysadmin/page.tsx
 /[locale]/admin/taxonomy/{levels,topics,outcomes,skills,tags}  → AdminTaxonomy*Page → TaxonomyListPage
 /[locale]/sysadmin/taxonomy/{levels,topics,outcomes,skills,tags}  → SysadminTaxonomy*Page → TaxonomyListPage
+/[locale]/admin/instructors/{roster,approvals,profiles,expertise,tickets}  → AdminInstructor*Page → shared instructor screens
+/[locale]/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}  → SysadminInstructor*Page → same shared screens
 ```
 
 ### Route Groups
@@ -112,11 +115,14 @@ src/app/[locale]/
 | `/en/logout` | same | same | ✅ Implemented |
 | `/vi/admin` | `[locale]/admin/page.tsx` | `AdminDashboardPage` | ✅ Shell + placeholder |
 | `/vi/instructor` | `[locale]/instructor/page.tsx` | `InstructorDashboardPage` | ✅ Shell + placeholder |
+| `/vi/instructor/tickets` | `[locale]/instructor/tickets/page.tsx` | `InstructorTicketsPage` | ✅ Implemented |
+| `/vi/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | `admin/instructors/*/page.tsx` | `AdminInstructor*Page` → shared screens | ✅ Implemented |
+| `/vi/sysadmin/instructors/*` | `sysadmin/instructors/*/page.tsx` | `SysadminInstructor*Page` → shared screens | ✅ Implemented |
 | `/vi/sysadmin` | `[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` | ✅ Shell + placeholder |
 | `/vi/courses` | — | — | 🚧 Planned |
 | `/vi/admin/taxonomy/levels` (and topics, outcomes, skills, tags) | `admin/taxonomy/*/page.tsx` | `AdminTaxonomy*Page` → `TaxonomyListPage` | ✅ Implemented |
 | `/vi/sysadmin/taxonomy/*` | `sysadmin/taxonomy/*/page.tsx` | `SysadminTaxonomy*Page` → `TaxonomyListPage` | ✅ Implemented |
-| `/vi/admin/users`, `/vi/admin/courses`, … | — | — | 🚧 Placeholder nav links only |
+| `/vi/admin/users`, `/vi/admin/courses`, … | — | — | 🚧 Placeholder nav links only (instructor routes above are implemented) |
 
 ---
 

@@ -102,9 +102,9 @@ fe/
 │   │       ├── (web)/
 │   │       │   ├── layout.tsx      # Web shell — Header, <main>, Footer
 │   │       │   └── page.tsx        # Home route → HomePage
-│   │       ├── admin/              # DashboardLayout + AdminDashboardPage
-│   │       ├── instructor/
-│   │       └── sysadmin/
+│   │       ├── admin/              # DashboardLayout; taxonomy + instructors/*
+│   │       ├── instructor/         # DashboardLayout; tickets
+│   │       └── sysadmin/           # DashboardLayout; taxonomy + instructors/*
 │   │
 │   ├── screen/                     # Page-level screen components (async server components)
 │   │   ├── index.ts                # Barrel: common + admin + instructor + sysadmin

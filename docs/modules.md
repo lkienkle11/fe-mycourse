@@ -1,6 +1,6 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (taxonomy screen layer: common + admin/sysadmin wrappers; TAXONOMY_RESOURCE_KEYS)._
+_Last audited: 2026-05-29 (taxonomy + instructor management modules)._
 
 
 ## Module map
@@ -13,6 +13,7 @@ _Last audited: 2026-05-29 (taxonomy screen layer: common + admin/sysadmin wrappe
 - `Shared`: `src/lib/utils`, `src/constants`, `src/config`
 - `Taxonomy`: `src/types/taxonomy`, `src/constants/taxonomy`, `src/api/callers/taxonomy`, `src/components/features/taxonomy`, `src/screen/common/taxonomy`, `src/screen/{admin,sysadmin}/taxonomy/*`, app routes under `admin/taxonomy/*` and `sysadmin/taxonomy/*`
 - `Media`: `src/types/media`, `src/constants/media`, `src/api/callers/media`, `src/components/features/media` (collection popup; no dedicated route page yet)
+- `Instructor`: `src/types/instructor.ts`, `src/constants/instructor`, `src/api/callers/instructor`, `src/api/hooks/instructor`, `src/components/features/instructor`, `src/screen/common/instructor`, `src/screen/{admin,sysadmin}/instructor/*`, `src/screen/instructor/tickets`, app routes under `admin/instructors/*`, `sysadmin/instructors/*`, `instructor/tickets`
 
 ## Responsibilities
 - `Ui` renders pages/sections and calls hooks/actions.
@@ -45,9 +46,17 @@ _Last audited: 2026-05-29 (taxonomy screen layer: common + admin/sysadmin wrappe
 - **UI**: `src/components/features/media/*`; embedded from `taxonomy-form-dialog.tsx`.
 - **Docs**: `docs/media-collection.md`.
 
+## Instructor module
+
+- **Types**: `src/types/instructor.ts` — roster, applications, profiles, expertise junction rows, tickets, messages, list filters.
+- **Constants**: `src/constants/instructor/resources.ts` — `INSTRUCTOR_GROUP_READ_PERMISSIONS`; `src/constants/dashboard/instructor-icons.ts` — `INSTRUCTOR_MENU_ICONS`; instructor group in `admin-items.ts` / `sysadmin-items.ts` / `instructor-items.ts`.
+- **API**: `src/api/callers/instructor/instructor.ts`, `src/api/hooks/instructor/*`; routes in `API_PRIVATE_ROUTES.instructor`.
+- **UI**: `src/screen/common/instructor/*` (shared pages), thin `src/screen/{admin,sysadmin}/instructor/*/page.tsx`, `src/screen/instructor/tickets/page.tsx`; `src/components/features/instructor/*`.
+- **Docs**: `docs/instructor-admin.md` (routes, permissions, expertise names, tickets).
+
 ## Authorization constants & hooks
 
-- **Constants**: `PERMISSIONS` (40 names), `PERMISSION_IDS` (P1–P40), `ROLES` in `src/constants/` — mirror BE `AllPermissions` and role tags.
+- **Constants**: `PERMISSIONS` (58 names), `PERMISSION_IDS` (P1–P58), `ROLES` in `src/constants/` — mirror BE `AllPermissions` and role tags.
 - **Types**: `PermissionName`, `PermissionId`, `RoleName` in `src/types/permissions/`.
 - **Utils**: `PERMISSION_NAME_TO_ID`, `permissionIdFromName`, `permissionNameFromId` in `src/lib/utils/permission.ts`.
 - **Utils**: `src/lib/utils/permission.ts` — `hasAllPermissions` matches BE `RequirePermission` (AND semantics); `filterPermissionNavTree` deep-filters nested nav (dashboard + user menu).

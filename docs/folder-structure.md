@@ -56,14 +56,17 @@ src/app/
     ├── admin/              # Admin dashboard (DashboardLayout)
     │   ├── layout.tsx
     │   ├── page.tsx
-    │   └── taxonomy/       # App routes → admin screen pages (AdminTaxonomy*Page)
+    │   ├── taxonomy/       # App routes → AdminTaxonomy*Page
+    │   └── instructors/    # roster, approvals, profiles, expertise, tickets
     ├── instructor/
     │   ├── layout.tsx
-    │   └── page.tsx
+    │   ├── page.tsx
+    │   └── tickets/page.tsx
     └── sysadmin/
         ├── layout.tsx
         ├── page.tsx
-        └── taxonomy/       # App routes → sysadmin screen pages (SysadminTaxonomy*Page)
+        ├── taxonomy/       # App routes → SysadminTaxonomy*Page
+        └── instructors/    # same five screens as admin
 ```
 
 ### `src/screen/` — Page-Level Screen Components
@@ -74,7 +77,15 @@ Async server components that assemble sections into a full page. Acts as the bri
 src/screen/
 ├── index.ts                # Barrel: re-exports common, admin, instructor, sysadmin
 ├── common/
-│   ├── index.ts            # Barrel: shared screens (home, taxonomy)
+│   ├── index.ts            # Barrel: shared screens (home, taxonomy, instructor)
+│   ├── instructor/
+│   │   ├── index.ts
+│   │   ├── instructor-roster-page.tsx
+│   │   ├── instructor-approvals-page.tsx
+│   │   ├── instructor-profiles-page.tsx
+│   │   ├── instructor-expertise-page.tsx
+│   │   ├── instructor-tickets-admin-page.tsx
+│   │   └── instructor-list-pagination.tsx
 │   ├── home/
 │   │   └── page.tsx        # HomePage — assembles all home section components
 │   └── taxonomy/
@@ -89,9 +100,16 @@ src/screen/
 │       ├── outcomes/page.tsx   # AdminTaxonomyOutcomesPage
 │       ├── skills/page.tsx     # AdminTaxonomySkillsPage
 │       └── tags/page.tsx       # AdminTaxonomyTagsPage
+│   └── instructor/           # Thin wrappers → common/instructor/*
+│       ├── roster/page.tsx
+│       ├── approvals/page.tsx
+│       ├── profiles/page.tsx
+│       ├── expertise/page.tsx
+│       └── tickets/page.tsx
 ├── instructor/
 │   ├── index.ts
-│   └── page.tsx            # InstructorDashboardPage (placeholder)
+│   ├── page.tsx            # InstructorDashboardPage (placeholder)
+│   └── tickets/page.tsx    # InstructorTicketsPage
 └── sysadmin/
     ├── index.ts
     ├── page.tsx            # SysadminDashboardPage (placeholder)
@@ -101,6 +119,12 @@ src/screen/
         ├── outcomes/page.tsx   # SysadminTaxonomyOutcomesPage
         ├── skills/page.tsx     # SysadminTaxonomySkillsPage
         └── tags/page.tsx       # SysadminTaxonomyTagsPage
+    └── instructor/           # Thin wrappers → common/instructor/*
+        ├── roster/page.tsx
+        ├── approvals/page.tsx
+        ├── profiles/page.tsx
+        ├── expertise/page.tsx
+        └── tickets/page.tsx
 ```
 
 ### `src/components/` — React Components
@@ -130,6 +154,7 @@ src/components/
 │                           #   UpcomingWebinarsSection, PromoSection, CourseCard
 ├── features/
 │   ├── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
+│   ├── instructor/         # InstructorProfileViewDialog, ConfirmAddInstructorDialog, InstructorApprovalActions
 │   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
@@ -173,6 +198,8 @@ src/api/
 │   │   └── auth.ts         # loginService, getMeService, getMeEndpointKey
 │   ├── taxonomy/
 │   │   └── taxonomy.ts     # list/create/patch/delete taxonomy services
+│   ├── instructor/
+│   │   └── instructor.ts   # roster, applications, profiles, expertise, tickets
 │   └── media/
 │       └── media.ts        # list/upload/delete media services
 └── hooks/
@@ -180,6 +207,8 @@ src/api/
     │   └── useAuth.ts      # SWR hook: { me, isLoading, error, mutate }
     ├── taxonomy/
     │   └── useTaxonomy.ts  # useTaxonomyList(resourceKey, filters)
+    ├── instructor/
+    │   └── useInstructor*.ts  # roster, applications, profiles, expertise, tickets
     └── media/
         └── useMediaFiles.ts # useMediaFiles(filters)
 ```
@@ -302,20 +331,23 @@ src/schema/
 
 ```
 src/constants/
-├── api-route.ts            # API_PUBLIC_ROUTES + API_PRIVATE_ROUTES (me, taxonomy, media.files, …)
+├── api-route.ts            # API_PUBLIC_ROUTES + API_PRIVATE_ROUTES (me, taxonomy, media, instructor, …)
 ├── api-error-code.ts       # ApiErrorCode — mirrors be/pkg/errcode/codes.go
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
 ├── route.ts                # PUBLIC_ROUTES — client-side navigation path constants
 ├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (values only)
-├── permissions.ts          # PERMISSIONS — 40 canonical names (mirror BE AllPermissions)
-├── permission-ids.ts       # PERMISSION_IDS — P1…P40
+├── permissions.ts          # PERMISSIONS — P1…P58 (mirror BE AllPermissions)
+├── permission-ids.ts       # PERMISSION_IDS — P1…P58
 ├── roles.ts                # ROLES — sysadmin, admin, instructor, learner
 ├── dashboard/
 │   ├── index.ts            # ADMIN_DASHBOARD_ITEMS, INSTRUCTOR_*, SYSADMIN_* (barrel)
 │   ├── admin-items.ts      # Admin sidebar tree (includes taxonomy group + children)
 │   ├── sysadmin-items.ts   # Sysadmin sidebar tree
 │   ├── instructor-items.ts
+│   ├── instructor-icons.ts # INSTRUCTOR_MENU_ICONS — Lucide icons for instructor nav nodes
 │   └── taxonomy-icons.ts   # TAXONOMY_MENU_ICONS — Lucide icons for taxonomy nav nodes
+├── instructor/
+│   └── resources.ts        # INSTRUCTOR_GROUP_READ_PERMISSIONS (data only)
 ├── taxonomy/
 │   └── resources.ts        # TAXONOMY_RESOURCES, TAXONOMY_RESOURCE_KEYS, TAXONOMY_GROUP_READ_PERMISSIONS (data only)
 ├── media/

@@ -140,7 +140,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ### Asset: PERMISSION_IDS
 - **Name**: `PERMISSION_IDS`
-- **Type**: Constant object (`P1`…`P40`)
+- **Type**: Constant object (`P1`…`P58`)
 - **Path**: `src/constants/permission-ids.ts`
 - **Purpose**: DB `permissions.permission_id` keyed like BE `perm_id` tags.
 - **Scope**: Admin RBAC UI, id ↔ name lookup via utils.
@@ -202,6 +202,22 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `DashboardLayout` and any client dashboard nav.
 - **Dependencies**: `usePermissionSet`, `filterDashboardItems`.
 
+### Asset: `INSTRUCTOR_MENU_ICONS`
+- **Name**: `INSTRUCTOR_MENU_ICONS`
+- **Type**: Constant (`Record<"group" | "roster" | "approvals" | "profiles" | "expertise" | "tickets", LucideIcon>`)
+- **Path**: `src/constants/dashboard/instructor-icons.ts`
+- **Purpose**: Shared Lucide icons for the instructor admin sidebar group and five child routes. Imported by `admin-items.ts`, `sysadmin-items.ts`, and `instructor-items.ts` (tickets).
+- **Scope**: Admin/sysadmin instructor nav + instructor role tickets menu.
+- **Dependencies**: `lucide-react`, `LucideIcon`.
+
+### Asset: Instructor API callers & hooks
+- **Name**: `listInstructorRosterService`, `useInstructorApplicationsList`, …
+- **Type**: Service functions + SWR hooks
+- **Path**: `src/api/callers/instructor/instructor.ts`, `src/api/hooks/instructor/*`
+- **Purpose**: HTTP + cache for roster, applications (approve/reject), profiles, expertise, tickets.
+- **Scope**: `src/screen/common/instructor/*`, `src/screen/instructor/tickets/page.tsx`.
+- **Dependencies**: `API_PRIVATE_ROUTES.instructor`, `src/types/instructor.ts`.
+
 ### Asset: `TAXONOMY_MENU_ICONS`
 - **Name**: `TAXONOMY_MENU_ICONS`
 - **Type**: Constant (`Record<"group" \| "levels" \| "topics" \| "outcomes" \| "skills" \| "tags", LucideIcon>`)
@@ -213,8 +229,8 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: Role dashboard menu constants
 - **Name**: `ADMIN_DASHBOARD_ITEMS`, `INSTRUCTOR_DASHBOARD_ITEMS`, `SYSADMIN_DASHBOARD_ITEMS`
 - **Type**: Constant (`DashboardItem[]`)
-- **Path**: `src/constants/dashboard/` (`admin-items.ts`, `sysadmin-items.ts`, `instructor-items.ts`, `taxonomy-icons.ts`; barrel: `@/constants/dashboard`)
-- **Purpose**: Nav trees per role with nested children, Lucide `icon`, optional `titleKey`, and permission gates aligned to BE `permissions.go`. Taxonomy subtree uses `TAXONOMY_MENU_ICONS`.
+- **Path**: `src/constants/dashboard/` (`admin-items.ts`, `sysadmin-items.ts`, `instructor-items.ts`, `taxonomy-icons.ts`, `instructor-icons.ts`; barrel: `@/constants/dashboard`)
+- **Purpose**: Nav trees per role with nested children, Lucide `icon`, optional `titleKey`, and permission gates aligned to BE `permissions.go`. Taxonomy subtree uses `TAXONOMY_MENU_ICONS`; instructor admin subtree uses `INSTRUCTOR_MENU_ICONS` + `INSTRUCTOR_GROUP_READ_PERMISSIONS`.
 - **Scope**: App route layouts under `src/app/[locale]/{admin,instructor,sysadmin}/layout.tsx`.
 - **Dependencies**: `PERMISSIONS`, `TAXONOMY_MENU_ICONS`, `TAXONOMY_GROUP_READ_PERMISSIONS`, `DashboardItem`.
 
