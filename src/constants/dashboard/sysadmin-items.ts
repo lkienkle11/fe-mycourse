@@ -1,5 +1,7 @@
 import { LayoutDashboard, Server, Shield } from "lucide-react";
+import { INSTRUCTOR_MENU_ICONS } from "@/constants/dashboard/instructor-icons";
 import { TAXONOMY_MENU_ICONS } from "@/constants/dashboard/taxonomy-icons";
+import { INSTRUCTOR_GROUP_READ_PERMISSIONS } from "@/constants/instructor/resources";
 import { PERMISSIONS } from "@/constants/permissions";
 import { TAXONOMY_GROUP_READ_PERMISSIONS } from "@/constants/taxonomy/resources";
 import type { DashboardItem } from "@/types/dashboard";
@@ -81,6 +83,56 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         href: "/sysadmin/taxonomy/tags",
         icon: TAXONOMY_MENU_ICONS.tags,
         permissions: [PERMISSIONS.TagRead],
+      },
+    ],
+  },
+  {
+    id: "sysadmin-instructors",
+    title: "Instructors",
+    titleKey: "instructor.menu.group",
+    icon: INSTRUCTOR_MENU_ICONS.group,
+    permissions: INSTRUCTOR_GROUP_READ_PERMISSIONS,
+    permissionMode: "any",
+    children: [
+      {
+        id: "sysadmin-instructors-roster",
+        title: "Roster",
+        titleKey: "instructor.menu.roster",
+        href: "/sysadmin/instructors/roster",
+        icon: INSTRUCTOR_MENU_ICONS.roster,
+        permissions: [PERMISSIONS.InstructorRosterRead],
+      },
+      {
+        id: "sysadmin-instructors-approvals",
+        title: "Approvals",
+        titleKey: "instructor.menu.approvals",
+        href: "/sysadmin/instructors/approvals",
+        icon: INSTRUCTOR_MENU_ICONS.approvals,
+        permissions: [PERMISSIONS.InstructorApplicationRead],
+      },
+      {
+        id: "sysadmin-instructors-profiles",
+        title: "Profiles",
+        titleKey: "instructor.menu.profiles",
+        href: "/sysadmin/instructors/profiles",
+        icon: INSTRUCTOR_MENU_ICONS.profiles,
+        permissions: [PERMISSIONS.InstructorProfileRead],
+      },
+      {
+        id: "sysadmin-instructors-expertise",
+        title: "Expertise",
+        titleKey: "instructor.menu.expertise",
+        href: "/sysadmin/instructors/expertise",
+        icon: INSTRUCTOR_MENU_ICONS.expertise,
+        permissions: [PERMISSIONS.InstructorExpertiseRead],
+      },
+      {
+        id: "sysadmin-instructors-tickets",
+        title: "Tickets",
+        titleKey: "instructor.menu.tickets",
+        href: "/sysadmin/instructors/tickets",
+        icon: INSTRUCTOR_MENU_ICONS.tickets,
+        permissions: [PERMISSIONS.InstructorApplicationRead],
       },
     ],
   },
