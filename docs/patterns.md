@@ -273,6 +273,8 @@ z.string().email({ message: "validation.email" })
 z.string().email({ message: "Please enter a valid email" })
 ```
 
+Translate keys in `auth-form-fields.tsx` (`resolveAuthValidationMessage`) — pass `error` from react-hook-form, not `t(errors.*.message)` in `login-content` / `signup-content` (calling `t(undefined)` throws `MISSING_MESSAGE`).
+
 ---
 
 ## 7. Internationalization (i18n) Pattern

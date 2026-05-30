@@ -225,7 +225,7 @@ Message files: src/messages/vi.ts, src/messages/en.ts (loaded via src/lib/i18n/l
 
 Convention:
   → Zod validation messages = i18n key strings (e.g. "validation.email")
-  → Components translate at render time: t(error.message)
+  → auth-form-fields.tsx: resolveAuthValidationMessage(t, error?.message) — skip t() when message is undefined
 ```
 
 ---

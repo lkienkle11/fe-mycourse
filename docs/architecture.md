@@ -102,9 +102,9 @@ fe/
 │   │       ├── (web)/
 │   │       │   ├── layout.tsx      # Web shell — Header, <main>, Footer
 │   │       │   └── page.tsx        # Home route → HomePage
-│   │       ├── admin/              # DashboardLayout + AdminDashboardPage
-│   │       ├── instructor/
-│   │       └── sysadmin/
+│   │       ├── admin/              # DashboardLayout; taxonomy + instructors/*
+│   │       ├── instructor/         # DashboardLayout; tickets
+│   │       └── sysadmin/           # DashboardLayout; taxonomy + instructors/*
 │   │
 │   ├── screen/                     # Page-level screen components (async server components)
 │   │   ├── index.ts                # Barrel: common + admin + instructor + sysadmin
@@ -359,7 +359,7 @@ All Go API endpoints return a standard `{ code, message, data }` envelope (mirro
 | `src/types/i18n.d.ts` | `AppConfig.Messages` augmentation for typed `useTranslations` keys |
 | `next.config.ts` | `createNextIntlPlugin("./src/i18n/request.ts")` wraps the Next config |
 
-Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i18n keys** (e.g. `"validation.email"`). Components call `t(error.message)` to resolve them via `useTranslations("auth")`.
+Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i18n keys** (e.g. `"validation.email"`). `AuthEmailField`, `AuthPasswordField`, and `AuthFullNameField` in `auth-form-fields.tsx` resolve keys via `useTranslations("auth")` only when `error.message` is set (never `t(undefined)`).
 
 ---
 

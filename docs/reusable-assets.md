@@ -140,7 +140,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ### Asset: PERMISSION_IDS
 - **Name**: `PERMISSION_IDS`
-- **Type**: Constant object (`P1`…`P40`)
+- **Type**: Constant object (`P1`…`P58`)
 - **Path**: `src/constants/permission-ids.ts`
 - **Purpose**: DB `permissions.permission_id` keyed like BE `perm_id` tags.
 - **Scope**: Admin RBAC UI, id ↔ name lookup via utils.
@@ -202,6 +202,22 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `DashboardLayout` and any client dashboard nav.
 - **Dependencies**: `usePermissionSet`, `filterDashboardItems`.
 
+### Asset: `INSTRUCTOR_MENU_ICONS`
+- **Name**: `INSTRUCTOR_MENU_ICONS`
+- **Type**: Constant (`Record<"group" | "roster" | "approvals" | "profiles" | "expertise" | "tickets", LucideIcon>`)
+- **Path**: `src/constants/dashboard/instructor-icons.ts`
+- **Purpose**: Shared Lucide icons for the instructor admin sidebar group and five child routes. Imported by `admin-items.ts`, `sysadmin-items.ts`, and `instructor-items.ts` (tickets).
+- **Scope**: Admin/sysadmin instructor nav + instructor role tickets menu.
+- **Dependencies**: `lucide-react`, `LucideIcon`.
+
+### Asset: Instructor API callers & hooks
+- **Name**: `listInstructorRosterService`, `useInstructorApplicationsList`, …
+- **Type**: Service functions + SWR hooks
+- **Path**: `src/api/callers/instructor/instructor.ts`, `src/api/hooks/instructor/*`
+- **Purpose**: HTTP + cache for roster, applications (approve/reject), profiles, expertise, tickets.
+- **Scope**: `src/screen/common/instructor/*`, `src/screen/instructor/tickets/page.tsx`.
+- **Dependencies**: `API_PRIVATE_ROUTES.instructor`, `src/types/instructor.ts`.
+
 ### Asset: `TAXONOMY_MENU_ICONS`
 - **Name**: `TAXONOMY_MENU_ICONS`
 - **Type**: Constant (`Record<"group" \| "levels" \| "topics" \| "outcomes" \| "skills" \| "tags", LucideIcon>`)
@@ -213,8 +229,8 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: Role dashboard menu constants
 - **Name**: `ADMIN_DASHBOARD_ITEMS`, `INSTRUCTOR_DASHBOARD_ITEMS`, `SYSADMIN_DASHBOARD_ITEMS`
 - **Type**: Constant (`DashboardItem[]`)
-- **Path**: `src/constants/dashboard/` (`admin-items.ts`, `sysadmin-items.ts`, `instructor-items.ts`, `taxonomy-icons.ts`; barrel: `@/constants/dashboard`)
-- **Purpose**: Nav trees per role with nested children, Lucide `icon`, optional `titleKey`, and permission gates aligned to BE `permissions.go`. Taxonomy subtree uses `TAXONOMY_MENU_ICONS`.
+- **Path**: `src/constants/dashboard/` (`admin-items.ts`, `sysadmin-items.ts`, `instructor-items.ts`, `taxonomy-icons.ts`, `instructor-icons.ts`; barrel: `@/constants/dashboard`)
+- **Purpose**: Nav trees per role with nested children, Lucide `icon`, optional `titleKey`, and permission gates aligned to BE `permissions.go`. Taxonomy subtree uses `TAXONOMY_MENU_ICONS`; instructor admin subtree uses `INSTRUCTOR_MENU_ICONS` + `INSTRUCTOR_GROUP_READ_PERMISSIONS`.
 - **Scope**: App route layouts under `src/app/[locale]/{admin,instructor,sysadmin}/layout.tsx`.
 - **Dependencies**: `PERMISSIONS`, `TAXONOMY_MENU_ICONS`, `TAXONOMY_GROUP_READ_PERMISSIONS`, `DashboardItem`.
 
@@ -472,7 +488,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `loginSchema`, `LoginFormValues`
 - **Type**: Zod schema + inferred type
 - **Path**: `src/schema/auth/auth.ts`
-- **Purpose**: Validates login form — `email`, `password`, `rememberMe`. Validation messages are i18n keys (`"validation.email"`, `"validation.password"`) — components translate via `useTranslations("auth")`.
+- **Purpose**: Validates login form — `email`, `password`, `rememberMe`. Validation messages are i18n keys (`"validation.email"`, `"validation.password"`) — translated inside `auth-form-fields.tsx` (`resolveAuthValidationMessage`).
 - **Scope**: `src/components/common/auth-menu/auth/login-content.tsx`.
 - **Dependencies**: `zod`.
 - **Reuse Rule**: Use `zodResolver(loginSchema)` with `react-hook-form`. Never re-define inline.
@@ -607,9 +623,9 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `AuthEmailPasswordFields`, `AuthFullNameField`, `AuthEmailField`, `AuthPasswordField`
 - **Type**: Auth form field components
 - **Path**: `src/components/common/auth-menu/auth/auth-form-fields.tsx`
-- **Purpose**: Shared styled inputs for login/signup modals.
-- **Scope**: `login-content.tsx`, `signup-content.tsx`. **Do not copy** email/password markup into new auth forms.
-- **Dependencies**: `InputGroup`, lucide icons, react-hook-form register props.
+- **Purpose**: Shared styled inputs for login/signup modals; resolves Zod i18n validation keys via `useTranslations("auth")` when `FieldError.message` is present.
+- **Scope**: `login-content.tsx`, `signup-content.tsx`. Pass `error` only — **do not** call `t(errors.*.message)` in parents (avoids `MISSING_MESSAGE` from `t(undefined)`).
+- **Dependencies**: `InputGroup`, lucide icons, react-hook-form, `next-intl`.
 
 ### Asset: apiInstance
 - **Name**: `apiInstance`
