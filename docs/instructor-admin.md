@@ -73,7 +73,7 @@ Reject application requires `rejection_reason` (1–2000 chars) via `InstructorA
 
 | Component | Purpose |
 |-----------|---------|
-| `InstructorProfileViewDialog` | Read-only profile popup (approvals / roster) |
+| `InstructorProfileViewDialog` | Read-only profile popup (approvals / roster / profiles) with identity block (`full_name`, `avatar` + fallback) |
 | `ConfirmAddInstructorDialog` | Add roster member by email |
 | `InstructorApprovalActions` | Approve / reject (reason required) / delete application |
 
@@ -84,6 +84,13 @@ Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, taxonomy list hook
 - Pick instructor from roster dropdown (name + email).
 - **Topics / skills tabs:** add from ACTIVE taxonomy lists; display assigned rows by **taxonomy name** (map `topic_id` / `skill_id` via loaded taxonomy rows).
 - Already-assigned topic/skill IDs are hidden from add dropdowns.
+
+## Identity rendering
+
+- Roster table includes an `Avatar` column.
+- Avatar rendering rule is shared across instructor screens:
+  - use API `avatar` URL when present
+  - otherwise fallback to generated initials via `pickCharacter(full_name)`.
 
 ## Tickets UX
 
