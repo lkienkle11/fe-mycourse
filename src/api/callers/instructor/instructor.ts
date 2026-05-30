@@ -1,0 +1,377 @@
+import { apiDelete, apiFetch, apiPatch, apiPost } from "@/api/methods";
+import { API_PRIVATE_ROUTES } from "@/constants/api-route";
+import { apiListQueryToRecord, buildQueryParams } from "@/lib/utils";
+import type {
+  ApiPaginatedData,
+  ApiPaginatedResponse,
+  ApiResponse,
+} from "@/types/api";
+import type {
+  AddExpertiseSkillPayload,
+  AddExpertiseTopicPayload,
+  AddRosterPayload,
+  AddTicketMessagePayload,
+  CreateTicketPayload,
+  InstructorApplication,
+  InstructorExpertiseSkill,
+  InstructorExpertiseTopic,
+  InstructorListFilters,
+  InstructorProfile,
+  InstructorProfilePayload,
+  InstructorRosterMember,
+  InstructorTicket,
+  InstructorTicketListFilters,
+  InstructorTicketMessage,
+  RejectApplicationPayload,
+  UpsertProfileResponse,
+} from "@/types/instructor";
+
+const routes = API_PRIVATE_ROUTES.instructor;
+
+function listQueryToRecord(
+  filters: InstructorListFilters | InstructorTicketListFilters,
+): Record<string, string> {
+  const query = apiListQueryToRecord(filters);
+  if ("review_status" in filters && filters.review_status) {
+    query.status = filters.review_status;
+  }
+  if ("has_profile" in filters && filters.has_profile != null) {
+    query.has_profile = String(filters.has_profile);
+  }
+  if ("scope" in filters && filters.scope === "all") {
+    query.scope = "all";
+  }
+  if ("ticket_status" in filters && filters.ticket_status) {
+    query.status = filters.ticket_status;
+  }
+  return query;
+}
+
+export function getInstructorRosterListKey(
+  filters: InstructorListFilters = {},
+): string | null {
+  return buildQueryParams(routes.roster, listQueryToRecord(filters));
+}
+
+export async function listInstructorRosterService(
+  filters: InstructorListFilters = {},
+): Promise<ApiPaginatedData<InstructorRosterMember[]>> {
+  const url = getInstructorRosterListKey(filters);
+  if (!url) throw new Error("Invalid roster list URL");
+  const { data } =
+    await apiFetch<ApiPaginatedResponse<InstructorRosterMember[]>>(url);
+  if (!data.data) throw new Error(data.message || "Failed to load roster");
+  return data.data;
+}
+
+export async function addInstructorRosterService(
+  payload: AddRosterPayload,
+): Promise<InstructorRosterMember> {
+  const { data } = await apiPost<
+    ApiResponse<InstructorRosterMember>,
+    AddRosterPayload
+  >(routes.roster, payload);
+  if (!data.data) throw new Error(data.message || "Failed to add instructor");
+  return data.data;
+}
+
+export async function deleteInstructorRosterService(id: number): Promise<void> {
+  const url = buildQueryParams(routes.rosterById, undefined, {
+    id: String(id),
+  });
+  if (!url) throw new Error("Invalid roster delete URL");
+  await apiDelete<ApiResponse<null>>(url);
+}
+
+export function getInstructorApplicationsListKey(
+  filters: InstructorListFilters = {},
+): string | null {
+  return buildQueryParams(routes.applications, listQueryToRecord(filters));
+}
+
+export async function listInstructorApplicationsService(
+  filters: InstructorListFilters = {},
+): Promise<ApiPaginatedData<InstructorApplication[]>> {
+  const url = getInstructorApplicationsListKey(filters);
+  if (!url) throw new Error("Invalid applications list URL");
+  const { data } =
+    await apiFetch<ApiPaginatedResponse<InstructorApplication[]>>(url);
+  if (!data.data)
+    throw new Error(data.message || "Failed to load applications");
+  return data.data;
+}
+
+export async function getInstructorApplicationService(
+  id: number,
+): Promise<InstructorApplication> {
+  const url = buildQueryParams(routes.applicationById, undefined, {
+    id: String(id),
+  });
+  if (!url) throw new Error("Invalid application URL");
+  const { data } = await apiFetch<ApiResponse<InstructorApplication>>(url);
+  if (!data.data) throw new Error(data.message || "Failed to load application");
+  return data.data;
+}
+
+export async function approveInstructorApplicationService(
+  id: number,
+): Promise<InstructorApplication> {
+  const url = buildQueryParams(routes.applicationApprove, undefined, {
+    id: String(id),
+  });
+  if (!url) throw new Error("Invalid approve URL");
+  const { data } = await apiPost<ApiResponse<InstructorApplication>>(url, {});
+  if (!data.data) throw new Error(data.message || "Failed to approve");
+  return data.data;
+}
+
+export async function rejectInstructorApplicationService(
+  id: number,
+  payload: RejectApplicationPayload,
+): Promise<InstructorApplication> {
+  const url = buildQueryParams(routes.applicationReject, undefined, {
+    id: String(id),
+  });
+  if (!url) throw new Error("Invalid reject URL");
+  const { data } = await apiPost<
+    ApiResponse<InstructorApplication>,
+    RejectApplicationPayload
+  >(url, payload);
+  if (!data.data) throw new Error(data.message || "Failed to reject");
+  return data.data;
+}
+
+export async function deleteInstructorApplicationService(
+  id: number,
+): Promise<void> {
+  const url = buildQueryParams(routes.applicationById, undefined, {
+    id: String(id),
+  });
+  if (!url) throw new Error("Invalid application delete URL");
+  await apiDelete<ApiResponse<null>>(url);
+}
+
+export function getInstructorProfilesListKey(
+  filters: InstructorListFilters = {},
+): string | null {
+  return buildQueryParams(routes.profiles, listQueryToRecord(filters));
+}
+
+export async function listInstructorProfilesService(
+  filters: InstructorListFilters = {},
+): Promise<ApiPaginatedData<InstructorProfile[]>> {
+  const url = getInstructorProfilesListKey(filters);
+  if (!url) throw new Error("Invalid profiles list URL");
+  const { data } =
+    await apiFetch<ApiPaginatedResponse<InstructorProfile[]>>(url);
+  if (!data.data) throw new Error(data.message || "Failed to load profiles");
+  return data.data;
+}
+
+export async function getInstructorProfileByUserService(
+  userId: number,
+): Promise<InstructorProfile> {
+  const url = buildQueryParams(routes.profileByUser, undefined, {
+    id: String(userId),
+  });
+  if (!url) throw new Error("Invalid profile URL");
+  const { data } = await apiFetch<ApiResponse<InstructorProfile>>(url);
+  if (!data.data) throw new Error(data.message || "Failed to load profile");
+  return data.data;
+}
+
+export async function upsertInstructorProfileService(
+  payload: InstructorProfilePayload,
+  userId?: number,
+): Promise<UpsertProfileResponse> {
+  if (userId != null) {
+    const url = buildQueryParams(routes.profileByUser, undefined, {
+      id: String(userId),
+    });
+    if (!url) throw new Error("Invalid profile update URL");
+    const { data } = await apiPatch<
+      ApiResponse<UpsertProfileResponse>,
+      InstructorProfilePayload
+    >(url, payload);
+    if (!data.data) throw new Error(data.message || "Failed to update profile");
+    return data.data;
+  }
+  const { data } = await apiPost<
+    ApiResponse<UpsertProfileResponse>,
+    InstructorProfilePayload
+  >(routes.profiles, payload);
+  if (!data.data) throw new Error(data.message || "Failed to save profile");
+  return data.data;
+}
+
+export async function deleteInstructorProfileService(
+  userId: number,
+): Promise<void> {
+  const url = buildQueryParams(routes.profileByUser, undefined, {
+    id: String(userId),
+  });
+  if (!url) throw new Error("Invalid profile delete URL");
+  await apiDelete<ApiResponse<null>>(url);
+}
+
+export function getInstructorExpertiseTopicsKey(instructorId: number): string {
+  const url = buildQueryParams(routes.expertiseTopics, undefined, {
+    id: String(instructorId),
+  });
+  if (!url) throw new Error("Invalid expertise topics URL");
+  return url;
+}
+
+export async function listInstructorExpertiseTopicsService(
+  instructorId: number,
+): Promise<InstructorExpertiseTopic[]> {
+  const { data } = await apiFetch<ApiResponse<InstructorExpertiseTopic[]>>(
+    getInstructorExpertiseTopicsKey(instructorId),
+  );
+  if (!data.data) throw new Error(data.message || "Failed to load topics");
+  return data.data;
+}
+
+export async function addInstructorExpertiseTopicService(
+  instructorId: number,
+  payload: AddExpertiseTopicPayload,
+): Promise<InstructorExpertiseTopic> {
+  const url = buildQueryParams(routes.expertiseTopics, undefined, {
+    id: String(instructorId),
+  });
+  if (!url) throw new Error("Invalid add topic URL");
+  const { data } = await apiPost<
+    ApiResponse<InstructorExpertiseTopic>,
+    AddExpertiseTopicPayload
+  >(url, payload);
+  if (!data.data) throw new Error(data.message || "Failed to add topic");
+  return data.data;
+}
+
+export async function deleteInstructorExpertiseTopicService(
+  instructorId: number,
+  topicRowId: number,
+): Promise<void> {
+  const url = buildQueryParams(routes.expertiseTopicByRow, undefined, {
+    id: String(instructorId),
+    topicRowId: String(topicRowId),
+  });
+  if (!url) throw new Error("Invalid delete topic URL");
+  await apiDelete<ApiResponse<null>>(url);
+}
+
+export function getInstructorExpertiseSkillsKey(instructorId: number): string {
+  const url = buildQueryParams(routes.expertiseSkills, undefined, {
+    id: String(instructorId),
+  });
+  if (!url) throw new Error("Invalid expertise skills URL");
+  return url;
+}
+
+export async function listInstructorExpertiseSkillsService(
+  instructorId: number,
+): Promise<InstructorExpertiseSkill[]> {
+  const { data } = await apiFetch<ApiResponse<InstructorExpertiseSkill[]>>(
+    getInstructorExpertiseSkillsKey(instructorId),
+  );
+  if (!data.data) throw new Error(data.message || "Failed to load skills");
+  return data.data;
+}
+
+export async function addInstructorExpertiseSkillService(
+  instructorId: number,
+  payload: AddExpertiseSkillPayload,
+): Promise<InstructorExpertiseSkill> {
+  const url = buildQueryParams(routes.expertiseSkills, undefined, {
+    id: String(instructorId),
+  });
+  if (!url) throw new Error("Invalid add skill URL");
+  const { data } = await apiPost<
+    ApiResponse<InstructorExpertiseSkill>,
+    AddExpertiseSkillPayload
+  >(url, payload);
+  if (!data.data) throw new Error(data.message || "Failed to add skill");
+  return data.data;
+}
+
+export async function deleteInstructorExpertiseSkillService(
+  instructorId: number,
+  skillRowId: number,
+): Promise<void> {
+  const url = buildQueryParams(routes.expertiseSkillByRow, undefined, {
+    id: String(instructorId),
+    skillRowId: String(skillRowId),
+  });
+  if (!url) throw new Error("Invalid delete skill URL");
+  await apiDelete<ApiResponse<null>>(url);
+}
+
+export function getInstructorTicketsListKey(
+  filters: InstructorTicketListFilters = {},
+): string | null {
+  return buildQueryParams(routes.tickets, listQueryToRecord(filters));
+}
+
+export async function listInstructorTicketsService(
+  filters: InstructorTicketListFilters = {},
+): Promise<ApiPaginatedData<InstructorTicket[]>> {
+  const url = getInstructorTicketsListKey(filters);
+  if (!url) throw new Error("Invalid tickets list URL");
+  const { data } =
+    await apiFetch<ApiPaginatedResponse<InstructorTicket[]>>(url);
+  if (!data.data) throw new Error(data.message || "Failed to load tickets");
+  return data.data;
+}
+
+export async function createInstructorTicketService(
+  payload: CreateTicketPayload,
+): Promise<InstructorTicket> {
+  const { data } = await apiPost<
+    ApiResponse<InstructorTicket>,
+    CreateTicketPayload
+  >(routes.tickets, payload);
+  if (!data.data) throw new Error(data.message || "Failed to create ticket");
+  return data.data;
+}
+
+export async function closeInstructorTicketService(id: number): Promise<void> {
+  const url = buildQueryParams(routes.ticketClose, undefined, {
+    id: String(id),
+  });
+  if (!url) throw new Error("Invalid close ticket URL");
+  await apiPost<ApiResponse<null>>(url, {});
+}
+
+export function getInstructorTicketMessagesKey(ticketId: number): string {
+  const url = buildQueryParams(routes.ticketMessages, undefined, {
+    id: String(ticketId),
+  });
+  if (!url) throw new Error("Invalid ticket messages URL");
+  return url;
+}
+
+export async function listInstructorTicketMessagesService(
+  ticketId: number,
+): Promise<InstructorTicketMessage[]> {
+  const { data } = await apiFetch<ApiResponse<InstructorTicketMessage[]>>(
+    getInstructorTicketMessagesKey(ticketId),
+  );
+  if (!data.data) throw new Error(data.message || "Failed to load messages");
+  return data.data;
+}
+
+export async function addInstructorTicketMessageService(
+  ticketId: number,
+  payload: AddTicketMessagePayload,
+): Promise<InstructorTicketMessage> {
+  const url = buildQueryParams(routes.ticketMessages, undefined, {
+    id: String(ticketId),
+  });
+  if (!url) throw new Error("Invalid add message URL");
+  const { data } = await apiPost<
+    ApiResponse<InstructorTicketMessage>,
+    AddTicketMessagePayload
+  >(url, payload);
+  if (!data.data) throw new Error(data.message || "Failed to add message");
+  return data.data;
+}

@@ -51,4 +51,27 @@ export const PERMISSIONS = {
   SysadminModify: "sysadmin:modify",
   AdminModify: "admin:modify",
   InstructorModify: "instructor:modify",
+  // Instructor roster
+  InstructorRosterRead: "instructor_roster:read",
+  InstructorRosterCreate: "instructor_roster:create",
+  InstructorRosterDelete: "instructor_roster:delete",
+  // Instructor application
+  InstructorApplicationRead: "instructor_application:read",
+  InstructorApplicationCreate: "instructor_application:create",
+  InstructorApplicationUpdate: "instructor_application:update",
+  InstructorApplicationDelete: "instructor_application:delete",
+  InstructorApplicationApprove: "instructor_application:approve",
+  InstructorApplicationReject: "instructor_application:reject",
+  // Instructor profile
+  InstructorProfileRead: "instructor_profile:read",
+  InstructorProfileCreate: "instructor_profile:create",
+  InstructorProfileUpdate: "instructor_profile:update",
+  InstructorProfileDelete: "instructor_profile:delete",
+  // Instructor expertise
+  InstructorExpertiseRead: "instructor_expertise:read",
+  InstructorExpertiseCreate: "instructor_expertise:create",
+  InstructorExpertiseUpdate: "instructor_expertise:update",
+  InstructorExpertiseDelete: "instructor_expertise:delete",
+  // Instructor ticket
+  InstructorTicketClose: "instructor_ticket:close",
 } as const;

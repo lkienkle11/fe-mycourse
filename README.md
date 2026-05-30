@@ -168,7 +168,7 @@ handleAuthSubmit("signup", signupValues) // → signupAction
 ### Validation Messages (i18n)
 
 Schema error messages use i18n keys (e.g. `"validation.email"`).  
-Components call `t(error.message)` which resolves the key via `next-intl`.
+`auth-form-fields.tsx` resolves keys via `useTranslations("auth")` only when `error.message` is set.
 
 ---
 

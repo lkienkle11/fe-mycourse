@@ -1,6 +1,6 @@
 # API Overview (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (`ApiErrorCode` in constants; types in `src/types/api.ts`)._
+_Last audited: 2026-05-29 (`ApiErrorCode`; instructor callers under `API_PRIVATE_ROUTES.instructor`)._
 
 
 ## Scope
@@ -26,6 +26,16 @@ Frontend API layer lives in `src/api/` and is used by `src/actions/` and client 
 - `POST /api/v1/auth/refresh`
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/me`
+
+## Instructor routes (private)
+
+Mounted under `API_PRIVATE_ROUTES.instructor` — see `src/api/callers/instructor/instructor.ts` and `docs/instructor-admin.md`:
+
+- `GET/POST/DELETE /api/v1/instructors` (roster)
+- `GET/POST /api/v1/instructor-applications`, approve/reject, delete
+- `GET/POST/PATCH/DELETE /api/v1/instructor-profiles`, `GET …/me`
+- `GET/POST/DELETE …/instructors/:id/expertise/topics|skills`
+- `GET/POST /api/v1/instructor-tickets`, messages, `POST …/close`
 
 ## Rules
 - Do not call `axios` directly in features.

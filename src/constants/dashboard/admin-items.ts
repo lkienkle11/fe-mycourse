@@ -1,5 +1,7 @@
 import { BookOpen, LayoutDashboard, Users } from "lucide-react";
+import { INSTRUCTOR_MENU_ICONS } from "@/constants/dashboard/instructor-icons";
 import { TAXONOMY_MENU_ICONS } from "@/constants/dashboard/taxonomy-icons";
+import { INSTRUCTOR_GROUP_READ_PERMISSIONS } from "@/constants/instructor/resources";
 import { PERMISSIONS } from "@/constants/permissions";
 import { TAXONOMY_GROUP_READ_PERMISSIONS } from "@/constants/taxonomy/resources";
 import type { DashboardItem } from "@/types/dashboard";
@@ -81,6 +83,56 @@ export const ADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         href: "/admin/taxonomy/tags",
         icon: TAXONOMY_MENU_ICONS.tags,
         permissions: [PERMISSIONS.TagRead],
+      },
+    ],
+  },
+  {
+    id: "admin-instructors",
+    title: "Instructors",
+    titleKey: "instructor.menu.group",
+    icon: INSTRUCTOR_MENU_ICONS.group,
+    permissions: INSTRUCTOR_GROUP_READ_PERMISSIONS,
+    permissionMode: "any",
+    children: [
+      {
+        id: "admin-instructors-roster",
+        title: "Roster",
+        titleKey: "instructor.menu.roster",
+        href: "/admin/instructors/roster",
+        icon: INSTRUCTOR_MENU_ICONS.roster,
+        permissions: [PERMISSIONS.InstructorRosterRead],
+      },
+      {
+        id: "admin-instructors-approvals",
+        title: "Approvals",
+        titleKey: "instructor.menu.approvals",
+        href: "/admin/instructors/approvals",
+        icon: INSTRUCTOR_MENU_ICONS.approvals,
+        permissions: [PERMISSIONS.InstructorApplicationRead],
+      },
+      {
+        id: "admin-instructors-profiles",
+        title: "Profiles",
+        titleKey: "instructor.menu.profiles",
+        href: "/admin/instructors/profiles",
+        icon: INSTRUCTOR_MENU_ICONS.profiles,
+        permissions: [PERMISSIONS.InstructorProfileRead],
+      },
+      {
+        id: "admin-instructors-expertise",
+        title: "Expertise",
+        titleKey: "instructor.menu.expertise",
+        href: "/admin/instructors/expertise",
+        icon: INSTRUCTOR_MENU_ICONS.expertise,
+        permissions: [PERMISSIONS.InstructorExpertiseRead],
+      },
+      {
+        id: "admin-instructors-tickets",
+        title: "Tickets",
+        titleKey: "instructor.menu.tickets",
+        href: "/admin/instructors/tickets",
+        icon: INSTRUCTOR_MENU_ICONS.tickets,
+        permissions: [PERMISSIONS.InstructorApplicationRead],
       },
     ],
   },

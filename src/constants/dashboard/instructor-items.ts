@@ -1,4 +1,5 @@
 import { BookOpen, Film, LayoutDashboard } from "lucide-react";
+import { INSTRUCTOR_MENU_ICONS } from "@/constants/dashboard/instructor-icons";
 import { PERMISSIONS } from "@/constants/permissions";
 import type { DashboardItem } from "@/types/dashboard";
 
@@ -31,5 +32,13 @@ export const INSTRUCTOR_DASHBOARD_ITEMS: DashboardItem[] = [
     href: "/instructor/media",
     icon: Film,
     permissions: [PERMISSIONS.MediaFileRead],
+  },
+  {
+    id: "instructor-tickets",
+    title: "Support tickets",
+    titleKey: "instructor.menu.tickets",
+    href: "/instructor/tickets",
+    icon: INSTRUCTOR_MENU_ICONS.tickets,
+    permissions: [PERMISSIONS.InstructorApplicationRead],
   },
 ];

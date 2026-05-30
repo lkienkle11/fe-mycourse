@@ -67,7 +67,7 @@ sequenceDiagram
 - `password`: non-empty
 - `rememberMe`: boolean
 
-Validation error messages are i18n keys (e.g. `"validation.email"`); the component calls `t(error.message)` to resolve them via `useTranslations("auth")`.
+Validation error messages are i18n keys (e.g. `"validation.email"`); `auth-form-fields.tsx` resolves them via `useTranslations("auth")` only when `error.message` is defined.
 
 **Step 2 — Dispatch to server action (`handleAuthSubmit`)**
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { LockKeyhole, LockKeyholeOpen, Mail, User } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { FieldError, UseFormRegisterReturn } from "react-hook-form";
 import {
@@ -8,6 +9,21 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+
+/** Zod schemas in `src/schema/auth` store i18n keys; resolve only when a field error exists. */
+type AuthValidationMessageKey =
+  | "validation.email"
+  | "validation.password"
+  | "validation.passwordWeak"
+  | "validation.fullName";
+
+function resolveAuthValidationMessage(
+  t: (key: AuthValidationMessageKey) => string,
+  message: string | undefined,
+): string {
+  if (!message) return "";
+  return t(message as AuthValidationMessageKey);
+}
 
 const inputGroupClassName =
   "h-12 border-none shadow-0 shadow-none bg-object-white/90 has-[[data-slot=input-group-control]:focus-visible]:ring-0";
@@ -29,15 +45,15 @@ type AuthEmailFieldProps = {
   register: UseFormRegisterReturn;
   placeholder: string;
   error?: FieldError;
-  errorMessage: string;
 };
 
 export function AuthEmailField({
   register,
   placeholder,
   error,
-  errorMessage,
 }: AuthEmailFieldProps) {
+  const t = useTranslations("auth");
+  const errorMessage = resolveAuthValidationMessage(t, error?.message);
   return (
     <div className="space-y-1">
       <InputGroup className={inputGroupClassName}>
@@ -62,7 +78,6 @@ type AuthPasswordFieldProps = {
   showPassword: boolean;
   onToggleShowPassword: () => void;
   error?: FieldError;
-  errorMessage: string;
   hint?: ReactNode;
 };
 
@@ -73,8 +88,6 @@ type AuthEmailPasswordFieldsProps = {
   passwordPlaceholder: string;
   emailError?: FieldError;
   passwordError?: FieldError;
-  emailErrorMessage: string;
-  passwordErrorMessage: string;
   showPassword: boolean;
   onToggleShowPassword: () => void;
   passwordHint?: ReactNode;
@@ -88,8 +101,6 @@ export function AuthEmailPasswordFields({
   passwordPlaceholder,
   emailError,
   passwordError,
-  emailErrorMessage,
-  passwordErrorMessage,
   showPassword,
   onToggleShowPassword,
   passwordHint,
@@ -100,7 +111,6 @@ export function AuthEmailPasswordFields({
         register={registerEmail}
         placeholder={emailPlaceholder}
         error={emailError}
-        errorMessage={emailErrorMessage}
       />
       <AuthPasswordField
         register={registerPassword}
@@ -108,7 +118,6 @@ export function AuthEmailPasswordFields({
         showPassword={showPassword}
         onToggleShowPassword={onToggleShowPassword}
         error={passwordError}
-        errorMessage={passwordErrorMessage}
         hint={passwordHint}
       />
     </>
@@ -119,15 +128,15 @@ type AuthFullNameFieldProps = {
   register: UseFormRegisterReturn;
   placeholder: string;
   error?: FieldError;
-  errorMessage: string;
 };
 
 export function AuthFullNameField({
   register,
   placeholder,
   error,
-  errorMessage,
 }: AuthFullNameFieldProps) {
+  const t = useTranslations("auth");
+  const errorMessage = resolveAuthValidationMessage(t, error?.message);
   return (
     <div className="space-y-1">
       <InputGroup className={inputGroupClassName}>
@@ -152,9 +161,10 @@ export function AuthPasswordField({
   showPassword,
   onToggleShowPassword,
   error,
-  errorMessage,
   hint,
 }: AuthPasswordFieldProps) {
+  const t = useTranslations("auth");
+  const errorMessage = resolveAuthValidationMessage(t, error?.message);
   return (
     <div className="space-y-1">
       <InputGroup className={inputGroupClassName}>

@@ -118,7 +118,6 @@ export function SignupContent({ className }: { className?: string }) {
           register={register("fullName")}
           placeholder={t("fullName")}
           error={errors.fullName}
-          errorMessage={t(errors.fullName?.message as "validation.fullName")}
         />
 
         <AuthEmailPasswordFields
@@ -128,10 +127,6 @@ export function SignupContent({ className }: { className?: string }) {
           passwordPlaceholder={t("password")}
           emailError={errors.email}
           passwordError={errors.password}
-          emailErrorMessage={t(errors.email?.message as "validation.email")}
-          passwordErrorMessage={t(
-            errors.password?.message as "validation.passwordWeak",
-          )}
           showPassword={showPassword}
           onToggleShowPassword={() => setShowPassword((prev) => !prev)}
           passwordHint={
