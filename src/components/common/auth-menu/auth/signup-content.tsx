@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui";
+import { Button, Spinner } from "@/components/ui";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { useAuthStore } from "@/hooks";
 import { cn } from "@/lib/utils";
@@ -150,7 +150,7 @@ export function SignupContent({ className }: { className?: string }) {
           disabled={isSubmitting || (retryAfterSeconds ?? 0) > 0}
           className="w-full h-11 text-sm font-medium flex items-center justify-center bg-base-primary rounded-full leading-[21px] hover:cursor-pointer hover:brightness-110 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? "..." : t("register")}
+          {isSubmitting ? <Spinner className="size-4" /> : t("register")}
         </Button>
       </form>
 
