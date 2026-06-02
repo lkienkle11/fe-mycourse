@@ -1,9 +1,22 @@
 # Reusable Assets
 
-_Last audited: 2026-05-29 (type-only `src/types/**`; `ApiErrorCode` → constants; helpers → lib/utils)._
+_Last audited: 2026-06-02 (auth submit loading reuses shared UI Spinner)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
+
+---
+
+## UI Primitives
+
+### Asset: Spinner
+- **Name**: `Spinner`
+- **Type**: React component
+- **Path**: `src/components/ui/spinner.tsx` (barrel: `@/components/ui`)
+- **Purpose**: Shared animated loading indicator backed by `Loader2Icon`.
+- **Scope**: Any component-level loading state that needs a compact spinner; currently reused by login and signup submit buttons during `isSubmitting`.
+- **Dependencies**: `lucide-react`, `cn`.
+- **Reuse Rule**: Import this component instead of creating local spinner SVGs, animated dots, or duplicate loading indicators.
 
 ---
 

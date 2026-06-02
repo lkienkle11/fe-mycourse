@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { registerAction } from "@/actions/auth";
-import { Button } from "@/components/ui";
+import { Button, Spinner } from "@/components/ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
@@ -171,7 +171,7 @@ export function LoginContent({ className }: { className?: string }) {
           disabled={isSubmitting}
           className="w-full h-11 text-sm font-medium flex items-center justify-center bg-base-primary rounded-full leading-[21px] hover:cursor-pointer hover:brightness-110 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? "..." : t("login")}
+          {isSubmitting ? <Spinner className="size-4" /> : t("login")}
         </Button>
       </form>
 
