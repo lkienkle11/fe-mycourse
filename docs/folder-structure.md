@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (taxonomy screen layer: common + admin/sysadmin wrappers)._
+_Last audited: 2026-06-02 (user-menu role links + translated auth-menu labels)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -299,7 +299,7 @@ src/types/
 ├── media/
 │   └── index.ts            # MediaFile, MediaTab, MediaListFilters (= ApiListQueryParams + category/sort_order)
 ├── browse-menu.ts          # BrowseMenuItem (recursive children?: BrowseMenuItem[])
-├── user-menu.ts            # UserMenuItem, UserMenuGroup, UserMenuStatus (+ PermissionRequirement)
+├── user-menu.ts            # UserMenuItem, UserMenuGroup, UserMenuStatus (+ PermissionRequirement, optional titleKey)
 ├── index.ts                # `export type *` barrel (domain types only)
 ├── auth/
 │   ├── index.ts            # `export type * from "./auth"`
@@ -336,7 +336,7 @@ src/constants/
 ├── api-error-code.ts       # ApiErrorCode — mirrors be/pkg/errcode/codes.go
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
 ├── route.ts                # PUBLIC_ROUTES — client-side navigation path constants
-├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (values only)
+├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (user-menu config values incl. permissions/titleKey; roles group first)
 ├── permissions.ts          # PERMISSIONS — P1…P58 (mirror BE AllPermissions)
 ├── permission-ids.ts       # PERMISSION_IDS — P1…P58
 ├── roles.ts                # ROLES — sysadmin, admin, instructor, learner

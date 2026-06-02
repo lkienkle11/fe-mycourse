@@ -274,7 +274,7 @@ const canManage = useSatisfiesPermissions({
 </PermissionGate>
 ```
 
-`PERMISSIONS` mirrors BE `AllPermissions` (40 entries). Default mode is AND (`permissionMode: "all"`), same as BE `RequirePermission`. User menu links are filtered with `useFilteredUserMenuGroups()`. Re-login after BE permission matrix changes so JWT claims refresh.
+`PERMISSIONS` mirrors BE `AllPermissions` (40 entries). Default mode is AND (`permissionMode: "all"`), same as BE `RequirePermission`. User menu links are filtered with `useFilteredUserMenuGroups()`: the role-switch entries (`/sysadmin`, `/admin`, `/instructor`) remain permission-gated by `sysadmin:modify`, `admin:modify`, and `instructor:modify`, while the legacy study/account links are temporarily left visible by commented config guards in `HEADER_DROPDOWN_ITEMS`. Every dropdown item now also carries a `titleKey` under `commonHeader.userMenu.*`, while keeping its original `title` fallback in config. Re-login after BE permission matrix changes so JWT claims refresh.
 
 > To use the SWR hook directly:
 > ```ts
@@ -387,7 +387,7 @@ interface ApiErrorEntry {
 
 | File | Description |
 |------|-------------|
-| `common.ts` | Shared UI constants — `HEADER_DROPDOWN_ITEMS` (with per-item `permissions`), `LANGUAGE_OPTIONS`. Menu types live in `src/types/user-menu.ts`. |
+| `common.ts` | Shared UI constants — `HEADER_DROPDOWN_ITEMS` (per-item `permissions` / `titleKey` config), `LANGUAGE_OPTIONS`. Menu types live in `src/types/user-menu.ts`. |
 | `route.ts` | Application route paths — `ROUTES` object containing all named route strings (home, login, signup, …). |
 
 ## Auth Store (`src/store/auth/auth.ts`)
