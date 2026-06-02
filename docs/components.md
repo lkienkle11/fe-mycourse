@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (dagre tree name-only labels; shared DnD/tree wrappers documented)._
+_Last audited: 2026-06-02 (auth submit buttons reuse shared Spinner for loading state)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -73,7 +73,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `Sidebar` | `ui/sidebar.tsx` | `radix-ui` + Sheet | App sidebar shell; `SidebarProvider` wraps `TooltipProvider` (`delayDuration={0}`) for `SidebarMenuButton` tooltips when collapsed |
 | `Skeleton` | `ui/skeleton.tsx` | — | Loading placeholder |
 | `Slider` | `ui/slider.tsx` | `radix-ui` | Range slider |
-| `Spinner` | `ui/spinner.tsx` | — | Loading spinner |
+| `Spinner` | `ui/spinner.tsx` | — | Loading spinner; reused by auth submit buttons during `isSubmitting` |
 | `Switch` | `ui/switch.tsx` | `radix-ui` | Toggle switch |
 | `Table` | `ui/table.tsx` | — | Styled HTML table (base for Data Table pattern) |
 | `Tabs` | `ui/tabs.tsx` | `radix-ui` | Tabbed panels |
@@ -155,8 +155,8 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `UserMenu` | `user-menu.tsx` | Client | Avatar dropdown for authenticated users. Shows avatar, user name, logout option. |
 | `LoginSignupPopup` | `auth/login-signup-popup.tsx` | Client | Full-viewport centered dialog (`z-300`/`z-301`); card `max-w-200`; close button on card (`DialogClose`). |
 | `LoginSignupLayout` | `auth/login-signup-layout.tsx` | Client | `lg+` unchanged two-column layout; below `lg` form-only full width. |
-| `LoginContent` | `auth/login-content.tsx` | Client | Login form → `loginAction` → **`mutateMe()`** via `useGetMe()`. Resend confirm uses `registerAction`. |
-| `SignupContent` | `auth/signup-content.tsx` | Client | Signup form → `handleAuthSubmit("signup", …)` → **`registerAction`**. |
+| `LoginContent` | `auth/login-content.tsx` | Client | Login form → `loginAction` → **`mutateMe()`** via `useGetMe()`. Submit button shows shared `Spinner` while `isSubmitting`; resend confirm uses `registerAction`. |
+| `SignupContent` | `auth/signup-content.tsx` | Client | Signup form → `handleAuthSubmit("signup", …)` → **`registerAction`**. Submit button shows shared `Spinner` while `isSubmitting`. |
 | `ConfirmEmailContent` | `auth/confirm-email-content.tsx` | Client | Email confirm page body → `confirmAction`. |
 | `LogoutContent` | `auth/logout-content.tsx` | Client | Logout page → `logoutAction`. |
 | `handleAuthSubmit` | `auth/auth-form-handler.ts` | Utility | Routes `"login"` → `loginAction`, `"signup"` → **`registerAction`**. |
