@@ -54,3 +54,4 @@ CLAUDE.md
 # jscpd duplicate-detection reports
 .jscpd-report/
 
+.commandcode/
