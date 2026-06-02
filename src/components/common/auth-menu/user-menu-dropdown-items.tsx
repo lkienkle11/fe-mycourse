@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -19,6 +20,8 @@ function UserMenuDropdownLinks({
   onItemClick?: () => void;
   nested?: boolean;
 }) {
+  const t = useTranslations("commonHeader.userMenu");
+
   return (
     <>
       {items.map((item) => (
@@ -38,7 +41,7 @@ function UserMenuDropdownLinks({
                 item.itemClassName,
               )}
             >
-              {item.title}
+              {item.titleKey ? t(item.titleKey as never) : item.title}
             </Link>
           </DropdownMenuItem>
           {item.children?.length ? (

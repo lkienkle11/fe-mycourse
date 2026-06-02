@@ -150,7 +150,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
 | `AuthLayout` | `auth-layout.tsx` | Client | `useGetMe()` — skeleton / `UserMenu` / `AuthButton`. Does **not** mount `LoginSignupPopup`. |
-| `UserMenuDropdownItems` | `user-menu-dropdown-items.tsx` | Client | Renders `useFilteredUserMenuGroups()` (deep permission-filtered `HEADER_DROPDOWN_ITEMS`, including nested `UserMenuItem.children`) for `UserMenu` and sidebar footer; separators only between visible groups. |
+| `UserMenuDropdownItems` | `user-menu-dropdown-items.tsx` | Client | Renders `useFilteredUserMenuGroups()` (deep permission-filtered `HEADER_DROPDOWN_ITEMS`, including nested `UserMenuItem.children`) for `UserMenu` and sidebar footer; all current items carry `titleKey` labels from `commonHeader.userMenu.*` while retaining `title` fallback strings in config; separators only between visible groups. |
 | `AuthButton` | `auth-button.tsx` | Client | "Sign In / Sign Up" CTA button. Calls `openLoginModal()` from `useAuthStore`. |
 | `UserMenu` | `user-menu.tsx` | Client | Avatar dropdown for authenticated users. Shows avatar, user name, logout option. |
 | `LoginSignupPopup` | `auth/login-signup-popup.tsx` | Client | Full-viewport centered dialog (`z-300`/`z-301`); card `max-w-200`; close button on card (`DialogClose`). |

@@ -225,6 +225,7 @@ AuthLayout
       Props: me: MeResponse
       Displays: avatar (pickCharacter fallback), display_name, email
       └── DropdownMenu (Radix)
+            ├── Role-switch group: Sysadmin, Admin, Instructor
             ├── Study group: My Courses, My Cart, Wishlist
             ├── Account group: Notifications, Account Settings
             └── Session group: Logout
@@ -234,14 +235,17 @@ AuthLayout
 
 | Item | Route | Permissions (FE UI guard) |
 |------|-------|---------------------------|
-| My Courses | `/my-courses` | `course:read` |
-| My Cart | `/my-cart` | `profile:read` |
-| Wishlist | `/wishlist` | `profile:read` |
-| Notifications | `/notifications` | `profile:read` |
-| Account Settings | `/account-settings` | `profile:read` |
+| My Courses | `/my-courses` | *(temporarily none — config guard commented out)* |
+| My Cart | `/my-cart` | *(temporarily none — config guard commented out)* |
+| Wishlist | `/wishlist` | *(temporarily none — config guard commented out)* |
+| Notifications | `/notifications` | *(temporarily none — config guard commented out)* |
+| Account Settings | `/account-settings` | *(temporarily none — config guard commented out)* |
+| Sysadmin | `/sysadmin` | `sysadmin:modify` |
+| Admin | `/admin` | `admin:modify` |
+| Instructor | `/instructor` | `instructor:modify` |
 | Logout | `/logout` | *(none — always visible when logged in)* |
 
-Groups `study` and `account` have no group-level permissions (gating is per item). `UserMenuDropdownItems` calls `useFilteredUserMenuGroups()` so learners without `course:read` do not see My Courses; logout remains visible.
+Groups `roles`, `study`, `account`, and `session` have no group-level permissions (gating is per item). `UserMenuDropdownItems` calls `useFilteredUserMenuGroups()`; the role-switch links are filtered by role-modify permissions, while the legacy study/account links currently remain visible because their per-item guards are intentionally commented out. All current items expose `titleKey` → `commonHeader.userMenu.*` while retaining the existing `title` string in config.
 
 Rendered via `UserMenuDropdownItems` in `UserMenu` and `SidebarAuthFooter`.
 

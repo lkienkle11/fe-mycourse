@@ -166,7 +166,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `UserMenuStatus`, `UserMenuItem`, `UserMenuGroup`
 - **Type**: TypeScript types
 - **Path**: `src/types/user-menu.ts` (barrel: `@/types` or `@/types/user-menu`)
-- **Purpose**: Dropdown menu config shape; extends `PermissionRequirement` for optional guards on items. `UserMenuItem` supports optional nested `children` (filtered recursively).
+- **Purpose**: Dropdown menu config shape; extends `PermissionRequirement` for optional guards on items. `UserMenuItem` supports optional `titleKey` (user-menu i18n label) and nested `children` (filtered recursively). Current header dropdown entries all provide both `title` and `titleKey`.
 - **Scope**: `HEADER_DROPDOWN_ITEMS`, `filterUserMenuGroups`, `filterUserMenuItems`, auth menu UI.
 - **Dependencies**: `PermissionRequirement` from `src/types/permissions/`.
 
@@ -270,7 +270,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `HEADER_DROPDOWN_ITEMS`
 - **Type**: Constant (`UserMenuGroup[]`)
 - **Path**: `src/constants/common.ts`
-- **Purpose**: Static configuration for the user dropdown menu in the header. Each item may declare `permissions` + optional `permissionMode` (`"all"` default, `"any"` for OR). Logout group omits permissions (always visible when logged in).
+- **Purpose**: Static configuration for the user dropdown menu in the header. Each item may declare `permissions`, optional `permissionMode` (`"all"` default, `"any"` for OR), and optional `titleKey` for translated labels. The `roles` group is listed first, followed by study, account, and session. The role-switch group (`/sysadmin`, `/admin`, `/instructor`) stays permission-gated by role-modify permissions; the older study/account item guards are temporarily commented out in config. Logout group omits permissions (always visible when logged in).
 - **Scope**: `UserMenuDropdownItems` (via `useFilteredUserMenuGroups`), `user-menu.tsx`, `sidebar-auth-footer.tsx`.
 - **Dependencies**: `UserMenuGroup`, `UserMenuItem` (`src/types/user-menu.ts`), `PERMISSIONS`.
 

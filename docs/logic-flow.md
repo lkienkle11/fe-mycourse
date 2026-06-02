@@ -165,7 +165,7 @@ LoginContent ↔ SignupContent:
 ```
 Source: GET /api/v1/me → MeResponse.permissions → useSyncMeFromAuth → useGetMe().mePermissions (string[])
 
-Constants: PERMISSIONS, PERMISSION_IDS, ROLES, HEADER_DROPDOWN_ITEMS (+ per-item permissions)  [src/constants/]
+Constants: PERMISSIONS, PERMISSION_IDS, ROLES, HEADER_DROPDOWN_ITEMS (+ per-item permissions / titleKey)  [src/constants/]
 Types: PermissionName, PermissionRequirement, PermissionCheckMode  [src/types/permissions/]
 Utils: PERMISSION_NAME_TO_ID, permissionIdFromName  [src/lib/utils/permission.ts]
 Utils: hasPermission, hasAllPermissions (AND), hasAnyPermission (OR), satisfiesPermissions, filterPermissionNavTree, filterUserMenuItems, filterUserMenuGroups  [src/lib/utils/permission.ts]
@@ -176,6 +176,8 @@ Config rule (menu + PermissionRequirement):
   permissions undefined or [] → visible (when authenticated)
   permissionMode omitted → "all" (AND, mirrors BE RequirePermission)
   permissionMode "any" → OR guard
+  current temporary state: legacy study/account links use commented config guards; role-switch links still require role-modify permissions
+  current i18n state: all header dropdown items provide both `title` and `titleKey`
 
 User menu filter flow:
   HEADER_DROPDOWN_ITEMS (constants/common.ts; UserMenuGroup types in types/user-menu.ts)
