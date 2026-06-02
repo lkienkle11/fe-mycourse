@@ -3,25 +3,54 @@ import type { UserMenuGroup } from "@/types/user-menu";
 
 export const HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
   {
+    key: "roles",
+    value: [
+      {
+        href: "/sysadmin",
+        title: "Sysadmin",
+        titleKey: "sysadmin",
+        status: "normal",
+        permissions: [PERMISSIONS.SysadminModify],
+      },
+      {
+        href: "/admin",
+        title: "Admin",
+        titleKey: "admin",
+        status: "normal",
+        permissions: [PERMISSIONS.AdminModify],
+      },
+      {
+        href: "/instructor",
+        title: "Instructor",
+        titleKey: "instructor",
+        status: "normal",
+        permissions: [PERMISSIONS.InstructorModify],
+      },
+    ],
+  },
+  {
     key: "study",
     value: [
       {
         href: "/my-courses",
         title: "My Courses",
+        titleKey: "myCourses",
         status: "normal",
-        permissions: [PERMISSIONS.CourseRead],
+        // permissions: [PERMISSIONS.CourseRead],
       },
       {
         href: "/my-cart",
         title: "My Cart",
+        titleKey: "myCart",
         status: "normal",
-        permissions: [PERMISSIONS.ProfileRead],
+        // permissions: [PERMISSIONS.ProfileRead],
       },
       {
         href: "/wishlist",
         title: "Wishlist",
+        titleKey: "wishlist",
         status: "normal",
-        permissions: [PERMISSIONS.ProfileRead],
+        // permissions: [PERMISSIONS.ProfileRead],
       },
     ],
   },
@@ -31,14 +60,16 @@ export const HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
       {
         href: "/notifications",
         title: "Notifications",
+        titleKey: "notifications",
         status: "normal",
-        permissions: [PERMISSIONS.ProfileRead],
+        // permissions: [PERMISSIONS.ProfileRead],
       },
       {
         href: "/account-settings",
         title: "Account Settings",
+        titleKey: "accountSettings",
         status: "normal",
-        permissions: [PERMISSIONS.ProfileRead],
+        // permissions: [PERMISSIONS.ProfileRead],
       },
     ],
   },
@@ -48,6 +79,7 @@ export const HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
       {
         href: "/logout",
         title: "Logout",
+        titleKey: "logout",
         status: "warning",
         itemClassName: "hover:text-red-500",
       },

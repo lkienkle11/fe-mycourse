@@ -37,6 +37,17 @@ const messages = {
       language: "Language",
       account: "Account",
     },
+    userMenu: {
+      myCourses: "My Courses",
+      myCart: "My Cart",
+      wishlist: "Wishlist",
+      notifications: "Notifications",
+      accountSettings: "Account Settings",
+      sysadmin: "Sysadmin",
+      admin: "Admin",
+      instructor: "Instructor",
+      logout: "Logout",
+    },
     browse: {
       label: "Browse",
       categoriesTitle: "Browse categories",
