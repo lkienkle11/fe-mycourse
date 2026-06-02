@@ -39,6 +39,17 @@ const messages = {
       language: "Ngôn ngữ",
       account: "Tài khoản",
     },
+    userMenu: {
+      myCourses: "Khóa học của tôi",
+      myCart: "Giỏ hàng của tôi",
+      wishlist: "Danh sách yêu thích",
+      notifications: "Thông báo",
+      accountSettings: "Cài đặt tài khoản",
+      sysadmin: "Quản trị hệ thống",
+      admin: "Quản trị viên",
+      instructor: "Giảng viên",
+      logout: "Đăng xuất",
+    },
     browse: {
       label: "Danh mục",
       categoriesTitle: "Duyệt danh mục",
