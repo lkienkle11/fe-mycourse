@@ -162,6 +162,15 @@ const messages = {
       success: "Confirmation email sent. Please check your inbox.",
     },
   },
+  notFound: {
+    metaTitle: "Page not found",
+    title: "Oops! We can't find that page",
+    descriptionLine1:
+      "The page you are looking for may have been moved, deleted,",
+    descriptionLine2: "or the URL might be incorrect.",
+    backToHome: "Back to homepage",
+    imageAlt: "Page not found illustration",
+  },
   homepage: {
     hero: {
       title1: "Unlock Your Potential with Our",

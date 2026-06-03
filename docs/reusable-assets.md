@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-06-02 (auth submit loading reuses shared UI Spinner)._
+_Last audited: 2026-06-02 (custom 404 page + thumbnail asset)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -17,6 +17,18 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Any component-level loading state that needs a compact spinner; currently reused by login and signup submit buttons during `isSubmitting`.
 - **Dependencies**: `lucide-react`, `cn`.
 - **Reuse Rule**: Import this component instead of creating local spinner SVGs, animated dots, or duplicate loading indicators.
+
+---
+
+## Static Images
+
+### Asset: Page not found illustration
+- **Name**: `thumbnail-page-not-found.png`
+- **Type**: Static image (PNG)
+- **Path**: `public/assets/images/common/thumbnail-page-not-found.png` (import via `@public/assets/images/common/thumbnail-page-not-found.png`)
+- **Purpose**: Hero illustration on the custom 404 page.
+- **Scope**: `NotFoundPage` only.
+- **Reuse Rule**: Do not duplicate or rename — import from `@public` alias like other marketing assets.
 
 ---
 
