@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-06-02 (user-menu role links + translated auth-menu labels)._
+_Last audited: 2026-06-02 (custom localized 404 page)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -43,13 +43,16 @@ Entry point for all routing. Every folder corresponds to a URL segment.
 src/app/
 ├── layout.tsx              # Root layout: loads fonts (Roboto, Gilroy, GeistMono), mounts Sonner <Toaster>
 ├── page.tsx                # Root page: immediately redirects browser to /vi (default locale)
+├── not-found.tsx           # Global 404: NextIntlClientProvider + AppProviders + NotFoundPage
 ├── globals.css             # Global CSS resets and Tailwind base imports
 ├── utils.css               # Utility CSS classes shared across layouts
 ├── favicon.ico             # Browser tab favicon
 └── [locale]/               # Dynamic locale segment — value: "en" | "vi"
     ├── layout.tsx          # Locale layout: wraps in NextIntlClientProvider + AppProviders
+    ├── not-found.tsx       # Locale-level 404 → NotFoundPage (inherits providers from layout)
     ├── (web)/              # Route group: public marketing pages (no prefix in URL)
     │   ├── layout.tsx      # Web shell: Header + <main> + Footer
+    │   ├── not-found.tsx   # Web 404 → NotFoundPage showHeader={false}
     │   ├── page.tsx        # Home → HomePage
     │   ├── confirm-email/page.tsx
     │   └── logout/page.tsx
@@ -88,6 +91,9 @@ src/screen/
 │   │   └── instructor-list-pagination.tsx
 │   ├── home/
 │   │   └── page.tsx        # HomePage — assembles all home section components
+│   ├── not-found/
+│   │   ├── index.ts
+│   │   └── not-found-page.tsx  # NotFoundPage — localized 404 (image, i18n copy, CTA)
 │   └── taxonomy/
 │       ├── index.ts
 │       └── taxonomy-list-page.tsx  # TaxonomyListPage (client CRUD list, shared by admin + sysadmin)
