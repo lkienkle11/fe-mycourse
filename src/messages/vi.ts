@@ -163,6 +163,14 @@ const messages = {
       success: "Đã gửi lại email xác thực. Vui lòng kiểm tra hộp thư.",
     },
   },
+  notFound: {
+    metaTitle: "Không tìm thấy trang",
+    title: "Rất tiếc! Không tìm thấy trang",
+    descriptionLine1: "Trang bạn đang tìm có thể đã bị di chuyển hoặc bị xóa,",
+    descriptionLine2: "hoặc đường dẫn bạn nhập không chính xác.",
+    backToHome: "Quay về trang chủ",
+    imageAlt: "Hình minh họa không tìm thấy trang",
+  },
   homepage: {
     hero: {
       title1: "Khơi phá tiềm năng với các",
