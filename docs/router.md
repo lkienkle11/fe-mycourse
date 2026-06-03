@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (taxonomy + instructor management routes)._
+_Last audited: 2026-06-02 (custom localized 404 page)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
@@ -85,6 +85,8 @@ export const config = {
 /[locale]/sysadmin/taxonomy/{levels,topics,outcomes,skills,tags}  → SysadminTaxonomy*Page → TaxonomyListPage
 /[locale]/admin/instructors/{roster,approvals,profiles,expertise,tickets}  → AdminInstructor*Page → shared instructor screens
 /[locale]/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}  → SysadminInstructor*Page → same shared screens
+/[locale]/* (unknown)     → not-found.tsx chain → NotFoundPage (see 404 section below)
+/_not-found (global)      → src/app/not-found.tsx → NotFoundPage + explicit NextIntlClientProvider + AppProviders
 ```
 
 ### Route Groups
@@ -122,6 +124,7 @@ src/app/[locale]/
 | `/vi/courses` | — | — | 🚧 Planned |
 | `/vi/admin/taxonomy/levels` (and topics, outcomes, skills, tags) | `admin/taxonomy/*/page.tsx` | `AdminTaxonomy*Page` → `TaxonomyListPage` | ✅ Implemented |
 | `/vi/sysadmin/taxonomy/*` | `sysadmin/taxonomy/*/page.tsx` | `SysadminTaxonomy*Page` → `TaxonomyListPage` | ✅ Implemented |
+| `/vi/this-route-does-not-exist` (any unknown path) | `not-found.tsx` chain | `NotFoundPage` | ✅ Implemented |
 | `/vi/admin/users`, `/vi/admin/courses`, … | — | — | 🚧 Placeholder nav links only (instructor routes above are implemented) |
 
 ---
@@ -146,6 +149,26 @@ Root layout            (src/app/layout.tsx)
 | `src/app/[locale]/admin/layout.tsx` | `DashboardLayout` (`ADMIN_DASHBOARD_ITEMS`, `admin:modify` gate) |
 | `src/app/[locale]/instructor/layout.tsx` | `DashboardLayout` (`INSTRUCTOR_DASHBOARD_ITEMS`, `instructor:modify` gate) |
 | `src/app/[locale]/sysadmin/layout.tsx` | `DashboardLayout` (`SYSADMIN_DASHBOARD_ITEMS`, `sysadmin:modify` gate) |
+
+---
+
+## Custom 404 (not-found)
+
+Next.js renders `not-found.tsx` when `notFound()` is called or no route matches.
+
+| File | When it runs | Provider / chrome |
+|------|--------------|-------------------|
+| `src/app/not-found.tsx` | Global fallback for unmatched URLs (e.g. `/vi/unknown`) — **outside** `[locale]/layout` | Inline `NextIntlClientProvider` (`locale` + `messages` from server) + existing `AppProviders` (same stack as `[locale]/layout.tsx`) |
+| `src/app/[locale]/not-found.tsx` | Locale segment 404 (e.g. invalid locale child, admin/instructor unknown paths) | Inherits `NextIntlClientProvider` + `AppProviders` from `[locale]/layout.tsx` |
+| `src/app/[locale]/(web)/not-found.tsx` | Unknown paths under `(web)` route group | Inherits locale providers; `(web)/layout` supplies `Header` + `Footer` — screen uses `showHeader={false}` |
+
+Screen: `src/screen/common/not-found/not-found-page.tsx` (`NotFoundPage`).
+
+- i18n namespace: `notFound` in `src/messages/en.ts` / `vi.ts`
+- CTA: `Button` + `Link` from `@/i18n/navigation` + `homeHref` from `@/lib/navigation/home`
+- Illustration: `@public/assets/images/common/thumbnail-page-not-found.png`
+
+Manual test URLs: `/vi/this-route-does-not-exist`, `/en/this-route-does-not-exist`.
 
 ---
 

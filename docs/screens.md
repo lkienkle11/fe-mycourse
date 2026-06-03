@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-05-29 (taxonomy + instructor management screens)._
+_Last audited: 2026-06-02 (custom localized 404 page)._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -37,6 +37,7 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/sysadmin` | Active | Sysadmin dashboard shell (`SysadminDashboardPage` placeholder) |
 | `/{locale}/admin/taxonomy/{resource}` | Active | `AdminTaxonomy*Page` → shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags) |
 | `/{locale}/sysadmin/taxonomy/{resource}` | Active | `SysadminTaxonomy*Page` → same shared `TaxonomyListPage` (sysadmin menu + permissions) |
+| `/{locale}/*` (unknown path) | Active | Custom 404 — `NotFoundPage` via `not-found.tsx` chain |
 
 > `PUBLIC_ROUTES` (`src/constants/route.ts`): `home`, `confirmEmail`, `logout`. Login/signup are **modal-only** via `LoginSignupPopup`; confirm/logout have dedicated routes.
 
@@ -72,7 +73,7 @@ Each layout layer adds a concern without re-rendering the parent:
 ## Screen barrels (`src/screen/`)
 
 - **`src/screen/index.ts`** — re-exports `common`, `admin`, `instructor`, and `sysadmin` barrels.
-- **`src/screen/common/`** — shared screens used by multiple roles (e.g. marketing `HomePage`, `TaxonomyListPage`, instructor management pages). Barrel: `src/screen/common/index.ts`.
+- **`src/screen/common/`** — shared screens used by multiple roles (e.g. marketing `HomePage`, `NotFoundPage`, `TaxonomyListPage`, instructor management pages). Barrel: `src/screen/common/index.ts`.
 - **`src/screen/admin/`** — `AdminDashboardPage` (`page.tsx`) plus role-specific routes such as `taxonomy/{resource}/page.tsx` (`AdminTaxonomy*Page` wrappers). Barrel: `src/screen/admin/index.ts`.
 - **`src/screen/instructor/`** — `InstructorDashboardPage`, `InstructorTicketsPage` (`tickets/page.tsx`); barrel: `src/screen/instructor/index.ts`.
 - **`src/screen/common/instructor/`** — shared admin screens: roster, approvals, profiles, expertise, admin tickets; barrel: `src/screen/common/instructor/index.ts`.
@@ -101,6 +102,28 @@ HomePage (server)
 
 **Supporting components:**
 - `CourseCard` (`src/components/home/course-card.tsx`) — reusable card used by course-listing sections.
+
+---
+
+## Not Found Screen (`NotFoundPage`)
+
+**File:** `src/screen/common/not-found/not-found-page.tsx` — async Server Component.
+
+**Routes:**
+- `src/app/not-found.tsx` — global fallback (explicit `NextIntlClientProvider` + `AppProviders`)
+- `src/app/[locale]/not-found.tsx` — locale-level 404 (inherits providers from `[locale]/layout.tsx`)
+- `src/app/[locale]/(web)/not-found.tsx` — web shell 404 (`showHeader={false}`; `(web)/layout` supplies Header/Footer)
+
+**Composition:**
+```
+NotFoundPage (server)
+├── Header (optional — default true; false under (web)/not-found)
+├── Illustration — next/image → thumbnail-page-not-found.png
+├── Title + two description lines — getTranslations("notFound")
+└── CTA — Button asChild + Link href={homeHref}
+```
+
+**i18n keys** (`notFound`): `metaTitle`, `title`, `descriptionLine1`, `descriptionLine2`, `backToHome`, `imageAlt`.
 
 ---
 
