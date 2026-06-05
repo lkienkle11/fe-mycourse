@@ -7,6 +7,7 @@ export const INSTRUCTOR_DASHBOARD_ITEMS: DashboardItem[] = [
   {
     id: "instructor-overview",
     title: "Overview",
+    titleKey: "instructor.menu.overview",
     href: "/instructor",
     icon: LayoutDashboard,
     permissions: [PERMISSIONS.InstructorModify],
@@ -14,12 +15,14 @@ export const INSTRUCTOR_DASHBOARD_ITEMS: DashboardItem[] = [
   {
     id: "instructor-courses",
     title: "My Courses",
+    titleKey: "instructor.menu.courses",
     icon: BookOpen,
     permissions: [PERMISSIONS.CourseInstructorRead],
     children: [
       {
         id: "instructor-courses-list",
         title: "Course List",
+        titleKey: "instructor.menu.courseList",
         href: "/instructor/courses",
         icon: BookOpen,
         permissions: [PERMISSIONS.CourseInstructorRead],
@@ -29,6 +32,7 @@ export const INSTRUCTOR_DASHBOARD_ITEMS: DashboardItem[] = [
   {
     id: "instructor-media",
     title: "Media",
+    titleKey: "instructor.menu.media",
     href: "/instructor/media",
     icon: Film,
     permissions: [PERMISSIONS.MediaFileRead],

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Server, Shield } from "lucide-react";
+import { BookOpen, LayoutDashboard, Server, Shield } from "lucide-react";
 import { INSTRUCTOR_MENU_ICONS } from "@/constants/dashboard/instructor-icons";
 import { TAXONOMY_MENU_ICONS } from "@/constants/dashboard/taxonomy-icons";
 import { INSTRUCTOR_GROUP_READ_PERMISSIONS } from "@/constants/instructor/resources";
@@ -35,6 +35,13 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
     href: "/sysadmin/roles",
     icon: Shield,
     permissions: [PERMISSIONS.SysadminModify],
+  },
+  {
+    id: "sysadmin-courses",
+    title: "Courses",
+    href: "/sysadmin/courses",
+    icon: BookOpen,
+    permissions: [PERMISSIONS.CourseRead],
   },
   {
     id: "sysadmin-taxonomy",

@@ -1,0 +1,420 @@
+"use client";
+
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { toast } from "sonner";
+import {
+  deleteCourseLessonService,
+  deleteCourseSectionService,
+  deleteCourseSubLessonService,
+  reorderCourseLessonsService,
+  reorderCourseSectionsService,
+  reorderCourseSubLessonsService,
+} from "@/api/callers/course";
+import { useCourseDetail } from "@/api/hooks/course";
+import { useInstructorRosterList } from "@/api/hooks/instructor";
+import { useTaxonomyList } from "@/api/hooks/taxonomy/useTaxonomy";
+import { CourseBasicInfoTab } from "@/components/features/course/course-editor-basic-tab";
+import { CourseCollaboratorsTab } from "@/components/features/course/course-editor-collaborators-tab";
+import {
+  CourseLessonDialog,
+  CourseMediaDialogs,
+  CourseSectionDialog,
+  CourseSubLessonDialog,
+} from "@/components/features/course/course-editor-dialogs";
+import { CourseOutlineTab } from "@/components/features/course/course-editor-outline-tab";
+import { CourseStatusBadge } from "@/components/features/course/course-status-badge";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { rootOutlineStableId, useCourseEditorState } from "@/hooks/course";
+import type { CourseEditorTab } from "@/types/course";
+
+export function InstructorCourseEditorPage({ courseId }: { courseId: number }) {
+  const tCommon = useTranslations("course.common");
+  const tEditor = useTranslations("course.editor");
+  const tToast = useTranslations("course.editor.toast");
+  const { data, isLoading, mutate } = useCourseDetail(courseId);
+  const { rows: levelRows } = useTaxonomyList("levels", {
+    page: 1,
+    per_page: 100,
+  });
+  const { rows: topicRows } = useTaxonomyList("topics", {
+    page: 1,
+    per_page: 100,
+  });
+  const { rows: tagRows } = useTaxonomyList("tags", {
+    page: 1,
+    per_page: 100,
+  });
+  const { rows: skillRows } = useTaxonomyList("skills", {
+    page: 1,
+    per_page: 100,
+  });
+  const { rows: outcomeRows } = useTaxonomyList("outcomes", {
+    page: 1,
+    per_page: 100,
+  });
+  const { rows: rosterRows } = useInstructorRosterList({
+    page: 1,
+    per_page: 100,
+  });
+
+  const editableVersion = data?.draft_version;
+  const liveVersion = data?.live_version;
+  const activeVersion = editableVersion ?? liveVersion;
+  const canManageCollaborators = data?.collaborator_role === "OWNER";
+  const outline = data?.outline ?? [];
+
+  const {
+    activeTab,
+    setActiveTab,
+    isPreparingDraft,
+    isSavingBasicInfo,
+    thumbnailDialogOpen,
+    setThumbnailDialogOpen,
+    previewDialogOpen,
+    setPreviewDialogOpen,
+    sectionDialog,
+    sectionForm,
+    setSectionForm,
+    lessonDialog,
+    lessonForm,
+    setLessonForm,
+    subLessonDialog,
+    subLessonForm,
+    setSubLessonForm,
+    collaboratorUserId,
+    setCollaboratorUserId,
+    isSubmittingCollaborator,
+    videoDialogOpen,
+    setVideoDialogOpen,
+    basicInfo,
+    setBasicInfo,
+    tagSelection,
+    skillSelection,
+    outcomeSelection,
+    withEphemeralLease,
+    handlePrepareDraft,
+    handleSaveBasicInfo,
+    openSectionDialog,
+    closeSectionDialog,
+    saveSection,
+    openLessonDialog,
+    closeLessonDialog,
+    saveLesson,
+    openSubLessonDialog,
+    closeSubLessonDialog,
+    saveSubLesson,
+    toggleSelection,
+    handleAddCollaborator,
+    handleRemoveCollaborator,
+    handleSubmitReview,
+    handleReopenDraft,
+    refreshDetail,
+  } = useCourseEditorState({
+    courseId,
+    activeVersion,
+    editableVersion,
+    mutate,
+  });
+
+  if (isLoading) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {tCommon("loadingCourse")}
+      </p>
+    );
+  }
+
+  if (!data || !activeVersion) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">{tCommon("notLoaded")}</p>
+        <Button asChild variant="outline">
+          <Link href="/instructor/courses">{tCommon("backToCourses")}</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Button asChild type="button" variant="outline" size="sm">
+              <Link href="/instructor/courses">{tCommon("back")}</Link>
+            </Button>
+            <CourseStatusBadge status={activeVersion.status} />
+            <Badge variant="outline">
+              {tCommon("versionBadge", {
+                version: String(activeVersion.version_no),
+              })}
+            </Badge>
+            <Badge variant="outline">
+              {tCommon(`collaboratorRole.${data.collaborator_role}`)}
+            </Badge>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">{activeVersion.title}</h1>
+            <p className="text-sm text-muted-foreground">
+              {tEditor("learnerNotice")}
+            </p>
+          </div>
+          {editableVersion?.status === "REJECTED" &&
+          editableVersion.rejection_reason ? (
+            <p className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+              {tEditor("rejectionReason", {
+                reason: editableVersion.rejection_reason,
+              })}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {!editableVersion && liveVersion ? (
+            <Button
+              type="button"
+              disabled={isPreparingDraft}
+              onClick={() => void handlePrepareDraft()}
+            >
+              {isPreparingDraft
+                ? tEditor("actions.preparingDraft")
+                : tEditor("actions.prepareDraft")}
+            </Button>
+          ) : null}
+          {editableVersion?.status === "DRAFT" ? (
+            <Button type="button" onClick={() => void handleSubmitReview()}>
+              {tEditor("actions.submitForReview")}
+            </Button>
+          ) : null}
+          {editableVersion?.status === "REJECTED" ? (
+            <Button type="button" onClick={() => void handleReopenDraft()}>
+              {tEditor("actions.reopenDraft")}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as CourseEditorTab)}
+      >
+        <TabsList variant="line" className="w-full justify-start">
+          <TabsTrigger value="basic">{tEditor("tabs.basic")}</TabsTrigger>
+          <TabsTrigger value="outline">{tEditor("tabs.outline")}</TabsTrigger>
+          <TabsTrigger value="collaborators">
+            {tEditor("tabs.collaborators")}
+          </TabsTrigger>
+          <TabsTrigger value="pricing">{tEditor("tabs.pricing")}</TabsTrigger>
+          <TabsTrigger value="certificate">
+            {tEditor("tabs.certificate")}
+          </TabsTrigger>
+        </TabsList>
+
+        <CourseBasicInfoTab
+          editable={Boolean(editableVersion)}
+          basicInfo={basicInfo}
+          setBasicInfo={setBasicInfo}
+          levelRows={levelRows}
+          topicRows={topicRows}
+          tagRows={tagRows}
+          skillRows={skillRows}
+          outcomeRows={outcomeRows}
+          tagSelection={tagSelection}
+          skillSelection={skillSelection}
+          outcomeSelection={outcomeSelection}
+          onToggleSelection={toggleSelection}
+          isSavingBasicInfo={isSavingBasicInfo}
+          onSave={() => void handleSaveBasicInfo()}
+          onOpenThumbnailDialog={() => setThumbnailDialogOpen(true)}
+          onOpenPreviewDialog={() => setPreviewDialogOpen(true)}
+        />
+
+        <CourseOutlineTab
+          editable={Boolean(editableVersion)}
+          outline={outline}
+          onAddSection={() => void openSectionDialog()}
+          onReverseSections={() =>
+            void withEphemeralLease(
+              "OUTLINE_ROOT",
+              rootOutlineStableId(courseId),
+              async () => {
+                await reorderCourseSectionsService(courseId, {
+                  ordered_stable_ids: outline
+                    .slice()
+                    .reverse()
+                    .map((section) => section.stable_id),
+                });
+                await refreshDetail();
+              },
+            )
+          }
+          onReorderSections={(sections) =>
+            void withEphemeralLease(
+              "OUTLINE_ROOT",
+              rootOutlineStableId(courseId),
+              async () => {
+                await reorderCourseSectionsService(courseId, {
+                  ordered_stable_ids: sections.map(
+                    (section) => section.stable_id,
+                  ),
+                });
+                await refreshDetail();
+              },
+            )
+          }
+          onEditSection={(section) => void openSectionDialog(section)}
+          onDeleteSection={(section) =>
+            void withEphemeralLease("SECTION", section.stable_id, async () => {
+              await deleteCourseSectionService(courseId, section.id);
+              toast.success(tToast("sectionDeleted"));
+              await refreshDetail();
+            })
+          }
+          onAddLesson={(section) => void openLessonDialog(section)}
+          onEditLesson={(section, lesson) =>
+            void openLessonDialog(section, lesson)
+          }
+          onDeleteLesson={(lesson) =>
+            void withEphemeralLease("LESSON", lesson.stable_id, async () => {
+              await deleteCourseLessonService(courseId, lesson.id);
+              toast.success(tToast("lessonDeleted"));
+              await refreshDetail();
+            })
+          }
+          onReorderLessons={(section, lessons) =>
+            void withEphemeralLease("SECTION", section.stable_id, async () => {
+              await reorderCourseLessonsService(courseId, section.id, {
+                ordered_stable_ids: lessons.map((lesson) => lesson.stable_id),
+              });
+              await refreshDetail();
+            })
+          }
+          onAddSubLesson={(lesson) => void openSubLessonDialog(lesson)}
+          onEditSubLesson={(lesson, subLesson) =>
+            void openSubLessonDialog(lesson, subLesson)
+          }
+          onDeleteSubLesson={(subLesson) =>
+            void withEphemeralLease(
+              "SUB_LESSON",
+              subLesson.stable_id,
+              async () => {
+                await deleteCourseSubLessonService(courseId, subLesson.id);
+                toast.success(tToast("itemDeleted"));
+                await refreshDetail();
+              },
+            )
+          }
+          onReorderSubLessons={(lesson, subLessons) =>
+            void withEphemeralLease("LESSON", lesson.stable_id, async () => {
+              await reorderCourseSubLessonsService(courseId, lesson.id, {
+                ordered_stable_ids: subLessons.map(
+                  (subLesson) => subLesson.stable_id,
+                ),
+              });
+              await refreshDetail();
+            })
+          }
+        />
+
+        <CourseCollaboratorsTab
+          canManageCollaborators={canManageCollaborators}
+          collaboratorUserId={collaboratorUserId}
+          setCollaboratorUserId={setCollaboratorUserId}
+          rosterRows={rosterRows}
+          isSubmittingCollaborator={isSubmittingCollaborator}
+          onAddCollaborator={() => void handleAddCollaborator()}
+          collaborators={data.collaborators}
+          onRemoveCollaborator={(collaborator) =>
+            void handleRemoveCollaborator(collaborator)
+          }
+        />
+
+        <TabsContent value="pricing">
+          <ComingSoonCard
+            title={tEditor("pricing.title")}
+            description={tEditor("pricing.description")}
+            comingSoonLabel={tEditor("pricing.comingSoon")}
+          />
+        </TabsContent>
+
+        <TabsContent value="certificate">
+          <ComingSoonCard
+            title={tEditor("certificate.title")}
+            description={tEditor("certificate.description")}
+            comingSoonLabel={tEditor("certificate.comingSoon")}
+          />
+        </TabsContent>
+      </Tabs>
+
+      <CourseSectionDialog
+        sectionDialog={sectionDialog}
+        sectionForm={sectionForm}
+        setSectionForm={setSectionForm}
+        onClose={() => void closeSectionDialog()}
+        onSave={() => void saveSection()}
+      />
+
+      <CourseLessonDialog
+        lessonDialog={lessonDialog}
+        lessonForm={lessonForm}
+        setLessonForm={setLessonForm}
+        onClose={() => void closeLessonDialog()}
+        onSave={() => void saveLesson()}
+      />
+
+      <CourseSubLessonDialog
+        subLessonDialog={subLessonDialog}
+        subLessonForm={subLessonForm}
+        setSubLessonForm={setSubLessonForm}
+        onClose={() => void closeSubLessonDialog()}
+        onSave={() => void saveSubLesson()}
+        onOpenVideoDialog={() => setVideoDialogOpen(true)}
+      />
+
+      <CourseMediaDialogs
+        thumbnailDialogOpen={thumbnailDialogOpen}
+        setThumbnailDialogOpen={setThumbnailDialogOpen}
+        previewDialogOpen={previewDialogOpen}
+        setPreviewDialogOpen={setPreviewDialogOpen}
+        basicInfo={basicInfo}
+        setBasicInfo={setBasicInfo}
+        videoDialogOpen={videoDialogOpen}
+        setVideoDialogOpen={setVideoDialogOpen}
+        subLessonForm={subLessonForm}
+        setSubLessonForm={setSubLessonForm}
+      />
+    </div>
+  );
+}
+
+function ComingSoonCard({
+  title,
+  description,
+  comingSoonLabel,
+}: {
+  title: string;
+  description: string;
+  comingSoonLabel: string;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">{comingSoonLabel}</p>
+      </CardContent>
+    </Card>
+  );
+}
