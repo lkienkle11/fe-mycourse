@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-06-02 (custom localized 404 page)._
+_Last audited: 2026-06-05 (course routes + shared review screen sync)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
@@ -117,15 +117,19 @@ src/app/[locale]/
 | `/en/logout` | same | same | ✅ Implemented |
 | `/vi/admin` | `[locale]/admin/page.tsx` | `AdminDashboardPage` | ✅ Shell + placeholder |
 | `/vi/instructor` | `[locale]/instructor/page.tsx` | `InstructorDashboardPage` | ✅ Shell + placeholder |
+| `/vi/instructor/courses` | `[locale]/instructor/courses/page.tsx` | `InstructorCoursesPage` | ✅ Implemented |
+| `/vi/instructor/courses/{courseId}` | `[locale]/instructor/courses/[courseId]/page.tsx` | `InstructorCourseEditorPage` | ✅ Implemented |
 | `/vi/instructor/tickets` | `[locale]/instructor/tickets/page.tsx` | `InstructorTicketsPage` | ✅ Implemented |
+| `/vi/admin/courses` | `[locale]/admin/courses/page.tsx` | `CourseReviewPage` (`scope="admin"`) | ✅ Implemented |
 | `/vi/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | `admin/instructors/*/page.tsx` | `AdminInstructor*Page` → shared screens | ✅ Implemented |
 | `/vi/sysadmin/instructors/*` | `sysadmin/instructors/*/page.tsx` | `SysadminInstructor*Page` → shared screens | ✅ Implemented |
 | `/vi/sysadmin` | `[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` | ✅ Shell + placeholder |
+| `/vi/sysadmin/courses` | `[locale]/sysadmin/courses/page.tsx` | `CourseReviewPage` (`scope="sysadmin"`) | ✅ Implemented |
 | `/vi/courses` | — | — | 🚧 Planned |
 | `/vi/admin/taxonomy/levels` (and topics, outcomes, skills, tags) | `admin/taxonomy/*/page.tsx` | `AdminTaxonomy*Page` → `TaxonomyListPage` | ✅ Implemented |
 | `/vi/sysadmin/taxonomy/*` | `sysadmin/taxonomy/*/page.tsx` | `SysadminTaxonomy*Page` → `TaxonomyListPage` | ✅ Implemented |
 | `/vi/this-route-does-not-exist` (any unknown path) | `not-found.tsx` chain | `NotFoundPage` | ✅ Implemented |
-| `/vi/admin/users`, `/vi/admin/courses`, … | — | — | 🚧 Placeholder nav links only (instructor routes above are implemented) |
+| `/vi/admin/users`, … | — | — | 🚧 Remaining placeholder nav links outside the implemented taxonomy, instructor, and course review surfaces |
 
 ---
 
@@ -147,7 +151,7 @@ Root layout            (src/app/layout.tsx)
 | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider`, `AppProviders` (`SWRConfig`, `EventsStreamProvider`, `MeSwrSync`, `LanguageLocaleSync`, auth tab sync) |
 | `src/app/[locale]/(web)/layout.tsx` | `Header`, `<main>` content area, `Footer` |
 | `src/app/[locale]/admin/layout.tsx` | `DashboardLayout` (`ADMIN_DASHBOARD_ITEMS`, `admin:modify` gate) |
-| `src/app/[locale]/instructor/layout.tsx` | `DashboardLayout` (`INSTRUCTOR_DASHBOARD_ITEMS`, `instructor:modify` gate) |
+| `src/app/[locale]/instructor/layout.tsx` | `DashboardLayout` (`INSTRUCTOR_DASHBOARD_ITEMS`, `instructor:modify` OR `course_instructor:read` gate) |
 | `src/app/[locale]/sysadmin/layout.tsx` | `DashboardLayout` (`SYSADMIN_DASHBOARD_ITEMS`, `sysadmin:modify` gate) |
 
 ---
@@ -221,10 +225,10 @@ import { Link, useRouter } from "@/i18n/navigation";
 Example:
 
 ```
-src/app/[locale]/(web)/courses/page.tsx           → route: /vi/courses
-src/screen/common/courses/page.tsx                → CoursesPage screen component (shared)
-
 src/app/[locale]/admin/taxonomy/levels/page.tsx   → route: /vi/admin/taxonomy/levels
 src/screen/admin/taxonomy/levels/page.tsx         → AdminTaxonomyLevelsPage (wraps shared TaxonomyListPage)
 src/screen/common/taxonomy/taxonomy-list-page.tsx → TaxonomyListPage (shared CRUD UI)
+
+src/app/[locale]/admin/courses/page.tsx           → route: /vi/admin/courses
+src/screen/common/course/course-review-page.tsx   → CourseReviewPage (shared by admin + sysadmin)
 ```

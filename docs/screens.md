@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-06-02 (custom localized 404 page)._
+_Last audited: 2026-06-05 (course routes + screen sharing sync)._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -31,10 +31,14 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/logout` | Active | Logout page (`LogoutContent` → `logoutAction`, cross-tab `broadcast:logout`) |
 | `/{locale}/admin` | Active | Admin dashboard shell (`AdminDashboardPage` placeholder) |
 | `/{locale}/instructor` | Active | Instructor dashboard shell (`InstructorDashboardPage` placeholder) |
+| `/{locale}/instructor/courses` | Active | `InstructorCoursesPage` — editable course list, create dialog, owner-only delete |
+| `/{locale}/instructor/courses/{courseId}` | Active | `InstructorCourseEditorPage` — basic info, outline, collaborators, pricing placeholder, certificate placeholder |
 | `/{locale}/instructor/tickets` | Active | `InstructorTicketsPage` — create ticket, thread, close (P58) |
+| `/{locale}/admin/courses` | Active | `CourseReviewPage` — admin draft review queue |
 | `/{locale}/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | Active | `AdminInstructor*Page` → shared `Instructor*Page` in `src/screen/common/instructor/` |
 | `/{locale}/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}` | Active | `SysadminInstructor*Page` → same shared screens |
 | `/{locale}/sysadmin` | Active | Sysadmin dashboard shell (`SysadminDashboardPage` placeholder) |
+| `/{locale}/sysadmin/courses` | Active | `CourseReviewPage` — sysadmin draft review queue |
 | `/{locale}/admin/taxonomy/{resource}` | Active | `AdminTaxonomy*Page` → shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags) |
 | `/{locale}/sysadmin/taxonomy/{resource}` | Active | `SysadminTaxonomy*Page` → same shared `TaxonomyListPage` (sysadmin menu + permissions) |
 | `/{locale}/*` (unknown path) | Active | Custom 404 — `NotFoundPage` via `not-found.tsx` chain |
@@ -75,8 +79,11 @@ Each layout layer adds a concern without re-rendering the parent:
 - **`src/screen/index.ts`** — re-exports `common`, `admin`, `instructor`, and `sysadmin` barrels.
 - **`src/screen/common/`** — shared screens used by multiple roles (e.g. marketing `HomePage`, `NotFoundPage`, `TaxonomyListPage`, instructor management pages). Barrel: `src/screen/common/index.ts`.
 - **`src/screen/admin/`** — `AdminDashboardPage` (`page.tsx`) plus role-specific routes such as `taxonomy/{resource}/page.tsx` (`AdminTaxonomy*Page` wrappers). Barrel: `src/screen/admin/index.ts`.
-- **`src/screen/instructor/`** — `InstructorDashboardPage`, `InstructorTicketsPage` (`tickets/page.tsx`); barrel: `src/screen/instructor/index.ts`.
+- **`src/screen/instructor/`** — `InstructorDashboardPage`, `InstructorTicketsPage` (`tickets/page.tsx`), `InstructorCourseEditorPage` shell under `courses/`; barrel: `src/screen/instructor/index.ts`.
 - **`src/screen/common/instructor/`** — shared admin screens: roster, approvals, profiles, expertise, admin tickets; barrel: `src/screen/common/instructor/index.ts`.
+- **`src/screen/common/course/`** — shared course review screen used by admin and sysadmin.
+- **`src/components/features/course/`** — non-page course editor tabs and dialogs (`course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx`).
+- **`src/components/features/instructor/`** — shared instructor/admin/sysadmin pagination and action/footer helper components.
 - **`src/screen/admin/instructor/`** — thin wrappers per route (`roster`, `approvals`, `profiles`, `expertise`, `tickets`).
 - **`src/screen/sysadmin/instructor/`** — same wrappers for sysadmin.
 - **`src/screen/sysadmin/`** — `SysadminDashboardPage` plus `taxonomy/{resource}/page.tsx` (`SysadminTaxonomy*Page` wrappers). Barrel: `src/screen/sysadmin/index.ts`.

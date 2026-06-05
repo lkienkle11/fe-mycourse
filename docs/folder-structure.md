@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-06-02 (custom localized 404 page)._
+_Last audited: 2026-06-05 (course hooks relocation + course i18n sync)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -59,15 +59,20 @@ src/app/
     ├── admin/              # Admin dashboard (DashboardLayout)
     │   ├── layout.tsx
     │   ├── page.tsx
+    │   ├── courses/page.tsx    # Admin course review queue
     │   ├── taxonomy/       # App routes → AdminTaxonomy*Page
     │   └── instructors/    # roster, approvals, profiles, expertise, tickets
     ├── instructor/
     │   ├── layout.tsx
     │   ├── page.tsx
+    │   ├── courses/
+    │   │   ├── page.tsx        # InstructorCoursesPage
+    │   │   └── [courseId]/page.tsx  # InstructorCourseEditorPage
     │   └── tickets/page.tsx
     └── sysadmin/
         ├── layout.tsx
         ├── page.tsx
+        ├── courses/page.tsx    # System-admin course review queue
         ├── taxonomy/       # App routes → SysadminTaxonomy*Page
         └── instructors/    # same five screens as admin
 ```
@@ -80,15 +85,17 @@ Async server components that assemble sections into a full page. Acts as the bri
 src/screen/
 ├── index.ts                # Barrel: re-exports common, admin, instructor, sysadmin
 ├── common/
-│   ├── index.ts            # Barrel: shared screens (home, taxonomy, instructor)
+│   ├── index.ts            # Barrel: shared screens (home, taxonomy, instructor, course)
+│   ├── course/
+│   │   ├── index.ts
+│   │   └── course-review-page.tsx  # Shared admin/sysadmin course review queue
 │   ├── instructor/
 │   │   ├── index.ts
 │   │   ├── instructor-roster-page.tsx
 │   │   ├── instructor-approvals-page.tsx
 │   │   ├── instructor-profiles-page.tsx
 │   │   ├── instructor-expertise-page.tsx
-│   │   ├── instructor-tickets-admin-page.tsx
-│   │   └── instructor-list-pagination.tsx
+│   │   └── instructor-tickets-admin-page.tsx
 │   ├── home/
 │   │   └── page.tsx        # HomePage — assembles all home section components
 │   ├── not-found/
@@ -115,6 +122,9 @@ src/screen/
 ├── instructor/
 │   ├── index.ts
 │   ├── page.tsx            # InstructorDashboardPage (placeholder)
+│   ├── courses/
+│   │   ├── page.tsx        # InstructorCoursesPage
+│   │   └── editor-page.tsx
 │   └── tickets/page.tsx    # InstructorTicketsPage
 └── sysadmin/
     ├── index.ts
@@ -160,8 +170,11 @@ src/components/
 │                           #   AdvancedPromoSection, TrendingCoursesSection,
 │                           #   UpcomingWebinarsSection, PromoSection, CourseCard
 ├── features/
+│   ├── course/             # CourseStatusBadge, CourseDeltaEditor, CourseBasicInfoTab,
+│   │                       # CourseOutlineTab, CourseCollaboratorsTab, Course*Dialog helpers
 │   ├── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
-│   ├── instructor/         # InstructorProfileViewDialog, ConfirmAddInstructorDialog, InstructorApprovalActions
+│   ├── instructor/         # InstructorProfileViewDialog, ConfirmAddInstructorDialog, InstructorApprovalActions,
+│   │                       # InstructorListPagination, instructor action/footer helpers
 │   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
@@ -207,6 +220,8 @@ src/api/
 │   │   └── taxonomy.ts     # list/create/patch/delete taxonomy services
 │   ├── instructor/
 │   │   └── instructor.ts   # roster, applications, profiles, expertise, tickets
+│   ├── course/
+│   │   └── course.ts       # course list/detail, draft review, outline CRUD/reorder, leases, learner progress
 │   └── media/
 │       └── media.ts        # list/upload/delete media services
 └── hooks/
@@ -216,6 +231,8 @@ src/api/
     │   └── useTaxonomy.ts  # useTaxonomyList(resourceKey, filters)
     ├── instructor/
     │   └── useInstructor*.ts  # roster, applications, profiles, expertise, tickets
+    ├── course/
+    │   └── useCourses.ts      # editable course list/detail, review queue, learner course hooks
     └── media/
         └── useMediaFiles.ts # useMediaFiles(filters)
 ```
@@ -251,18 +268,21 @@ src/hooks/
 │   ├── use-permissions.ts  # usePermissionSet, useHas*, useSatisfiesPermissions, useFilteredUserMenuGroups
 │   ├── use-auth-confirm-tab-sync.ts
 │   └── use-auth-logout-tab-sync.ts
+├── course/
+│   ├── index.ts            # Barrel: use-course-editor-state
+│   └── use-course-editor-state.ts  # Course editor state, lease handling, translated toasts
+├── events/
+│   ├── index.ts            # Barrel: useStreamEvent + per-channel hooks
+│   ├── use-stream-event.ts # subscribeStreamEvents + optional source/type filter
+│   ├── broadcast/          # useBroadcastStreamEvent, useSendBroadcastOutbound
+│   ├── sse/                # useSseStreamEvent
+│   ├── socket/             # useWebSocketStreamEvent
+│   └── gRPC/               # useGrpcStreamEvent
 ├── language/
 │   ├── index.ts            # useCustomLanguage, useSyncLanguageFromLocale
 │   ├── use-custom-language.ts
 │   └── use-sync-language-from-locale.ts
-├── use-mobile.ts           # useIsMobile
-└── events/
-    ├── index.ts            # Barrel: useStreamEvent + per-channel hooks
-    ├── use-stream-event.ts # subscribeStreamEvents + optional source/type filter
-    ├── broadcast/          # useBroadcastStreamEvent, useSendBroadcastOutbound
-    ├── sse/                # useSseStreamEvent
-    ├── socket/             # useWebSocketStreamEvent
-    └── gRPC/               # useGrpcStreamEvent
+└── use-mobile.ts           # useIsMobile
 ```
 
 ### `src/events/` — Realtime Stream Transports
@@ -482,6 +502,6 @@ docs/
 ├── router.md               # Routing structure and navigation conventions
 ├── patterns.md             # Coding patterns and conventions
 ├── dependencies.md         # Key libraries and their roles
-├── quality.md              # ESLint, Madge / jscpd; CI test job (quality:deps + lint + test)
+├── quality.md              # ESLint, Biome, Madge / jscpd; CI test job (quality:deps + lint + test)
 └── reusable-assets.md      # Reusable utilities, types, hooks, and constants
 ```

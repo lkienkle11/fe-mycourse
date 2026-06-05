@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-06-02 (custom localized 404 page)._
+_Last audited: 2026-06-05 (course collaboration editor + review queue)._
 
 ## Current pages
 
@@ -12,7 +12,10 @@ _Last audited: 2026-06-02 (custom localized 404 page)._
 | `/{locale}/logout` | `src/app/[locale]/(web)/logout/page.tsx` | `LogoutContent` → `logoutAction` (+ cross-tab `broadcast:logout`) | Implemented |
 | `/{locale}/admin` | `src/app/[locale]/admin/page.tsx` | `AdminDashboardPage` (placeholder dashboard) | Implemented |
 | `/{locale}/instructor` | `src/app/[locale]/instructor/page.tsx` | `InstructorDashboardPage` (placeholder) | Implemented |
+| `/{locale}/instructor/courses` | `src/app/[locale]/instructor/courses/page.tsx` | `InstructorCoursesPage` | Implemented |
+| `/{locale}/instructor/courses/{courseId}` | `src/app/[locale]/instructor/courses/[courseId]/page.tsx` | `InstructorCourseEditorPage` | Implemented |
 | `/{locale}/instructor/tickets` | `src/app/[locale]/instructor/tickets/page.tsx` | `InstructorTicketsPage` | Implemented |
+| `/{locale}/admin/courses` | `src/app/[locale]/admin/courses/page.tsx` | `CourseReviewPage` (`scope="admin"`) | Implemented |
 | `/{locale}/admin/instructors/roster` | `src/app/[locale]/admin/instructors/roster/page.tsx` | `AdminInstructorRosterPage` → `InstructorRosterPage` | Implemented |
 | `/{locale}/admin/instructors/approvals` | `…/approvals/page.tsx` | `AdminInstructorApprovalsPage` → `InstructorApprovalsPage` | Implemented |
 | `/{locale}/admin/instructors/profiles` | `…/profiles/page.tsx` | `AdminInstructorProfilesPage` → `InstructorProfilesPage` | Implemented |
@@ -20,6 +23,7 @@ _Last audited: 2026-06-02 (custom localized 404 page)._
 | `/{locale}/admin/instructors/tickets` | `…/tickets/page.tsx` | `AdminInstructorTicketsPage` → `InstructorTicketsAdminPage` | Implemented |
 | `/{locale}/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}` | `src/app/[locale]/sysadmin/instructors/*/page.tsx` | `SysadminInstructor*Page` → same shared screens | Implemented |
 | `/{locale}/sysadmin` | `src/app/[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` (placeholder) | Implemented |
+| `/{locale}/sysadmin/courses` | `src/app/[locale]/sysadmin/courses/page.tsx` | `CourseReviewPage` (`scope="sysadmin"`) | Implemented |
 | `/{locale}/admin/taxonomy/{resource}` | `src/app/[locale]/admin/taxonomy/*/page.tsx` | `AdminTaxonomy*Page` → `TaxonomyListPage` (`src/screen/common/taxonomy/`) — resource: levels, topics, outcomes, skills, tags | Implemented |
 | `/{locale}/sysadmin/taxonomy/{resource}` | `src/app/[locale]/sysadmin/taxonomy/*/page.tsx` | `SysadminTaxonomy*Page` → same `TaxonomyListPage` (sysadmin menu) | Implemented |
 | `/{locale}/*` (unknown path) | `src/app/[locale]/not-found.tsx`, `(web)/not-found.tsx`, `src/app/not-found.tsx` | `NotFoundPage` — localized 404 with Header + CTA | Implemented |
@@ -48,6 +52,6 @@ _Last audited: 2026-06-02 (custom localized 404 page)._
 | `/{locale}/auth/login` | Optional future page; today login is modal-based |
 | `/{locale}/courses` | Marketing/courses listing (nav placeholders only) |
 | Dedicated signup page | Not planned — `SignupContent` stays in `LoginSignupPopup` |
-| Further `/{locale}/admin/*` beyond taxonomy + instructors | Placeholder sidebar links only (users, courses, …) |
+| Further `/{locale}/admin/*` beyond taxonomy + instructors + course review | Placeholder sidebar links only (users, …) |
 
 See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-admin.md`](./taxonomy-admin.md), [`instructor-admin.md`](./instructor-admin.md).

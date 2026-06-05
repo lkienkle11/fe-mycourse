@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-05-29 (admin/sysadmin/instructor routes + shared screens)._
+_Last audited: 2026-06-05 (course editor split follow-up + review queue + instructor tickets)._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -14,8 +14,11 @@ Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `
 | Expertise (topics + skills) | `/admin/instructors/expertise` | `/sysadmin/instructors/expertise` | — |
 | Tickets (admin view, no close) | `/admin/instructors/tickets` | `/sysadmin/instructors/tickets` | — |
 | My tickets | — | — | `/instructor/tickets` |
+| My courses | — | — | `/instructor/courses` |
+| Course editor | — | — | `/instructor/courses/{courseId}` |
+| Course reviews | `/admin/courses` | `/sysadmin/courses` | — |
 
-Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages).
+Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages). Course review queues are implemented for admin/sysadmin; instructor course authoring is implemented under the instructor dashboard.
 
 ## Screen layer
 
@@ -42,7 +45,12 @@ Instructor group on **admin** and **sysadmin** (`ADMIN_DASHBOARD_ITEMS` / `SYSAD
 - Icons: `INSTRUCTOR_MENU_ICONS` in `src/constants/dashboard/instructor-icons.ts`
 - Group visibility: `INSTRUCTOR_GROUP_READ_PERMISSIONS` with `permissionMode: "any"` (`src/constants/instructor/resources.ts`)
 
-**Instructor** dashboard menu (`INSTRUCTOR_DASHBOARD_ITEMS`): adds **Support tickets** → `/instructor/tickets` (`instructor_application:read` for list/create; `instructor_ticket:close` for close on thread).
+**Instructor** dashboard menu (`INSTRUCTOR_DASHBOARD_ITEMS`):
+
+- **My Courses** → `/instructor/courses`
+- **Support tickets** → `/instructor/tickets`
+
+Instructor layout authorization now accepts either `instructor:modify` or `course_instructor:read`, so course collaborators are not blocked by the dashboard shell.
 
 ## Permissions (P41–P58)
 
@@ -64,6 +72,13 @@ UI gates use `PermissionGate` and sidebar filtering via `useFilteredDashboardIte
 - Callers: `src/api/callers/instructor/instructor.ts`
 - Hooks (SWR): `src/api/hooks/instructor/` — roster, applications, profiles, expertise topics/skills, tickets, messages
 - Types: `src/types/instructor.ts` (single profile payload shape for applications and profiles)
+
+Course authoring / review reuses the same dashboard and API patterns:
+
+- instructor routes + review routes live in `API_PRIVATE_ROUTES.course`
+- callers in `src/api/callers/course/course.ts`
+- hooks in `src/api/hooks/course/useCourses.ts`
+- types in `src/types/course.ts`
 
 Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalActions`.
 
@@ -108,7 +123,7 @@ Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, taxonomy list hook
 
 - Public “become instructor” page (BE submit API exists; no marketing route).
 - Assignments / activity log (BE stubs → toast “coming soon” when wired).
-- Course instructor assignment UI (`course_instructors`).
+- Public learner course storefront and learner lesson player UI.
 
 ## Related docs
 

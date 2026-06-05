@@ -1,6 +1,6 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (taxonomy + instructor management modules)._
+_Last audited: 2026-06-05 (course collaboration + review queue)._
 
 
 ## Module map
@@ -14,6 +14,7 @@ _Last audited: 2026-05-29 (taxonomy + instructor management modules)._
 - `Taxonomy`: `src/types/taxonomy`, `src/constants/taxonomy`, `src/api/callers/taxonomy`, `src/components/features/taxonomy`, `src/screen/common/taxonomy`, `src/screen/{admin,sysadmin}/taxonomy/*`, app routes under `admin/taxonomy/*` and `sysadmin/taxonomy/*`
 - `Media`: `src/types/media`, `src/constants/media`, `src/api/callers/media`, `src/components/features/media` (collection popup; no dedicated route page yet)
 - `Instructor`: `src/types/instructor.ts`, `src/constants/instructor`, `src/api/callers/instructor`, `src/api/hooks/instructor`, `src/components/features/instructor`, `src/screen/common/instructor`, `src/screen/{admin,sysadmin}/instructor/*`, `src/screen/instructor/tickets`, app routes under `admin/instructors/*`, `sysadmin/instructors/*`, `instructor/tickets`
+- `Course`: `src/types/course.ts`, `src/api/callers/course`, `src/api/hooks/course`, `src/components/features/course`, `src/screen/instructor/courses`, `src/screen/common/course`, app routes under `instructor/courses/*`, `admin/courses`, `sysadmin/courses`
 
 ## Responsibilities
 - `Ui` renders pages/sections and calls hooks/actions.
@@ -25,6 +26,7 @@ _Last audited: 2026-05-29 (taxonomy + instructor management modules)._
 - `Shared` exposes reusable helpers/types/constants (`lib/language`, `constants/browse-menu.ts`, …).
 - `Taxonomy` provides admin CRUD for levels/topics/outcomes/skills/tags; list filters reuse `ApiListQueryParams` and extend with taxonomy typed-search (`search_by`, `search_value`).
 - `Media` provides the reusable media library dialog (browse/upload/select); taxonomy cover images use it. List filters extend `ApiListQueryParams` with `category` / `sort_order`.
+- `Course` provides instructor course CRUD, draft editing tabs, outline sorting, collaborator management, and admin/sysadmin review actions.
 
 ## Taxonomy module
 
@@ -53,6 +55,28 @@ _Last audited: 2026-05-29 (taxonomy + instructor management modules)._
 - **API**: `src/api/callers/instructor/instructor.ts`, `src/api/hooks/instructor/*`; routes in `API_PRIVATE_ROUTES.instructor`.
 - **UI**: `src/screen/common/instructor/*` (shared pages), thin `src/screen/{admin,sysadmin}/instructor/*/page.tsx`, `src/screen/instructor/tickets/page.tsx`; `src/components/features/instructor/*`.
 - **Docs**: `docs/instructor-admin.md` (routes, permissions, expertise names, tickets).
+
+## Course module
+
+- **Types**: `src/types/course.ts` — version status, outline nodes, collaborators, leases, learner progress, request payloads.
+- **API**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourses.ts`; routes under `API_PRIVATE_ROUTES.course`.
+- **UI**:
+  - `src/screen/instructor/courses/page.tsx` — editable course list + create/delete owner flow
+  - `src/screen/instructor/courses/editor-page.tsx` — editor shell, status header, and tab orchestration
+  - `src/screen/common/course/course-review-page.tsx` — shared admin/sysadmin review queue
+  - `src/components/features/course/course-status-badge.tsx`
+  - `src/components/features/course/course-delta-editor.tsx`
+  - `src/components/features/course/course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx` — split editor render helpers kept outside `src/screen/**` to satisfy the page-only screen rule
+  - `src/components/features/instructor/instructor-action-controls.tsx` — shared instructor admin action/footer helpers
+  - `src/components/features/instructor/instructor-list-pagination.tsx` — shared instructor/admin/sysadmin pagination helper
+- **Hooks**:
+  - `src/hooks/course/use-course-editor-state.ts` — shared client editor state, lease lifecycle, translated toasts, and course draft mutation orchestration
+- **Reuse points**:
+  - `SortableList` for section / lesson / sub-lesson ordering
+  - `MediaCollectionDialog` + `ImageFileField` for thumbnail / preview video / text-lesson images
+  - `useTaxonomyList` for metadata pickers
+  - `useInstructorRosterList` for collaborator selection
+  - `next-intl` message dictionaries in `src/messages/{en,vi}.ts` for all course editor, review, badge, and menu copy
 
 ## Authorization constants & hooks
 
