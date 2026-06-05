@@ -49,7 +49,7 @@
           },
           "suspicious": {
             "noArrayIndexKey": "off",
-            "noDocumentCookie": "warn"
+            "noDocumentCookie": "off"
           }
         }
       }

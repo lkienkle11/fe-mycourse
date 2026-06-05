@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "biome": "npm run lint:biome",
     "lint:biome": "biome check .",
     "format:biome": "biome format --write .",
     "lint:commit": "commitlint --from=HEAD~1 --to=HEAD",
