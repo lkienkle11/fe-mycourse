@@ -12,6 +12,7 @@ import {
   useInstructorTicketMessages,
   useInstructorTicketsList,
 } from "@/api/hooks/instructor";
+import { InstructorListPagination } from "@/components/features/instructor/instructor-list-pagination";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { PermissionGate } from "@/components/shared/permission-gate";
@@ -27,7 +28,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PERMISSIONS } from "@/constants/permissions";
-import { InstructorListPagination } from "@/screen/common/instructor/instructor-list-pagination";
 import type {
   InstructorTicket,
   InstructorTicketListFilters,

@@ -8,6 +8,7 @@ import {
   useInstructorTicketMessages,
   useInstructorTicketsList,
 } from "@/api/hooks/instructor";
+import { InstructorListPagination } from "@/components/features/instructor/instructor-list-pagination";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { PermissionGate } from "@/components/shared/permission-gate";
@@ -31,7 +32,6 @@ import type {
   InstructorTicketListFilters,
   InstructorTicketStatus,
 } from "@/types/instructor";
-import { InstructorListPagination } from "./instructor-list-pagination";
 
 export function InstructorTicketsAdminPage() {
   const t = useTranslations("instructor.tickets");
