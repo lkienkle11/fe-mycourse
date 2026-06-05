@@ -18,13 +18,13 @@ Open the URL Next.js prints (default [http://localhost:3000](http://localhost:30
 | `npm run dev` | Development server |
 | `npm run build` / `npm run start` | Production build / server |
 | `npm run lint` | ESLint (CI `test` job on `dev`, after `quality:deps`) |
-| `npm run lint:biome` / `npm run format:biome` | Biome check / format (local / pre-PR; not in CI) |
+| `npm run biome` / `npm run lint:biome` / `npm run format:biome` | Biome check alias / check / format (local / pre-PR; not in CI) |
 | `npm run cycles` | Circular import check (Madge on `src/`) — run before large refactors |
 | `npm run cycles:json` | Same as `cycles`, JSON output |
 | `npm run dupl` | Duplicate code check (jscpd; excludes shadcn `src/components/ui/**`) |
 | `npm run quality:deps` | `cycles` then `dupl` (CI `test` job on `dev`, before `lint`) |
 
-**Pre-PR local gate (2026-05-29):** `npm run format:biome && npm run lint:biome && npm run lint && npx tsc --noEmit && npm run quality:deps && npm run build` — details in [`docs/quality.md`](docs/quality.md).
+**Pre-PR local gate (2026-06-05):** `npm run format:biome && npm run biome && npm run lint && npx tsc --noEmit && npm run quality:deps && npm run build` — details in [`docs/quality.md`](docs/quality.md).
 
 ## Documentation Convention (Mandatory)
 

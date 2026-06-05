@@ -1,6 +1,6 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (constants + types ESLint rules documented)._
+_Last audited: 2026-06-05 (Biome alias script + UI cookie warning suppression synced)._
 
 Checks for **circular imports** (Madge), **duplicate code** (jscpd), and **ESLint** under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs `npm run quality:deps` then **`npm run lint`** in the **`test`** job **before** `npm run build` (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 
@@ -24,6 +24,7 @@ Checks for **circular imports** (Madge), **duplicate code** (jscpd), and **ESLin
 | Script | Command | Purpose |
 |--------|---------|---------|
 | `lint` | `eslint` | ESLint (Next.js `core-web-vitals` + `typescript`; project rules in [`eslint.config.mjs`](../eslint.config.mjs)) |
+| `biome` | `npm run lint:biome` | Alias for Biome check (same behavior as `lint:biome`) |
 | `lint:biome` | `biome check .` | Biome format/lint (local / pre-PR; **not** in CI `test` job) |
 | `cycles` | `madge --circular … src` | Detect circular **static** import chains under `src/` |
 | `cycles:json` | Same + `--json` | JSON output for tooling |
@@ -114,20 +115,21 @@ Allowed: `export type`, `interface`, `export type * from`, `declare module "next
 
 ---
 
-## Baseline run (2026-05-29)
+## Baseline run (2026-06-05)
 
 ### Full local gate
 
 | Command | Result | Notes |
 |---------|--------|-------|
 | `npm run format:biome` | **Pass** | Biome format |
-| `npm run lint:biome` | **Pass** | 1 **warning** (non-blocking): `src/components/ui/sidebar.tsx` `noDocumentCookie` — shadcn upstream |
+| `npm run biome` | **Pass** | Alias to `lint:biome` |
+| `npm run lint:biome` | **Pass** | No warnings after Biome override update for `src/components/ui/**` (`noDocumentCookie` set to `off`) |
 | `npm run lint` | **Pass** | ESLint; `src/constants/**` data-only; `src/types/**` type-only |
 | `npx tsc --noEmit` | **Pass** | Strict TypeScript |
 | `npm run quality:deps` | **Pass** | Madge + jscpd (see below) |
 | `npm run build` | **Pass** | `next build` (Next.js 16.2.1) |
 
-Recommended before PR: run the table above (or at minimum `lint:biome`, `tsc`, `quality:deps`, `build`).
+Recommended before PR: run the table above (or at minimum `biome`, `tsc`, `quality:deps`, `build`).
 
 ### `quality:deps` only
 
@@ -136,7 +138,7 @@ Recommended before PR: run the table above (or at minimum `lint:biome`, `tsc`, `
 | `npm run cycles` | **Pass** | 311 files processed; no circular dependency |
 | `npm run dupl` | **Pass** | **215** files analyzed (UI primitives excluded); **0 clones** (0% duplicated lines) |
 
-_Re-run after media library a11y fix (2026-05-27): same results — `lint:biome`, `lint`, `tsc --noEmit`, `quality:deps`, `build` all pass._
+_Re-run on 2026-06-05 after adding `biome` alias + syncing UI override: `biome`/`lint:biome`, `lint`, `tsc --noEmit`, `quality:deps`, `build` pass._
 
 **jscpd dedup refactors (2026-05-27):**
 
@@ -155,7 +157,7 @@ _Re-run after media library a11y fix (2026-05-27): same results — `lint:biome`
 | **CI (`dev` deploy)** | `test` | `npm ci`, `npm run quality:deps` (`cycles` + `dupl`), **`npm run lint`** |
 | **CI (`dev` deploy)** | `build` | `npm ci`, `npm run build` (after `test` passes) |
 | **CI (`dev` deploy)** | `deploy` | SSH → VPS `npm ci` + `npm run build` + PM2 reload (quality checks are **not** re-run on the server) |
-| **Recommended local** | — | `lint:biome`, `lint`, `tsc --noEmit`, `quality:deps`, `build` (see **Full local gate** above) |
+| **Recommended local** | — | `biome` (or `lint:biome`), `lint`, `tsc --noEmit`, `quality:deps`, `build` (see **Full local gate** above) |
 
 Do **not** use backend `make check-dupl` or `make check-architecture` in this frontend repo — use the npm scripts above instead.
 

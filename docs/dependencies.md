@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-05-29 (added @xyflow/react, dagre, @types/dagre for read-only tree popup)._
+_Last audited: 2026-06-05 (synced Biome script alias `biome` -> `lint:biome`)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -144,7 +144,7 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 | `@tailwindcss/postcss` | ^4 | Tailwind PostCSS plugin for v4 |
 | `eslint` | ^9 | Linter (`npm run lint`; CI `test` job on `dev`) |
 | `eslint-config-next` | 16.2.1 | ESLint rules for Next.js; extended in [`eslint.config.mjs`](../eslint.config.mjs) (`src/constants/**` data-only, `src/types/**` type-only) |
-| `@biomejs/biome` | ^2.4.9 | Fast formatter + linter (`npm run lint:biome`, `npm run format:biome`) |
+| `@biomejs/biome` | ^2.4.9 | Fast formatter + linter (`npm run biome` alias, `npm run lint:biome`, `npm run format:biome`) |
 | `@commitlint/cli` | ^20.5.0 | Commit message linting |
 | `@commitlint/config-conventional` | ^20.5.0 | Conventional Commits ruleset |
 | `shadcn` | 4.2.0 | CLI tool for adding shadcn/ui components to `src/components/ui/` |
