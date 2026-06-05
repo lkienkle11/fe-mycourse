@@ -482,6 +482,6 @@ docs/
 ├── router.md               # Routing structure and navigation conventions
 ├── patterns.md             # Coding patterns and conventions
 ├── dependencies.md         # Key libraries and their roles
-├── quality.md              # ESLint, Madge / jscpd; CI test job (quality:deps + lint)
+├── quality.md              # ESLint, Madge / jscpd; CI test job (quality:deps + lint + test)
 └── reusable-assets.md      # Reusable utilities, types, hooks, and constants
 ```

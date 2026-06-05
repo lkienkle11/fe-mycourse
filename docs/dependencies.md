@@ -171,4 +171,4 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 6. **Icons**: Always import icons from `lucide-react`. Do not add other icon libraries.
 7. **Toasts**: Use `sonner` (`toast.success`, `toast.error`, etc.) for user-facing notifications.
 8. **Stream events**: Subscribe with `hooks/events/*`; send WS via `postSocketOutbound`, broadcast via `postBroadcastOutbound`. Do not add a second WebSocket/SSE library without updating [`delivery.md`](./delivery.md).
-9. **Quality gates**: Run `npm run quality:deps` and `npm run lint` (or individual scripts) before large refactors. CI on **`dev`** enforces both in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.
+9. **Quality gates**: Run `npm run quality:deps`, `npm run lint`, and `npm run test` (or individual scripts) before large refactors. CI on **`dev`** enforces the same in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.

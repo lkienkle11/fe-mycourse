@@ -404,7 +404,7 @@ Lint (`eslint`, `biome`), `npx tsc --noEmit`, and `npm run build` are the primar
 - `npm run dupl` — jscpd clone detection against `src/` (skips shadcn `src/components/ui/**`; see [`quality.md`](./quality.md)).
 - `npm run quality:deps` — both in sequence.
 
-On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs `npm run quality:deps` then **`npm run lint`** in the **`test`** job before **`build`** (same pattern as backend `test` → `build` in `be-mycourse`).
+On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs `npm run quality:deps`, **`npm run lint`**, and **`npm run test`** in the **`test`** job before **`build`** (same pattern as backend `test` → `build` in `be-mycourse`).
 
 ---
 

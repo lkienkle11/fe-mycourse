@@ -1,8 +1,8 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-06-05 (Biome alias script + UI cookie warning suppression synced)._
+_Last audited: 2026-06-05 (frontend test script + CI test job sync)._
 
-Checks for **circular imports** (Madge), **duplicate code** (jscpd), and **ESLint** under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs `npm run quality:deps` then **`npm run lint`** in the **`test`** job **before** `npm run build` (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
+Checks for **circular imports** (Madge), **duplicate code** (jscpd), and **ESLint** under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs `npm run quality:deps`, **`npm run lint`**, and **`npm run test`** in the **`test`** job **before** `npm run build` (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 
 > **Not the backend:** `be-mycourse` uses `make check-architecture` / `make check-dupl` (Go). This repo uses **npm scripts** below.
 
@@ -26,6 +26,7 @@ Checks for **circular imports** (Madge), **duplicate code** (jscpd), and **ESLin
 | `lint` | `eslint` | ESLint (Next.js `core-web-vitals` + `typescript`; project rules in [`eslint.config.mjs`](../eslint.config.mjs)) |
 | `biome` | `npm run lint:biome` | Alias for Biome check (same behavior as `lint:biome`) |
 | `lint:biome` | `biome check .` | Biome format/lint (local / pre-PR; **not** in CI `test` job) |
+| `test` | `node -e "console.log('No frontend test suite is configured yet.')"` | Placeholder command so CI/local verification can run a stable `npm run test` step while no dedicated FE suite exists yet |
 | `cycles` | `madge --circular … src` | Detect circular **static** import chains under `src/` |
 | `cycles:json` | Same + `--json` | JSON output for tooling |
 | `dupl` | `jscpd src --config .jscpd.json` | Duplicate code detection (excludes paths in `ignore`; see below) |
@@ -142,6 +143,7 @@ Feature components (tabs, dialogs, pagination blocks, …) belong in `src/compon
 | `npm run biome` | **Pass** | Alias to `lint:biome` |
 | `npm run lint:biome` | **Pass** | No warnings after Biome override update for `src/components/ui/**` (`noDocumentCookie` set to `off`) |
 | `npm run lint` | **Pass** | ESLint; `src/constants/**` data-only; `src/types/**` type-only |
+| `npm run test` | **Pass** | Placeholder script; no dedicated frontend test suite is configured yet |
 | `npx tsc --noEmit` | **Pass** | Strict TypeScript |
 | `npm run quality:deps` | **Pass** | Madge + jscpd (see below) |
 | `npm run build` | **Pass** | `next build` (Next.js 16.2.1) |
@@ -171,7 +173,7 @@ _Re-run on 2026-06-05 after adding `biome` alias + syncing UI override: `biome`/
 
 | Stage | Job | What runs |
 |-------|-----|-----------|
-| **CI (`dev` deploy)** | `test` | `npm ci`, `npm run quality:deps` (`cycles` + `dupl`), **`npm run lint`** |
+| **CI (`dev` deploy)** | `test` | `npm ci`, `npm run quality:deps` (`cycles` + `dupl`), **`npm run lint`**, **`npm run test`** |
 | **CI (`dev` deploy)** | `build` | `npm ci`, `npm run build` (after `test` passes) |
 | **CI (`dev` deploy)** | `deploy` | SSH → VPS `npm ci` + `npm run build` + PM2 reload (quality checks are **not** re-run on the server) |
 | **Recommended local** | — | `biome` (or `lint:biome`), `lint`, `tsc --noEmit`, `quality:deps`, `build` (see **Full local gate** above) |
