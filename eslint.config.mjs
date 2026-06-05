@@ -5,6 +5,19 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    ignores: [".jscpd-report/**", "src/messages/en.ts", "src/messages/vi.ts"],
+    rules: {
+      "max-lines": [
+        "error",
+        {
+          max: 700,
+          skipBlankLines: true,
+          skipComments: true,
+        },
+      ],
+    },
+  },
 
   // Cấm file .tsx trong src/constants và mọi thư mục con/cháu
   {
@@ -238,6 +251,7 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    ".jscpd-report/**",
     "next-env.d.ts",
   ]),
 ]);
