@@ -113,6 +113,23 @@ Allowed: `export type`, `interface`, `export type * from`, `declare module "next
 
 **2026-05-29 refactor (types):** `ApiErrorCode` → `src/constants/api-error-code.ts`; `isApiSuccess` → `src/lib/utils/api.ts`; `MEDIA_COLLECTION_ALL_TABS` → `src/constants/media/file-rules.ts`; `PERMISSION_NAME_TO_ID` → `src/lib/utils/permission.ts`; `countTaxonomyTreeNodes` → `src/lib/utils/taxonomy.ts`; barrels use `export type *`.
 
+### `src/screen/**` — page files only
+
+Each module folder under `src/screen/` may contain only:
+
+| Allowed | Pattern | Example |
+|---------|---------|---------|
+| Barrel | `index.ts` | `src/screen/common/instructor/index.ts` |
+| Page screen | `page.tsx` | `src/screen/common/home/page.tsx` |
+| Named page screen | `*-page.tsx` | `src/screen/common/taxonomy/taxonomy-list-page.tsx` |
+
+| Rule | Forbidden in `src/screen/**` |
+|------|------------------------------|
+| `.tsx` | Any file that is not `page.tsx` or `*-page.tsx` |
+| `.ts` | Any file that is not `index.ts` |
+
+Feature components (tabs, dialogs, pagination blocks, …) belong in `src/components/`, not beside screen files.
+
 ---
 
 ## Baseline run (2026-06-05)
