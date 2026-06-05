@@ -70,7 +70,14 @@ jscpd may still **print** clone pairs on success (informational). Failures list 
 
 ## ESLint (`eslint.config.mjs`)
 
-Extends **`eslint-config-next`** (`core-web-vitals` + `typescript`). Global ignores: `.next/**`, `out/**`, `build/**`, `next-env.d.ts`.
+Extends **`eslint-config-next`** (`core-web-vitals` + `typescript`). Global ignores: `.next/**`, `out/**`, `build/**`, `.jscpd-report/**`, `next-env.d.ts`.
+
+Project-wide `max-lines` is enabled with:
+
+- `max: 700`
+- `skipBlankLines: true`
+- `skipComments: true`
+- file-level exceptions only for `src/messages/en.ts` and `src/messages/vi.ts`
 
 ### `src/constants/**` — data-only constants
 
