@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-06-05 (course routes + shared review screen sync)._
+_Last audited: 2026-06-05 (centralized route constants + resource route builders)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
@@ -37,7 +37,6 @@ All URLs are prefixed with the locale:
 |-----|--------|------|
 | `/vi` | Vietnamese | Home |
 | `/en` | English | Home |
-| `/vi/courses` | Vietnamese | Courses (future) |
 
 Root `/` automatically redirects to `/vi` (default locale) via `src/app/page.tsx`.
 
@@ -125,11 +124,25 @@ src/app/[locale]/
 | `/vi/sysadmin/instructors/*` | `sysadmin/instructors/*/page.tsx` | `SysadminInstructor*Page` → shared screens | ✅ Implemented |
 | `/vi/sysadmin` | `[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` | ✅ Shell + placeholder |
 | `/vi/sysadmin/courses` | `[locale]/sysadmin/courses/page.tsx` | `CourseReviewPage` (`scope="sysadmin"`) | ✅ Implemented |
-| `/vi/courses` | — | — | 🚧 Planned |
 | `/vi/admin/taxonomy/levels` (and topics, outcomes, skills, tags) | `admin/taxonomy/*/page.tsx` | `AdminTaxonomy*Page` → `TaxonomyListPage` | ✅ Implemented |
 | `/vi/sysadmin/taxonomy/*` | `sysadmin/taxonomy/*/page.tsx` | `SysadminTaxonomy*Page` → `TaxonomyListPage` | ✅ Implemented |
 | `/vi/this-route-does-not-exist` (any unknown path) | `not-found.tsx` chain | `NotFoundPage` | ✅ Implemented |
 | `/vi/admin/users`, … | — | — | 🚧 Remaining placeholder nav links outside the implemented taxonomy, instructor, and course review surfaces |
+
+---
+
+## Route Classification
+
+Temporary classification for app navigation:
+
+- **Public routes (no login required):** `PUBLIC_ROUTES.home`, `PUBLIC_ROUTES.forgotPassword`, `PUBLIC_ROUTES.confirmEmail`, `PUBLIC_ROUTES.logout`.
+- **Private routes (login required):** all entries under `PRIVATE_ROUTES` (`admin`, `instructor`, `sysadmin`, `account` groups).
+- **Resource routes (dynamic params `:param`):**
+  - `PUBLIC_RESOURCE_ROUTES` for public dynamic routes.
+  - `PRIVATE_RESOURCE_ROUTES` for authenticated dynamic routes.
+  - Current private resource route: `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` (`/instructor/courses/:courseId`).
+
+This classification is defined in `src/constants/route.ts` and used by shared menu/sidebar constants.
 
 ---
 
@@ -195,14 +208,38 @@ import { Link } from "next/link";
 
 ## Client-Side Route Constants
 
-Use constants from `src/constants/route.ts` for all internal navigation paths:
+Use route constants from `src/constants/route.ts` plus helper builders in `src/lib/navigation/routes.ts`:
 
 ```ts
-import { PUBLIC_ROUTES } from "@/constants/route";
-router.push(PUBLIC_ROUTES.home);
+import { PRIVATE_RESOURCE_ROUTES, PRIVATE_ROUTES, PUBLIC_ROUTES } from "@/constants/route";
+import {
+  instructorCourseEditorHref,
+  toPrivateRoute,
+  toPrivateResourceRoute,
+  toPublicRoute,
+} from "@/lib/navigation/routes";
+
+router.push(toPublicRoute(PUBLIC_ROUTES.home));
+router.push(toPrivateRoute(PRIVATE_ROUTES.admin.courses));
+router.push(instructorCourseEditorHref(courseId));
+router.push(
+  toPrivateResourceRoute(PRIVATE_RESOURCE_ROUTES.instructor.courseEditor, {
+    courseId: String(courseId),
+  }),
+);
 ```
 
-Never hard-code path strings in components.
+`src/constants/route.ts` is the single source for FE route values:
+- `PUBLIC_ROUTES` (public/no-login)
+- `PRIVATE_ROUTES` (private/login-required)
+- `PUBLIC_RESOURCE_ROUTES` (public dynamic routes with `:param`)
+- `PRIVATE_RESOURCE_ROUTES` (private dynamic routes with `:param`)
+
+`src/lib/navigation/routes.ts` centralizes route builders/helpers:
+- `toPublicRoute` / `toPrivateRoute`
+- `toPublicResourceRoute` / `toPrivateResourceRoute`
+- feature helpers like `instructorCourseEditorHref(courseId)`
+- pre-built href constants like `homeHref`, `logoutHref`, `adminCoursesHref`
 
 For reusable home navigation touchpoints (logo/title in header/dashboard), use `src/lib/navigation/home.ts`:
 
@@ -215,12 +252,13 @@ import { Link, useRouter } from "@/i18n/navigation";
 
 ## Adding a New Page
 
-1. Create the directory under `src/app/[locale]/(web)/` (or the appropriate route group).
+1. Create the directory under `src/app/[locale]/` in the appropriate route group/segment (`(web)`, `admin`, `instructor`, `sysadmin`, ...).
 2. Add a `page.tsx` file — this becomes the route.
 3. Create a screen component in `src/screen/<role>/<feature>/page.tsx` for the page body (or reuse a shared screen under `src/screen/common/` when multiple roles share the same UI).
 4. Import and render the screen component from the route page.
-5. Add the path constant to `src/constants/route.ts`.
-6. Update `docs/screens.md` with the new route entry.
+5. Add or update the route value in `src/constants/route.ts` (`PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`).
+6. Add or reuse a builder/helper in `src/lib/navigation/routes.ts` instead of string interpolation in screens/components.
+7. Update `docs/screens.md` with the new route entry.
 
 Example:
 

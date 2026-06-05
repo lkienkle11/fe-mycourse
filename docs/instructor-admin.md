@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-06-05 (course editor split follow-up + review queue + instructor tickets)._
+_Last audited: 2026-06-05 (course editor split follow-up + review queue + instructor tickets + centralized route constants)._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -49,6 +49,8 @@ Instructor group on **admin** and **sysadmin** (`ADMIN_DASHBOARD_ITEMS` / `SYSAD
 
 - **My Courses** → `/instructor/courses`
 - **Support tickets** → `/instructor/tickets`
+
+`/instructor/courses` route base is centralized in `PRIVATE_ROUTES.instructor.courses` (`src/constants/route.ts`), while course editor/detail uses `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` (`/instructor/courses/:courseId`). Runtime href generation uses `instructorCourseEditorHref(courseId)` in `src/lib/navigation/routes.ts`.
 
 Instructor layout authorization now accepts either `instructor:modify` or `course_instructor:read`, so course collaborators are not blocked by the dashboard shell.
 

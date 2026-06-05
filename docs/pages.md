@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-06-05 (course collaboration editor + review queue)._
+_Last audited: 2026-06-05 (course collaboration editor + review queue + centralized route constants)._
 
 ## Current pages
 
@@ -43,15 +43,21 @@ _Last audited: 2026-06-05 (course collaboration editor + review queue)._
 | Email confirm | Dedicated page `/{locale}/confirm-email?token=…` |
 | Logout | Dedicated page `/{locale}/logout` (also linked from user menu) |
 
-`PUBLIC_ROUTES` (`src/constants/route.ts`): `home`, `confirmEmail`, `logout` — no `auth.login` / `auth.signup` route constants.
+Route constants:
+- `PUBLIC_ROUTES` (`src/constants/route.ts`): public/no-login routes (`home`, `forgotPassword`, `confirmEmail`, `logout`)
+- `PRIVATE_ROUTES` (`src/constants/route.ts`): login-required routes (`admin`, `instructor`, `sysadmin`, `account`)
+- `PUBLIC_RESOURCE_ROUTES` / `PRIVATE_RESOURCE_ROUTES` (`src/constants/route.ts`): dynamic templates (`:param`) for resource pages
+- Route builders/helpers live in `src/lib/navigation/routes.ts` (for example `instructorCourseEditorHref(courseId)` for `/instructor/courses/:courseId`)
 
-## Planned / not implemented
+No `auth.login` / `auth.signup` route constants (login/signup stay modal-only).
 
-| URL | Notes |
-|-----|-------|
-| `/{locale}/auth/login` | Optional future page; today login is modal-based |
-| `/{locale}/courses` | Marketing/courses listing (nav placeholders only) |
-| Dedicated signup page | Not planned — `SignupContent` stays in `LoginSignupPopup` |
-| Further `/{locale}/admin/*` beyond taxonomy + instructors + course review | Placeholder sidebar links only (users, …) |
+## Current implementation notes
+
+| Area | Status |
+|------|--------|
+| Login / Signup pages | Modal-only (`LoginSignupPopup`), no dedicated route pages |
+| Admin pages | Implemented: dashboard shell, taxonomy, instructors, course review |
+| Instructor pages | Implemented: dashboard shell, courses list/editor, tickets |
+| Sysadmin pages | Implemented: dashboard shell, taxonomy, instructors, course review |
 
 See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-admin.md`](./taxonomy-admin.md), [`instructor-admin.md`](./instructor-admin.md).

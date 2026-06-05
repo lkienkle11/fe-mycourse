@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-06-02 (custom 404 page + thumbnail asset)._
+_Last audited: 2026-06-05 (course editor loading skeleton + route resource builders)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -17,6 +17,15 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Any component-level loading state that needs a compact spinner; currently reused by login and signup submit buttons during `isSubmitting`.
 - **Dependencies**: `lucide-react`, `cn`.
 - **Reuse Rule**: Import this component instead of creating local spinner SVGs, animated dots, or duplicate loading indicators.
+
+### Asset: Skeleton
+- **Name**: `Skeleton`
+- **Type**: React component
+- **Path**: `src/components/ui/skeleton.tsx` (barrel: `@/components/ui`)
+- **Purpose**: Shared pulse loading placeholder (`animate-pulse`) for page/section skeleton states.
+- **Scope**: Reused in instructor course editor loading state (`src/screen/instructor/courses/editor-page.tsx`) and other loading placeholders.
+- **Dependencies**: `cn`.
+- **Reuse Rule**: Prefer `Skeleton` for loading placeholders instead of custom local placeholder markup.
 
 ---
 
@@ -142,7 +151,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant object
 - **Path**: `src/constants/api-route.ts`
 - **Purpose**: All authenticated BE API endpoint paths.
-- **Current Entries**: `user.getMe`.
+- **Current Entries**: grouped constants for `user`, `taxonomy`, `media`, `instructor`, `course`.
 - **Scope**: API callers.
 - **Dependencies**: none.
 
@@ -151,9 +160,50 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant object
 - **Path**: `src/constants/route.ts`
 - **Purpose**: FE client-side route constants (paths for navigation).
-- **Current Entries**: `home`, `confirmEmail`, `logout` (paths without locale prefix — use `@/i18n/navigation`).
+- **Current Entries**: `home`, `forgotPassword`, `confirmEmail`, `logout` (paths without locale prefix — use `@/i18n/navigation`).
 - **Scope**: Navigation helpers, links, router.
 - **Dependencies**: none.
+
+### Asset: PRIVATE_ROUTES
+- **Name**: `PRIVATE_ROUTES`
+- **Type**: Constant object
+- **Path**: `src/constants/route.ts`
+- **Purpose**: FE private route map (login-required) grouped by module: `admin`, `instructor`, `sysadmin`, and account surfaces.
+- **Scope**: dashboard menus, user menu links, instructor/admin/sysadmin navigation.
+- **Dependencies**: none.
+
+### Asset: PUBLIC_RESOURCE_ROUTES / PRIVATE_RESOURCE_ROUTES
+- **Name**: `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`
+- **Type**: Constant object
+- **Path**: `src/constants/route.ts`
+- **Purpose**: Dynamic FE route templates with `:param` placeholders for resource/detail pages.
+- **Current Entries**: `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` (`/instructor/courses/:courseId`).
+- **Scope**: Navigation helpers and screens that need parameterized routes.
+- **Dependencies**: none.
+
+### Asset: route builders (`toPublicRoute`, `toPrivateRoute`, `toPublicResourceRoute`, `toPrivateResourceRoute`)
+- **Name**: `toPublicRoute`, `toPrivateRoute`, `toPublicResourceRoute`, `toPrivateResourceRoute`
+- **Type**: Utility functions
+- **Path**: `src/lib/navigation/routes.ts`
+- **Purpose**: Convert route constants/templates into runtime href strings (supports params/query/fragment through `buildQueryParams` reuse).
+- **Scope**: screens, shared menu/sidebar constants, navigation helpers.
+- **Dependencies**: `PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`, `buildQueryParams`.
+
+### Asset: pre-built navigation hrefs (`homeHref`, `logoutHref`, `adminCoursesHref`, ...)
+- **Name**: `homeHref`, `forgotPasswordHref`, `logoutHref`, `adminRootHref`, `instructorCoursesHref`, `sysadminCoursesHref`, `accountMyCoursesHref`, ...
+- **Type**: Constant strings
+- **Path**: `src/lib/navigation/routes.ts`
+- **Purpose**: Shared route outputs generated from route builders to avoid duplicated conversion in call sites.
+- **Scope**: auth components, header/user menu constants, dashboard constants.
+- **Dependencies**: route builder functions in same module.
+
+### Asset: `instructorCourseEditorHref(courseId)`
+- **Name**: `instructorCourseEditorHref`
+- **Type**: Utility function
+- **Path**: `src/lib/navigation/routes.ts`
+- **Purpose**: Build instructor course editor route from `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` without string interpolation.
+- **Scope**: instructor course list page and any future course detail navigation.
+- **Dependencies**: `toPrivateResourceRoute`.
 
 ### Asset: PERMISSIONS
 - **Name**: `PERMISSIONS`
@@ -840,7 +890,6 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - Shared form error display component.
 - Reusable paginated list hook when list endpoints are implemented.
 - Course, lesson, enrollment types and service callers (Phase 02+).
-- Shared loading skeleton component.
 
 ## Additional audited reusable assets
 

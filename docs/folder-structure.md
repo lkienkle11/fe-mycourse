@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-06-05 (course hooks relocation + course i18n sync)._
+_Last audited: 2026-06-05 (course hooks relocation + course i18n sync + centralized route constants)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -361,7 +361,7 @@ src/constants/
 ├── api-route.ts            # API_PUBLIC_ROUTES + API_PRIVATE_ROUTES (me, taxonomy, media, instructor, …)
 ├── api-error-code.ts       # ApiErrorCode — mirrors be/pkg/errcode/codes.go
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
-├── route.ts                # PUBLIC_ROUTES — client-side navigation path constants
+├── route.ts                # PUBLIC_ROUTES + PRIVATE_ROUTES + PUBLIC_RESOURCE_ROUTES + PRIVATE_RESOURCE_ROUTES (central FE navigation values)
 ├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (user-menu config values incl. permissions/titleKey; roles group first)
 ├── permissions.ts          # PERMISSIONS — P1…P58 (mirror BE AllPermissions)
 ├── permission-ids.ts       # PERMISSION_IDS — P1…P58
@@ -396,7 +396,8 @@ src/lib/language/
 ```
 src/lib/
 ├── navigation/
-│   └── home.ts             # shared homeHref + navigateToHome(router) helper for header/dashboard brand touchpoints
+│   ├── home.ts             # navigateToHome(router) helper for header/dashboard brand touchpoints
+│   └── routes.ts           # route builders + shared href constants (public/private/resource)
 ├── utils/                  # Shared helper functions — import as @/lib/utils
 │   ├── index.ts            # Barrel: client-safe utils only (cn, url, cookie, …)
 │   ├── cn.ts               # cn() — clsx + tailwind-merge class combiner

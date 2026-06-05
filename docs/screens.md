@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-06-05 (course routes + screen sharing sync)._
+_Last audited: 2026-06-05 (course routes + route resource builders + centralized route constants)._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -26,7 +26,6 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 |-------------|------------|---------------------|
 | `/` | `src/app/page.tsx` | **Locale redirect** → `/vi` (308 Permanent Redirect via `next-intl` navigation) |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | **Home page** — renders `HomePage` |
-| `/{locale}/auth/login` | (future) | Login page (planned, not yet implemented) |
 | `/{locale}/confirm-email` | Active | Email confirmation page (`ConfirmEmailContent` → `confirmAction`) |
 | `/{locale}/logout` | Active | Logout page (`LogoutContent` → `logoutAction`, cross-tab `broadcast:logout`) |
 | `/{locale}/admin` | Active | Admin dashboard shell (`AdminDashboardPage` placeholder) |
@@ -43,7 +42,25 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/sysadmin/taxonomy/{resource}` | Active | `SysadminTaxonomy*Page` → same shared `TaxonomyListPage` (sysadmin menu + permissions) |
 | `/{locale}/*` (unknown path) | Active | Custom 404 — `NotFoundPage` via `not-found.tsx` chain |
 
-> `PUBLIC_ROUTES` (`src/constants/route.ts`): `home`, `confirmEmail`, `logout`. Login/signup are **modal-only** via `LoginSignupPopup`; confirm/logout have dedicated routes.
+> Route constants (single source: `src/constants/route.ts`):
+> - `PUBLIC_ROUTES`: public routes (no login required)
+> - `PRIVATE_ROUTES`: private routes (login required)
+> - `PUBLIC_RESOURCE_ROUTES` / `PRIVATE_RESOURCE_ROUTES`: dynamic routes with `:param`
+>
+> Route builders/helpers (single source: `src/lib/navigation/routes.ts`):
+> - `toPublicRoute` / `toPrivateRoute`
+> - `toPublicResourceRoute` / `toPrivateResourceRoute`
+> - feature helpers like `instructorCourseEditorHref(courseId)`
+>   Login/signup remain **modal-only** via `LoginSignupPopup`.
+
+---
+
+## Public vs Private Routes
+
+- **Public routes (no login required):** values in `PUBLIC_ROUTES` (`home`, `forgotPassword`, `confirmEmail`, `logout`).
+- **Private routes (login required):** values in `PRIVATE_ROUTES` (admin/instructor/sysadmin/account groups).
+
+This split is intentionally centralized in `src/constants/route.ts` so UI config and navigation share one route source.
 
 ---
 
@@ -342,9 +359,36 @@ Defined in `src/constants/route.ts`:
 // src/constants/route.ts
 PUBLIC_ROUTES = {
   home: "/",
+  forgotPassword: "/forgot-password",
   confirmEmail: "/confirm-email",
   logout: "/logout",
 }
+
+PRIVATE_ROUTES = {
+  admin: { ... },
+  instructor: { root: "/instructor", courses: "/instructor/courses", ... },
+  sysadmin: { ... },
+  account: { ... },
+}
+
+PUBLIC_RESOURCE_ROUTES = {}
+
+PRIVATE_RESOURCE_ROUTES = {
+  instructor: {
+    courseEditor: "/instructor/courses/:courseId",
+  },
+}
+```
+
+Build final href with `src/lib/navigation/routes.ts` helpers (no string interpolation in screens):
+
+```ts
+toPublicRoute(PUBLIC_ROUTES.home)
+toPrivateRoute(PRIVATE_ROUTES.admin.courses)
+instructorCourseEditorHref(courseId)
+toPrivateResourceRoute(PRIVATE_RESOURCE_ROUTES.instructor.courseEditor, {
+  courseId: String(courseId),
+})
 ```
 
 Use with `@/i18n/navigation` `Link` / `router.push` — locale prefix is applied automatically. No `auth.login` / `auth.signup` constants (modal-only login/signup).

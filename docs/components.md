@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-06-02 (auth submit buttons reuse shared Spinner for loading state)._
+_Last audited: 2026-06-05 (auth spinner reuse + instructor course editor loading skeleton)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -206,6 +206,8 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 `src/components/features/instructor/` — instructor management: `InstructorProfileViewDialog`, `ConfirmAddInstructorDialog`, `InstructorApprovalActions` (reject requires reason). See `docs/instructor-admin.md`.
 
 `src/components/features/media/` — media library popup: `MediaCollectionDialog`, `MediaUploadDialog` (sr-only `DialogDescription`; uses shared `formatBytes` from `@/lib/utils`), `MediaItemCard` (overlay select button + menu above + full-filename tooltip; see a11y in `docs/media-collection.md`), `MediaTabPanel`. See `docs/media-collection.md`.
+
+`src/screen/instructor/courses/editor-page.tsx` uses shared `Skeleton` (`src/components/ui/skeleton.tsx`) for the course-editor loading state.
 
 ---
 

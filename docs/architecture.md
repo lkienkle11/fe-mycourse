@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (dagre tree popup; name-only node labels)._
+_Last audited: 2026-06-05 (centralized public/private route constants + route-constant adoption)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -170,12 +170,13 @@ fe/
 │   ├── constants/
 │   │   ├── api-route.ts            # API_PUBLIC_ROUTES, API_PRIVATE_ROUTES
 │   │   ├── api-error-code.ts       # ApiErrorCode (mirrors be/pkg/errcode/codes.go)
-│   │   ├── route.ts                # PUBLIC_ROUTES (home, confirmEmail, logout)
+│   │   ├── route.ts                # PUBLIC_ROUTES + PRIVATE_ROUTES + PUBLIC_RESOURCE_ROUTES + PRIVATE_RESOURCE_ROUTES
 │   │   ├── browse-menu.ts          # BROWSE_MENU_ITEMS
 │   │   └── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (types: types/user-menu.ts)
 │   │
 │   ├── lib/
 │   │   ├── language/               # resolveCustomLanguage, resolveLanguageCode
+│   │   ├── navigation/             # route builders + shared href helpers
 │   │   ├── utils/                  # Shared helpers — import `@/lib/utils` (barrel: index.ts)
 │   │   │   ├── index.ts            # Re-exports
 │   │   │   ├── cn.ts               # cn() (clsx + tailwind-merge)
@@ -366,6 +367,47 @@ Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i
 ## Middleware: Locale Routing
 
 ``src/proxy.ts` exports the next-intl locale proxy middleware (`createMiddleware(routing)`) and `config.matcher` used by this project to enforce locale-prefixed routes.
+
+---
+
+## Route Constants
+
+```ts
+// src/constants/route.ts
+PUBLIC_ROUTES = {
+  home: "/",
+  forgotPassword: "/forgot-password",
+  confirmEmail: "/confirm-email",
+  logout: "/logout",
+}
+
+PRIVATE_ROUTES = {
+  admin: { ... },
+  instructor: { root: "/instructor", courses: "/instructor/courses", ... },
+  sysadmin: { ... },
+  account: { ... },
+}
+
+PUBLIC_RESOURCE_ROUTES = { ... }     // dynamic templates for public pages
+PRIVATE_RESOURCE_ROUTES = {
+  instructor: {
+    courseEditor: "/instructor/courses/:courseId",
+  },
+}
+```
+
+Runtime href generation is centralized in `src/lib/navigation/routes.ts`:
+
+```ts
+toPublicRoute(PUBLIC_ROUTES.home)
+toPrivateRoute(PRIVATE_ROUTES.admin.courses)
+toPrivateResourceRoute(PRIVATE_RESOURCE_ROUTES.instructor.courseEditor, {
+  courseId: String(courseId),
+})
+instructorCourseEditorHref(courseId)
+```
+
+All FE internal navigation uses these route maps + helper builders (menus/sidebar/screen navigation) instead of hardcoded/interpolated path strings.
 
 ---
 

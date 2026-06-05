@@ -416,6 +416,7 @@ Before writing code for a new feature:
 - [ ] Place Server Actions in `src/actions/<domain>/`
 - [ ] Place Zustand stores in `src/store/`
 - [ ] Add new i18n strings to both `en.ts` and `vi.ts` (keep `vi.ts` satisfying `Messages`)
-- [ ] Add route constants to `src/constants/route.ts`
+- [ ] Add/update route values in `src/constants/route.ts` (`PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`)
+- [ ] Build runtime URLs through `src/lib/navigation/routes.ts` helpers (no route string interpolation in screens/components)
 - [ ] Add API route constants to `src/constants/api-route.ts`
 - [ ] Update `docs/` after implementation
