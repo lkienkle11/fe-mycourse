@@ -3,10 +3,10 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { logoutAction } from "@/actions/auth";
-import { PUBLIC_ROUTES } from "@/constants/route";
 import { useGetMe } from "@/hooks";
 import { useSendBroadcastOutbound } from "@/hooks/events/broadcast/use-send-broadcast-outbound";
 import { useRouter } from "@/i18n/navigation";
+import { homeHref } from "@/lib/navigation/routes";
 import { clearAuthCookiesClient } from "@/lib/utils/cookie";
 
 type LogoutStatus = "loading" | "error" | "success";
@@ -34,7 +34,7 @@ export function LogoutContent() {
           type: "logout",
           payload: { reason: "user" },
         });
-        router.replace(PUBLIC_ROUTES.home);
+        router.replace(homeHref);
         return;
       }
       setStatus("error");

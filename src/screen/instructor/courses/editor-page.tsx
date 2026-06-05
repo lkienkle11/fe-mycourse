@@ -33,8 +33,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { rootOutlineStableId, useCourseEditorState } from "@/hooks/course";
+import { instructorCoursesHref } from "@/lib/navigation/routes";
 import type { CourseEditorTab } from "@/types/course";
 
 export function InstructorCourseEditorPage({ courseId }: { courseId: number }) {
@@ -128,9 +130,26 @@ export function InstructorCourseEditorPage({ courseId }: { courseId: number }) {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-muted-foreground">
-        {tCommon("loadingCourse")}
-      </p>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-6 w-20" />
+          <Skeleton className="h-6 w-24" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-80 max-w-full" />
+          <Skeleton className="h-4 w-72 max-w-full" />
+        </div>
+        <Skeleton className="h-10 w-full" />
+        <div className="grid gap-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {tCommon("loadingCourse")}
+        </p>
+      </div>
     );
   }
 
@@ -139,7 +158,9 @@ export function InstructorCourseEditorPage({ courseId }: { courseId: number }) {
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">{tCommon("notLoaded")}</p>
         <Button asChild variant="outline">
-          <Link href="/instructor/courses">{tCommon("backToCourses")}</Link>
+          <Link href={instructorCoursesHref}>
+            {tCommon("backToCourses")}
+          </Link>
         </Button>
       </div>
     );
@@ -151,7 +172,7 @@ export function InstructorCourseEditorPage({ courseId }: { courseId: number }) {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Button asChild type="button" variant="outline" size="sm">
-              <Link href="/instructor/courses">{tCommon("back")}</Link>
+              <Link href={instructorCoursesHref}>{tCommon("back")}</Link>
             </Button>
             <CourseStatusBadge status={activeVersion.status} />
             <Badge variant="outline">

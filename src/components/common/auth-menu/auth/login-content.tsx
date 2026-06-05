@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { useAuthStore, useGetMe } from "@/hooks";
 import { Link, useRouter } from "@/i18n/navigation";
+import { forgotPasswordHref } from "@/lib/navigation/routes";
 import { cn } from "@/lib/utils";
 import { type LoginFormValues, loginSchema } from "@/schema/auth";
 import { AuthSocialLogin } from "../auth-social-login";
@@ -131,7 +132,7 @@ export function LoginContent({ className }: { className?: string }) {
             className="justify-end items-center text-end"
           >
             <Link
-              href="/forgot-password"
+              href={forgotPasswordHref}
               className="hover:no-underline hover:cursor-pointer no-underlin"
             >
               <Label className="hover:no-underline hover:cursor-pointer no-underline text-[#3DCBB1] hover:brightness-110 transition-all duration-300">

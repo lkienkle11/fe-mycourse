@@ -4,10 +4,10 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { confirmAction } from "@/actions/auth";
-import { PUBLIC_ROUTES } from "@/constants/route";
 import { useGetMe } from "@/hooks";
 import { useSendBroadcastOutbound } from "@/hooks/events/broadcast/use-send-broadcast-outbound";
 import { useRouter } from "@/i18n/navigation";
+import { homeHref } from "@/lib/navigation/routes";
 
 type ConfirmStatus = "loading" | "missing" | "error" | "success";
 
@@ -37,7 +37,7 @@ export function ConfirmEmailContent() {
           type: "confirm_success",
           payload: { messageId: `confirm-${Date.now()}` },
         });
-        router.replace(PUBLIC_ROUTES.home);
+        router.replace(homeHref);
         return;
       }
       setStatus("error");

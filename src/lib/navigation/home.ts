@@ -1,9 +1,9 @@
-import { PUBLIC_ROUTES } from "@/constants/route";
+import { homeHref } from "@/lib/navigation/routes";
 import type { useRouter } from "@/i18n/navigation";
 
-export const homeHref = PUBLIC_ROUTES.home;
-
 type AppRouter = ReturnType<typeof useRouter>;
+
+export { homeHref };
 
 export function navigateToHome(router: Pick<AppRouter, "push">): void {
   router.push(homeHref);

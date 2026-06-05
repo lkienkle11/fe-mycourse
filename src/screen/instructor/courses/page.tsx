@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { instructorCourseEditorHref } from "@/lib/navigation/routes";
 import type { CourseListItem } from "@/types/course";
 
 export function InstructorCoursesPage() {
@@ -76,7 +77,7 @@ export function InstructorCoursesPage() {
       setTitle("");
       setSlug("");
       await mutate();
-      router.push(`/instructor/courses/${created.course.id}`);
+      router.push(instructorCourseEditorHref(created.course.id));
     } catch {
       toast.error(t("toast.createError"));
     } finally {
@@ -127,7 +128,9 @@ export function InstructorCoursesPage() {
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => router.push(`/instructor/courses/${row.id}`)}
+                onClick={() =>
+                  router.push(instructorCourseEditorHref(row.id))
+                }
               >
                 {tCommon("open")}
               </Button>

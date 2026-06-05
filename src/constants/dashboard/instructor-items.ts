@@ -1,6 +1,12 @@
 import { BookOpen, Film, LayoutDashboard } from "lucide-react";
 import { INSTRUCTOR_MENU_ICONS } from "@/constants/dashboard/instructor-icons";
 import { PERMISSIONS } from "@/constants/permissions";
+import {
+  instructorCoursesHref,
+  instructorMediaHref,
+  instructorRootHref,
+  instructorTicketsHref,
+} from "@/lib/navigation/routes";
 import type { DashboardItem } from "@/types/dashboard";
 
 export const INSTRUCTOR_DASHBOARD_ITEMS: DashboardItem[] = [
@@ -8,7 +14,7 @@ export const INSTRUCTOR_DASHBOARD_ITEMS: DashboardItem[] = [
     id: "instructor-overview",
     title: "Overview",
     titleKey: "instructor.menu.overview",
-    href: "/instructor",
+    href: instructorRootHref,
     icon: LayoutDashboard,
     permissions: [PERMISSIONS.InstructorModify],
   },
@@ -23,7 +29,7 @@ export const INSTRUCTOR_DASHBOARD_ITEMS: DashboardItem[] = [
         id: "instructor-courses-list",
         title: "Course List",
         titleKey: "instructor.menu.courseList",
-        href: "/instructor/courses",
+        href: instructorCoursesHref,
         icon: BookOpen,
         permissions: [PERMISSIONS.CourseInstructorRead],
       },
@@ -33,7 +39,7 @@ export const INSTRUCTOR_DASHBOARD_ITEMS: DashboardItem[] = [
     id: "instructor-media",
     title: "Media",
     titleKey: "instructor.menu.media",
-    href: "/instructor/media",
+    href: instructorMediaHref,
     icon: Film,
     permissions: [PERMISSIONS.MediaFileRead],
   },
@@ -41,7 +47,7 @@ export const INSTRUCTOR_DASHBOARD_ITEMS: DashboardItem[] = [
     id: "instructor-tickets",
     title: "Support tickets",
     titleKey: "instructor.menu.tickets",
-    href: "/instructor/tickets",
+    href: instructorTicketsHref,
     icon: INSTRUCTOR_MENU_ICONS.tickets,
     permissions: [PERMISSIONS.InstructorApplicationRead],
   },
