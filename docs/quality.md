@@ -96,7 +96,7 @@ Put helpers in `src/lib/utils/` and types in `src/types/`. `import type` from ty
 
 Route constants policy: keep FE route strings centralized in `src/constants/route.ts` (`PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`). Build runtime URLs via helpers in `src/lib/navigation/routes.ts` (`toPublicRoute`, `toPrivateRoute`, `toPublicResourceRoute`, `toPrivateResourceRoute`, and feature helpers such as `instructorCourseEditorHref`) instead of hardcoded/interpolated strings.
 
-**2026-05-29 refactor (screens):** `TaxonomyListPage` moved from `src/screen/taxonomy/` → `src/screen/common/taxonomy/`; admin/sysadmin get thin `taxonomy/{resource}/page.tsx` wrappers; removed unused `dashboardBasePath` prop.
+**2026-06-07 refactor (screens):** admin/sysadmin taxonomy and instructor app routes now import shared screens directly from `src/screen/common/**`; duplicate `src/screen/{admin,sysadmin}/{taxonomy,instructor}/*` wrappers were removed.
 
 **2026-05-29 refactor (constants):** `isImageFilename` / extension helpers → `src/lib/utils/media.ts`; taxonomy config types → `src/types/taxonomy/`; `getTaxonomyResourceConfig` / `getTaxonomySearchableColumns` → `src/lib/utils/taxonomy.ts`.
 

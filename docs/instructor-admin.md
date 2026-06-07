@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-06-05 (course editor split follow-up + review queue + instructor tickets + centralized route constants)._
+_Last audited: 2026-06-07 (shared app-route screens + review-v1 remediation)._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -22,15 +22,13 @@ Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder 
 
 ## Screen layer
 
-Same pattern as taxonomy: **app route → role screen → shared screen**.
+Instructor management now uses **app route → shared screen** for admin and sysadmin.
 
 | Layer | Path | Role |
 |-------|------|------|
-| App route | `src/app/[locale]/admin/instructors/{roster,approvals,profiles,expertise,tickets}/page.tsx` | Re-exports `AdminInstructor*Page` |
-| App route | `src/app/[locale]/sysadmin/instructors/.../page.tsx` | Re-exports `SysadminInstructor*Page` |
+| App route | `src/app/[locale]/admin/instructors/{roster,approvals,profiles,expertise,tickets}/page.tsx` | Imports shared instructor screens directly |
+| App route | `src/app/[locale]/sysadmin/instructors/.../page.tsx` | Same shared screens for sysadmin |
 | App route | `src/app/[locale]/instructor/tickets/page.tsx` | Re-exports `InstructorTicketsPage` |
-| Role screen | `src/screen/admin/instructor/*/page.tsx` | Thin wrapper around shared page |
-| Role screen | `src/screen/sysadmin/instructor/*/page.tsx` | Same for sysadmin |
 | Role screen | `src/screen/instructor/tickets/page.tsx` | `InstructorTicketsPage` (instructor-only UX) |
 | Shared screen | `src/screen/common/instructor/*.tsx` | Roster, approvals, profiles, expertise, admin tickets |
 

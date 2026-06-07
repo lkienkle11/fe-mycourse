@@ -128,11 +128,12 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
-| `DashboardLayout` | `dashboard-layout.tsx` | Client | `SidebarProvider` + `HeaderDashboard` (`leading` burger `md:hidden`, `trailing` `DashboardHeaderLocale` on `lg+`) + left `Sidebar` (`!top-16`, `h-[calc(100svh-4rem)]`) + `SidebarInset` / `main`. Private helpers: `DashboardMenuTrigger`, `DashboardHeaderLocale`, `DashboardSidebarMobileHeader`, `DashboardSidebarLocaleFooter` (`lg:hidden`, mirrors `HeaderMobileSidebar` footer). Mobile nav via Radix `Sheet`; desktop footer `SidebarTrigger`. Sidebar mobile header brand `Link` uses shared `homeHref` and closes sheet before navigation. Filters `items` via `useFilteredDashboardItems`; gate via `permissions` / `isAuthorized`; loading uses `SidebarMenuSkeleton` with fixed `widthPercent` (SSR-safe). Unauthorized: header + locale + `DashboardUnauthorized`. `LoginSignupPopup` when authorized. |
+| `DashboardLayout` | `dashboard-layout.tsx` | Client | Core dashboard shell: `SidebarProvider` + `HeaderDashboard` (`leading` burger `md:hidden`, `trailing` `DashboardHeaderLocale` on `lg+`) + left `Sidebar` (`!top-16`, `h-[calc(100svh-4rem)]`) + `SidebarInset` / `main`. Filters `items` via `useFilteredDashboardItems`; gate via `permissions` / `isAuthorized`; loading uses `SidebarMenuSkeleton`. |
+| `RoleDashboardLayout` | `role-dashboard-layout.tsx` | Client | Shared admin/sysadmin wrapper that maps `dashboardRole` to the correct sidebar items + shell permissions, then renders `DashboardLayout`. |
 | `DashboardSidebar` | `dashboard-sidebar.tsx` | Client | Recursive nav tree (pattern from `BrowseSidebarMenu`). Renders each item's Lucide `icon` from `DashboardItem` config (taxonomy uses `TAXONOMY_MENU_ICONS` — see `docs/taxonomy-admin.md`). **Collapsed:** root icons only (no child subtrees). **Expanded:** full `Collapsible` + `SidebarMenuSub*`. Active route via `usePathname`. |
 | `DashboardUnauthorized` | `dashboard-unauthorized.tsx` | Client | Compact access-denied message when layout permissions fail. |
 
-**`dashboard/index.ts` barrel:** `DashboardLayout`, `DashboardSidebar`, `DashboardUnauthorized`.
+**`dashboard/index.ts` barrel:** `DashboardLayout`, `RoleDashboardLayout`, `DashboardSidebar`, `DashboardUnauthorized`.
 
 ### Footer
 
@@ -159,7 +160,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `SignupContent` | `auth/signup-content.tsx` | Client | Signup form → `handleAuthSubmit("signup", …)` → **`registerAction`**. Submit button shows shared `Spinner` while `isSubmitting`. |
 | `ConfirmEmailContent` | `auth/confirm-email-content.tsx` | Client | Email confirm page body → `confirmAction`. |
 | `LogoutContent` | `auth/logout-content.tsx` | Client | Logout page → `logoutAction`. |
-| `handleAuthSubmit` | `auth/auth-form-handler.ts` | Utility | Routes `"login"` → `loginAction`, `"signup"` → **`registerAction`**. |
+| `handleAuthSubmit` | `src/actions/auth/auth-client.ts` | Client utility | Routes `"login"` → `loginAction`, `"signup"` → **`registerAction`** without keeping submit orchestration inside the auth component tree. |
 | `AuthEmailPasswordFields` | `auth/auth-form-fields.tsx` | Shared UI | Email + password for login/signup; translates Zod i18n keys when `emailError` / `passwordError` set. |
 | `AuthFullNameField` | `auth/auth-form-fields.tsx` | Shared UI | Full name (signup); same validation translation pattern. |
 | `AuthConfirmTabSync` | `providers/auth-confirm-tab-sync.tsx` | Client | Reload tabs after email confirm elsewhere. |

@@ -117,13 +117,13 @@ fe/
 │   │   ├── ui/                     # Radix/shadcn primitives (Button, Dialog, Input, …)
 │   │   ├── common/
 │   │   │   ├── index.ts            # Barrel: auth-menu, dashboard, footer, header
-│   │   │   ├── dashboard/          # DashboardLayout (+ locale chrome helpers), DashboardSidebar, DashboardUnauthorized
+│   │   │   ├── dashboard/          # DashboardLayout, RoleDashboardLayout (+ locale chrome helpers), DashboardSidebar, DashboardUnauthorized
 │   │   │   ├── header/             # Header (RSC), HeaderDashboard, HeaderBrowseNav, HeaderMobileBar/Sidebar,
 │   │   │                           # BrowseSidebarMenu, SidebarAuthFooter, LocaleSwitcher
 │   │   │   ├── footer/             # Footer (RSC), FooterSocial (client social icons)
 │   │   │   └── auth-menu/          # AuthLayout, AuthButton, LoginSignupPopup,
 │   │   │                           # LoginContent, SignupContent, UserMenu,
-│   │   │                           # auth-form-handler.ts, auth-social-login/
+│   │   │                           # auth-client.ts delegates to server actions, auth-social-login/
 │   │   ├── home/                   # Home page sections (HeroSection, CourseCard, …)
 │   │   ├── shared/                 # Cross-feature components (SearchBar, …)
 │   │   ├── providers/
@@ -242,7 +242,7 @@ Covers everything related to authentication UI and server-side token management:
 | `AuthButton` | `auth-menu/auth-button.tsx` | CTA button shown when not authenticated |
 | `AuthLayout` | `auth-menu/auth-layout.tsx` | Header chrome: skeleton / `UserMenu` / `AuthButton` |
 | `UserMenu` | `auth-menu/user-menu.tsx` | Avatar dropdown for authenticated users |
-| `handleAuthSubmit` | `auth-menu/auth/auth-form-handler.ts` | Dispatcher → `loginAction` / `registerAction` (UI type `"signup"`) |
+| `handleAuthSubmit` | `actions/auth/auth-client.ts` | Client-side submit helper → `loginAction` / `registerAction` (UI type `"signup"`) |
 | `loginAction` | `actions/auth/auth.ts` | `"use server"` — login, sets cookies |
 | `registerAction` | `actions/auth/auth.ts` | `"use server"` — register (201, no cookies until confirm) |
 | `confirmAction` | `actions/auth/auth.ts` | `"use server"` — email confirm, sets cookies |
@@ -296,6 +296,8 @@ Login and signup calls are proxied through Next.js Server Actions (`"use server"
 ### 2. Non-HttpOnly Cookies — Client-Readable Tokens
 
 Auth tokens (`access_token`, `refresh_token`, `session_id`) are stored as **non-HttpOnly**, `SameSite=Lax` cookies so the client-side Axios interceptor can read them and attach them as HTTP headers on every request (`Authorization: Bearer …`, `X-Refresh-Token`, `X-Session-Id`). `buildCookieOptions` enforces `secure: true` in production.
+
+This remains a **known follow-up risk** after the 2026-06-07 frontend remediation pass: the project intentionally kept the current FE/BE auth contract and deferred any HttpOnly redesign to a coordinated cross-repo change.
 
 ### 3. Isomorphic Cookie Layer
 

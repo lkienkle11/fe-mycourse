@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-06-05 (centralized route constants + resource route builders)._
+_Last audited: 2026-06-07 (shared app-route screens + role dashboard wrapper)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
@@ -80,10 +80,10 @@ export const config = {
 /[locale]/instructor/tickets      → InstructorTicketsPage
 /[locale]/sysadmin      → src/app/[locale]/sysadmin/layout.tsx
 /[locale]/sysadmin      → src/app/[locale]/sysadmin/page.tsx
-/[locale]/admin/taxonomy/{levels,topics,outcomes,skills,tags}  → AdminTaxonomy*Page → TaxonomyListPage
-/[locale]/sysadmin/taxonomy/{levels,topics,outcomes,skills,tags}  → SysadminTaxonomy*Page → TaxonomyListPage
-/[locale]/admin/instructors/{roster,approvals,profiles,expertise,tickets}  → AdminInstructor*Page → shared instructor screens
-/[locale]/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}  → SysadminInstructor*Page → same shared screens
+/[locale]/admin/taxonomy/{levels,topics,outcomes,skills,tags}  → shared TaxonomyListPage
+/[locale]/sysadmin/taxonomy/{levels,topics,outcomes,skills,tags}  → shared TaxonomyListPage
+/[locale]/admin/instructors/{roster,approvals,profiles,expertise,tickets}  → shared instructor screens
+/[locale]/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}  → same shared screens
 /[locale]/* (unknown)     → not-found.tsx chain → NotFoundPage (see 404 section below)
 /_not-found (global)      → src/app/not-found.tsx → NotFoundPage + explicit NextIntlClientProvider + AppProviders
 ```
@@ -120,12 +120,12 @@ src/app/[locale]/
 | `/vi/instructor/courses/{courseId}` | `[locale]/instructor/courses/[courseId]/page.tsx` | `InstructorCourseEditorPage` | ✅ Implemented |
 | `/vi/instructor/tickets` | `[locale]/instructor/tickets/page.tsx` | `InstructorTicketsPage` | ✅ Implemented |
 | `/vi/admin/courses` | `[locale]/admin/courses/page.tsx` | `CourseReviewPage` (`scope="admin"`) | ✅ Implemented |
-| `/vi/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | `admin/instructors/*/page.tsx` | `AdminInstructor*Page` → shared screens | ✅ Implemented |
-| `/vi/sysadmin/instructors/*` | `sysadmin/instructors/*/page.tsx` | `SysadminInstructor*Page` → shared screens | ✅ Implemented |
+| `/vi/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | `admin/instructors/*/page.tsx` | Shared instructor screens | ✅ Implemented |
+| `/vi/sysadmin/instructors/*` | `sysadmin/instructors/*/page.tsx` | Shared instructor screens | ✅ Implemented |
 | `/vi/sysadmin` | `[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` | ✅ Shell + placeholder |
 | `/vi/sysadmin/courses` | `[locale]/sysadmin/courses/page.tsx` | `CourseReviewPage` (`scope="sysadmin"`) | ✅ Implemented |
-| `/vi/admin/taxonomy/levels` (and topics, outcomes, skills, tags) | `admin/taxonomy/*/page.tsx` | `AdminTaxonomy*Page` → `TaxonomyListPage` | ✅ Implemented |
-| `/vi/sysadmin/taxonomy/*` | `sysadmin/taxonomy/*/page.tsx` | `SysadminTaxonomy*Page` → `TaxonomyListPage` | ✅ Implemented |
+| `/vi/admin/taxonomy/levels` (and topics, outcomes, skills, tags) | `admin/taxonomy/*/page.tsx` | Shared `TaxonomyListPage` | ✅ Implemented |
+| `/vi/sysadmin/taxonomy/*` | `sysadmin/taxonomy/*/page.tsx` | Shared `TaxonomyListPage` | ✅ Implemented |
 | `/vi/this-route-does-not-exist` (any unknown path) | `not-found.tsx` chain | `NotFoundPage` | ✅ Implemented |
 | `/vi/admin/users`, … | — | — | 🚧 Remaining placeholder nav links outside the implemented taxonomy, instructor, and course review surfaces |
 
@@ -163,9 +163,9 @@ Root layout            (src/app/layout.tsx)
 | `src/app/layout.tsx` | Global fonts (Roboto, Gilroy, GeistMono as CSS vars), `<Toaster>` (Sonner) |
 | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider`, `AppProviders` (`SWRConfig`, `EventsStreamProvider`, `MeSwrSync`, `LanguageLocaleSync`, auth tab sync) |
 | `src/app/[locale]/(web)/layout.tsx` | `Header`, `<main>` content area, `Footer` |
-| `src/app/[locale]/admin/layout.tsx` | `DashboardLayout` (`ADMIN_DASHBOARD_ITEMS`, `admin:modify` gate) |
+| `src/app/[locale]/admin/layout.tsx` | `RoleDashboardLayout` → `DashboardLayout` (`ADMIN_DASHBOARD_ITEMS`, `admin:modify` gate) |
 | `src/app/[locale]/instructor/layout.tsx` | `DashboardLayout` (`INSTRUCTOR_DASHBOARD_ITEMS`, `instructor:modify` OR `course_instructor:read` gate) |
-| `src/app/[locale]/sysadmin/layout.tsx` | `DashboardLayout` (`SYSADMIN_DASHBOARD_ITEMS`, `sysadmin:modify` gate) |
+| `src/app/[locale]/sysadmin/layout.tsx` | `RoleDashboardLayout` → `DashboardLayout` (`SYSADMIN_DASHBOARD_ITEMS`, `sysadmin:modify` gate) |
 
 ---
 
@@ -254,8 +254,8 @@ import { Link, useRouter } from "@/i18n/navigation";
 
 1. Create the directory under `src/app/[locale]/` in the appropriate route group/segment (`(web)`, `admin`, `instructor`, `sysadmin`, ...).
 2. Add a `page.tsx` file — this becomes the route.
-3. Create a screen component in `src/screen/<role>/<feature>/page.tsx` for the page body (or reuse a shared screen under `src/screen/common/` when multiple roles share the same UI).
-4. Import and render the screen component from the route page.
+3. Prefer a shared screen under `src/screen/common/` when multiple roles share the same UI; keep role-specific screens only when behavior actually differs.
+4. Import and render the shared or role-specific screen component from the route page.
 5. Add or update the route value in `src/constants/route.ts` (`PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`).
 6. Add or reuse a builder/helper in `src/lib/navigation/routes.ts` instead of string interpolation in screens/components.
 7. Update `docs/screens.md` with the new route entry.
@@ -264,8 +264,7 @@ Example:
 
 ```
 src/app/[locale]/admin/taxonomy/levels/page.tsx   → route: /vi/admin/taxonomy/levels
-src/screen/admin/taxonomy/levels/page.tsx         → AdminTaxonomyLevelsPage (wraps shared TaxonomyListPage)
-src/screen/common/taxonomy/taxonomy-list-page.tsx → TaxonomyListPage (shared CRUD UI)
+src/screen/common/taxonomy/taxonomy-list-page.tsx → TaxonomyListPage (shared CRUD UI imported directly by the route)
 
 src/app/[locale]/admin/courses/page.tsx           → route: /vi/admin/courses
 src/screen/common/course/course-review-page.tsx   → CourseReviewPage (shared by admin + sysadmin)

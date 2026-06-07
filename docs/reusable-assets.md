@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-06-05 (course editor loading skeleton + route resource builders)._
+_Last audited: 2026-06-07 (review-v1 remediation helpers + shared route screens)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -310,10 +310,10 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `PERMISSIONS`, `TAXONOMY_MENU_ICONS`, `TAXONOMY_GROUP_READ_PERMISSIONS`, `DashboardItem`.
 
 ### Asset: Dashboard shell components
-- **Name**: `DashboardLayout`, `DashboardSidebar`, `HeaderDashboard`, `DashboardUnauthorized`
+- **Name**: `DashboardLayout`, `RoleDashboardLayout`, `DashboardSidebar`, `HeaderDashboard`, `DashboardUnauthorized`
 - **Type**: Client components
 - **Path**: `src/components/common/dashboard/`, `src/components/common/header/header-dashboard.tsx`
-- **Purpose**: Role dashboard chrome: `SidebarProvider` + fixed sidebar under `HeaderDashboard` (`h-16`); `collapsible="icon"` (collapsed = root icons + tooltips); mobile nav via `Sheet` with `DashboardSidebarMobileHeader` / `DashboardSidebarLocaleFooter`. Locale: `DashboardHeaderLocale` (`LocaleSwitcher` + `useCodeLabelLanguage`, `lg+`) and drawer footer (`fullWidth`, below `lg`) — same pattern as `header.tsx` / `header-mobile-sidebar.tsx`. `HeaderDashboard` exposes `leading` / `trailing` slots only (no built-in locale). Layout permission gate + unauthorized fallback.
+- **Purpose**: Role dashboard chrome: `DashboardLayout` owns the shell; `RoleDashboardLayout` centralizes admin/sysadmin role config (items + shell permission) and forwards into `DashboardLayout`. `DashboardLayout` still provides `SidebarProvider` + fixed sidebar under `HeaderDashboard` (`h-16`); `collapsible="icon"` (collapsed = root icons + tooltips); mobile nav via `Sheet` with `DashboardSidebarMobileHeader` / `DashboardSidebarLocaleFooter`. Locale: `DashboardHeaderLocale` (`LocaleSwitcher` + `useCodeLabelLanguage`, `lg+`) and drawer footer (`fullWidth`, below `lg`) — same pattern as `header.tsx` / `header-mobile-sidebar.tsx`. `HeaderDashboard` exposes `leading` / `trailing` slots only (no built-in locale). Layout permission gate + unauthorized fallback.
 - **Scope**: `/admin`, `/instructor`, `/sysadmin` routes.
 - **Dependencies**: shadcn `Sidebar*` (includes `TooltipProvider`), `LocaleSwitcher`, RBAC hooks, `LoginSignupPopup`.
 
@@ -428,12 +428,20 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Route/screen generation, iteration over resources; keep in sync with `TAXONOMY_RESOURCES` keys.
 - **Dependencies**: `TaxonomyResourceKey` type.
 
+### Asset: shared API query helpers
+- **Name**: `useApiListQuery`, `useApiRowsQuery`, `useApiDetailQuery`
+- **Type**: Client hook helpers
+- **Path**: `src/api/hooks/shared.ts`
+- **Purpose**: Normalize common SWR return shapes so domain hooks can reuse one list/detail implementation instead of duplicating `rows/pageInfo/isLoading/error/mutate`.
+- **Scope**: taxonomy, instructor, course, and media hooks.
+- **Dependencies**: `useSWR`, `ApiPaginatedData`.
+
 ### Asset: `TaxonomyListPage`
 - **Name**: `TaxonomyListPage`, `TaxonomyListPageProps`
 - **Type**: React component (client)
 - **Path**: `src/screen/common/taxonomy/taxonomy-list-page.tsx`
 - **Purpose**: Shared admin CRUD list for all five taxonomy resources (DataTable toolbar, form dialog, delete confirm, pagination).
-- **Scope**: Wrapped by `AdminTaxonomy*Page` / `SysadminTaxonomy*Page` in `src/screen/{admin,sysadmin}/taxonomy/*/page.tsx`; app routes re-export those role screens.
+- **Scope**: Imported directly by app routes under `src/app/[locale]/{admin,sysadmin}/taxonomy/*/page.tsx`.
 - **Dependencies**: `useTaxonomyList`, `TaxonomyFormDialog`, `DataTable`, `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`.
 
 ### Asset: Media filename / extension helpers
@@ -459,6 +467,14 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Tree visualization in a dialog via `@xyflow/react` + `dagre` (vertical default, horizontal toggle). Props: `nodesDraggable` (default `true` — drag nodes, edges stay attached; `false` locks positions). Node labels: **name only**.
 - **Scope**: Taxonomy topics/skills (`TaxonomyTreeViewButton` with `nodesDraggable={false}`); reusable for any `{ id, name, children? }` tree.
 - **Dependencies**: `Dialog`, `ToggleGroup`, `useNodesState` / `useEdgesState`, `treeToFlowElements` in `src/lib/utils/dagre-tree.ts`. CSS: `@xyflow/react/dist/style.css` in the dialog file.
+
+### Asset: course delta helpers
+- **Name**: `createEmptyDelta`, `createEmptyDeltaString`, `parseDelta`, `stringifyDelta`, `extractPlainText`, `extractImages`, `extractImageOps`, `normalizeSafeLink`
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/course-delta.ts`
+- **Purpose**: Shared Quill-Delta parsing/stringify/text/image extraction plus safe link normalization for course text lessons.
+- **Scope**: `CourseDeltaEditor`, course editor state, and any future Delta import/export logic.
+- **Dependencies**: none.
 
 ### Asset: dagre-tree utils
 - **Name**: `DagreTreeRoot`, `treeToFlowElements`, `getLayoutedElements`

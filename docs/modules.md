@@ -1,6 +1,6 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-06-05 (course collaboration + review queue)._
+_Last audited: 2026-06-07 (review-v1 remediation helpers + shared route screens)._
 
 
 ## Module map
@@ -11,9 +11,9 @@ _Last audited: 2026-06-05 (course collaboration + review queue)._
 - `State`: `src/store` (auth, language, api-error, events), `src/hooks/auth`, `src/hooks/language`
 - `Routing + i18n`: `src/app`, `src/i18n`, `src/proxy.ts`, `src/messages`
 - `Shared`: `src/lib/utils`, `src/constants`, `src/config`
-- `Taxonomy`: `src/types/taxonomy`, `src/constants/taxonomy`, `src/api/callers/taxonomy`, `src/components/features/taxonomy`, `src/screen/common/taxonomy`, `src/screen/{admin,sysadmin}/taxonomy/*`, app routes under `admin/taxonomy/*` and `sysadmin/taxonomy/*`
+- `Taxonomy`: `src/types/taxonomy`, `src/constants/taxonomy`, `src/api/callers/taxonomy`, `src/components/features/taxonomy`, `src/screen/common/taxonomy`, app routes under `admin/taxonomy/*` and `sysadmin/taxonomy/*`
 - `Media`: `src/types/media`, `src/constants/media`, `src/api/callers/media`, `src/components/features/media` (collection popup; no dedicated route page yet)
-- `Instructor`: `src/types/instructor.ts`, `src/constants/instructor`, `src/api/callers/instructor`, `src/api/hooks/instructor`, `src/components/features/instructor`, `src/screen/common/instructor`, `src/screen/{admin,sysadmin}/instructor/*`, `src/screen/instructor/tickets`, app routes under `admin/instructors/*`, `sysadmin/instructors/*`, `instructor/tickets`
+- `Instructor`: `src/types/instructor.ts`, `src/constants/instructor`, `src/api/callers/instructor`, `src/api/hooks/instructor`, `src/components/features/instructor`, `src/screen/common/instructor`, `src/screen/instructor/tickets`, app routes under `admin/instructors/*`, `sysadmin/instructors/*`, `instructor/tickets`
 - `Course`: `src/types/course.ts`, `src/api/callers/course`, `src/api/hooks/course`, `src/components/features/course`, `src/screen/instructor/courses`, `src/screen/common/course`, app routes under `instructor/courses/*`, `admin/courses`, `sysadmin/courses`
 
 ## Responsibilities
@@ -34,8 +34,8 @@ _Last audited: 2026-06-05 (course collaboration + review queue)._
 - **Constants**: `src/constants/taxonomy/resources.ts` — `TAXONOMY_RESOURCES`, `TAXONOMY_RESOURCE_KEYS`, `TAXONOMY_GROUP_READ_PERMISSIONS` (data only).
 - **Utils**: `src/lib/utils/taxonomy.ts` — `getTaxonomyResourceConfig()`, `getTaxonomySearchableColumns()`, `getTaxonomyTreeFromEntity()`, `buildTaxonomyDagreRoot()`, `countTaxonomyTreeNodes()`; `src/lib/utils/dagre-tree.ts` — read-only tree layout helpers.
 - **Nav**: `src/constants/dashboard/taxonomy-icons.ts` (`TAXONOMY_MENU_ICONS`) + taxonomy nodes in `admin-items.ts` / `sysadmin-items.ts`; filtered by `useFilteredDashboardItems`.
-- **API**: `src/api/callers/taxonomy/taxonomy.ts`, `src/api/hooks/taxonomy/useTaxonomy.ts`.
-- **UI**: `src/screen/common/taxonomy/taxonomy-list-page.tsx` (`TaxonomyListPage`), `src/screen/admin/taxonomy/*/page.tsx`, `src/screen/sysadmin/taxonomy/*/page.tsx`, `src/components/features/taxonomy/*` (incl. `TaxonomyTreeViewButton` with `nodesDraggable={false}`, `child_render` column), shared `DagreTreeDialog`, `ConfirmDeleteDialog`.
+- **API**: `src/api/callers/taxonomy/taxonomy.ts`, `src/api/hooks/taxonomy/useTaxonomy.ts`, shared SWR normalizers in `src/api/hooks/shared.ts`.
+- **UI**: `src/screen/common/taxonomy/taxonomy-list-page.tsx` (`TaxonomyListPage`), app routes under `src/app/[locale]/{admin,sysadmin}/taxonomy/*/page.tsx`, `src/components/features/taxonomy/*` (incl. `TaxonomyTreeViewButton` with `nodesDraggable={false}`, `child_render` column), shared `DagreTreeDialog`, `ConfirmDeleteDialog`.
 - **Docs**: `docs/taxonomy-admin.md` (routes, permissions, sidebar icons, slug, DnD).
 
 ## Media module
@@ -52,8 +52,8 @@ _Last audited: 2026-06-05 (course collaboration + review queue)._
 
 - **Types**: `src/types/instructor.ts` — roster, applications, profiles, expertise junction rows, tickets, messages, list filters.
 - **Constants**: `src/constants/instructor/resources.ts` — `INSTRUCTOR_GROUP_READ_PERMISSIONS`; `src/constants/dashboard/instructor-icons.ts` — `INSTRUCTOR_MENU_ICONS`; instructor group in `admin-items.ts` / `sysadmin-items.ts` / `instructor-items.ts`.
-- **API**: `src/api/callers/instructor/instructor.ts`, `src/api/hooks/instructor/*`; routes in `API_PRIVATE_ROUTES.instructor`.
-- **UI**: `src/screen/common/instructor/*` (shared pages), thin `src/screen/{admin,sysadmin}/instructor/*/page.tsx`, `src/screen/instructor/tickets/page.tsx`; `src/components/features/instructor/*`.
+- **API**: `src/api/callers/instructor/instructor.ts`, `src/api/hooks/instructor/*`, shared SWR normalizers in `src/api/hooks/shared.ts`; routes in `API_PRIVATE_ROUTES.instructor`.
+- **UI**: `src/screen/common/instructor/*` (shared pages), `src/screen/instructor/tickets/page.tsx`, app routes under `src/app/[locale]/{admin,sysadmin}/instructors/*/page.tsx`; `src/components/features/instructor/*`.
 - **Docs**: `docs/instructor-admin.md` (routes, permissions, expertise names, tickets).
 
 ## Course module
@@ -66,6 +66,7 @@ _Last audited: 2026-06-05 (course collaboration + review queue)._
   - `src/screen/common/course/course-review-page.tsx` — shared admin/sysadmin review queue
   - `src/components/features/course/course-status-badge.tsx`
   - `src/components/features/course/course-delta-editor.tsx`
+  - `src/lib/utils/course-delta.ts` — shared Delta parsing/stringify/text/image/link helpers reused by the editor and course state
   - `src/components/features/course/course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx` — split editor render helpers kept outside `src/screen/**` to satisfy the page-only screen rule
   - `src/components/features/instructor/instructor-action-controls.tsx` — shared instructor admin action/footer helpers
   - `src/components/features/instructor/instructor-list-pagination.tsx` — shared instructor/admin/sysadmin pagination helper
@@ -90,11 +91,11 @@ _Last audited: 2026-06-05 (course collaboration + review queue)._
 - **Note**: `MeResponse` has `permissions: string[]` only; no `roles[]` on `/me` yet — gate UI by permission, not role name alone.
 
 ## Cross-module contracts
-- `Auth UI -> actions/auth -> api/callers` for login/signup submit.
+- `Auth UI -> actions/auth/auth-client -> actions/auth -> api/callers` for login/signup submit.
 - `api/hooks/auth/useAuth -> hooks/auth/use-auth-store` for SWR-to-Zustand sync.
 - `api/instance` depends on `lib/utils/cookie` for isomorphic token read/write.
 - `AppProviders -> EventsStreamProvider -> events/registry` starts transports; transports call `events/core/publish` → `store/events`.
-- Feature UI listens via `hooks/events/*` (never import transports directly except outbound helpers).
+- Feature UI listens via `hooks/events/*` with shared source-scoping helpers under `src/hooks/events/internal/` (never import transports directly except outbound helpers).
 
 ## Events module detail
 
