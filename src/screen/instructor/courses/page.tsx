@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { instructorCourseEditorHref } from "@/lib/navigation/routes";
+import { slugifyName } from "@/lib/utils";
 import type { CourseListItem } from "@/types/course";
 
 export function InstructorCoursesPage() {
@@ -29,8 +30,8 @@ export function InstructorCoursesPage() {
   const { rows, isLoading, mutate } = useEditableCourses();
   const [createOpen, setCreateOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const derivedSlug = slugifyName(title);
   const [deleteTarget, setDeleteTarget] = useState<CourseListItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -70,12 +71,10 @@ export function InstructorCoursesPage() {
     try {
       const created = await createCourseService({
         title: title.trim(),
-        slug: slug.trim(),
       });
       toast.success(t("toast.created"));
       setCreateOpen(false);
       setTitle("");
-      setSlug("");
       await mutate();
       router.push(instructorCourseEditorHref(created.course.id));
     } catch {
@@ -167,9 +166,10 @@ export function InstructorCoursesPage() {
               <Label htmlFor="course-slug">{t("createDialog.slugLabel")}</Label>
               <Input
                 id="course-slug"
-                value={slug}
-                onChange={(event) => setSlug(event.target.value)}
-                placeholder={t("createDialog.slugPlaceholder")}
+                readOnly
+                value={derivedSlug}
+                className="cursor-not-allowed bg-muted"
+                aria-readonly
               />
             </div>
           </div>
@@ -183,7 +183,7 @@ export function InstructorCoursesPage() {
             </Button>
             <Button
               type="button"
-              disabled={isSubmitting || !title.trim() || !slug.trim()}
+              disabled={isSubmitting || !title.trim() || derivedSlug.length < 1}
               onClick={() => void handleCreate()}
             >
               {isSubmitting

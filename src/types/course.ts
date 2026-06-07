@@ -180,7 +180,6 @@ export type CourseProgress = {
 };
 
 export type CreateCoursePayload = {
-  slug: string;
   title: string;
 };
 

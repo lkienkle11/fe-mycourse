@@ -34,6 +34,7 @@ import { slugifyName } from "@/lib/utils";
 import {
   getTaxonomyResourceConfig,
   getTaxonomyTreeFromEntity,
+  toTaxonomyTreeWritePayload,
 } from "@/lib/utils/taxonomy";
 import type { MediaFile } from "@/types/media";
 import type {
@@ -159,15 +160,6 @@ export function TaxonomyFormDialog({
     | string
     | undefined;
 
-  const normalizeTreeSlugs = (nodes: TaxonomyTreeNode[]): TaxonomyTreeNode[] =>
-    nodes.map((node) => ({
-      ...node,
-      slug: slugifyName(node.name),
-      children: node.children?.length
-        ? normalizeTreeSlugs(node.children)
-        : undefined,
-    }));
-
   const resourceLabel = t(`resources.${resourceKey}.singular`);
   const dialogTitle =
     mode === "create"
@@ -198,11 +190,10 @@ export function TaxonomyFormDialog({
         const name = (values as z.infer<typeof slugStatusSchema>).name;
         const payload = {
           name,
-          slug: slugifyName(name),
           status: values.status as TaxonomyStatus,
           image_file_id:
             (values as z.infer<typeof topicSchema>).image_file_id || undefined,
-          child_topics: normalizeTreeSlugs(tree),
+          child_topics: toTaxonomyTreeWritePayload(tree),
         };
         if (mode === "create") {
           await createTaxonomyService("topics", payload);
@@ -215,9 +206,8 @@ export function TaxonomyFormDialog({
         const name = (values as z.infer<typeof slugStatusSchema>).name;
         const payload = {
           name,
-          slug: slugifyName(name),
           status: values.status as TaxonomyStatus,
-          children: normalizeTreeSlugs(tree),
+          children: toTaxonomyTreeWritePayload(tree),
         };
         if (mode === "create") {
           await createTaxonomyService("skills", payload);
@@ -230,7 +220,6 @@ export function TaxonomyFormDialog({
         const name = (values as z.infer<typeof slugStatusSchema>).name;
         const payload = {
           name,
-          slug: slugifyName(name),
           status: values.status as TaxonomyStatus,
         };
         if (mode === "create") {

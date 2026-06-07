@@ -5,13 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { slugifyName } from "@/lib/utils";
-
-export type SortableTreeNode = {
-  id: string;
-  name: string;
-  slug: string;
-  children?: SortableTreeNode[];
-};
+import { createTaxonomyTreeNode } from "@/lib/utils/taxonomy";
+import type { TaxonomyTreeNode } from "@/types/taxonomy";
 
 export type SortableTreeEditorLabels = {
   dragHandle: string;
@@ -21,22 +16,13 @@ export type SortableTreeEditorLabels = {
   remove: string;
 };
 
-export function createSortableTreeNode(name = ""): SortableTreeNode {
-  return {
-    id: crypto.randomUUID(),
-    name,
-    slug: slugifyName(name),
-    children: [],
-  };
-}
-
 type TreeLevelProps = {
-  nodes: SortableTreeNode[];
+  nodes: TaxonomyTreeNode[];
   depth: number;
   indentPx: number;
   labels: SortableTreeEditorLabels;
-  createNode: () => SortableTreeNode;
-  onChange: (nodes: SortableTreeNode[]) => void;
+  createNode: () => TaxonomyTreeNode;
+  onChange: (nodes: TaxonomyTreeNode[]) => void;
 };
 
 function TreeLevel({
@@ -64,11 +50,9 @@ function TreeLevel({
                 placeholder={labels.namePlaceholder}
                 onChange={(event) => {
                   const next = [...nodes];
-                  const name = event.target.value;
                   next[index] = {
                     ...node,
-                    name,
-                    slug: slugifyName(name),
+                    name: event.target.value,
                   };
                   onChange(next);
                 }}
@@ -132,24 +116,24 @@ function TreeLevel({
 }
 
 export type SortableTreeEditorProps = {
-  nodes: SortableTreeNode[];
-  onChange: (nodes: SortableTreeNode[]) => void;
+  nodes: TaxonomyTreeNode[];
+  onChange: (nodes: TaxonomyTreeNode[]) => void;
   labels: SortableTreeEditorLabels;
   /** Horizontal indent per nesting level (default 12px). */
   indentPx?: number;
-  createNode?: () => SortableTreeNode;
+  createNode?: () => TaxonomyTreeNode;
 };
 
 /**
  * Nested sortable tree: name + read-only slug per node, drag reorder among siblings.
- * Slug is derived from name via `slugifyName`.
+ * Uses shared `TaxonomyTreeNode`; slug preview via `slugifyName` (not stored on write).
  */
 export function SortableTreeEditor({
   nodes,
   onChange,
   labels,
   indentPx = 12,
-  createNode = createSortableTreeNode,
+  createNode = createTaxonomyTreeNode,
 }: SortableTreeEditorProps) {
   return (
     <div className="space-y-2">
