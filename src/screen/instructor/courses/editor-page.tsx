@@ -131,9 +131,6 @@ export function InstructorCourseEditorPage({ courseId }: { courseId: number }) {
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-20 w-full" />
         </div>
-        <p className="text-xs text-muted-foreground">
-          {tCommon("loadingCourse")}
-        </p>
       </div>
     );
   }
