@@ -1,6 +1,5 @@
 "use client";
 
-import useSWR from "swr";
 import {
   getCourseDetailKey,
   getCourseDetailService,
@@ -11,80 +10,45 @@ import {
   listPendingCourseReviewsService,
   listPublishedCoursesService,
 } from "@/api/callers/course";
+import { useApiDetailQuery, useApiRowsQuery } from "@/api/hooks/shared";
 import type { CourseDetail, CourseListItem } from "@/types/course";
 
 export function useEditableCourses() {
-  const swr = useSWR<CourseListItem[]>(
+  return useApiRowsQuery<CourseListItem>(
     getEditableCoursesKey(),
     listEditableCoursesService,
     { revalidateOnFocus: true },
   );
-
-  return {
-    rows: swr.data ?? [],
-    isLoading: swr.isLoading,
-    error: swr.error,
-    mutate: swr.mutate,
-  };
 }
 
 export function useCourseDetail(courseId: number | null) {
-  const key = courseId ? getCourseDetailKey(courseId) : null;
-  const swr = useSWR<CourseDetail>(
-    key,
+  return useApiDetailQuery<CourseDetail>(
+    courseId ? getCourseDetailKey(courseId) : null,
     () => getCourseDetailService(courseId as number),
     { revalidateOnFocus: true },
   );
-
-  return {
-    data: swr.data,
-    isLoading: swr.isLoading,
-    error: swr.error,
-    mutate: swr.mutate,
-  };
 }
 
 export function useCourseReviewQueue() {
-  const swr = useSWR<CourseListItem[]>(
+  return useApiRowsQuery<CourseListItem>(
     getCourseReviewQueueKey(),
     listPendingCourseReviewsService,
     { revalidateOnFocus: true },
   );
-
-  return {
-    rows: swr.data ?? [],
-    isLoading: swr.isLoading,
-    error: swr.error,
-    mutate: swr.mutate,
-  };
 }
 
 export function usePublishedCourses() {
-  const swr = useSWR<CourseListItem[]>(
+  return useApiRowsQuery<CourseListItem>(
     "published-courses",
     listPublishedCoursesService,
     { revalidateOnFocus: true },
   );
-
-  return {
-    rows: swr.data ?? [],
-    isLoading: swr.isLoading,
-    error: swr.error,
-    mutate: swr.mutate,
-  };
 }
 
 export function useLearningCourse(courseId: number | null) {
-  const swr = useSWR<CourseDetail>(
+  return useApiDetailQuery<CourseDetail>(
     courseId ? `learning-course-${courseId}` : null,
     () => getLearningCourseService(courseId as number),
     { revalidateOnFocus: true },
   );
-
-  return {
-    data: swr.data,
-    isLoading: swr.isLoading,
-    error: swr.error,
-    mutate: swr.mutate,
-  };
 }

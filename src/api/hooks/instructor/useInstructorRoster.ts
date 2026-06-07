@@ -1,29 +1,22 @@
 "use client";
 
-import useSWR from "swr";
 import {
   getInstructorRosterListKey,
   listInstructorRosterService,
 } from "@/api/callers/instructor";
-import type { ApiPaginatedData } from "@/types/api";
+import { useApiListQuery } from "@/api/hooks/shared";
 import type {
   InstructorListFilters,
   InstructorRosterMember,
 } from "@/types/instructor";
 
-export function useInstructorRosterList(filters: InstructorListFilters) {
-  const key = getInstructorRosterListKey(filters);
-  const swr = useSWR<ApiPaginatedData<InstructorRosterMember[]>>(
-    key,
-    () => listInstructorRosterService(filters),
-    { revalidateOnFocus: true },
+export function useInstructorRosterList(filters: InstructorListFilters | null) {
+  return useApiListQuery<InstructorRosterMember>(
+    filters ? getInstructorRosterListKey(filters) : null,
+    () => listInstructorRosterService(filters as InstructorListFilters),
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 5 * 60 * 1000,
+    },
   );
-  return {
-    data: swr.data,
-    rows: swr.data?.result ?? [],
-    pageInfo: swr.data?.page_info,
-    isLoading: swr.isLoading,
-    error: swr.error,
-    mutate: swr.mutate,
-  };
 }

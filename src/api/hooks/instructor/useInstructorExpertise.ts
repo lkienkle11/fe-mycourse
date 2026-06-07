@@ -1,47 +1,29 @@
 "use client";
 
-import useSWR from "swr";
 import {
   getInstructorExpertiseSkillsKey,
   getInstructorExpertiseTopicsKey,
   listInstructorExpertiseSkillsService,
   listInstructorExpertiseTopicsService,
 } from "@/api/callers/instructor";
+import { useApiRowsQuery } from "@/api/hooks/shared";
 import type {
   InstructorExpertiseSkill,
   InstructorExpertiseTopic,
 } from "@/types/instructor";
 
 export function useInstructorExpertiseTopics(instructorId: number | null) {
-  const key = instructorId
-    ? getInstructorExpertiseTopicsKey(instructorId)
-    : null;
-  const swr = useSWR<InstructorExpertiseTopic[]>(
-    key,
+  return useApiRowsQuery<InstructorExpertiseTopic>(
+    instructorId ? getInstructorExpertiseTopicsKey(instructorId) : null,
     () => listInstructorExpertiseTopicsService(instructorId as number),
     { revalidateOnFocus: true },
   );
-  return {
-    rows: swr.data ?? [],
-    isLoading: swr.isLoading,
-    error: swr.error,
-    mutate: swr.mutate,
-  };
 }
 
 export function useInstructorExpertiseSkills(instructorId: number | null) {
-  const key = instructorId
-    ? getInstructorExpertiseSkillsKey(instructorId)
-    : null;
-  const swr = useSWR<InstructorExpertiseSkill[]>(
-    key,
+  return useApiRowsQuery<InstructorExpertiseSkill>(
+    instructorId ? getInstructorExpertiseSkillsKey(instructorId) : null,
     () => listInstructorExpertiseSkillsService(instructorId as number),
     { revalidateOnFocus: true },
   );
-  return {
-    rows: swr.data ?? [],
-    isLoading: swr.isLoading,
-    error: swr.error,
-    mutate: swr.mutate,
-  };
 }
