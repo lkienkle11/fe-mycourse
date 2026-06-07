@@ -714,6 +714,7 @@ const messages = {
         linkEmbedLabel: "Link embed",
         linkPlaceholder: "https://example.com/resource",
         addLink: "Add link",
+        invalidLink: "Enter a valid http:// or https:// link.",
         imagesLabel: "Images",
         insertImage: "Insert image",
         embeddedImagesLabel: "Embedded images",

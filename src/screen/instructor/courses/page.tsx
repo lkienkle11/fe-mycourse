@@ -128,9 +128,7 @@ export function InstructorCoursesPage() {
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() =>
-                  router.push(instructorCourseEditorHref(row.id))
-                }
+                onClick={() => router.push(instructorCourseEditorHref(row.id))}
               >
                 {tCommon("open")}
               </Button>

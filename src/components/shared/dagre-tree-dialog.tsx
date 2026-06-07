@@ -72,21 +72,17 @@ function DagreTreeFlow({
       setEdges([]);
       return;
     }
-    const { nodes: nextNodes, edges: nextEdges } = treeToFlowElements(
-      root,
-      direction,
-    );
-    setNodes(nextNodes);
-    setEdges(nextEdges);
-  }, [root, direction, hasChildren, setNodes, setEdges]);
+    setNodes(layouted.nodes);
+    setEdges(layouted.edges);
+  }, [hasChildren, layouted, setNodes, setEdges]);
 
   useEffect(() => {
-    if (!hasChildren || nodes.length === 0) return;
+    if (!hasChildren || layouted.nodes.length === 0) return;
     const frame = requestAnimationFrame(() => {
       fitView({ padding: 0.2 });
     });
     return () => cancelAnimationFrame(frame);
-  }, [fitView, hasChildren, nodes]);
+  }, [fitView, hasChildren, layouted]);
 
   if (!hasChildren) {
     return (

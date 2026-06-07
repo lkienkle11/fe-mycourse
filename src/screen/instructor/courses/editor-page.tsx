@@ -44,31 +44,6 @@ export function InstructorCourseEditorPage({ courseId }: { courseId: number }) {
   const tEditor = useTranslations("course.editor");
   const tToast = useTranslations("course.editor.toast");
   const { data, isLoading, mutate } = useCourseDetail(courseId);
-  const { rows: levelRows } = useTaxonomyList("levels", {
-    page: 1,
-    per_page: 100,
-  });
-  const { rows: topicRows } = useTaxonomyList("topics", {
-    page: 1,
-    per_page: 100,
-  });
-  const { rows: tagRows } = useTaxonomyList("tags", {
-    page: 1,
-    per_page: 100,
-  });
-  const { rows: skillRows } = useTaxonomyList("skills", {
-    page: 1,
-    per_page: 100,
-  });
-  const { rows: outcomeRows } = useTaxonomyList("outcomes", {
-    page: 1,
-    per_page: 100,
-  });
-  const { rows: rosterRows } = useInstructorRosterList({
-    page: 1,
-    per_page: 100,
-  });
-
   const editableVersion = data?.draft_version;
   const liveVersion = data?.live_version;
   const activeVersion = editableVersion ?? liveVersion;
@@ -127,6 +102,16 @@ export function InstructorCourseEditorPage({ courseId }: { courseId: number }) {
     editableVersion,
     mutate,
   });
+  const basicInfoFilters =
+    activeTab === "basic" ? { page: 1, per_page: 100 } : null;
+  const rosterFilters =
+    activeTab === "collaborators" ? { page: 1, per_page: 100 } : null;
+  const { rows: levelRows } = useTaxonomyList("levels", basicInfoFilters);
+  const { rows: topicRows } = useTaxonomyList("topics", basicInfoFilters);
+  const { rows: tagRows } = useTaxonomyList("tags", basicInfoFilters);
+  const { rows: skillRows } = useTaxonomyList("skills", basicInfoFilters);
+  const { rows: outcomeRows } = useTaxonomyList("outcomes", basicInfoFilters);
+  const { rows: rosterRows } = useInstructorRosterList(rosterFilters);
 
   if (isLoading) {
     return (
@@ -158,9 +143,7 @@ export function InstructorCourseEditorPage({ courseId }: { courseId: number }) {
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">{tCommon("notLoaded")}</p>
         <Button asChild variant="outline">
-          <Link href={instructorCoursesHref}>
-            {tCommon("backToCourses")}
-          </Link>
+          <Link href={instructorCoursesHref}>{tCommon("backToCourses")}</Link>
         </Button>
       </div>
     );

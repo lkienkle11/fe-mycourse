@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { registerAction } from "@/actions/auth";
+import { handleAuthSubmit } from "@/actions/auth/auth-client";
 import { Button, Spinner } from "@/components/ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field } from "@/components/ui/field";
@@ -17,7 +18,6 @@ import { cn } from "@/lib/utils";
 import { type LoginFormValues, loginSchema } from "@/schema/auth";
 import { AuthSocialLogin } from "../auth-social-login";
 import { AuthEmailPasswordFields } from "./auth-form-fields";
-import { handleAuthSubmit } from "./auth-form-handler";
 
 export function LoginContent({ className }: { className?: string }) {
   const t = useTranslations("auth");

@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { handleAuthSubmit } from "@/actions/auth/auth-client";
 import { Button, Spinner } from "@/components/ui";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { useAuthStore } from "@/hooks";
@@ -11,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { type SignupFormValues, signupSchema } from "@/schema/auth";
 import { AuthSocialLogin } from "../auth-social-login";
 import { AuthEmailPasswordFields, AuthFullNameField } from "./auth-form-fields";
-import { handleAuthSubmit } from "./auth-form-handler";
 
 function registerErrorKey(code: number): string {
   switch (code) {

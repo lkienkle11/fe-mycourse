@@ -15,6 +15,7 @@ import type {
   MediaSortOption,
   MediaTab,
 } from "@/types/media";
+import { formatUnixDateTime } from "./date";
 
 export function isImageFilename(filename: string): boolean {
   const lower = filename.toLowerCase();
@@ -79,8 +80,7 @@ export function getMediaDeleteKey(file: MediaFile): string {
 }
 
 export function formatMediaDate(unixSeconds: number | undefined): string {
-  if (!unixSeconds) return "—";
-  return new Date(unixSeconds * 1000).toLocaleString();
+  return formatUnixDateTime(unixSeconds);
 }
 
 export function parseMediaSortOption(

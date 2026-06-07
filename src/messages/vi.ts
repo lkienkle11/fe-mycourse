@@ -714,6 +714,7 @@ const messages = {
         linkEmbedLabel: "Chèn liên kết",
         linkPlaceholder: "https://example.com/resource",
         addLink: "Thêm liên kết",
+        invalidLink: "Hãy nhập liên kết http:// hoặc https:// hợp lệ.",
         imagesLabel: "Hình ảnh",
         insertImage: "Chèn ảnh",
         embeddedImagesLabel: "Ảnh đã chèn",

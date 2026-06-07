@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   acquireCourseLeaseService,
@@ -20,6 +20,7 @@ import {
   updateCourseSectionService,
   updateCourseSubLessonService,
 } from "@/api/callers/course";
+import { createEmptyDeltaString } from "@/lib/utils";
 import type {
   CourseBasicInfoForm,
   CourseCollaborator,
@@ -46,8 +47,59 @@ type UseCourseEditorStateParams = {
   mutate: () => Promise<unknown>;
 };
 
-function emptyDelta(): string {
-  return JSON.stringify({ ops: [{ insert: "" }] }, null, 2);
+function createCourseBasicInfoState(
+  activeVersion?: CourseVersion,
+): CourseBasicInfoForm {
+  return {
+    title: activeVersion?.title ?? "",
+    short_description: activeVersion?.short_description ?? "",
+    about_course: activeVersion?.about_course ?? "",
+    thumbnail_file_id: activeVersion?.thumbnail_file_id ?? "",
+    thumbnail_url: activeVersion?.thumbnail_url ?? "",
+    preview_video_file_id: activeVersion?.preview_video_file_id ?? "",
+    preview_video_url: activeVersion?.preview_video_url ?? "",
+    course_level_id: activeVersion?.course_level_id
+      ? String(activeVersion.course_level_id)
+      : "",
+    course_topic_id: activeVersion?.course_topic_id
+      ? String(activeVersion.course_topic_id)
+      : "",
+    tag_ids: activeVersion?.tag_ids ?? [],
+    skill_ids: activeVersion?.skill_ids ?? [],
+    outcome_ids: activeVersion?.outcome_ids ?? [],
+    expected_row_version: activeVersion?.row_version ?? 0,
+  };
+}
+
+function createEmptyQuizOption() {
+  return {
+    option_key: crypto.randomUUID(),
+    body: "",
+    is_correct: false,
+  };
+}
+
+function createCourseSubLessonFormState(
+  lessonId = 0,
+  subLesson?: CourseSubLesson,
+): CourseSubLessonFormState {
+  return {
+    lesson_id: lessonId,
+    title: subLesson?.title ?? "",
+    kind: subLesson?.kind ?? "VIDEO",
+    is_preview: subLesson?.is_preview ?? false,
+    expected_row_version: subLesson?.row_version ?? 0,
+    video_file_id: subLesson?.video?.media_file_id ?? "",
+    video_url: subLesson?.video?.media_url ?? "",
+    text_delta: subLesson?.text?.content_delta ?? createEmptyDeltaString(),
+    quiz_prompt: subLesson?.quiz?.prompt ?? "",
+    allow_multiple: subLesson?.quiz?.allow_multiple ?? false,
+    quiz_options: subLesson?.quiz?.options?.map((option) => ({
+      option_key: option.option_key,
+      body: option.body,
+      is_correct: option.is_correct,
+    })) ?? [createEmptyQuizOption()],
+  };
 }
 
 function selectedIdsToMap(ids: number[]) {
@@ -58,117 +110,17 @@ export function rootOutlineStableId(courseId: number): string {
   return `course-${courseId}-outline-root`;
 }
 
-export function useCourseEditorState({
-  courseId,
-  activeVersion,
-  editableVersion,
-  mutate,
-}: UseCourseEditorStateParams) {
-  const t = useTranslations("course.editor.toast");
-  const [activeTab, setActiveTab] = useState<CourseEditorTab>("basic");
-  const [isPreparingDraft, setIsPreparingDraft] = useState(false);
-  const [isSavingBasicInfo, setIsSavingBasicInfo] = useState(false);
-  const [thumbnailDialogOpen, setThumbnailDialogOpen] = useState(false);
-  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-  const [activeLease, setActiveLease] = useState<CourseLease | null>(null);
-  const [sectionDialog, setSectionDialog] =
-    useState<CourseSectionDialogState | null>(null);
-  const [lessonDialog, setLessonDialog] =
-    useState<CourseLessonDialogState | null>(null);
-  const [subLessonDialog, setSubLessonDialog] =
-    useState<CourseSubLessonDialogState | null>(null);
-  const [collaboratorUserId, setCollaboratorUserId] = useState("");
-  const [isSubmittingCollaborator, setIsSubmittingCollaborator] =
-    useState(false);
-  const [videoDialogOpen, setVideoDialogOpen] = useState(false);
+function useCourseBasicInfoState(activeVersion?: CourseVersion) {
+  const [basicInfo, setBasicInfo] = useState<CourseBasicInfoForm>(() =>
+    createCourseBasicInfoState(activeVersion),
+  );
+  const syncedVersionIdRef = useRef(activeVersion?.id ?? 0);
+  const activeVersionId = activeVersion?.id ?? 0;
 
-  const [basicInfo, setBasicInfo] = useState<CourseBasicInfoForm>({
-    title: "",
-    short_description: "",
-    about_course: "",
-    thumbnail_file_id: "",
-    thumbnail_url: "",
-    preview_video_file_id: "",
-    preview_video_url: "",
-    course_level_id: "",
-    course_topic_id: "",
-    tag_ids: [],
-    skill_ids: [],
-    outcome_ids: [],
-    expected_row_version: 0,
-  });
-  const [sectionForm, setSectionForm] = useState<CourseSectionFormState>({
-    title: "",
-    description: "",
-    expected_row_version: 0,
-  });
-  const [lessonForm, setLessonForm] = useState<CourseLessonFormState>({
-    section_id: 0,
-    title: "",
-    summary: "",
-    expected_row_version: 0,
-  });
-  const [subLessonForm, setSubLessonForm] = useState<CourseSubLessonFormState>({
-    lesson_id: 0,
-    title: "",
-    kind: "VIDEO",
-    is_preview: false,
-    expected_row_version: 0,
-    video_file_id: "",
-    video_url: "",
-    text_delta: emptyDelta(),
-    quiz_prompt: "",
-    allow_multiple: false,
-    quiz_options: [
-      {
-        option_key: crypto.randomUUID(),
-        body: "",
-        is_correct: false,
-      },
-    ],
-  });
-
-  const leaseVersionId = editableVersion?.id ?? 0;
-
-  useEffect(() => {
-    if (!activeVersion) {
-      return;
-    }
-    setBasicInfo({
-      title: activeVersion.title,
-      short_description: activeVersion.short_description,
-      about_course: activeVersion.about_course,
-      thumbnail_file_id: activeVersion.thumbnail_file_id ?? "",
-      thumbnail_url: activeVersion.thumbnail_url ?? "",
-      preview_video_file_id: activeVersion.preview_video_file_id ?? "",
-      preview_video_url: activeVersion.preview_video_url ?? "",
-      course_level_id: activeVersion.course_level_id
-        ? String(activeVersion.course_level_id)
-        : "",
-      course_topic_id: activeVersion.course_topic_id
-        ? String(activeVersion.course_topic_id)
-        : "",
-      tag_ids: activeVersion.tag_ids ?? [],
-      skill_ids: activeVersion.skill_ids ?? [],
-      outcome_ids: activeVersion.outcome_ids ?? [],
-      expected_row_version: activeVersion.row_version,
-    });
-  }, [activeVersion]);
-
-  useEffect(() => {
-    if (!activeLease) {
-      return;
-    }
-    const timer = window.setInterval(() => {
-      void heartbeatCourseLeaseService(courseId, activeLease.lease_token).catch(
-        () => {
-          toast.error(t("lockExpired"));
-          setActiveLease(null);
-        },
-      );
-    }, 120000);
-    return () => window.clearInterval(timer);
-  }, [activeLease, courseId, t]);
+  if (syncedVersionIdRef.current !== activeVersionId) {
+    syncedVersionIdRef.current = activeVersionId;
+    setBasicInfo(createCourseBasicInfoState(activeVersion));
+  }
 
   const tagSelection = useMemo(
     () => selectedIdsToMap(basicInfo.tag_ids),
@@ -182,6 +134,116 @@ export function useCourseEditorState({
     () => selectedIdsToMap(basicInfo.outcome_ids),
     [basicInfo.outcome_ids],
   );
+
+  const toggleSelection = (key: CourseSelectionKey, value: number) => {
+    setBasicInfo((prev) => {
+      const next = new Set(prev[key]);
+      if (next.has(value)) {
+        next.delete(value);
+      } else {
+        next.add(value);
+      }
+      return { ...prev, [key]: [...next] };
+    });
+  };
+
+  return {
+    basicInfo,
+    setBasicInfo,
+    tagSelection,
+    skillSelection,
+    outcomeSelection,
+    toggleSelection,
+  };
+}
+
+function useCourseCollaboratorState() {
+  const [collaboratorUserId, setCollaboratorUserId] = useState("");
+  const [isSubmittingCollaborator, setIsSubmittingCollaborator] =
+    useState(false);
+
+  return {
+    collaboratorUserId,
+    setCollaboratorUserId,
+    isSubmittingCollaborator,
+    setIsSubmittingCollaborator,
+  };
+}
+
+function useCourseOutlineDialogState() {
+  const [thumbnailDialogOpen, setThumbnailDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [sectionDialog, setSectionDialog] =
+    useState<CourseSectionDialogState | null>(null);
+  const [lessonDialog, setLessonDialog] =
+    useState<CourseLessonDialogState | null>(null);
+  const [subLessonDialog, setSubLessonDialog] =
+    useState<CourseSubLessonDialogState | null>(null);
+  const [videoDialogOpen, setVideoDialogOpen] = useState(false);
+  const [sectionForm, setSectionForm] = useState<CourseSectionFormState>({
+    title: "",
+    description: "",
+    expected_row_version: 0,
+  });
+  const [lessonForm, setLessonForm] = useState<CourseLessonFormState>({
+    section_id: 0,
+    title: "",
+    summary: "",
+    expected_row_version: 0,
+  });
+  const [subLessonForm, setSubLessonForm] = useState<CourseSubLessonFormState>(
+    () => createCourseSubLessonFormState(),
+  );
+
+  return {
+    thumbnailDialogOpen,
+    setThumbnailDialogOpen,
+    previewDialogOpen,
+    setPreviewDialogOpen,
+    sectionDialog,
+    setSectionDialog,
+    sectionForm,
+    setSectionForm,
+    lessonDialog,
+    setLessonDialog,
+    lessonForm,
+    setLessonForm,
+    subLessonDialog,
+    setSubLessonDialog,
+    subLessonForm,
+    setSubLessonForm,
+    videoDialogOpen,
+    setVideoDialogOpen,
+  };
+}
+
+function useCourseLeaseState({
+  courseId,
+  leaseVersionId,
+  t,
+}: {
+  courseId: number;
+  leaseVersionId: number;
+  t: ReturnType<typeof useTranslations<"course.editor.toast">>;
+}) {
+  const [activeLease, setActiveLease] = useState<CourseLease | null>(null);
+
+  useEffect(() => {
+    if (!activeLease) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      void heartbeatCourseLeaseService(courseId, activeLease.lease_token).catch(
+        () => {
+          toast.error(t("lockExpired"));
+          setActiveLease(null);
+        },
+      );
+    }, 120000);
+
+    return () => window.clearInterval(timer);
+  }, [activeLease, courseId, t]);
 
   const releaseLease = async () => {
     if (!activeLease) {
@@ -231,6 +293,66 @@ export function useCourseEditorState({
       await releaseLease();
     }
   };
+
+  return {
+    activeLease,
+    acquireLease,
+    releaseLease,
+    withEphemeralLease,
+  };
+}
+
+export function useCourseEditorState({
+  courseId,
+  activeVersion,
+  editableVersion,
+  mutate,
+}: UseCourseEditorStateParams) {
+  const t = useTranslations("course.editor.toast");
+  const [activeTab, setActiveTab] = useState<CourseEditorTab>("basic");
+  const [isPreparingDraft, setIsPreparingDraft] = useState(false);
+  const [isSavingBasicInfo, setIsSavingBasicInfo] = useState(false);
+  const leaseVersionId = editableVersion?.id ?? 0;
+  const {
+    basicInfo,
+    setBasicInfo,
+    tagSelection,
+    skillSelection,
+    outcomeSelection,
+    toggleSelection,
+  } = useCourseBasicInfoState(activeVersion);
+  const {
+    collaboratorUserId,
+    setCollaboratorUserId,
+    isSubmittingCollaborator,
+    setIsSubmittingCollaborator,
+  } = useCourseCollaboratorState();
+  const {
+    thumbnailDialogOpen,
+    setThumbnailDialogOpen,
+    previewDialogOpen,
+    setPreviewDialogOpen,
+    sectionDialog,
+    setSectionDialog,
+    sectionForm,
+    setSectionForm,
+    lessonDialog,
+    setLessonDialog,
+    lessonForm,
+    setLessonForm,
+    subLessonDialog,
+    setSubLessonDialog,
+    subLessonForm,
+    setSubLessonForm,
+    videoDialogOpen,
+    setVideoDialogOpen,
+  } = useCourseOutlineDialogState();
+  const { acquireLease, releaseLease, withEphemeralLease } =
+    useCourseLeaseState({
+      courseId,
+      leaseVersionId,
+      t,
+    });
 
   const refreshDetail = async () => {
     await mutate();
@@ -387,27 +509,7 @@ export function useCourseEditorState({
       return;
     }
     setSubLessonForm({
-      lesson_id: lesson.id,
-      title: subLesson?.title ?? "",
-      kind: subLesson?.kind ?? "VIDEO",
-      is_preview: subLesson?.is_preview ?? false,
-      expected_row_version: subLesson?.row_version ?? 0,
-      video_file_id: subLesson?.video?.media_file_id ?? "",
-      video_url: subLesson?.video?.media_url ?? "",
-      text_delta: subLesson?.text?.content_delta ?? emptyDelta(),
-      quiz_prompt: subLesson?.quiz?.prompt ?? "",
-      allow_multiple: subLesson?.quiz?.allow_multiple ?? false,
-      quiz_options: subLesson?.quiz?.options?.map((option) => ({
-        option_key: option.option_key,
-        body: option.body,
-        is_correct: option.is_correct,
-      })) ?? [
-        {
-          option_key: crypto.randomUUID(),
-          body: "",
-          is_correct: false,
-        },
-      ],
+      ...createCourseSubLessonFormState(lesson.id, subLesson),
     });
     setSubLessonDialog({
       mode: subLesson ? "edit" : "create",
@@ -468,18 +570,6 @@ export function useCourseEditorState({
     } catch {
       toast.error(t("itemSaveError"));
     }
-  };
-
-  const toggleSelection = (key: CourseSelectionKey, value: number) => {
-    setBasicInfo((prev) => {
-      const next = new Set(prev[key]);
-      if (next.has(value)) {
-        next.delete(value);
-      } else {
-        next.add(value);
-      }
-      return { ...prev, [key]: [...next] };
-    });
   };
 
   const handleAddCollaborator = async () => {

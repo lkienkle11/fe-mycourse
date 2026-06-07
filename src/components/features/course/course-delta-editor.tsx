@@ -7,46 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  type DeltaShape,
+  extractImageOps,
+  extractImages,
+  extractPlainText,
+  normalizeSafeLink,
+  parseDelta,
+  stringifyDelta,
+} from "@/lib/utils";
 import type { MediaFile } from "@/types/media";
-
-type DeltaOp = {
-  insert: string | { image: string };
-  attributes?: Record<string, unknown>;
-};
-
-type DeltaShape = {
-  ops: DeltaOp[];
-};
-
-function parseDelta(value: string): DeltaShape {
-  try {
-    const parsed = JSON.parse(value) as DeltaShape;
-    if (parsed && Array.isArray(parsed.ops)) {
-      return parsed;
-    }
-  } catch {}
-  return { ops: [{ insert: "" }] };
-}
-
-function stringifyDelta(delta: DeltaShape): string {
-  return JSON.stringify(delta, null, 2);
-}
-
-function extractPlainText(delta: DeltaShape): string {
-  return delta.ops
-    .map((op) => (typeof op.insert === "string" ? op.insert : ""))
-    .join("");
-}
-
-function extractImages(delta: DeltaShape): string[] {
-  return delta.ops
-    .map((op) =>
-      typeof op.insert === "object" && op.insert && "image" in op.insert
-        ? op.insert.image
-        : "",
-    )
-    .filter(Boolean);
-}
 
 export type CourseDeltaEditorProps = {
   value: string;
@@ -58,17 +28,14 @@ export function CourseDeltaEditor({ value, onChange }: CourseDeltaEditorProps) {
   const delta = useMemo(() => parseDelta(value), [value]);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   const plainText = extractPlainText(delta);
   const images = extractImages(delta);
 
   const updateText = (nextText: string) => {
     const nextDelta: DeltaShape = { ops: [{ insert: nextText }] };
-    const imageOps = delta.ops.filter(
-      (op) =>
-        typeof op.insert === "object" && op.insert && "image" in op.insert,
-    );
-    nextDelta.ops.push(...imageOps);
+    nextDelta.ops.push(...extractImageOps(delta));
     onChange(stringifyDelta(nextDelta));
   };
 
@@ -85,22 +52,27 @@ export function CourseDeltaEditor({ value, onChange }: CourseDeltaEditorProps) {
   };
 
   const appendLink = () => {
-    const trimmed = linkUrl.trim();
-    if (!trimmed) {
+    const normalizedLink = normalizeSafeLink(linkUrl);
+    if (!normalizedLink) {
+      if (linkUrl.trim()) {
+        setLinkError(t("invalidLink"));
+      }
       return;
     }
+
     const nextDelta: DeltaShape = {
       ops: [
         ...delta.ops,
         {
-          insert: trimmed,
-          attributes: { link: trimmed },
+          insert: normalizedLink,
+          attributes: { link: normalizedLink },
         },
         { insert: "\n" },
       ],
     };
     onChange(stringifyDelta(nextDelta));
     setLinkUrl("");
+    setLinkError(null);
   };
 
   return (
@@ -122,12 +94,20 @@ export function CourseDeltaEditor({ value, onChange }: CourseDeltaEditorProps) {
             <Input
               value={linkUrl}
               placeholder={t("linkPlaceholder")}
-              onChange={(event) => setLinkUrl(event.target.value)}
+              onChange={(event) => {
+                setLinkUrl(event.target.value);
+                if (linkError) {
+                  setLinkError(null);
+                }
+              }}
             />
             <Button type="button" variant="secondary" onClick={appendLink}>
               {t("addLink")}
             </Button>
           </div>
+          {linkError ? (
+            <p className="px-1 text-xs text-destructive">{linkError}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label>{t("imagesLabel")}</Label>

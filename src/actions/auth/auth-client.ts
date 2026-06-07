@@ -6,9 +6,6 @@ import type { LoginFormValues, SignupFormValues } from "@/schema/auth";
 
 export type { AuthActionResult };
 
-/**
- * Hàm xử lý submit dùng chung cho cả form đăng nhập và đăng ký.
- */
 export async function handleAuthSubmit(
   type: "login",
   payload: LoginFormValues,
@@ -28,15 +25,11 @@ export async function handleAuthSubmit(
     return loginAction({ email, password, remember_me: rememberMe ?? false });
   }
 
-  if (type === "signup") {
-    const { email, password, fullName } = payload as SignupFormValues;
-    return registerAction({
-      email,
-      password,
-      display_name: fullName,
-      locale: locale ?? "vi",
-    });
-  }
-
-  throw new Error(`Unknown auth type: ${type}`);
+  const { email, password, fullName } = payload as SignupFormValues;
+  return registerAction({
+    email,
+    password,
+    display_name: fullName,
+    locale: locale ?? "vi",
+  });
 }
