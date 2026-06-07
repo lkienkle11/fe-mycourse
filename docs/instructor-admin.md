@@ -80,6 +80,8 @@ Course authoring / review reuses the same dashboard and API patterns:
 - hooks in `src/api/hooks/course/useCourses.ts`
 - types in `src/types/course.ts`
 
+**My Courses** (`InstructorCoursesPage`): create dialog sends `{ title }` only; slug preview is read-only (`slugifyName(title)`). Create is enabled when slugify is non-empty (`length >= 1`); BE rejects only empty slugify output.
+
 Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalActions`.
 
 ## Shared UI components

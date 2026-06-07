@@ -413,10 +413,10 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `TaxonomyResourceKey`.
 
 ### Asset: Taxonomy config helpers
-- **Name**: `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`, `getTaxonomyTreeFromEntity`, `buildTaxonomyDagreRoot`, `countTaxonomyTreeNodes`
+- **Name**: `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`, `getTaxonomyTreeFromEntity`, `buildTaxonomyDagreRoot`, `toTaxonomyTreeWritePayload`, `createTaxonomyTreeNode`, `countTaxonomyTreeNodes`
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/taxonomy.ts`
-- **Purpose**: Resolve `TAXONOMY_RESOURCES` entry, searchable column ids, extract nested tree from entity, build dagre root for read-only popup, count nested nodes for button state.
+- **Purpose**: Resolve `TAXONOMY_RESOURCES` entry, searchable column ids, extract nested tree from entity, build dagre root for read-only popup, strip slug for write payloads, create empty editor node, count nested nodes for button state.
 - **Scope**: Taxonomy list page, form dialog, table columns, tree view button.
 - **Dependencies**: `TAXONOMY_RESOURCES` (`src/constants/taxonomy/resources.ts`), `TaxonomyTreeNode`, `DagreTreeRoot` (`dagre-tree.ts`).
 
@@ -485,12 +485,12 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `@xyflow/react`, `dagre`.
 
 ### Asset: SortableTreeEditor
-- **Name**: `SortableTreeEditor`, `SortableTreeNode`
+- **Name**: `SortableTreeEditor`
 - **Type**: React component
 - **Path**: `src/components/shared/sortable-tree-editor.tsx`
-- **Purpose**: Nested drag-and-drop tree with name field and read-only slug preview per node.
+- **Purpose**: Nested drag-and-drop tree with name field and read-only slug preview per node. Uses shared `TaxonomyTreeNode` (no duplicate tree type).
 - **Scope**: Taxonomy topics/skills (`TaxonomyTreeEditor` wrapper); similar JSONB trees elsewhere.
-- **Dependencies**: `SortableList`, `slugifyName`.
+- **Dependencies**: `SortableList`, `slugifyName`, `createTaxonomyTreeNode`, `TaxonomyTreeNode`.
 
 ### Asset: ImageFileField
 - **Name**: `ImageFileField`, `ImageFileFieldProps`
@@ -512,7 +512,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `slugifyName(text: string): string`
 - **Type**: Utility function
 - **Path**: `src/lib/utils/slug.ts`
-- **Purpose**: Build slug from display name (`generateSlug` + `slugifyName` alias): trim, lowercase, remove Vietnamese accents (`đ/Đ -> d`), spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes. Used for read-only slug preview and API payloads.
+- **Purpose**: Build slug from display name (`generateSlug` + `slugifyName` alias): trim, lowercase, remove Vietnamese accents (`đ/Đ -> d`), spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes. Used for **read-only UI preview only**; persisted slugs are computed on BE (`utils.SlugifyName`).
 - **Scope**: Taxonomy form dialog, tree editor, submit handlers.
 - **Dependencies**: none.
 

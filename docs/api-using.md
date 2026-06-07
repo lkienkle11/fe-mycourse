@@ -304,7 +304,6 @@ const { rows, pageInfo, mutate } = useTaxonomyList("levels", {
 // One-off service call
 await createTaxonomyService("tags", {
   name: "React",
-  slug: "react",
   status: "ACTIVE",
 });
 ```
