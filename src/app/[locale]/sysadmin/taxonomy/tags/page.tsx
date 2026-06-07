@@ -1,3 +1,5 @@
-import { SysadminTaxonomyTagsPage } from "@/screen/sysadmin/taxonomy/tags/page";
+import { TaxonomyListPage } from "@/screen/common/taxonomy";
 
-export default SysadminTaxonomyTagsPage;
+export default function SysadminTaxonomyTagsRoute() {
+  return <TaxonomyListPage resourceKey="tags" />;
+}

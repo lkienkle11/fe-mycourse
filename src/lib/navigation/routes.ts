@@ -84,7 +84,9 @@ export const sysadminRootHref = toPrivateRoute(privateRoutes.sysadmin.root);
 export const instructorCoursesHref = toPrivateRoute(
   privateRoutes.instructor.courses,
 );
-export const instructorMediaHref = toPrivateRoute(privateRoutes.instructor.media);
+export const instructorMediaHref = toPrivateRoute(
+  privateRoutes.instructor.media,
+);
 export const instructorTicketsHref = toPrivateRoute(
   privateRoutes.instructor.tickets,
 );
@@ -124,7 +126,9 @@ export const adminInstructorsTicketsHref = toPrivateRoute(
 
 export const sysadminSystemHref = toPrivateRoute(privateRoutes.sysadmin.system);
 export const sysadminRolesHref = toPrivateRoute(privateRoutes.sysadmin.roles);
-export const sysadminCoursesHref = toPrivateRoute(privateRoutes.sysadmin.courses);
+export const sysadminCoursesHref = toPrivateRoute(
+  privateRoutes.sysadmin.courses,
+);
 export const sysadminTaxonomyLevelsHref = toPrivateRoute(
   privateRoutes.sysadmin.taxonomy.levels,
 );
@@ -160,7 +164,9 @@ export const accountMyCoursesHref = toPrivateRoute(
   privateRoutes.account.myCourses,
 );
 export const accountMyCartHref = toPrivateRoute(privateRoutes.account.myCart);
-export const accountWishlistHref = toPrivateRoute(privateRoutes.account.wishlist);
+export const accountWishlistHref = toPrivateRoute(
+  privateRoutes.account.wishlist,
+);
 export const accountNotificationsHref = toPrivateRoute(
   privateRoutes.account.notifications,
 );

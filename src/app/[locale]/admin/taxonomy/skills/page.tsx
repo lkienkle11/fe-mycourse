@@ -1,3 +1,5 @@
-import { AdminTaxonomySkillsPage } from "@/screen/admin/taxonomy/skills/page";
+import { TaxonomyListPage } from "@/screen/common/taxonomy";
 
-export default AdminTaxonomySkillsPage;
+export default function AdminTaxonomySkillsRoute() {
+  return <TaxonomyListPage resourceKey="skills" />;
+}

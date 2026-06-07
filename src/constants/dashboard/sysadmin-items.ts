@@ -3,6 +3,7 @@ import { INSTRUCTOR_MENU_ICONS } from "@/constants/dashboard/instructor-icons";
 import { TAXONOMY_MENU_ICONS } from "@/constants/dashboard/taxonomy-icons";
 import { INSTRUCTOR_GROUP_READ_PERMISSIONS } from "@/constants/instructor/resources";
 import { PERMISSIONS } from "@/constants/permissions";
+import { TAXONOMY_GROUP_READ_PERMISSIONS } from "@/constants/taxonomy/resources";
 import {
   sysadminCoursesHref,
   sysadminInstructorsApprovalsHref,
@@ -19,7 +20,6 @@ import {
   sysadminTaxonomyTagsHref,
   sysadminTaxonomyTopicsHref,
 } from "@/lib/navigation/routes";
-import { TAXONOMY_GROUP_READ_PERMISSIONS } from "@/constants/taxonomy/resources";
 import type { DashboardItem } from "@/types/dashboard";
 
 export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [

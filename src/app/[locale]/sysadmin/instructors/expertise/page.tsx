@@ -1,3 +1,3 @@
-import { SysadminInstructorExpertisePage } from "@/screen/sysadmin/instructor/expertise/page";
+import { InstructorExpertisePage } from "@/screen/common/instructor";
 
-export default SysadminInstructorExpertisePage;
+export default InstructorExpertisePage;
