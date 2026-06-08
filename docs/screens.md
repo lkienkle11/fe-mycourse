@@ -100,10 +100,10 @@ Each layout layer adds a concern without re-rendering the parent:
 - **`src/screen/index.ts`** — re-exports `common`, `admin`, `instructor`, and `sysadmin` barrels.
 - **`src/screen/common/`** — shared screens used by multiple roles (e.g. marketing `HomePage`, `NotFoundPage`, `TaxonomyListPage`, instructor management pages). Barrel: `src/screen/common/index.ts`.
 - **`src/screen/admin/`** — `AdminDashboardPage` (`page.tsx`) only. Shared admin/sysadmin content now lives under `src/screen/common/**`; app route files import those screens directly.
-- **`src/screen/instructor/`** — `InstructorDashboardPage`, `InstructorTicketsPage` (`tickets/page.tsx`), `InstructorCourseEditorPage` shell under `courses/`; barrel: `src/screen/instructor/index.ts`.
+- **`src/screen/instructor/`** — `InstructorDashboardPage`, `InstructorTicketsPage` (`tickets/page.tsx`), `InstructorCourseEditorPage` shell under `courses/` with route-backed tab triggers and active-panel mapping; barrel: `src/screen/instructor/index.ts`.
 - **`src/screen/common/instructor/`** — shared admin screens: roster, approvals, profiles, expertise, admin tickets; barrel: `src/screen/common/instructor/index.ts`.
 - **`src/screen/common/course/`** — shared course review screen used by admin and sysadmin.
-- **`src/components/features/course/`** — non-page course editor tabs and dialogs (`course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx`).
+- **`src/components/features/course/`** — non-page course editor tabs and dialogs (`course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx`); the three tab components consume grouped prop objects from the screen shell to keep page JSX short as tabs grow.
 - **`src/components/features/instructor/`** — shared instructor/admin/sysadmin pagination, action/footer helpers, and the `renderInstructorCourseEditorRoute` adapter reused by the 5 instructor course editor route pages.
 - **`src/screen/sysadmin/`** — `SysadminDashboardPage` only. Shared admin/sysadmin content lives under `src/screen/common/**`.
 

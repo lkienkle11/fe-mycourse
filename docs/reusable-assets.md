@@ -491,7 +491,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course.ts`
-- **Purpose**: Pure course editor helpers — tab registry, basic-info/sub-lesson form state factories, payload mapping, taxonomy id `Set` mapping, and root outline `stable_id` for drag-and-drop.
+- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories, payload mapping, taxonomy id `Set` mapping, and root outline `stable_id` for drag-and-drop.
 - **Scope**: `use-course-editor-state`, `editor-page.tsx`.
 - **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`).
 

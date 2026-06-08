@@ -77,7 +77,7 @@ All user-facing API failures use `errors.codes.{numericCode}` via `translateApiE
 | Media collection + upload | `media.validation.*` (size, type, executable) | `toastApiError` |
 | Instructor roster / approvals / expertise / tickets / profiles | `instructor.validation.*`, `RequiredLabel` on email/reject/topic/skill/ticket fields | `toastValidationError` pre-submit; `toastApiError` on API |
 | Instructor courses list | `course.validation.title` on create dialog | `toastApiError` on create / delete |
-| Instructor course editor | `courseBasicInfoSchema` via `react-hook-form + zodResolver`, outline dialogs, `RequiredLabel`, `FieldError` | `toastValidationError` pre-submit; `toastApiError` on API |
+| Instructor course editor | `courseBasicInfoSchema` via `react-hook-form + zodResolver`, route-backed tab panels, outline dialogs, `RequiredLabel`, `FieldError` | `toastValidationError` pre-submit; `toastApiError` on API |
 | Admin/sysadmin course review | Reject reason required (`course.validation.rejectReason`) | `toastApiError` on approve / reject |
 
 See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-admin.md`](./taxonomy-admin.md), [`instructor-admin.md`](./instructor-admin.md), [`media-collection.md`](./media-collection.md), [`modules.md`](./modules.md).

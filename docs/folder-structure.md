@@ -152,6 +152,7 @@ src/components/
 ├── features/
 │   ├── course/             # CourseStatusBadge, CourseDeltaEditor, CourseBasicInfoTab,
 │   │                       # CourseOutlineTab, CourseCollaboratorsTab, Course*Dialog helpers
+│   │                       # grouped tab prop objects (`state` / `data|taxonomyRows` / `actions`)
 │   ├── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
 │   ├── instructor/         # InstructorProfileViewDialog, ConfirmAddInstructorDialog, InstructorApprovalActions,
 │   │                       # InstructorListPagination, instructor action/footer helpers,
