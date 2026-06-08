@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import type { Dispatch, SetStateAction } from "react";
 import { ImageFileField } from "@/components/shared/image-file-field";
+import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -82,7 +82,9 @@ export function CourseBasicInfoTab({
 
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="course-basic-title">{t("titleLabel")}</Label>
+              <RequiredLabel htmlFor="course-basic-title">
+                {t("titleLabel")}
+              </RequiredLabel>
               <Input
                 id="course-basic-title"
                 value={basicInfo.title}
@@ -96,9 +98,12 @@ export function CourseBasicInfoTab({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="course-basic-short-description">
+              <RequiredLabel
+                htmlFor="course-basic-short-description"
+                required={false}
+              >
                 {t("shortDescriptionLabel")}
-              </Label>
+              </RequiredLabel>
               <Input
                 id="course-basic-short-description"
                 value={basicInfo.short_description}
@@ -114,7 +119,9 @@ export function CourseBasicInfoTab({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="course-basic-about">{t("aboutLabel")}</Label>
+            <RequiredLabel htmlFor="course-basic-about" required={false}>
+              {t("aboutLabel")}
+            </RequiredLabel>
             <Textarea
               id="course-basic-about"
               rows={6}
@@ -158,7 +165,9 @@ export function CourseBasicInfoTab({
             />
 
             <div className="space-y-2">
-              <Label>{t("previewVideoLabel")}</Label>
+              <RequiredLabel required={false}>
+                {t("previewVideoLabel")}
+              </RequiredLabel>
               <div className="rounded-md border p-3 text-sm">
                 {basicInfo.preview_video_file_id ? (
                   <div className="space-y-1">
@@ -204,7 +213,9 @@ export function CourseBasicInfoTab({
 
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-2">
-              <Label>{t("courseLevelLabel")}</Label>
+              <RequiredLabel required={false}>
+                {t("courseLevelLabel")}
+              </RequiredLabel>
               <Select
                 value={basicInfo.course_level_id || "none"}
                 disabled={!editable}
@@ -230,7 +241,9 @@ export function CourseBasicInfoTab({
             </div>
 
             <div className="space-y-2">
-              <Label>{t("courseTopicLabel")}</Label>
+              <RequiredLabel required={false}>
+                {t("courseTopicLabel")}
+              </RequiredLabel>
               <Select
                 value={basicInfo.course_topic_id || "none"}
                 disabled={!editable}

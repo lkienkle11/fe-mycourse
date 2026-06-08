@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { toast } from "sonner";
 import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { toastValidationError } from "@/lib/utils/validation-message";
 import { instructorEmailSchema } from "@/schema/instructor";
 
 export type ConfirmAddInstructorDialogProps = {
@@ -37,7 +37,7 @@ export function ConfirmAddInstructorDialog({
     const trimmed = email.trim();
     const parsed = instructorEmailSchema.safeParse({ email: trimmed });
     if (!parsed.success) {
-      toast.error(tValidation("email"));
+      toastValidationError(tValidation, parsed.error.issues, "email");
       return;
     }
     await onConfirm(trimmed);

@@ -35,8 +35,9 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { rootOutlineStableId, useCourseEditorState } from "@/hooks/course";
+import { useCourseEditorState } from "@/hooks/course";
 import { instructorCoursesHref } from "@/lib/navigation/routes";
+import { rootOutlineStableId } from "@/lib/utils/course";
 import type { CourseEditorTab } from "@/types/course";
 
 export function InstructorCourseEditorPage({ courseId }: { courseId: number }) {

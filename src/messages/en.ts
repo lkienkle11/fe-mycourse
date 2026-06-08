@@ -533,13 +533,18 @@ const messages = {
   course: {
     validation: {
       title: "Please enter a course title.",
+      titleMax: "Title must be at most 255 characters.",
+      shortDescriptionMax: "Short description must be at most 500 characters.",
       sectionTitle: "Please enter a section title.",
       lessonTitle: "Please enter a lesson title.",
       subLessonTitle: "Please enter a lesson item title.",
       subLessonKind: "Please select a lesson item type.",
       quizPrompt: "Please enter a quiz prompt.",
+      quizOptionBody: "Please enter text for each quiz option.",
+      quizOptionsMin: "Add at least one quiz option.",
       collaboratorUserId: "Please select a collaborator.",
       rejectReason: "Please enter a rejection reason.",
+      rejectReasonMax: "Rejection reason must be at most 2000 characters.",
       videoMediaRequired: "Please select a video file.",
     },
     common: {
@@ -830,6 +835,7 @@ const messages = {
       imageFileIdHint: "Optional. Choose an image from the media library.",
       validation: {
         name: "Name is required.",
+        nameMax: "Name must be at most 255 characters.",
         shortDescription: "Short description is required.",
         shortDescriptionMax:
           "Short description must be at most 100 characters.",

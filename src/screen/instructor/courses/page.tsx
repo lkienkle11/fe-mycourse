@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { instructorCourseEditorHref } from "@/lib/navigation/routes";
 import { slugifyName } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
+import { toastValidationError } from "@/lib/utils/validation-message";
 import { courseCreateSchema } from "@/schema/course";
 import type { CourseListItem } from "@/types/course";
 
@@ -74,7 +75,7 @@ export function InstructorCoursesPage() {
   const handleCreate = async () => {
     const parsed = courseCreateSchema.safeParse({ title: title.trim() });
     if (!parsed.success) {
-      toast.error(tValidation("title"));
+      toastValidationError(tValidation, parsed.error.issues, "title");
       return;
     }
     setIsSubmitting(true);

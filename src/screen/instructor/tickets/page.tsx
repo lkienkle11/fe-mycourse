@@ -16,6 +16,7 @@ import { InstructorListPagination } from "@/components/features/instructor/instr
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { PermissionGate } from "@/components/shared/permission-gate";
+import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,10 +26,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PERMISSIONS } from "@/constants/permissions";
 import { toastApiError } from "@/lib/utils/api-error";
+import { toastValidationError } from "@/lib/utils/validation-message";
 import { instructorTicketSchema } from "@/schema/instructor";
 import type {
   InstructorTicket,
@@ -86,7 +87,7 @@ export function InstructorTicketsPage() {
       .pick({ subject: true })
       .safeParse({ subject: trimmed });
     if (!parsed.success) {
-      toast.error(tValidation("ticketSubject"));
+      toastValidationError(tValidation, parsed.error.issues, "ticketSubject");
       return;
     }
     setIsCreating(true);
@@ -110,7 +111,7 @@ export function InstructorTicketsPage() {
       .pick({ message: true })
       .safeParse({ message: body });
     if (!parsed.success) {
-      toast.error(tValidation("ticketMessage"));
+      toastValidationError(tValidation, parsed.error.issues, "ticketMessage");
       return;
     }
     setIsSending(true);
@@ -191,7 +192,9 @@ export function InstructorTicketsPage() {
             <DialogTitle>{t("createTitle")}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-2">
-            <Label htmlFor="ticket-subject">{t("subjectLabel")}</Label>
+            <RequiredLabel htmlFor="ticket-subject">
+              {t("subjectLabel")}
+            </RequiredLabel>
             <Input
               id="ticket-subject"
               value={subject}
@@ -231,7 +234,11 @@ export function InstructorTicketsPage() {
           </ul>
           {selectedTicket?.status === "open" ? (
             <>
+              <RequiredLabel htmlFor="ticket-message">
+                {t("messagePlaceholder")}
+              </RequiredLabel>
               <Textarea
+                id="ticket-message"
                 value={messageBody}
                 rows={3}
                 placeholder={t("messagePlaceholder")}

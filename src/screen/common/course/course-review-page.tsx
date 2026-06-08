@@ -11,6 +11,7 @@ import { useCourseReviewQueue } from "@/api/hooks/course";
 import { CourseStatusBadge } from "@/components/features/course/course-status-badge";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
+import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toastApiError } from "@/lib/utils/api-error";
+import { toastValidationError } from "@/lib/utils/validation-message";
 import { courseRejectReasonSchema } from "@/schema/course";
 import type { CourseListItem } from "@/types/course";
 
@@ -81,7 +83,7 @@ export function CourseReviewPage({ scope }: { scope: "admin" | "sysadmin" }) {
       reason: rejectionReason.trim(),
     });
     if (!parsed.success) {
-      toast.error(tValidation("rejectReason"));
+      toastValidationError(tValidation, parsed.error.issues, "rejectReason");
       return;
     }
     setPendingActionId(rejectTarget.id);
@@ -154,7 +156,11 @@ export function CourseReviewPage({ scope }: { scope: "admin" | "sysadmin" }) {
           <DialogHeader>
             <DialogTitle>{t("rejectDialog.title")}</DialogTitle>
           </DialogHeader>
+          <RequiredLabel htmlFor="reject-reason">
+            {t("rejectDialog.placeholder")}
+          </RequiredLabel>
           <Textarea
+            id="reject-reason"
             rows={5}
             value={rejectionReason}
             placeholder={t("rejectDialog.placeholder")}

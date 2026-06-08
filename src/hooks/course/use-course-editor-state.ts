@@ -20,11 +20,19 @@ import {
   updateCourseSectionService,
   updateCourseSubLessonService,
 } from "@/api/callers/course";
-import { createEmptyDeltaString } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
 import {
+  createCourseBasicInfoState,
+  createCourseSubLessonFormState,
+  rootOutlineStableId,
+  selectedIdsToMap,
+} from "@/lib/utils/course";
+import { toastValidationError } from "@/lib/utils/validation-message";
+import {
+  courseBasicInfoSchema,
   courseCollaboratorSchema,
   courseLessonSchema,
+  courseQuizOptionSchema,
   courseSectionSchema,
   courseSubLessonSchema,
 } from "@/schema/course";
@@ -53,69 +61,6 @@ type UseCourseEditorStateParams = {
   editableVersion?: CourseVersion;
   mutate: () => Promise<unknown>;
 };
-
-function createCourseBasicInfoState(
-  activeVersion?: CourseVersion,
-): CourseBasicInfoForm {
-  return {
-    title: activeVersion?.title ?? "",
-    short_description: activeVersion?.short_description ?? "",
-    about_course: activeVersion?.about_course ?? "",
-    thumbnail_file_id: activeVersion?.thumbnail_file_id ?? "",
-    thumbnail_url: activeVersion?.thumbnail_url ?? "",
-    preview_video_file_id: activeVersion?.preview_video_file_id ?? "",
-    preview_video_url: activeVersion?.preview_video_url ?? "",
-    course_level_id: activeVersion?.course_level_id
-      ? String(activeVersion.course_level_id)
-      : "",
-    course_topic_id: activeVersion?.course_topic_id
-      ? String(activeVersion.course_topic_id)
-      : "",
-    tag_ids: activeVersion?.tag_ids ?? [],
-    skill_ids: activeVersion?.skill_ids ?? [],
-    outcome_ids: activeVersion?.outcome_ids ?? [],
-    expected_row_version: activeVersion?.row_version ?? 0,
-  };
-}
-
-function createEmptyQuizOption() {
-  return {
-    option_key: crypto.randomUUID(),
-    body: "",
-    is_correct: false,
-  };
-}
-
-function createCourseSubLessonFormState(
-  lessonId = 0,
-  subLesson?: CourseSubLesson,
-): CourseSubLessonFormState {
-  return {
-    lesson_id: lessonId,
-    title: subLesson?.title ?? "",
-    kind: subLesson?.kind ?? "VIDEO",
-    is_preview: subLesson?.is_preview ?? false,
-    expected_row_version: subLesson?.row_version ?? 0,
-    video_file_id: subLesson?.video?.media_file_id ?? "",
-    video_url: subLesson?.video?.media_url ?? "",
-    text_delta: subLesson?.text?.content_delta ?? createEmptyDeltaString(),
-    quiz_prompt: subLesson?.quiz?.prompt ?? "",
-    allow_multiple: subLesson?.quiz?.allow_multiple ?? false,
-    quiz_options: subLesson?.quiz?.options?.map((option) => ({
-      option_key: option.option_key,
-      body: option.body,
-      is_correct: option.is_correct,
-    })) ?? [createEmptyQuizOption()],
-  };
-}
-
-function selectedIdsToMap(ids: number[]) {
-  return new Set(ids);
-}
-
-export function rootOutlineStableId(courseId: number): string {
-  return `course-${courseId}-outline-root`;
-}
 
 function useCourseBasicInfoState(activeVersion?: CourseVersion) {
   const [basicInfo, setBasicInfo] = useState<CourseBasicInfoForm>(() =>
@@ -388,6 +333,14 @@ export function useCourseEditorState({
       toast.error(t("draftRequiredInfo"));
       return;
     }
+    const parsedBasic = courseBasicInfoSchema.safeParse({
+      title: basicInfo.title,
+      short_description: basicInfo.short_description,
+    });
+    if (!parsedBasic.success) {
+      toastValidationError(tValidation, parsedBasic.error.issues, "title");
+      return;
+    }
     setIsSavingBasicInfo(true);
     try {
       await updateCourseBasicInfoService(courseId, {
@@ -445,7 +398,7 @@ export function useCourseEditorState({
       title: sectionForm.title.trim(),
     });
     if (!parsed.success) {
-      toast.error(tValidation("sectionTitle"));
+      toastValidationError(tValidation, parsed.error.issues, "sectionTitle");
       return;
     }
     try {
@@ -502,7 +455,7 @@ export function useCourseEditorState({
       title: lessonForm.title.trim(),
     });
     if (!parsed.success) {
-      toast.error(tValidation("lessonTitle"));
+      toastValidationError(tValidation, parsed.error.issues, "lessonTitle");
       return;
     }
     try {
@@ -559,12 +512,26 @@ export function useCourseEditorState({
       kind: subLessonForm.kind,
     });
     if (!parsed.success) {
-      toast.error(tValidation("subLessonTitle"));
+      toastValidationError(tValidation, parsed.error.issues, "subLessonTitle");
       return;
     }
     if (subLessonForm.kind === "VIDEO" && !subLessonForm.video_file_id) {
       toast.error(tValidation("videoMediaRequired"));
       return;
+    }
+    if (subLessonForm.kind === "QUIZ") {
+      const parsedQuiz = courseQuizOptionSchema.safeParse({
+        prompt: subLessonForm.quiz_prompt,
+        options: subLessonForm.quiz_options,
+      });
+      if (!parsedQuiz.success) {
+        toastValidationError(
+          tValidation,
+          parsedQuiz.error.issues,
+          "quizPrompt",
+        );
+        return;
+      }
     }
     const payload = {
       lesson_id: subLessonForm.lesson_id,

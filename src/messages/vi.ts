@@ -531,13 +531,18 @@ const messages = {
   course: {
     validation: {
       title: "Vui lòng nhập tiêu đề khóa học.",
+      titleMax: "Tiêu đề tối đa 255 ký tự.",
+      shortDescriptionMax: "Mô tả ngắn tối đa 500 ký tự.",
       sectionTitle: "Vui lòng nhập tiêu đề phần.",
       lessonTitle: "Vui lòng nhập tiêu đề bài học.",
       subLessonTitle: "Vui lòng nhập tiêu đề mục bài học.",
       subLessonKind: "Vui lòng chọn loại mục bài học.",
       quizPrompt: "Vui lòng nhập câu hỏi quiz.",
+      quizOptionBody: "Vui lòng nhập nội dung cho mỗi lựa chọn quiz.",
+      quizOptionsMin: "Cần ít nhất một lựa chọn quiz.",
       collaboratorUserId: "Vui lòng chọn cộng tác viên.",
       rejectReason: "Vui lòng nhập lý do từ chối.",
+      rejectReasonMax: "Lý do từ chối tối đa 2000 ký tự.",
       videoMediaRequired: "Vui lòng chọn tệp video.",
     },
     common: {
@@ -831,6 +836,7 @@ const messages = {
       imageFileIdHint: "Tùy chọn. Chọn ảnh từ thư viện media.",
       validation: {
         name: "Vui lòng nhập tên.",
+        nameMax: "Tên tối đa 255 ký tự.",
         shortDescription: "Vui lòng nhập mô tả ngắn.",
         shortDescriptionMax: "Mô tả ngắn tối đa 100 ký tự.",
         descriptionMaxLines: "Tối đa 8 đoạn mô tả.",

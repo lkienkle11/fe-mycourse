@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { PERMISSIONS } from "@/constants/permissions";
 import { toastApiError } from "@/lib/utils/api-error";
+import { toastValidationError } from "@/lib/utils/validation-message";
 import { instructorRejectionReasonSchema } from "@/schema/instructor";
 import type { InstructorApplication } from "@/types/instructor";
 
@@ -69,7 +70,7 @@ export function InstructorApprovalActions({
       reason: reason.trim(),
     });
     if (!parsed.success) {
-      toast.error(tValidation("rejectionReason"));
+      toastValidationError(tValidation, parsed.error.issues, "rejectionReason");
       return;
     }
     setIsRejecting(true);

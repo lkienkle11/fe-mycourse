@@ -17,6 +17,12 @@ export {
   getCookieValue,
   setCookieValue,
 } from "./cookie";
+export {
+  createCourseBasicInfoState,
+  createCourseSubLessonFormState,
+  rootOutlineStableId,
+  selectedIdsToMap,
+} from "./course";
 export type { DeltaOp, DeltaShape } from "./course-delta";
 export {
   createEmptyDelta,

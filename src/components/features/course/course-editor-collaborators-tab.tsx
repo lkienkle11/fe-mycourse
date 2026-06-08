@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+import { RequiredLabel } from "@/components/shared/required-label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -54,7 +54,7 @@ export function CourseCollaboratorsTab({
           {canManageCollaborators ? (
             <div className="flex flex-col gap-3 rounded-md border p-3 lg:flex-row lg:items-end">
               <div className="min-w-0 flex-1 space-y-2">
-                <Label>{t("addInstructorLabel")}</Label>
+                <RequiredLabel>{t("addInstructorLabel")}</RequiredLabel>
                 <Select
                   value={collaboratorUserId || "none"}
                   onValueChange={(value) =>

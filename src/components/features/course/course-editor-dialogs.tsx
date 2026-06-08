@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import type { Dispatch, SetStateAction } from "react";
 import { CourseDeltaEditor } from "@/components/features/course/course-delta-editor";
 import { MediaCollectionDialog } from "@/components/features/media";
+import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -12,7 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -65,8 +65,11 @@ export function CourseSectionDialog({
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-2">
-            <Label>{t("titleLabel")}</Label>
+            <RequiredLabel htmlFor="section-title">
+              {t("titleLabel")}
+            </RequiredLabel>
             <Input
+              id="section-title"
               value={sectionForm.title}
               onChange={(event) =>
                 setSectionForm((prev) => ({
@@ -77,8 +80,11 @@ export function CourseSectionDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>{t("descriptionLabel")}</Label>
+            <RequiredLabel htmlFor="section-description" required={false}>
+              {t("descriptionLabel")}
+            </RequiredLabel>
             <Textarea
+              id="section-description"
               rows={4}
               value={sectionForm.description}
               onChange={(event) =>
@@ -135,8 +141,11 @@ export function CourseLessonDialog({
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-2">
-            <Label>{t("titleLabel")}</Label>
+            <RequiredLabel htmlFor="lesson-title">
+              {t("titleLabel")}
+            </RequiredLabel>
             <Input
+              id="lesson-title"
               value={lessonForm.title}
               onChange={(event) =>
                 setLessonForm((prev) => ({
@@ -147,8 +156,11 @@ export function CourseLessonDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>{t("summaryLabel")}</Label>
+            <RequiredLabel htmlFor="lesson-summary" required={false}>
+              {t("summaryLabel")}
+            </RequiredLabel>
             <Textarea
+              id="lesson-summary"
               rows={4}
               value={lessonForm.summary}
               onChange={(event) =>
@@ -209,8 +221,11 @@ export function CourseSubLessonDialog({
         <div className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-2">
-              <Label>{t("titleLabel")}</Label>
+              <RequiredLabel htmlFor="sublesson-title">
+                {t("titleLabel")}
+              </RequiredLabel>
               <Input
+                id="sublesson-title"
                 value={subLessonForm.title}
                 onChange={(event) =>
                   setSubLessonForm((prev) => ({
@@ -221,7 +236,7 @@ export function CourseSubLessonDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("lessonItemTypeLabel")}</Label>
+              <RequiredLabel>{t("lessonItemTypeLabel")}</RequiredLabel>
               <Select
                 value={subLessonForm.kind}
                 onValueChange={(value) =>
@@ -264,7 +279,7 @@ export function CourseSubLessonDialog({
 
           {subLessonForm.kind === "VIDEO" ? (
             <div className="space-y-2">
-              <Label>{t("videoFileLabel")}</Label>
+              <RequiredLabel>{t("videoFileLabel")}</RequiredLabel>
               <div className="rounded-md border p-3 text-sm">
                 {subLessonForm.video_file_id ? (
                   <div className="space-y-1">
@@ -320,8 +335,11 @@ export function CourseSubLessonDialog({
           {subLessonForm.kind === "QUIZ" ? (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>{t("promptLabel")}</Label>
+                <RequiredLabel htmlFor="quiz-prompt">
+                  {t("promptLabel")}
+                </RequiredLabel>
                 <Textarea
+                  id="quiz-prompt"
                   rows={3}
                   value={subLessonForm.quiz_prompt}
                   onChange={(event) =>
@@ -352,9 +370,9 @@ export function CourseSubLessonDialog({
                     className="rounded-md border p-3"
                   >
                     <div className="mb-2 flex items-center justify-between">
-                      <Label>
+                      <RequiredLabel>
                         {t("optionLabel", { index: String(index + 1) })}
-                      </Label>
+                      </RequiredLabel>
                       {subLessonForm.quiz_options.length > 1 ? (
                         <Button
                           type="button"

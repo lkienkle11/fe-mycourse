@@ -2,10 +2,14 @@ import { z } from "zod";
 
 const statusSchema = z.enum(["ACTIVE", "INACTIVE"]);
 
+const taxonomyNameField = z
+  .string({ message: "validation.name" })
+  .trim()
+  .min(1, { message: "validation.name" })
+  .max(255, { message: "validation.nameMax" });
+
 export const taxonomySlugStatusSchema = z.object({
-  name: z
-    .string({ message: "validation.name" })
-    .min(1, { message: "validation.name" }),
+  name: taxonomyNameField,
   status: statusSchema,
 });
 
