@@ -39,40 +39,46 @@ import type {
 
 type CourseBasicInfoTabProps = {
   editable: boolean;
-  basicInfo: CourseBasicInfoForm;
-  setBasicInfo: Dispatch<SetStateAction<CourseBasicInfoForm>>;
-  levelRows: SlugStatusTaxonomy[];
-  topicRows: CourseTopic[];
-  tagRows: SlugStatusTaxonomy[];
-  skillRows: CourseSkill[];
-  outcomeRows: CourseOutcome[];
-  tagSelection: Set<number>;
-  skillSelection: Set<number>;
-  outcomeSelection: Set<number>;
-  onToggleSelection: (key: CourseSelectionKey, value: number) => void;
-  isSavingBasicInfo: boolean;
-  onSave: (values: CourseBasicInfoValues) => void;
-  onOpenThumbnailDialog: () => void;
-  onOpenPreviewDialog: () => void;
+  state: {
+    basicInfo: CourseBasicInfoForm;
+    setBasicInfo: Dispatch<SetStateAction<CourseBasicInfoForm>>;
+    tagSelection: Set<number>;
+    skillSelection: Set<number>;
+    outcomeSelection: Set<number>;
+  };
+  taxonomyRows: {
+    levelRows: SlugStatusTaxonomy[];
+    topicRows: CourseTopic[];
+    tagRows: SlugStatusTaxonomy[];
+    skillRows: CourseSkill[];
+    outcomeRows: CourseOutcome[];
+  };
+  actions: {
+    onToggleSelection: (key: CourseSelectionKey, value: number) => void;
+    isSavingBasicInfo: boolean;
+    onSave: (values: CourseBasicInfoValues) => void;
+    onOpenThumbnailDialog: () => void;
+    onOpenPreviewDialog: () => void;
+  };
 };
 
 export function CourseBasicInfoTab({
   editable,
-  basicInfo,
-  setBasicInfo,
-  levelRows,
-  topicRows,
-  tagRows,
-  skillRows,
-  outcomeRows,
-  tagSelection,
-  skillSelection,
-  outcomeSelection,
-  onToggleSelection,
-  isSavingBasicInfo,
-  onSave,
-  onOpenThumbnailDialog,
-  onOpenPreviewDialog,
+  state: {
+    basicInfo,
+    setBasicInfo,
+    tagSelection,
+    skillSelection,
+    outcomeSelection,
+  },
+  taxonomyRows: { levelRows, topicRows, tagRows, skillRows, outcomeRows },
+  actions: {
+    onToggleSelection,
+    isSavingBasicInfo,
+    onSave,
+    onOpenThumbnailDialog,
+    onOpenPreviewDialog,
+  },
 }: CourseBasicInfoTabProps) {
   const tCourse = useTranslations("course");
   const tCommon = useTranslations("course.common");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import type { ComponentProps, ComponentType } from "react";
 import { toast } from "sonner";
 import {
   deleteCourseLessonService,
@@ -43,6 +44,31 @@ import {
 import { courseEditorTabs, rootOutlineStableId } from "@/lib/utils/course";
 import type { CourseEditorTab } from "@/types/course";
 
+type CourseEditorTabPropsMap = {
+  info: ComponentProps<typeof CourseBasicInfoTab>;
+  outline: ComponentProps<typeof CourseOutlineTab>;
+  collaborators: ComponentProps<typeof CourseCollaboratorsTab>;
+  pricing: ComponentProps<typeof CourseEditorComingSoonTab>;
+  certificate: ComponentProps<typeof CourseEditorComingSoonTab>;
+};
+
+type CourseEditorTabPanelDefinition<
+  TTab extends CourseEditorTab = CourseEditorTab,
+> = {
+  Component: ComponentType<CourseEditorTabPropsMap[TTab]>;
+  props: CourseEditorTabPropsMap[TTab];
+};
+
+type AnyCourseEditorTabPanelDefinition = {
+  Component: ComponentType<Record<string, unknown>>;
+  props: Record<string, unknown>;
+};
+
+function renderCourseEditorTabPanel(panel: AnyCourseEditorTabPanelDefinition) {
+  const PanelComponent = panel.Component;
+  return <PanelComponent {...panel.props} />;
+}
+
 export function InstructorCourseEditorPage({
   courseId,
   tab,
@@ -57,6 +83,7 @@ export function InstructorCourseEditorPage({
   const editableVersion = data?.draft_version;
   const liveVersion = data?.live_version;
   const activeVersion = editableVersion ?? liveVersion;
+  const editable = Boolean(editableVersion);
   const canManageCollaborators = data?.collaborator_role === "OWNER";
   const outline = data?.outline ?? [];
 
@@ -153,6 +180,157 @@ export function InstructorCourseEditorPage({
     );
   }
 
+  const basicInfoTabProps = {
+    editable,
+    state: {
+      basicInfo,
+      setBasicInfo,
+      tagSelection,
+      skillSelection,
+      outcomeSelection,
+    },
+    taxonomyRows: {
+      levelRows,
+      topicRows,
+      tagRows,
+      skillRows,
+      outcomeRows,
+    },
+    actions: {
+      isSavingBasicInfo,
+      onToggleSelection: toggleSelection,
+      onSave: (values) => void handleSaveBasicInfo(values),
+      onOpenThumbnailDialog: () => setThumbnailDialogOpen(true),
+      onOpenPreviewDialog: () => setPreviewDialogOpen(true),
+    },
+  } satisfies ComponentProps<typeof CourseBasicInfoTab>;
+
+  const outlineTabProps = {
+    editable,
+    outline,
+    actions: {
+      onAddSection: () => void openSectionDialog(),
+      onReverseSections: () =>
+        void withEphemeralLease(
+          "OUTLINE_ROOT",
+          rootOutlineStableId(courseId),
+          async () => {
+            await reorderCourseSectionsService(courseId, {
+              ordered_stable_ids: outline
+                .slice()
+                .reverse()
+                .map((section) => section.stable_id),
+            });
+            await refreshDetail();
+          },
+        ),
+      onReorderSections: (sections) =>
+        void withEphemeralLease(
+          "OUTLINE_ROOT",
+          rootOutlineStableId(courseId),
+          async () => {
+            await reorderCourseSectionsService(courseId, {
+              ordered_stable_ids: sections.map((section) => section.stable_id),
+            });
+            await refreshDetail();
+          },
+        ),
+      onEditSection: (section) => void openSectionDialog(section),
+      onDeleteSection: (section) =>
+        void withEphemeralLease("SECTION", section.stable_id, async () => {
+          await deleteCourseSectionService(courseId, section.id);
+          toast.success(tToast("sectionDeleted"));
+          await refreshDetail();
+        }),
+      onAddLesson: (section) => void openLessonDialog(section),
+      onEditLesson: (section, lesson) => void openLessonDialog(section, lesson),
+      onDeleteLesson: (lesson) =>
+        void withEphemeralLease("LESSON", lesson.stable_id, async () => {
+          await deleteCourseLessonService(courseId, lesson.id);
+          toast.success(tToast("lessonDeleted"));
+          await refreshDetail();
+        }),
+      onReorderLessons: (section, lessons) =>
+        void withEphemeralLease("SECTION", section.stable_id, async () => {
+          await reorderCourseLessonsService(courseId, section.id, {
+            ordered_stable_ids: lessons.map((lesson) => lesson.stable_id),
+          });
+          await refreshDetail();
+        }),
+      onAddSubLesson: (lesson) => void openSubLessonDialog(lesson),
+      onEditSubLesson: (lesson, subLesson) =>
+        void openSubLessonDialog(lesson, subLesson),
+      onDeleteSubLesson: (subLesson) =>
+        void withEphemeralLease("SUB_LESSON", subLesson.stable_id, async () => {
+          await deleteCourseSubLessonService(courseId, subLesson.id);
+          toast.success(tToast("itemDeleted"));
+          await refreshDetail();
+        }),
+      onReorderSubLessons: (lesson, subLessons) =>
+        void withEphemeralLease("LESSON", lesson.stable_id, async () => {
+          await reorderCourseSubLessonsService(courseId, lesson.id, {
+            ordered_stable_ids: subLessons.map(
+              (subLesson) => subLesson.stable_id,
+            ),
+          });
+          await refreshDetail();
+        }),
+    },
+  } satisfies ComponentProps<typeof CourseOutlineTab>;
+
+  const collaboratorsTabProps = {
+    canManageCollaborators,
+    state: {
+      collaboratorUserId,
+      setCollaboratorUserId,
+      isSubmittingCollaborator,
+    },
+    data: {
+      rosterRows,
+      collaborators: data.collaborators,
+    },
+    actions: {
+      onAddCollaborator: () => void handleAddCollaborator(),
+      onRemoveCollaborator: (collaborator) =>
+        void handleRemoveCollaborator(collaborator),
+    },
+  } satisfies ComponentProps<typeof CourseCollaboratorsTab>;
+
+  const courseEditorTabPanels = {
+    info: {
+      Component: CourseBasicInfoTab,
+      props: basicInfoTabProps,
+    },
+    outline: {
+      Component: CourseOutlineTab,
+      props: outlineTabProps,
+    },
+    collaborators: {
+      Component: CourseCollaboratorsTab,
+      props: collaboratorsTabProps,
+    },
+    pricing: {
+      Component: CourseEditorComingSoonTab,
+      props: {
+        value: "pricing",
+        title: tEditor("pricing.title"),
+        description: tEditor("pricing.description"),
+        comingSoonLabel: tEditor("pricing.comingSoon"),
+      },
+    },
+    certificate: {
+      Component: CourseEditorComingSoonTab,
+      props: {
+        value: "certificate",
+        title: tEditor("certificate.title"),
+        description: tEditor("certificate.description"),
+        comingSoonLabel: tEditor("certificate.comingSoon"),
+      },
+    },
+  } satisfies {
+    [TTab in CourseEditorTab]: CourseEditorTabPanelDefinition<TTab>;
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -232,161 +410,11 @@ export function InstructorCourseEditorPage({
             ))}
           </TabsList>
         </div>
-
-        {tab === "info" ? (
-          <CourseBasicInfoTab
-            editable={Boolean(editableVersion)}
-            basicInfo={basicInfo}
-            setBasicInfo={setBasicInfo}
-            levelRows={levelRows}
-            topicRows={topicRows}
-            tagRows={tagRows}
-            skillRows={skillRows}
-            outcomeRows={outcomeRows}
-            tagSelection={tagSelection}
-            skillSelection={skillSelection}
-            outcomeSelection={outcomeSelection}
-            onToggleSelection={toggleSelection}
-            isSavingBasicInfo={isSavingBasicInfo}
-            onSave={(values) => void handleSaveBasicInfo(values)}
-            onOpenThumbnailDialog={() => setThumbnailDialogOpen(true)}
-            onOpenPreviewDialog={() => setPreviewDialogOpen(true)}
-          />
-        ) : null}
-
-        {tab === "outline" ? (
-          <CourseOutlineTab
-            editable={Boolean(editableVersion)}
-            outline={outline}
-            onAddSection={() => void openSectionDialog()}
-            onReverseSections={() =>
-              void withEphemeralLease(
-                "OUTLINE_ROOT",
-                rootOutlineStableId(courseId),
-                async () => {
-                  await reorderCourseSectionsService(courseId, {
-                    ordered_stable_ids: outline
-                      .slice()
-                      .reverse()
-                      .map((section) => section.stable_id),
-                  });
-                  await refreshDetail();
-                },
-              )
-            }
-            onReorderSections={(sections) =>
-              void withEphemeralLease(
-                "OUTLINE_ROOT",
-                rootOutlineStableId(courseId),
-                async () => {
-                  await reorderCourseSectionsService(courseId, {
-                    ordered_stable_ids: sections.map(
-                      (section) => section.stable_id,
-                    ),
-                  });
-                  await refreshDetail();
-                },
-              )
-            }
-            onEditSection={(section) => void openSectionDialog(section)}
-            onDeleteSection={(section) =>
-              void withEphemeralLease(
-                "SECTION",
-                section.stable_id,
-                async () => {
-                  await deleteCourseSectionService(courseId, section.id);
-                  toast.success(tToast("sectionDeleted"));
-                  await refreshDetail();
-                },
-              )
-            }
-            onAddLesson={(section) => void openLessonDialog(section)}
-            onEditLesson={(section, lesson) =>
-              void openLessonDialog(section, lesson)
-            }
-            onDeleteLesson={(lesson) =>
-              void withEphemeralLease("LESSON", lesson.stable_id, async () => {
-                await deleteCourseLessonService(courseId, lesson.id);
-                toast.success(tToast("lessonDeleted"));
-                await refreshDetail();
-              })
-            }
-            onReorderLessons={(section, lessons) =>
-              void withEphemeralLease(
-                "SECTION",
-                section.stable_id,
-                async () => {
-                  await reorderCourseLessonsService(courseId, section.id, {
-                    ordered_stable_ids: lessons.map(
-                      (lesson) => lesson.stable_id,
-                    ),
-                  });
-                  await refreshDetail();
-                },
-              )
-            }
-            onAddSubLesson={(lesson) => void openSubLessonDialog(lesson)}
-            onEditSubLesson={(lesson, subLesson) =>
-              void openSubLessonDialog(lesson, subLesson)
-            }
-            onDeleteSubLesson={(subLesson) =>
-              void withEphemeralLease(
-                "SUB_LESSON",
-                subLesson.stable_id,
-                async () => {
-                  await deleteCourseSubLessonService(courseId, subLesson.id);
-                  toast.success(tToast("itemDeleted"));
-                  await refreshDetail();
-                },
-              )
-            }
-            onReorderSubLessons={(lesson, subLessons) =>
-              void withEphemeralLease("LESSON", lesson.stable_id, async () => {
-                await reorderCourseSubLessonsService(courseId, lesson.id, {
-                  ordered_stable_ids: subLessons.map(
-                    (subLesson) => subLesson.stable_id,
-                  ),
-                });
-                await refreshDetail();
-              })
-            }
-          />
-        ) : null}
-
-        {tab === "collaborators" ? (
-          <CourseCollaboratorsTab
-            canManageCollaborators={canManageCollaborators}
-            collaboratorUserId={collaboratorUserId}
-            setCollaboratorUserId={setCollaboratorUserId}
-            rosterRows={rosterRows}
-            isSubmittingCollaborator={isSubmittingCollaborator}
-            onAddCollaborator={() => void handleAddCollaborator()}
-            collaborators={data.collaborators}
-            onRemoveCollaborator={(collaborator) =>
-              void handleRemoveCollaborator(collaborator)
-            }
-          />
-        ) : null}
-
-        {tab === "pricing" ? (
-          <TabsContent value="pricing">
-            <ComingSoonCard
-              title={tEditor("pricing.title")}
-              description={tEditor("pricing.description")}
-              comingSoonLabel={tEditor("pricing.comingSoon")}
-            />
-          </TabsContent>
-        ) : null}
-
-        {tab === "certificate" ? (
-          <TabsContent value="certificate">
-            <ComingSoonCard
-              title={tEditor("certificate.title")}
-              description={tEditor("certificate.description")}
-              comingSoonLabel={tEditor("certificate.comingSoon")}
-            />
-          </TabsContent>
-        ) : null}
+        {renderCourseEditorTabPanel(
+          courseEditorTabPanels[
+            tab
+          ] as unknown as AnyCourseEditorTabPanelDefinition,
+        )}
       </Tabs>
 
       <CourseSectionDialog
@@ -427,6 +455,28 @@ export function InstructorCourseEditorPage({
         setSubLessonForm={setSubLessonForm}
       />
     </div>
+  );
+}
+
+function CourseEditorComingSoonTab({
+  value,
+  title,
+  description,
+  comingSoonLabel,
+}: {
+  value: "pricing" | "certificate";
+  title: string;
+  description: string;
+  comingSoonLabel: string;
+}) {
+  return (
+    <TabsContent value={value}>
+      <ComingSoonCard
+        title={title}
+        description={description}
+        comingSoonLabel={comingSoonLabel}
+      />
+    </TabsContent>
   );
 }
 

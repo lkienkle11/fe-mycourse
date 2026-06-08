@@ -18,40 +18,44 @@ import type {
 type CourseOutlineTabProps = {
   editable: boolean;
   outline: CourseSection[];
-  onAddSection: () => void;
-  onReverseSections: () => void;
-  onReorderSections: (sections: CourseSection[]) => void;
-  onEditSection: (section: CourseSection) => void;
-  onDeleteSection: (section: CourseSection) => void;
-  onAddLesson: (section: CourseSection) => void;
-  onEditLesson: (section: CourseSection, lesson: CourseLesson) => void;
-  onDeleteLesson: (lesson: CourseLesson) => void;
-  onReorderLessons: (section: CourseSection, lessons: CourseLesson[]) => void;
-  onAddSubLesson: (lesson: CourseLesson) => void;
-  onEditSubLesson: (lesson: CourseLesson, subLesson: CourseSubLesson) => void;
-  onDeleteSubLesson: (subLesson: CourseSubLesson) => void;
-  onReorderSubLessons: (
-    lesson: CourseLesson,
-    subLessons: CourseSubLesson[],
-  ) => void;
+  actions: {
+    onAddSection: () => void;
+    onReverseSections: () => void;
+    onReorderSections: (sections: CourseSection[]) => void;
+    onEditSection: (section: CourseSection) => void;
+    onDeleteSection: (section: CourseSection) => void;
+    onAddLesson: (section: CourseSection) => void;
+    onEditLesson: (section: CourseSection, lesson: CourseLesson) => void;
+    onDeleteLesson: (lesson: CourseLesson) => void;
+    onReorderLessons: (section: CourseSection, lessons: CourseLesson[]) => void;
+    onAddSubLesson: (lesson: CourseLesson) => void;
+    onEditSubLesson: (lesson: CourseLesson, subLesson: CourseSubLesson) => void;
+    onDeleteSubLesson: (subLesson: CourseSubLesson) => void;
+    onReorderSubLessons: (
+      lesson: CourseLesson,
+      subLessons: CourseSubLesson[],
+    ) => void;
+  };
 };
 
 export function CourseOutlineTab({
   editable,
   outline,
-  onAddSection,
-  onReverseSections,
-  onReorderSections,
-  onEditSection,
-  onDeleteSection,
-  onAddLesson,
-  onEditLesson,
-  onDeleteLesson,
-  onReorderLessons,
-  onAddSubLesson,
-  onEditSubLesson,
-  onDeleteSubLesson,
-  onReorderSubLessons,
+  actions: {
+    onAddSection,
+    onReverseSections,
+    onReorderSections,
+    onEditSection,
+    onDeleteSection,
+    onAddLesson,
+    onEditLesson,
+    onDeleteLesson,
+    onReorderLessons,
+    onAddSubLesson,
+    onEditSubLesson,
+    onDeleteSubLesson,
+    onReorderSubLessons,
+  },
 }: CourseOutlineTabProps) {
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.editor.outline");

@@ -22,24 +22,30 @@ import type { InstructorRosterMember } from "@/types/instructor";
 
 type CourseCollaboratorsTabProps = {
   canManageCollaborators: boolean;
-  collaboratorUserId: string;
-  setCollaboratorUserId: (value: string) => void;
-  rosterRows: InstructorRosterMember[];
-  isSubmittingCollaborator: boolean;
-  onAddCollaborator: () => void;
-  collaborators: CourseCollaborator[];
-  onRemoveCollaborator: (collaborator: CourseCollaborator) => void;
+  state: {
+    collaboratorUserId: string;
+    setCollaboratorUserId: (value: string) => void;
+    isSubmittingCollaborator: boolean;
+  };
+  data: {
+    rosterRows: InstructorRosterMember[];
+    collaborators: CourseCollaborator[];
+  };
+  actions: {
+    onAddCollaborator: () => void;
+    onRemoveCollaborator: (collaborator: CourseCollaborator) => void;
+  };
 };
 
 export function CourseCollaboratorsTab({
   canManageCollaborators,
-  collaboratorUserId,
-  setCollaboratorUserId,
-  rosterRows,
-  isSubmittingCollaborator,
-  onAddCollaborator,
-  collaborators,
-  onRemoveCollaborator,
+  state: {
+    collaboratorUserId,
+    setCollaboratorUserId,
+    isSubmittingCollaborator,
+  },
+  data: { rosterRows, collaborators },
+  actions: { onAddCollaborator, onRemoveCollaborator },
 }: CourseCollaboratorsTabProps) {
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.editor.collaborators");
