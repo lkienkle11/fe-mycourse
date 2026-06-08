@@ -1,3 +1,5 @@
-import { AdminTaxonomyTopicsPage } from "@/screen/admin/taxonomy/topics/page";
+import { TaxonomyListPage } from "@/screen/common/taxonomy";
 
-export default AdminTaxonomyTopicsPage;
+export default function AdminTaxonomyTopicsRoute() {
+  return <TaxonomyListPage resourceKey="topics" />;
+}

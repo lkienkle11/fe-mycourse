@@ -1,6 +1,6 @@
 # Execution Flows (`fe`)
 
-_Last audited: 2026-05-29 (ApiErrorCode import path in auth flow)._
+_Last audited: 2026-06-08 (code-based API errors on auth + feature modules)._
 
 
 This document traces the major user-visible and technical flows in the MyCourse frontend. Flows are derived from the **GitNexus** process index for repo **`fe-mycourse`** (12 tracked execution chains across the **Auth** and **Api** clusters) and from direct source inspection. Regenerate the graph after large UI changes with `npx gitnexus analyze --force` from the **fe-mycourse** repo root.
@@ -71,7 +71,7 @@ Validation error messages are i18n keys (e.g. `"validation.email"`); `auth-form-
 
 **Step 2 — Dispatch to server action (`handleAuthSubmit`)**
 
-`src/components/common/auth-menu/auth/auth-form-handler.ts`
+`src/actions/auth/auth-client.ts`
 
 Shared dispatcher called by both `LoginContent` and `SignupContent`:
 
@@ -111,9 +111,13 @@ await setAuthSessionCookies({
 
 > **Why not HttpOnly?** The Axios interceptor (`src/api/instance.ts`) runs on **both** client and server. On the client, it reads cookies via `js-cookie` and sets `Authorization: Bearer <token>`. HttpOnly cookies are invisible to JavaScript — using them would break client-side authenticated requests.
 
+> **Known follow-up risk:** This review pass intentionally kept that auth-cookie architecture unchanged to avoid a cross-repo auth-contract rewrite. The remaining JS-readable cookie risk should be addressed in a coordinated FE+BE redesign.
+
 **Step 5 — SWR revalidation**
 
 After a successful login, `login-content.tsx` calls **`mutateMe()`** from `useGetMe()` (Zustand mirror synced from SWR). This forces an immediate `GET /api/v1/me` with the new cookies; `AuthLayout` switches from `AuthButton` to `UserMenu`.
+
+**Errors in UI:** `translateApiErrorCode(useTranslations("errors.codes"), result.code)` — never `result.message`.
 
 ---
 
@@ -131,7 +135,7 @@ SignupContent (client, locale from useLocale())
   → UI: registrationPending panel ("check your email"), modal stays open
 ```
 
-**Errors mapped in UI:** `4001`, `4003`, `4009`, `4010` (+ `Retry-After` countdown), `4011`.
+**Errors in UI:** `translateApiErrorCode(useTranslations("errors.codes"), result.code)` — all auth codes via `errors.codes.{code}`; rate-limit `4010` keeps `Retry-After` countdown UX.
 
 **Email link (BE):** `{APP_CLIENT_BASE_URL}/{locale}/confirm-email?token={uuid}` → see §2b.
 

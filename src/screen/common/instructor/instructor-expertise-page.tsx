@@ -17,6 +17,7 @@ import {
 import { useTaxonomyList } from "@/api/hooks/taxonomy/useTaxonomy";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { PermissionGate } from "@/components/shared/permission-gate";
+import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -27,10 +28,18 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PERMISSIONS } from "@/constants/permissions";
+import { toastApiError } from "@/lib/utils/api-error";
+import { toastValidationError } from "@/lib/utils/validation-message";
+import {
+  instructorExpertiseSkillSchema,
+  instructorExpertiseTopicSchema,
+} from "@/schema/instructor";
 
 export function InstructorExpertisePage() {
   const t = useTranslations("instructor.expertise");
   const tc = useTranslations("instructor.common");
+  const tErrors = useTranslations("errors.codes");
+  const tValidation = useTranslations("instructor.validation");
   const [instructorId, setInstructorId] = useState<number | null>(null);
   const [topicToAdd, setTopicToAdd] = useState<string>("");
   const [skillToAdd, setSkillToAdd] = useState<string>("");
@@ -103,7 +112,14 @@ export function InstructorExpertisePage() {
     skillNameById.get(skillId) ?? t("unknownName", { id: String(skillId) });
 
   const addTopic = async () => {
-    if (!instructorId || !topicToAdd) return;
+    if (!instructorId) return;
+    const parsed = instructorExpertiseTopicSchema.safeParse({
+      topic_id: topicToAdd,
+    });
+    if (!parsed.success) {
+      toastValidationError(tValidation, parsed.error.issues, "topicId");
+      return;
+    }
     try {
       await addInstructorExpertiseTopicService(instructorId, {
         topic_id: Number(topicToAdd),
@@ -111,13 +127,20 @@ export function InstructorExpertisePage() {
       toast.success(t("addTopicSuccess"));
       setTopicToAdd("");
       await mutateTopics();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     }
   };
 
   const addSkill = async () => {
-    if (!instructorId || !skillToAdd) return;
+    if (!instructorId) return;
+    const parsed = instructorExpertiseSkillSchema.safeParse({
+      skill_id: skillToAdd,
+    });
+    if (!parsed.success) {
+      toastValidationError(tValidation, parsed.error.issues, "skillId");
+      return;
+    }
     try {
       await addInstructorExpertiseSkillService(instructorId, {
         skill_id: Number(skillToAdd),
@@ -125,8 +148,8 @@ export function InstructorExpertisePage() {
       toast.success(t("addSkillSuccess"));
       setSkillToAdd("");
       await mutateSkills();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     }
   };
 
@@ -151,8 +174,8 @@ export function InstructorExpertisePage() {
       toast.success(tc("deleteSuccess"));
       setDeleteTopicId(null);
       setDeleteSkillId(null);
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsDeleting(false);
     }
@@ -196,19 +219,22 @@ export function InstructorExpertisePage() {
             <PermissionGate
               permissions={[PERMISSIONS.InstructorExpertiseCreate]}
             >
-              <div className="flex flex-wrap gap-2">
-                <Select value={topicToAdd} onValueChange={setTopicToAdd}>
-                  <SelectTrigger className="w-[280px]">
-                    <SelectValue placeholder={t("pickTopic")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableTopics.map((topic) => (
-                      <SelectItem key={topic.id} value={String(topic.id)}>
-                        {topic.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-wrap items-end gap-2">
+                <div className="space-y-2">
+                  <RequiredLabel>{t("pickTopic")}</RequiredLabel>
+                  <Select value={topicToAdd} onValueChange={setTopicToAdd}>
+                    <SelectTrigger className="w-[280px]">
+                      <SelectValue placeholder={t("pickTopic")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTopics.map((topic) => (
+                        <SelectItem key={topic.id} value={String(topic.id)}>
+                          {topic.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button type="button" onClick={() => void addTopic()}>
                   {t("addTopic")}
                 </Button>
@@ -249,19 +275,22 @@ export function InstructorExpertisePage() {
             <PermissionGate
               permissions={[PERMISSIONS.InstructorExpertiseCreate]}
             >
-              <div className="flex flex-wrap gap-2">
-                <Select value={skillToAdd} onValueChange={setSkillToAdd}>
-                  <SelectTrigger className="w-[280px]">
-                    <SelectValue placeholder={t("pickSkill")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableSkills.map((skill) => (
-                      <SelectItem key={skill.id} value={String(skill.id)}>
-                        {skill.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-wrap items-end gap-2">
+                <div className="space-y-2">
+                  <RequiredLabel>{t("pickSkill")}</RequiredLabel>
+                  <Select value={skillToAdd} onValueChange={setSkillToAdd}>
+                    <SelectTrigger className="w-[280px]">
+                      <SelectValue placeholder={t("pickSkill")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSkills.map((skill) => (
+                        <SelectItem key={skill.id} value={String(skill.id)}>
+                          {skill.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button type="button" onClick={() => void addSkill()}>
                   {t("addSkill")}
                 </Button>

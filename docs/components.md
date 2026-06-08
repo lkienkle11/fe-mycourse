@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-06-02 (auth submit buttons reuse shared Spinner for loading state)._
+_Last audited: 2026-06-08 (RequiredLabel, FieldError for form validation)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -128,11 +128,12 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
-| `DashboardLayout` | `dashboard-layout.tsx` | Client | `SidebarProvider` + `HeaderDashboard` (`leading` burger `md:hidden`, `trailing` `DashboardHeaderLocale` on `lg+`) + left `Sidebar` (`!top-16`, `h-[calc(100svh-4rem)]`) + `SidebarInset` / `main`. Private helpers: `DashboardMenuTrigger`, `DashboardHeaderLocale`, `DashboardSidebarMobileHeader`, `DashboardSidebarLocaleFooter` (`lg:hidden`, mirrors `HeaderMobileSidebar` footer). Mobile nav via Radix `Sheet`; desktop footer `SidebarTrigger`. Sidebar mobile header brand `Link` uses shared `homeHref` and closes sheet before navigation. Filters `items` via `useFilteredDashboardItems`; gate via `permissions` / `isAuthorized`; loading uses `SidebarMenuSkeleton` with fixed `widthPercent` (SSR-safe). Unauthorized: header + locale + `DashboardUnauthorized`. `LoginSignupPopup` when authorized. |
+| `DashboardLayout` | `dashboard-layout.tsx` | Client | Core dashboard shell: `SidebarProvider` + `HeaderDashboard` (`leading` burger `md:hidden`, `trailing` `DashboardHeaderLocale` on `lg+`) + left `Sidebar` (`!top-16`, `h-[calc(100svh-4rem)]`) + `SidebarInset` / `main`. Filters `items` via `useFilteredDashboardItems`; gate via `permissions` / `isAuthorized`; loading uses `SidebarMenuSkeleton`. |
+| `RoleDashboardLayout` | `role-dashboard-layout.tsx` | Client | Shared admin/sysadmin wrapper that maps `dashboardRole` to the correct sidebar items + shell permissions, then renders `DashboardLayout`. |
 | `DashboardSidebar` | `dashboard-sidebar.tsx` | Client | Recursive nav tree (pattern from `BrowseSidebarMenu`). Renders each item's Lucide `icon` from `DashboardItem` config (taxonomy uses `TAXONOMY_MENU_ICONS` — see `docs/taxonomy-admin.md`). **Collapsed:** root icons only (no child subtrees). **Expanded:** full `Collapsible` + `SidebarMenuSub*`. Active route via `usePathname`. |
 | `DashboardUnauthorized` | `dashboard-unauthorized.tsx` | Client | Compact access-denied message when layout permissions fail. |
 
-**`dashboard/index.ts` barrel:** `DashboardLayout`, `DashboardSidebar`, `DashboardUnauthorized`.
+**`dashboard/index.ts` barrel:** `DashboardLayout`, `RoleDashboardLayout`, `DashboardSidebar`, `DashboardUnauthorized`.
 
 ### Footer
 
@@ -159,7 +160,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `SignupContent` | `auth/signup-content.tsx` | Client | Signup form → `handleAuthSubmit("signup", …)` → **`registerAction`**. Submit button shows shared `Spinner` while `isSubmitting`. |
 | `ConfirmEmailContent` | `auth/confirm-email-content.tsx` | Client | Email confirm page body → `confirmAction`. |
 | `LogoutContent` | `auth/logout-content.tsx` | Client | Logout page → `logoutAction`. |
-| `handleAuthSubmit` | `auth/auth-form-handler.ts` | Utility | Routes `"login"` → `loginAction`, `"signup"` → **`registerAction`**. |
+| `handleAuthSubmit` | `src/actions/auth/auth-client.ts` | Client utility | Routes `"login"` → `loginAction`, `"signup"` → **`registerAction`** without keeping submit orchestration inside the auth component tree. |
 | `AuthEmailPasswordFields` | `auth/auth-form-fields.tsx` | Shared UI | Email + password for login/signup; translates Zod i18n keys when `emailError` / `passwordError` set. |
 | `AuthFullNameField` | `auth/auth-form-fields.tsx` | Shared UI | Full name (signup); same validation translation pattern. |
 | `AuthConfirmTabSync` | `providers/auth-confirm-tab-sync.tsx` | Client | Reload tabs after email confirm elsewhere. |
@@ -194,6 +195,8 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | Component | File | Description |
 |-----------|------|-------------|
 | `PermissionGate` | `permission-gate.tsx` | Client wrapper: shows `children` when `useSatisfiesPermissions` passes; optional `fallback`. Props: `permissions`, `permissionMode` (`"all"` \| `"any"`). |
+| `RequiredLabel` | `required-label.tsx` | Extends `Label` with optional required asterisk (`required` prop, default `true`). |
+| `FieldError` | `field-error.tsx` | Inline validation message below a control; pair with `resolveValidationMessage`. |
 | `ConfirmDeleteDialog` | `confirm-delete-dialog.tsx` | Alert dialog for soft-delete confirm; copy from `taxonomy.delete` namespace. |
 | `DataTable` | `data-table.tsx` | Generic sortable admin table (`columns`, `rows`, `sort`, `renderActions`) with optional built-in filter toolbar (`FilterBy`, search, per-option custom input via `DataTableFilterByOption.customInputComponent`). First used by taxonomy lists. |
 | `SortableList` | `sortable-list.tsx` | Vertical `@dnd-kit` reorder list; items need string `id`. |
@@ -201,11 +204,15 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | `DagreTreeDialog` | `dagre-tree-dialog.tsx` | Dagre layout popup (`@xyflow/react` + `dagre`); `nodesDraggable` prop (default `true`); node labels **name only**; vertical/horizontal toggle; CSS in this file. Taxonomy passes `nodesDraggable={false}`. |
 | `SearchBar` | `search-bar.tsx` | Global search input (UI stub). `visibility`: `"header"` (default, hidden below `md`) or `"sidebar"` (full-width flex for mobile sheet). |
 
-`src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog`, `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns; `child_render` column opens tree view).
+`src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog` (shared Zod schemas, `RequiredLabel`, `FieldError`, `toastApiError`), `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns; `child_render` column opens tree view).
 
-`src/components/features/instructor/` — instructor management: `InstructorProfileViewDialog`, `ConfirmAddInstructorDialog`, `InstructorApprovalActions` (reject requires reason). See `docs/instructor-admin.md`.
+`src/components/features/instructor/` — instructor management: `InstructorProfileViewDialog`, `ConfirmAddInstructorDialog` (`RequiredLabel`, email Zod), `InstructorApprovalActions` (`RequiredLabel` on reason, `toastApiError`). See `docs/instructor-admin.md`.
 
-`src/components/features/media/` — media library popup: `MediaCollectionDialog`, `MediaUploadDialog` (sr-only `DialogDescription`; uses shared `formatBytes` from `@/lib/utils`), `MediaItemCard` (overlay select button + menu above + full-filename tooltip; see a11y in `docs/media-collection.md`), `MediaTabPanel`. See `docs/media-collection.md`.
+`src/components/features/media/` — media library popup: `MediaCollectionDialog`, `MediaUploadDialog` (`media.validation.*` client checks + `toastApiError` on API fail; sr-only `DialogDescription`; uses shared `formatBytes` from `@/lib/utils`), `MediaItemCard` (overlay select button + menu above + full-filename tooltip; see a11y in `docs/media-collection.md`), `MediaTabPanel`. See `docs/media-collection.md`.
+
+`src/components/features/course/` — course editor tabs and dialogs. `course-editor-basic-tab` — `RequiredLabel` on title (required) and optional fields marked `required={false}`. `course-editor-dialogs` — `RequiredLabel` on section/lesson/sublesson/quiz/video fields. `course-editor-collaborators-tab` — `RequiredLabel` on instructor picker. Pre-submit: `toastValidationError` via `useCourseEditorState`; API: `toastApiError`.
+
+`src/screen/instructor/courses/editor-page.tsx` uses shared `Skeleton` (`src/components/ui/skeleton.tsx`) for the course-editor loading state.
 
 ---
 

@@ -1,3 +1,5 @@
-import { SysadminTaxonomyOutcomesPage } from "@/screen/sysadmin/taxonomy/outcomes/page";
+import { TaxonomyListPage } from "@/screen/common/taxonomy";
 
-export default SysadminTaxonomyOutcomesPage;
+export default function SysadminTaxonomyOutcomesRoute() {
+  return <TaxonomyListPage resourceKey="outcomes" />;
+}

@@ -7,7 +7,8 @@ export type TaxonomyStatus = ApiEntityStatus;
 export type TaxonomyTreeNode = {
   id: string;
   name: string;
-  slug: string;
+  /** Present on API responses; omit on create/update (BE computes from `name`). */
+  slug?: string;
   children?: TaxonomyTreeNode[];
 };
 
@@ -101,13 +102,11 @@ export type TaxonomyEntity = TaxonomyEntityMap[TaxonomyResourceKey];
 
 export type CreateSlugStatusPayload = {
   name: string;
-  slug: string;
   status?: TaxonomyStatus;
 };
 
 export type UpdateSlugStatusPayload = {
   name?: string;
-  slug?: string;
   status?: TaxonomyStatus;
 };
 
@@ -118,7 +117,6 @@ export type CreateTopicPayload = CreateSlugStatusPayload & {
 
 export type UpdateTopicPayload = {
   name?: string;
-  slug?: string;
   image_file_id?: string;
   child_topics?: TaxonomyTreeNode[];
   status?: TaxonomyStatus;
@@ -130,7 +128,6 @@ export type CreateSkillPayload = CreateSlugStatusPayload & {
 
 export type UpdateSkillPayload = {
   name?: string;
-  slug?: string;
   children?: TaxonomyTreeNode[];
   status?: TaxonomyStatus;
 };

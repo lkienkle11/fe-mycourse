@@ -18,13 +18,13 @@ Open the URL Next.js prints (default [http://localhost:3000](http://localhost:30
 | `npm run dev` | Development server |
 | `npm run build` / `npm run start` | Production build / server |
 | `npm run lint` | ESLint (CI `test` job on `dev`, after `quality:deps`) |
-| `npm run lint:biome` / `npm run format:biome` | Biome check / format (local / pre-PR; not in CI) |
+| `npm run biome` / `npm run lint:biome` / `npm run format:biome` | Biome check alias / check / format (local / pre-PR; not in CI) |
 | `npm run cycles` | Circular import check (Madge on `src/`) — run before large refactors |
 | `npm run cycles:json` | Same as `cycles`, JSON output |
 | `npm run dupl` | Duplicate code check (jscpd; excludes shadcn `src/components/ui/**`) |
 | `npm run quality:deps` | `cycles` then `dupl` (CI `test` job on `dev`, before `lint`) |
 
-**Pre-PR local gate (2026-05-29):** `npm run format:biome && npm run lint:biome && npm run lint && npx tsc --noEmit && npm run quality:deps && npm run build` — details in [`docs/quality.md`](docs/quality.md).
+**Pre-PR local gate (2026-06-05):** `npm run format:biome && npm run biome && npm run lint && npx tsc --noEmit && npm run quality:deps && npm run build` — details in [`docs/quality.md`](docs/quality.md).
 
 ## Documentation Convention (Mandatory)
 
@@ -50,7 +50,7 @@ The `docs/` folder is the **primary and authoritative documentation source** for
 | [`docs/patterns.md`](docs/patterns.md) | Coding conventions — naming, styling (`cn()`), state management rules, form patterns, i18n, TypeScript patterns |
 | [`docs/logic-flow.md`](docs/logic-flow.md) | Execution flows — login, token refresh, Me fetch, form submission, auth modal state, permission checks, i18n, API error capture |
 | [`docs/dependencies.md`](docs/dependencies.md) | All runtime and dev dependencies — versions, roles, and usage rules |
-| [`docs/quality.md`](docs/quality.md) | ESLint, Madge / jscpd gates, `eslint.config.mjs` `src/constants` + `src/types` rules, CI `test` job on `dev` |
+| [`docs/quality.md`](docs/quality.md) | ESLint, Madge / jscpd gates, `eslint.config.mjs` `src/constants` + `src/types` + `src/screen` rules, CI `test` job on `dev` |
 | [`docs/reusable-assets.md`](docs/reusable-assets.md) | All reusable utilities, hooks, types, schemas, stores, constants, API callers, and Server Actions |
 | [`docs/delivery.md`](docs/delivery.md) | **Realtime channels** — BroadcastChannel, WebSocket, SSE, NDJSON gRPC; envelope model, env vars, links to per-channel docs |
 | [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — Nginx, Certbot, PM2, env vars (`NEXT_PUBLIC_API_URL`, `AUTH_COOKIE_DOMAIN`, stream URLs), go-live checklist, rollback, troubleshooting, CI/CD |

@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (`ApiErrorCode` → constants; type-only `src/types/**`)._
+_Last audited: 2026-06-08 (code-based API errors + `/api/v1/me` callers)._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -44,7 +44,7 @@ interface ApiResponse<T> {
 }
 ```
 
-The `ApiErrorCode` constant map in `src/constants/api-error-code.ts` mirrors `be/pkg/errcode/codes.go`.
+The `ApiErrorCode` constant map in `src/constants/api-error-code.ts` mirrors `be/internal/shared/errors/errcode_codes.go` (1:1 numeric codes).
 
 ```ts
 import { ApiErrorCode } from "@/constants/api-error-code";
@@ -304,7 +304,6 @@ const { rows, pageInfo, mutate } = useTaxonomyList("levels", {
 // One-off service call
 await createTaxonomyService("tags", {
   name: "React",
-  slug: "react",
   status: "ACTIVE",
 });
 ```
@@ -341,6 +340,51 @@ See `docs/media-collection.md`.
 
 ---
 
+## API error i18n (all modules)
+
+Never show the BE `message` field to users. Resolve errors by numeric `code` only:
+
+```ts
+import { useTranslations } from "next-intl";
+import { toastApiError, translateApiErrorCode } from "@/lib/utils/api-error";
+
+const tErrors = useTranslations("errors.codes");
+
+// Toast (catch blocks)
+catch (error) {
+  toastApiError(tErrors, error);
+}
+
+// Inline (Server Action results)
+setServerError(translateApiErrorCode(tErrors, result.code));
+```
+
+- i18n keys: `errors.codes.{code}` in `src/messages/en.ts` / `vi.ts` (sourced from `src/messages/error-codes.ts`).
+- Unknown codes fall back to `errors.codes.9999`.
+- FE form validation uses separate namespaces (`auth.validation.*`, `course.validation.*`, …) — never mix with API codes.
+
+---
+
+## Me API (`/api/v1/me`)
+
+Routes in `API_PRIVATE_ROUTES.user`: `getMe`, `patchMe`, `deleteMe`, `hardDeleteMe`, `getMyPermissions`.
+
+Callers in `src/api/callers/auth/auth.ts`:
+
+```ts
+import {
+  getMeService,
+  patchMeService,
+  deleteMeService,
+  hardDeleteMeService,
+  getMyPermissionsService,
+} from "@/api/callers/auth";
+```
+
+`useAuth` exposes `errorCode` for non-401 GET failures. PATCH body: `{ avatar_file_id?: uuid }` (optional).
+
+---
+
 ## Do Not Use
 
 | Pattern | Reason |
@@ -349,3 +393,5 @@ See `docs/media-collection.md`.
 | Hard-coded API paths | Use constants from `src/constants/api-route.ts` |
 | `rawPost`/`rawFetch` outside `instance.ts` | Reserved for token refresh only |
 | Manual `Authorization` header | Set automatically by the request interceptor |
+| Showing `response.message` in UI | Use `toastApiError` / `translateApiErrorCode` with `errors.codes.{code}` |
+| Semantic error keys per module (`auth.errors.*` for API) | API errors use numeric `errors.codes.*` only |

@@ -1,6 +1,6 @@
 # Taxonomy admin (FE)
 
-_Last audited: 2026-05-29 (taxonomy screen moved to common + role wrappers)._
+_Last audited: 2026-06-08 (shared Zod schemas, RequiredLabel, code-based API errors)._
 
 Admin and sysadmin dashboards can manage five taxonomy resources aligned with BE `/api/v1/taxonomy/*`:
 
@@ -14,14 +14,12 @@ Admin and sysadmin dashboards can manage five taxonomy resources aligned with BE
 
 ## Screen layer
 
-Taxonomy follows the standard **app route → role screen → shared screen** pattern:
+Taxonomy now follows a slimmer **app route → shared screen** pattern:
 
 | Layer | Path | Role |
 |-------|------|------|
-| App route | `src/app/[locale]/admin/taxonomy/{resource}/page.tsx` | Re-exports `AdminTaxonomy*Page` |
-| App route | `src/app/[locale]/sysadmin/taxonomy/{resource}/page.tsx` | Re-exports `SysadminTaxonomy*Page` |
-| Role screen | `src/screen/admin/taxonomy/{resource}/page.tsx` | Thin wrapper: `<TaxonomyListPage resourceKey="…" />` |
-| Role screen | `src/screen/sysadmin/taxonomy/{resource}/page.tsx` | Same wrapper for sysadmin |
+| App route | `src/app/[locale]/admin/taxonomy/{resource}/page.tsx` | Imports shared `TaxonomyListPage` directly |
+| App route | `src/app/[locale]/sysadmin/taxonomy/{resource}/page.tsx` | Same shared screen for sysadmin |
 | Shared screen | `src/screen/common/taxonomy/taxonomy-list-page.tsx` | `TaxonomyListPage` — client CRUD list (DataTable, form dialog, delete confirm) |
 
 Resource keys match `TAXONOMY_RESOURCE_KEYS` in `src/constants/taxonomy/resources.ts` (`levels`, `topics`, `outcomes`, `skills`, `tags`).
@@ -76,11 +74,12 @@ Edit/reorder still uses `SortableTreeEditor` in the form dialog — separate fro
 
 Topics and outcomes support optional `image_file_id` (media file UUID). The form dialog opens **Browse media** (`MediaCollectionDialog` with `visibleTabs={["image"]}` only — no document/video tabs) when the user has `media_file:read`. Selection callback receives both the selected `file` and active-tab `type`; taxonomy accepts only `type === "image"`, then stores `file.id` and shows a thumbnail when picked in-session. On edit, preview also hydrates from API field `image_file_url`. The preview/picker UI is implemented via shared component `ImageFileField` at `src/components/shared/image-file-field.tsx`. See [media-collection.md](./media-collection.md).
 
-## Slug (read-only)
+## Slug (read-only preview; server authority)
 
-- Computed from **Name** via `generateSlug()` / `slugifyName()` in `src/lib/utils/slug.ts` (trim, lowercase, remove Vietnamese accents, `đ/Đ -> d`, spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes).
+- UI preview uses `slugifyName()` / `generateSlug()` in `src/lib/utils/slug.ts` (trim, lowercase, remove Vietnamese accents, `đ/Đ -> d`, spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes).
 - Slug field is **read-only** on create and edit; users only type the name.
-- Tree nodes: name is editable, slug preview is read-only and updated when the name changes.
+- **Create/update API payloads omit `slug`** — BE derives it from `name` (and from each tree node `name`) via `utils.SlugifyName`.
+- Tree nodes: name is editable, slug preview is read-only; write payload omits `slug` on `TaxonomyTreeNode` (use `toTaxonomyTreeWritePayload()` in `src/lib/utils/taxonomy.ts`).
 
 ## List query types
 
@@ -100,6 +99,13 @@ Taxonomy list screens now use the built-in `DataTable` toolbar instead of a page
 - When `FilterBy` is not `status`, the search input + search action are shown.
 - Status behavior is unchanged.
 - Text search sends `search_by` + `search_value` and resets page to `1`.
+
+## Validation and API errors
+
+- **Schemas**: `src/schema/taxonomy/taxonomy.ts` — `taxonomySlugStatusSchema`, `taxonomyTopicSchema`, `taxonomySkillSchema`, `taxonomyOutcomeSchema` (i18n keys under `taxonomy.form.validation.*`).
+- **Form UI**: `TaxonomyFormDialog` uses `RequiredLabel` + `FieldError` on `name` / `short_description`; Zod enforces `name` 1–255 and outcome fields per BE; keys resolve via `useTranslations("taxonomy.form")` + `validation.*`; slug preview stays read-only (`required={false}`).
+- **Client checks**: Zod via `zodResolver` before submit; tree/description editors remain separate state (validated on submit through parent schema).
+- **API failures**: list delete and form create/update catch → `toastApiError(useTranslations("errors.codes"), error)` — never `taxonomy.common.errorGeneric` for API responses.
 
 ## Sample data
 

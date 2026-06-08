@@ -13,6 +13,10 @@ export const API_PUBLIC_ROUTES = {
 export const API_PRIVATE_ROUTES = {
   user: {
     getMe: "/api/v1/me",
+    patchMe: "/api/v1/me",
+    deleteMe: "/api/v1/me",
+    hardDeleteMe: "/api/v1/me/hard",
+    getMyPermissions: "/api/v1/me/permissions",
   },
   taxonomy: {
     levels: "/api/v1/taxonomy/levels",
@@ -44,5 +48,37 @@ export const API_PRIVATE_ROUTES = {
     tickets: "/api/v1/instructor-tickets",
     ticketClose: "/api/v1/instructor-tickets/:id/close",
     ticketMessages: "/api/v1/instructor-tickets/:id/messages",
+  },
+  course: {
+    editableList: "/api/v1/courses/my",
+    collection: "/api/v1/courses",
+    byId: "/api/v1/courses/:courseId",
+    prepareDraft: "/api/v1/courses/:courseId/draft/prepare",
+    basicInfo: "/api/v1/courses/:courseId/basic-info",
+    collaborators: "/api/v1/courses/:courseId/collaborators",
+    collaboratorByUser: "/api/v1/courses/:courseId/collaborators/:userId",
+    sections: "/api/v1/courses/:courseId/sections",
+    sectionById: "/api/v1/courses/:courseId/sections/:sectionId",
+    reorderSections: "/api/v1/courses/:courseId/sections/reorder",
+    lessons: "/api/v1/courses/:courseId/lessons",
+    lessonById: "/api/v1/courses/:courseId/lessons/:lessonId",
+    reorderLessons:
+      "/api/v1/courses/:courseId/sections/:sectionId/lessons/reorder",
+    subLessons: "/api/v1/courses/:courseId/sub-lessons",
+    subLessonById: "/api/v1/courses/:courseId/sub-lessons/:subLessonId",
+    reorderSubLessons:
+      "/api/v1/courses/:courseId/lessons/:lessonId/sub-lessons/reorder",
+    acquireLease: "/api/v1/courses/:courseId/leases/acquire",
+    heartbeatLease: "/api/v1/courses/:courseId/leases/heartbeat",
+    releaseLease: "/api/v1/courses/:courseId/leases/release",
+    submitReview: "/api/v1/courses/:courseId/submit-review",
+    reopenDraft: "/api/v1/courses/:courseId/reopen-draft",
+    pendingReviews: "/api/v1/course-reviews/pending",
+    approveReview: "/api/v1/course-reviews/:courseId/approve",
+    rejectReview: "/api/v1/course-reviews/:courseId/reject",
+    learnerCollection: "/api/v1/learner-courses",
+    learnerById: "/api/v1/learner-courses/:courseId",
+    learnerEnroll: "/api/v1/learner-courses/:courseId/enroll",
+    learnerProgress: "/api/v1/learner-courses/:courseId/progress",
   },
 } as const;

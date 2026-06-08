@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-06-02 (custom localized 404 page)._
+_Last audited: 2026-06-08 (validation + code-based API error i18n per screen)._
 
 ## Current pages
 
@@ -12,16 +12,20 @@ _Last audited: 2026-06-02 (custom localized 404 page)._
 | `/{locale}/logout` | `src/app/[locale]/(web)/logout/page.tsx` | `LogoutContent` → `logoutAction` (+ cross-tab `broadcast:logout`) | Implemented |
 | `/{locale}/admin` | `src/app/[locale]/admin/page.tsx` | `AdminDashboardPage` (placeholder dashboard) | Implemented |
 | `/{locale}/instructor` | `src/app/[locale]/instructor/page.tsx` | `InstructorDashboardPage` (placeholder) | Implemented |
+| `/{locale}/instructor/courses` | `src/app/[locale]/instructor/courses/page.tsx` | `InstructorCoursesPage` | Implemented |
+| `/{locale}/instructor/courses/{courseId}` | `src/app/[locale]/instructor/courses/[courseId]/page.tsx` | `InstructorCourseEditorPage` | Implemented |
 | `/{locale}/instructor/tickets` | `src/app/[locale]/instructor/tickets/page.tsx` | `InstructorTicketsPage` | Implemented |
-| `/{locale}/admin/instructors/roster` | `src/app/[locale]/admin/instructors/roster/page.tsx` | `AdminInstructorRosterPage` → `InstructorRosterPage` | Implemented |
-| `/{locale}/admin/instructors/approvals` | `…/approvals/page.tsx` | `AdminInstructorApprovalsPage` → `InstructorApprovalsPage` | Implemented |
-| `/{locale}/admin/instructors/profiles` | `…/profiles/page.tsx` | `AdminInstructorProfilesPage` → `InstructorProfilesPage` | Implemented |
-| `/{locale}/admin/instructors/expertise` | `…/expertise/page.tsx` | `AdminInstructorExpertisePage` → `InstructorExpertisePage` | Implemented |
-| `/{locale}/admin/instructors/tickets` | `…/tickets/page.tsx` | `AdminInstructorTicketsPage` → `InstructorTicketsAdminPage` | Implemented |
-| `/{locale}/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}` | `src/app/[locale]/sysadmin/instructors/*/page.tsx` | `SysadminInstructor*Page` → same shared screens | Implemented |
+| `/{locale}/admin/courses` | `src/app/[locale]/admin/courses/page.tsx` | `CourseReviewPage` (`scope="admin"`) | Implemented |
+| `/{locale}/admin/instructors/roster` | `src/app/[locale]/admin/instructors/roster/page.tsx` | `InstructorRosterPage` | Implemented |
+| `/{locale}/admin/instructors/approvals` | `…/approvals/page.tsx` | `InstructorApprovalsPage` | Implemented |
+| `/{locale}/admin/instructors/profiles` | `…/profiles/page.tsx` | `InstructorProfilesPage` | Implemented |
+| `/{locale}/admin/instructors/expertise` | `…/expertise/page.tsx` | `InstructorExpertisePage` | Implemented |
+| `/{locale}/admin/instructors/tickets` | `…/tickets/page.tsx` | `InstructorTicketsAdminPage` | Implemented |
+| `/{locale}/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}` | `src/app/[locale]/sysadmin/instructors/*/page.tsx` | Same shared instructor screens as admin | Implemented |
 | `/{locale}/sysadmin` | `src/app/[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` (placeholder) | Implemented |
-| `/{locale}/admin/taxonomy/{resource}` | `src/app/[locale]/admin/taxonomy/*/page.tsx` | `AdminTaxonomy*Page` → `TaxonomyListPage` (`src/screen/common/taxonomy/`) — resource: levels, topics, outcomes, skills, tags | Implemented |
-| `/{locale}/sysadmin/taxonomy/{resource}` | `src/app/[locale]/sysadmin/taxonomy/*/page.tsx` | `SysadminTaxonomy*Page` → same `TaxonomyListPage` (sysadmin menu) | Implemented |
+| `/{locale}/sysadmin/courses` | `src/app/[locale]/sysadmin/courses/page.tsx` | `CourseReviewPage` (`scope="sysadmin"`) | Implemented |
+| `/{locale}/admin/taxonomy/{resource}` | `src/app/[locale]/admin/taxonomy/*/page.tsx` | `TaxonomyListPage` (`src/screen/common/taxonomy/`) — resource: levels, topics, outcomes, skills, tags | Implemented |
+| `/{locale}/sysadmin/taxonomy/{resource}` | `src/app/[locale]/sysadmin/taxonomy/*/page.tsx` | Same shared `TaxonomyListPage` (sysadmin menu) | Implemented |
 | `/{locale}/*` (unknown path) | `src/app/[locale]/not-found.tsx`, `(web)/not-found.tsx`, `src/app/not-found.tsx` | `NotFoundPage` — localized 404 with Header + CTA | Implemented |
 
 ## Layout chain
@@ -29,7 +33,8 @@ _Last audited: 2026-06-02 (custom localized 404 page)._
 - `src/app/layout.tsx` — fonts, Sonner `<Toaster />`
 - `src/app/[locale]/layout.tsx` — `NextIntlClientProvider`, `AppProviders`
 - `src/app/[locale]/(web)/layout.tsx` — `Header`, `<main>`, `Footer` (web routes only)
-- `src/app/[locale]/admin|instructor|sysadmin/layout.tsx` — `DashboardLayout` (no site footer)
+- `src/app/[locale]/admin|sysadmin/layout.tsx` — `RoleDashboardLayout` → `DashboardLayout` (no site footer)
+- `src/app/[locale]/instructor/layout.tsx` — `DashboardLayout` (no site footer)
 
 ## Auth UX (not dedicated login/signup pages)
 
@@ -39,15 +44,36 @@ _Last audited: 2026-06-02 (custom localized 404 page)._
 | Email confirm | Dedicated page `/{locale}/confirm-email?token=…` |
 | Logout | Dedicated page `/{locale}/logout` (also linked from user menu) |
 
-`PUBLIC_ROUTES` (`src/constants/route.ts`): `home`, `confirmEmail`, `logout` — no `auth.login` / `auth.signup` route constants.
+Route constants:
+- `PUBLIC_ROUTES` (`src/constants/route.ts`): public/no-login routes (`home`, `forgotPassword`, `confirmEmail`, `logout`)
+- `PRIVATE_ROUTES` (`src/constants/route.ts`): login-required routes (`admin`, `instructor`, `sysadmin`, `account`)
+- `PUBLIC_RESOURCE_ROUTES` / `PRIVATE_RESOURCE_ROUTES` (`src/constants/route.ts`): dynamic templates (`:param`) for resource pages
+- Route builders/helpers live in `src/lib/navigation/routes.ts` (for example `instructorCourseEditorHref(courseId)` for `/instructor/courses/:courseId`)
 
-## Planned / not implemented
+No `auth.login` / `auth.signup` route constants (login/signup stay modal-only).
 
-| URL | Notes |
-|-----|-------|
-| `/{locale}/auth/login` | Optional future page; today login is modal-based |
-| `/{locale}/courses` | Marketing/courses listing (nav placeholders only) |
-| Dedicated signup page | Not planned — `SignupContent` stays in `LoginSignupPopup` |
-| Further `/{locale}/admin/*` beyond taxonomy + instructors | Placeholder sidebar links only (users, courses, …) |
+## Current implementation notes
 
-See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-admin.md`](./taxonomy-admin.md), [`instructor-admin.md`](./instructor-admin.md).
+| Area | Status |
+|------|--------|
+| Login / Signup pages | Modal-only (`LoginSignupPopup`), no dedicated route pages |
+| Admin pages | Implemented: dashboard shell, taxonomy, instructors, course review |
+| Instructor pages | Implemented: dashboard shell, courses list/editor, tickets |
+| Sysadmin pages | Implemented: dashboard shell, taxonomy, instructors, course review |
+
+## Validation & API errors by screen
+
+All user-facing API failures use `errors.codes.{numericCode}` via `translateApiErrorCode` / `toastApiError` — never the BE `message` string. Pre-submit checks use module-scoped `*.validation.*` keys (separate namespace). See [`patterns.md` §6b](./patterns.md) and [`api-using.md`](./api-using.md).
+
+| Screen / flow | Client validation | API error display |
+|---------------|-------------------|-------------------|
+| Login / Signup modal | `auth` Zod keys via `loginSchema` / `registerSchema` | Inline `translateApiErrorCode(tErrors, result.code)` |
+| Confirm email / Logout pages | — | Inline code-based errors |
+| Taxonomy list + form dialog | `taxonomy.form.validation.*`, `RequiredLabel`, `FieldError` | `toastApiError` on delete / create / update |
+| Media collection + upload | `media.validation.*` (size, type, executable) | `toastApiError` |
+| Instructor roster / approvals / expertise / tickets / profiles | `instructor.validation.*`, `RequiredLabel` on email/reject/topic/skill/ticket fields | `toastValidationError` pre-submit; `toastApiError` on API |
+| Instructor courses list | `course.validation.title` on create dialog | `toastApiError` on create / delete |
+| Instructor course editor | `courseBasicInfoSchema` + outline dialogs; `RequiredLabel` on title/section/lesson/quiz fields | `toastValidationError` pre-submit; `toastApiError` on API |
+| Admin/sysadmin course review | Reject reason required (`course.validation.rejectReason`) | `toastApiError` on approve / reject |
+
+See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-admin.md`](./taxonomy-admin.md), [`instructor-admin.md`](./instructor-admin.md), [`media-collection.md`](./media-collection.md), [`modules.md`](./modules.md).

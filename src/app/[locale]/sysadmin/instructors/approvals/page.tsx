@@ -1,3 +1,3 @@
-import { SysadminInstructorApprovalsPage } from "@/screen/sysadmin/instructor/approvals/page";
+import { InstructorApprovalsPage } from "@/screen/common/instructor";
 
-export default SysadminInstructorApprovalsPage;
+export default InstructorApprovalsPage;

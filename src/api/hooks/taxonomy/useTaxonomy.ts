@@ -1,11 +1,10 @@
 "use client";
 
-import useSWR from "swr";
 import {
   getTaxonomyListKey,
   listTaxonomyService,
 } from "@/api/callers/taxonomy";
-import type { ApiPaginatedData } from "@/types/api";
+import { useApiListQuery } from "@/api/hooks/shared";
 import type {
   TaxonomyEntityMap,
   TaxonomyListFilters,
@@ -14,21 +13,14 @@ import type {
 
 export function useTaxonomyList<K extends TaxonomyResourceKey>(
   resourceKey: K,
-  filters: TaxonomyListFilters,
+  filters: TaxonomyListFilters | null,
 ) {
-  const key = getTaxonomyListKey(resourceKey, filters);
-  const swr = useSWR<ApiPaginatedData<TaxonomyEntityMap[K][]>>(
-    key,
-    () => listTaxonomyService(resourceKey, filters),
-    { revalidateOnFocus: true },
+  return useApiListQuery<TaxonomyEntityMap[K]>(
+    filters ? getTaxonomyListKey(resourceKey, filters) : null,
+    () => listTaxonomyService(resourceKey, filters as TaxonomyListFilters),
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 5 * 60 * 1000,
+    },
   );
-
-  return {
-    data: swr.data,
-    rows: swr.data?.result ?? [],
-    pageInfo: swr.data?.page_info,
-    isLoading: swr.isLoading,
-    error: swr.error,
-    mutate: swr.mutate,
-  };
 }

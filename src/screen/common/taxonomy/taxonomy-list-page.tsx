@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toastApiError } from "@/lib/utils/api-error";
 import {
   getTaxonomyResourceConfig,
   getTaxonomySearchableColumns,
@@ -38,6 +39,7 @@ export type TaxonomyListPageProps = {
 
 export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
   const t = useTranslations("taxonomy");
+  const tErrors = useTranslations("errors.codes");
   const config = getTaxonomyResourceConfig(resourceKey);
   const searchableColumns = getTaxonomySearchableColumns(resourceKey);
   const [filters, setFilters] = useState<TaxonomyListFilters>({
@@ -182,8 +184,8 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
       setDeleteOpen(false);
       setDeleteTarget(null);
       await mutate();
-    } catch {
-      toast.error(t("common.errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsDeleting(false);
     }

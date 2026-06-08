@@ -5,13 +5,15 @@ import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
+import type { z } from "zod";
 import {
   createTaxonomyService,
   updateTaxonomyService,
 } from "@/api/callers/taxonomy";
 import { MediaCollectionDialog } from "@/components/features/media";
+import { FieldError } from "@/components/shared/field-error";
 import { ImageFileField } from "@/components/shared/image-file-field";
+import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,7 +23,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -31,10 +32,22 @@ import {
 } from "@/components/ui/select";
 import { PERMISSIONS } from "@/constants/permissions";
 import { slugifyName } from "@/lib/utils";
+import { toastApiError } from "@/lib/utils/api-error";
 import {
   getTaxonomyResourceConfig,
   getTaxonomyTreeFromEntity,
+  toTaxonomyTreeWritePayload,
 } from "@/lib/utils/taxonomy";
+import { resolveValidationMessage } from "@/lib/utils/validation-message";
+import {
+  type TaxonomyOutcomeValues,
+  type TaxonomySlugStatusValues,
+  type TaxonomyTopicValues,
+  taxonomyOutcomeSchema,
+  taxonomySkillSchema,
+  taxonomySlugStatusSchema,
+  taxonomyTopicSchema,
+} from "@/schema/taxonomy";
 import type { MediaFile } from "@/types/media";
 import type {
   CourseOutcome,
@@ -47,29 +60,6 @@ import type {
 } from "@/types/taxonomy";
 import { TaxonomyDescriptionEditor } from "./taxonomy-description-editor";
 import { TaxonomyTreeEditor } from "./taxonomy-tree-editor";
-
-const statusSchema = z.enum(["ACTIVE", "INACTIVE"]);
-
-const slugStatusSchema = z.object({
-  name: z.string().min(1),
-  status: statusSchema,
-});
-
-const topicSchema = slugStatusSchema.extend({
-  image_file_id: z.string().optional(),
-  child_topics: z.array(z.any()).optional(),
-});
-
-const skillSchema = slugStatusSchema.extend({
-  children: z.array(z.any()).optional(),
-});
-
-const outcomeSchema = z.object({
-  short_description: z.string().min(1).max(100),
-  description: z.array(z.string().max(120)).max(8).optional(),
-  image_file_id: z.string().optional(),
-  status: statusSchema,
-});
 
 export type TaxonomyFormDialogProps = {
   resourceKey: TaxonomyResourceKey;
@@ -90,6 +80,7 @@ export function TaxonomyFormDialog({
   const t = useTranslations("taxonomy");
   const tForm = useTranslations("taxonomy.form");
   const tMedia = useTranslations("media.picker");
+  const tErrors = useTranslations("errors.codes");
   const config = getTaxonomyResourceConfig(resourceKey);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tree, setTree] = useState<TaxonomyTreeNode[]>([]);
@@ -99,10 +90,10 @@ export function TaxonomyFormDialog({
   const [initialImageFileURL, setInitialImageFileURL] = useState("");
 
   const schema = useMemo(() => {
-    if (resourceKey === "outcomes") return outcomeSchema;
-    if (resourceKey === "topics") return topicSchema;
-    if (resourceKey === "skills") return skillSchema;
-    return slugStatusSchema;
+    if (resourceKey === "outcomes") return taxonomyOutcomeSchema;
+    if (resourceKey === "topics") return taxonomyTopicSchema;
+    if (resourceKey === "skills") return taxonomySkillSchema;
+    return taxonomySlugStatusSchema;
   }, [resourceKey]);
 
   type FormValues = z.infer<typeof schema>;
@@ -159,15 +150,6 @@ export function TaxonomyFormDialog({
     | string
     | undefined;
 
-  const normalizeTreeSlugs = (nodes: TaxonomyTreeNode[]): TaxonomyTreeNode[] =>
-    nodes.map((node) => ({
-      ...node,
-      slug: slugifyName(node.name),
-      children: node.children?.length
-        ? normalizeTreeSlugs(node.children)
-        : undefined,
-    }));
-
   const resourceLabel = t(`resources.${resourceKey}.singular`);
   const dialogTitle =
     mode === "create"
@@ -179,12 +161,11 @@ export function TaxonomyFormDialog({
     try {
       if (resourceKey === "outcomes") {
         const payload = {
-          short_description: (values as z.infer<typeof outcomeSchema>)
+          short_description: (values as TaxonomyOutcomeValues)
             .short_description,
           description: description.filter((line) => line.trim().length > 0),
           image_file_id:
-            (values as z.infer<typeof outcomeSchema>).image_file_id ||
-            undefined,
+            (values as TaxonomyOutcomeValues).image_file_id || undefined,
           status: values.status as TaxonomyStatus,
         };
         if (mode === "create") {
@@ -195,14 +176,13 @@ export function TaxonomyFormDialog({
           toast.success(t("common.updateSuccess"));
         }
       } else if (resourceKey === "topics") {
-        const name = (values as z.infer<typeof slugStatusSchema>).name;
+        const name = (values as TaxonomySlugStatusValues).name;
         const payload = {
           name,
-          slug: slugifyName(name),
           status: values.status as TaxonomyStatus,
           image_file_id:
-            (values as z.infer<typeof topicSchema>).image_file_id || undefined,
-          child_topics: normalizeTreeSlugs(tree),
+            (values as TaxonomyTopicValues).image_file_id || undefined,
+          child_topics: toTaxonomyTreeWritePayload(tree),
         };
         if (mode === "create") {
           await createTaxonomyService("topics", payload);
@@ -212,12 +192,11 @@ export function TaxonomyFormDialog({
           toast.success(t("common.updateSuccess"));
         }
       } else if (resourceKey === "skills") {
-        const name = (values as z.infer<typeof slugStatusSchema>).name;
+        const name = (values as TaxonomySlugStatusValues).name;
         const payload = {
           name,
-          slug: slugifyName(name),
           status: values.status as TaxonomyStatus,
-          children: normalizeTreeSlugs(tree),
+          children: toTaxonomyTreeWritePayload(tree),
         };
         if (mode === "create") {
           await createTaxonomyService("skills", payload);
@@ -227,10 +206,9 @@ export function TaxonomyFormDialog({
           toast.success(t("common.updateSuccess"));
         }
       } else {
-        const name = (values as z.infer<typeof slugStatusSchema>).name;
+        const name = (values as TaxonomySlugStatusValues).name;
         const payload = {
           name,
-          slug: slugifyName(name),
           status: values.status as TaxonomyStatus,
         };
         if (mode === "create") {
@@ -243,8 +221,8 @@ export function TaxonomyFormDialog({
       }
       onSuccess();
       onOpenChange(false);
-    } catch {
-      toast.error(t("common.errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsSubmitting(false);
     }
@@ -263,22 +241,50 @@ export function TaxonomyFormDialog({
         <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
           {resourceKey === "outcomes" ? (
             <div className="space-y-2">
-              <Label htmlFor="short_description">
+              <RequiredLabel htmlFor="short_description">
                 {tForm("shortDescription")}
-              </Label>
+              </RequiredLabel>
               <Input
                 id="short_description"
                 {...form.register("short_description")}
+              />
+              <FieldError
+                error={
+                  "short_description" in form.formState.errors
+                    ? form.formState.errors.short_description
+                    : undefined
+                }
+                message={resolveValidationMessage(
+                  tForm as (key: string) => string,
+                  "short_description" in form.formState.errors
+                    ? form.formState.errors.short_description?.message
+                    : undefined,
+                )}
               />
             </div>
           ) : (
             <>
               <div className="space-y-2">
-                <Label htmlFor="name">{tForm("name")}</Label>
+                <RequiredLabel htmlFor="name">{tForm("name")}</RequiredLabel>
                 <Input id="name" {...form.register("name")} />
+                <FieldError
+                  error={
+                    "name" in form.formState.errors
+                      ? form.formState.errors.name
+                      : undefined
+                  }
+                  message={resolveValidationMessage(
+                    tForm as (key: string) => string,
+                    "name" in form.formState.errors
+                      ? form.formState.errors.name?.message
+                      : undefined,
+                  )}
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="slug">{tForm("slug")}</Label>
+                <RequiredLabel htmlFor="slug" required={false}>
+                  {tForm("slug")}
+                </RequiredLabel>
                 <Input
                   id="slug"
                   readOnly
@@ -291,7 +297,7 @@ export function TaxonomyFormDialog({
           )}
 
           <div className="space-y-2">
-            <Label>{tForm("status")}</Label>
+            <RequiredLabel required={false}>{tForm("status")}</RequiredLabel>
             <Select
               value={form.watch("status") as TaxonomyStatus}
               onValueChange={(value) =>
@@ -386,7 +392,7 @@ export function TaxonomyFormDialog({
             return;
           }
           if (!file.id) {
-            toast.error(t("common.errorGeneric"));
+            toast.error(tMedia("selectImageOnly"));
             return;
           }
           (form.setValue as (name: "image_file_id", value: string) => void)(

@@ -15,6 +15,7 @@ import type {
   MediaSortOption,
   MediaTab,
 } from "@/types/media";
+import { formatUnixDateTime } from "./date";
 
 export function isImageFilename(filename: string): boolean {
   const lower = filename.toLowerCase();
@@ -79,8 +80,7 @@ export function getMediaDeleteKey(file: MediaFile): string {
 }
 
 export function formatMediaDate(unixSeconds: number | undefined): string {
-  if (!unixSeconds) return "—";
-  return new Date(unixSeconds * 1000).toLocaleString();
+  return formatUnixDateTime(unixSeconds);
 }
 
 export function parseMediaSortOption(
@@ -96,7 +96,12 @@ export function parseMediaSortOption(
 
 export type MediaUploadValidationIssue = {
   code: "too_many" | "file_too_large" | "total_too_large" | "executable";
-  messageKey: string;
+  /** i18n key under `media.validation` namespace. */
+  messageKey:
+    | "tooMany"
+    | "fileTooLarge"
+    | "totalTooLarge"
+    | "executableRejected";
 };
 
 export function validateMediaUploadBatch(
@@ -120,22 +125,4 @@ export function validateMediaUploadBatch(
     return { code: "total_too_large", messageKey: "totalTooLarge" };
   }
   return null;
-}
-
-/** Maps BE errcode numbers surfaced on upload failures. */
-export function mediaUploadErrorMessageKey(
-  apiCode: number | undefined,
-): string {
-  switch (apiCode) {
-    case 2003:
-      return "fileTooLarge";
-    case 2004:
-      return "executableRejected";
-    case 2005:
-      return "totalTooLarge";
-    case 2006:
-      return "tooMany";
-    default:
-      return "generic";
-  }
 }

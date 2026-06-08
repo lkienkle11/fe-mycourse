@@ -1,3 +1,3 @@
-import { SysadminInstructorTicketsPage } from "@/screen/sysadmin/instructor/tickets/page";
+import { InstructorTicketsAdminPage } from "@/screen/common/instructor";
 
-export default SysadminInstructorTicketsPage;
+export default InstructorTicketsAdminPage;

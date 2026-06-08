@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,7 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { toastValidationError } from "@/lib/utils/validation-message";
+import { instructorEmailSchema } from "@/schema/instructor";
 
 export type ConfirmAddInstructorDialogProps = {
   open: boolean;
@@ -28,11 +30,16 @@ export function ConfirmAddInstructorDialog({
   isLoading = false,
 }: ConfirmAddInstructorDialogProps) {
   const t = useTranslations("instructor.roster.add");
+  const tValidation = useTranslations("instructor.validation");
   const [email, setEmail] = useState("");
 
   const handleSubmit = async () => {
     const trimmed = email.trim();
-    if (!trimmed) return;
+    const parsed = instructorEmailSchema.safeParse({ email: trimmed });
+    if (!parsed.success) {
+      toastValidationError(tValidation, parsed.error.issues, "email");
+      return;
+    }
     await onConfirm(trimmed);
     setEmail("");
   };
@@ -51,7 +58,9 @@ export function ConfirmAddInstructorDialog({
           <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-2">
-          <Label htmlFor="instructor-email">{t("emailLabel")}</Label>
+          <RequiredLabel htmlFor="instructor-email">
+            {t("emailLabel")}
+          </RequiredLabel>
           <Input
             id="instructor-email"
             type="email"

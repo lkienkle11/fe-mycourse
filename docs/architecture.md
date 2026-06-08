@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (dagre tree popup; name-only node labels)._
+_Last audited: 2026-06-08 (api-error resolver, expanded schema/, Me API callers)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -117,13 +117,13 @@ fe/
 │   │   ├── ui/                     # Radix/shadcn primitives (Button, Dialog, Input, …)
 │   │   ├── common/
 │   │   │   ├── index.ts            # Barrel: auth-menu, dashboard, footer, header
-│   │   │   ├── dashboard/          # DashboardLayout (+ locale chrome helpers), DashboardSidebar, DashboardUnauthorized
+│   │   │   ├── dashboard/          # DashboardLayout, RoleDashboardLayout (+ locale chrome helpers), DashboardSidebar, DashboardUnauthorized
 │   │   │   ├── header/             # Header (RSC), HeaderDashboard, HeaderBrowseNav, HeaderMobileBar/Sidebar,
 │   │   │                           # BrowseSidebarMenu, SidebarAuthFooter, LocaleSwitcher
 │   │   │   ├── footer/             # Footer (RSC), FooterSocial (client social icons)
 │   │   │   └── auth-menu/          # AuthLayout, AuthButton, LoginSignupPopup,
 │   │   │                           # LoginContent, SignupContent, UserMenu,
-│   │   │                           # auth-form-handler.ts, auth-social-login/
+│   │   │                           # auth-client.ts delegates to server actions, auth-social-login/
 │   │   ├── home/                   # Home page sections (HeroSection, CourseCard, …)
 │   │   ├── shared/                 # Cross-feature components (SearchBar, …)
 │   │   ├── providers/
@@ -143,7 +143,7 @@ fe/
 │   │   ├── raw-http.ts             # rawFetch / rawPost / … plain Axios (used by doTokenRefresh)
 │   │   ├── cache.ts                # (DISABLED) Client IndexedDB + server Map cache layer
 │   │   ├── callers/
-│   │   │   └── auth/auth.ts        # loginService, registerService, confirmService, logoutService, getMeService
+│   │   │   └── auth/auth.ts        # login/register/confirm/logout + getMe/patchMe/deleteMe/getMyPermissions
 │   │   └── hooks/
 │   │       └── auth/useAuth.ts     # SWR hook: { me, isLoading, error, mutate }
 │   │
@@ -164,18 +164,19 @@ fe/
 │   │   ├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiErrorCodeValue (types only)
 │   │   └── auth/auth.ts            # MeResponse, LoginResponse, RefreshTokenResponse
 │   │
-│   ├── schema/
+│   ├── schema/                     # Zod: auth, me, media, taxonomy, instructor, course (barrel @/schema)
 │   │   └── auth/auth.ts            # loginSchema, signupSchema (Zod + i18n keys)
 │   │
 │   ├── constants/
 │   │   ├── api-route.ts            # API_PUBLIC_ROUTES, API_PRIVATE_ROUTES
-│   │   ├── api-error-code.ts       # ApiErrorCode (mirrors be/pkg/errcode/codes.go)
-│   │   ├── route.ts                # PUBLIC_ROUTES (home, confirmEmail, logout)
+│   │   ├── api-error-code.ts       # ApiErrorCode (mirrors be/internal/shared/errors/errcode_codes.go)
+│   │   ├── route.ts                # PUBLIC_ROUTES + PRIVATE_ROUTES + PUBLIC_RESOURCE_ROUTES + PRIVATE_RESOURCE_ROUTES
 │   │   ├── browse-menu.ts          # BROWSE_MENU_ITEMS
 │   │   └── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (types: types/user-menu.ts)
 │   │
 │   ├── lib/
 │   │   ├── language/               # resolveCustomLanguage, resolveLanguageCode
+│   │   ├── navigation/             # route builders + shared href helpers
 │   │   ├── utils/                  # Shared helpers — import `@/lib/utils` (barrel: index.ts)
 │   │   │   ├── index.ts            # Re-exports
 │   │   │   ├── cn.ts               # cn() (clsx + tailwind-merge)
@@ -241,7 +242,7 @@ Covers everything related to authentication UI and server-side token management:
 | `AuthButton` | `auth-menu/auth-button.tsx` | CTA button shown when not authenticated |
 | `AuthLayout` | `auth-menu/auth-layout.tsx` | Header chrome: skeleton / `UserMenu` / `AuthButton` |
 | `UserMenu` | `auth-menu/user-menu.tsx` | Avatar dropdown for authenticated users |
-| `handleAuthSubmit` | `auth-menu/auth/auth-form-handler.ts` | Dispatcher → `loginAction` / `registerAction` (UI type `"signup"`) |
+| `handleAuthSubmit` | `actions/auth/auth-client.ts` | Client-side submit helper → `loginAction` / `registerAction` (UI type `"signup"`) |
 | `loginAction` | `actions/auth/auth.ts` | `"use server"` — login, sets cookies |
 | `registerAction` | `actions/auth/auth.ts` | `"use server"` — register (201, no cookies until confirm) |
 | `confirmAction` | `actions/auth/auth.ts` | `"use server"` — email confirm, sets cookies |
@@ -265,7 +266,9 @@ All HTTP communication and token lifecycle management:
 | `scheduleAfterRefresh` / `flushRefreshQueue` | `api/instance.ts` | Client-side mutex queue |
 | `rawPost` / `rawFetch` / … | `api/raw-http.ts` | Plain Axios helpers → `ApiResult<T>`; imported by `instance.ts` only from here |
 | `apiFetch` / `apiPost` / `apiPut` / `apiDelete` / `apiOptions` | `api/methods.ts` | Low-level helpers on `apiInstance` → `ApiResult<T>` |
-| `getMeService` | `api/callers/auth/auth.ts` | `GET /api/v1/me` → `MeResponse \| null` |
+| `getMeService` / `patchMeService` / `deleteMeService` / `getMyPermissionsService` | `api/callers/auth/auth.ts` | Me API callers |
+| `toastApiError` / `translateApiErrorCode` | `lib/utils/api-error.ts` | Map `response.code` → `errors.codes.{code}` |
+| `RequiredLabel` / `FieldError` | `components/shared/` | Form required asterisk + inline Zod errors |
 | `loginService` | `api/callers/auth/auth.ts` | `POST /api/v1/auth/login` |
 | `listMediaFiles` / `uploadMediaFiles` / `deleteMediaFile` | `api/callers/media/media.ts` | Media library CRUD (multipart upload, delete by `object_key`) |
 | `useMediaFiles` | `api/hooks/media/useMediaFiles.ts` | SWR hook for paginated media list |
@@ -295,6 +298,8 @@ Login and signup calls are proxied through Next.js Server Actions (`"use server"
 ### 2. Non-HttpOnly Cookies — Client-Readable Tokens
 
 Auth tokens (`access_token`, `refresh_token`, `session_id`) are stored as **non-HttpOnly**, `SameSite=Lax` cookies so the client-side Axios interceptor can read them and attach them as HTTP headers on every request (`Authorization: Bearer …`, `X-Refresh-Token`, `X-Session-Id`). `buildCookieOptions` enforces `secure: true` in production.
+
+This remains a **known follow-up risk** after the 2026-06-07 frontend remediation pass: the project intentionally kept the current FE/BE auth contract and deferred any HttpOnly redesign to a coordinated cross-repo change.
 
 ### 3. Isomorphic Cookie Layer
 
@@ -329,7 +334,7 @@ Realtime messages from BroadcastChannel, SSE, WebSocket, and NDJSON gRPC share o
 
 ### 8. API Response Envelope
 
-All Go API endpoints return a standard `{ code, message, data }` envelope (mirroring `be/pkg/response/response.go`). `code === 0` means success; any other value is an application error. The `ApiErrorCode` constant map in `src/constants/api-error-code.ts` mirrors `be/pkg/errcode/codes.go`. Success checks: `isApiSuccess()` in `src/lib/utils/api.ts`.
+All Go API endpoints return a standard `{ code, message, data }` envelope (mirroring `be/pkg/response/response.go`). `code === 0` means success; any other value is an application error. The `ApiErrorCode` constant map in `src/constants/api-error-code.ts` mirrors `be/internal/shared/errors/errcode_codes.go` (1:1). Success checks: `isApiSuccess()` in `src/lib/utils/api.ts`. User-facing errors: `toastApiError` / `translateApiErrorCode` in `src/lib/utils/api-error.ts` — never display BE `message`.
 
 ---
 
@@ -369,6 +374,47 @@ Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i
 
 ---
 
+## Route Constants
+
+```ts
+// src/constants/route.ts
+PUBLIC_ROUTES = {
+  home: "/",
+  forgotPassword: "/forgot-password",
+  confirmEmail: "/confirm-email",
+  logout: "/logout",
+}
+
+PRIVATE_ROUTES = {
+  admin: { ... },
+  instructor: { root: "/instructor", courses: "/instructor/courses", ... },
+  sysadmin: { ... },
+  account: { ... },
+}
+
+PUBLIC_RESOURCE_ROUTES = { ... }     // dynamic templates for public pages
+PRIVATE_RESOURCE_ROUTES = {
+  instructor: {
+    courseEditor: "/instructor/courses/:courseId",
+  },
+}
+```
+
+Runtime href generation is centralized in `src/lib/navigation/routes.ts`:
+
+```ts
+toPublicRoute(PUBLIC_ROUTES.home)
+toPrivateRoute(PRIVATE_ROUTES.admin.courses)
+toPrivateResourceRoute(PRIVATE_RESOURCE_ROUTES.instructor.courseEditor, {
+  courseId: String(courseId),
+})
+instructorCourseEditorHref(courseId)
+```
+
+All FE internal navigation uses these route maps + helper builders (menus/sidebar/screen navigation) instead of hardcoded/interpolated path strings.
+
+---
+
 ## API Routes
 
 ```ts
@@ -404,7 +450,7 @@ Lint (`eslint`, `biome`), `npx tsc --noEmit`, and `npm run build` are the primar
 - `npm run dupl` — jscpd clone detection against `src/` (skips shadcn `src/components/ui/**`; see [`quality.md`](./quality.md)).
 - `npm run quality:deps` — both in sequence.
 
-On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs `npm run quality:deps` then **`npm run lint`** in the **`test`** job before **`build`** (same pattern as backend `test` → `build` in `be-mycourse`).
+On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs `npm run quality:deps`, **`npm run lint`**, and **`npm run test`** in the **`test`** job before **`build`** (same pattern as backend `test` → `build` in `be-mycourse`).
 
 ---
 

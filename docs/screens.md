@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-06-02 (custom localized 404 page)._
+_Last audited: 2026-06-08 (validation + code-based API error i18n on feature screens)._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -26,20 +26,41 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 |-------------|------------|---------------------|
 | `/` | `src/app/page.tsx` | **Locale redirect** → `/vi` (308 Permanent Redirect via `next-intl` navigation) |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | **Home page** — renders `HomePage` |
-| `/{locale}/auth/login` | (future) | Login page (planned, not yet implemented) |
 | `/{locale}/confirm-email` | Active | Email confirmation page (`ConfirmEmailContent` → `confirmAction`) |
 | `/{locale}/logout` | Active | Logout page (`LogoutContent` → `logoutAction`, cross-tab `broadcast:logout`) |
 | `/{locale}/admin` | Active | Admin dashboard shell (`AdminDashboardPage` placeholder) |
 | `/{locale}/instructor` | Active | Instructor dashboard shell (`InstructorDashboardPage` placeholder) |
+| `/{locale}/instructor/courses` | Active | `InstructorCoursesPage` — editable course list, create dialog, owner-only delete |
+| `/{locale}/instructor/courses/{courseId}` | Active | `InstructorCourseEditorPage` — basic info, outline, collaborators, pricing placeholder, certificate placeholder |
 | `/{locale}/instructor/tickets` | Active | `InstructorTicketsPage` — create ticket, thread, close (P58) |
-| `/{locale}/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | Active | `AdminInstructor*Page` → shared `Instructor*Page` in `src/screen/common/instructor/` |
-| `/{locale}/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}` | Active | `SysadminInstructor*Page` → same shared screens |
+| `/{locale}/admin/courses` | Active | `CourseReviewPage` — admin draft review queue |
+| `/{locale}/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | Active | Shared `Instructor*Page` screens imported directly from app routes |
+| `/{locale}/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}` | Active | Same shared screens |
 | `/{locale}/sysadmin` | Active | Sysadmin dashboard shell (`SysadminDashboardPage` placeholder) |
-| `/{locale}/admin/taxonomy/{resource}` | Active | `AdminTaxonomy*Page` → shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags) |
-| `/{locale}/sysadmin/taxonomy/{resource}` | Active | `SysadminTaxonomy*Page` → same shared `TaxonomyListPage` (sysadmin menu + permissions) |
+| `/{locale}/sysadmin/courses` | Active | `CourseReviewPage` — sysadmin draft review queue |
+| `/{locale}/admin/taxonomy/{resource}` | Active | Shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags) |
+| `/{locale}/sysadmin/taxonomy/{resource}` | Active | Same shared `TaxonomyListPage` (sysadmin menu + permissions) |
 | `/{locale}/*` (unknown path) | Active | Custom 404 — `NotFoundPage` via `not-found.tsx` chain |
 
-> `PUBLIC_ROUTES` (`src/constants/route.ts`): `home`, `confirmEmail`, `logout`. Login/signup are **modal-only** via `LoginSignupPopup`; confirm/logout have dedicated routes.
+> Route constants (single source: `src/constants/route.ts`):
+> - `PUBLIC_ROUTES`: public routes (no login required)
+> - `PRIVATE_ROUTES`: private routes (login required)
+> - `PUBLIC_RESOURCE_ROUTES` / `PRIVATE_RESOURCE_ROUTES`: dynamic routes with `:param`
+>
+> Route builders/helpers (single source: `src/lib/navigation/routes.ts`):
+> - `toPublicRoute` / `toPrivateRoute`
+> - `toPublicResourceRoute` / `toPrivateResourceRoute`
+> - feature helpers like `instructorCourseEditorHref(courseId)`
+>   Login/signup remain **modal-only** via `LoginSignupPopup`.
+
+---
+
+## Public vs Private Routes
+
+- **Public routes (no login required):** values in `PUBLIC_ROUTES` (`home`, `forgotPassword`, `confirmEmail`, `logout`).
+- **Private routes (login required):** values in `PRIVATE_ROUTES` (admin/instructor/sysadmin/account groups).
+
+This split is intentionally centralized in `src/constants/route.ts` so UI config and navigation share one route source.
 
 ---
 
@@ -74,12 +95,13 @@ Each layout layer adds a concern without re-rendering the parent:
 
 - **`src/screen/index.ts`** — re-exports `common`, `admin`, `instructor`, and `sysadmin` barrels.
 - **`src/screen/common/`** — shared screens used by multiple roles (e.g. marketing `HomePage`, `NotFoundPage`, `TaxonomyListPage`, instructor management pages). Barrel: `src/screen/common/index.ts`.
-- **`src/screen/admin/`** — `AdminDashboardPage` (`page.tsx`) plus role-specific routes such as `taxonomy/{resource}/page.tsx` (`AdminTaxonomy*Page` wrappers). Barrel: `src/screen/admin/index.ts`.
-- **`src/screen/instructor/`** — `InstructorDashboardPage`, `InstructorTicketsPage` (`tickets/page.tsx`); barrel: `src/screen/instructor/index.ts`.
+- **`src/screen/admin/`** — `AdminDashboardPage` (`page.tsx`) only. Shared admin/sysadmin content now lives under `src/screen/common/**`; app route files import those screens directly.
+- **`src/screen/instructor/`** — `InstructorDashboardPage`, `InstructorTicketsPage` (`tickets/page.tsx`), `InstructorCourseEditorPage` shell under `courses/`; barrel: `src/screen/instructor/index.ts`.
 - **`src/screen/common/instructor/`** — shared admin screens: roster, approvals, profiles, expertise, admin tickets; barrel: `src/screen/common/instructor/index.ts`.
-- **`src/screen/admin/instructor/`** — thin wrappers per route (`roster`, `approvals`, `profiles`, `expertise`, `tickets`).
-- **`src/screen/sysadmin/instructor/`** — same wrappers for sysadmin.
-- **`src/screen/sysadmin/`** — `SysadminDashboardPage` plus `taxonomy/{resource}/page.tsx` (`SysadminTaxonomy*Page` wrappers). Barrel: `src/screen/sysadmin/index.ts`.
+- **`src/screen/common/course/`** — shared course review screen used by admin and sysadmin.
+- **`src/components/features/course/`** — non-page course editor tabs and dialogs (`course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx`).
+- **`src/components/features/instructor/`** — shared instructor/admin/sysadmin pagination and action/footer helper components.
+- **`src/screen/sysadmin/`** — `SysadminDashboardPage` only. Shared admin/sysadmin content lives under `src/screen/common/**`.
 
 ---
 
@@ -178,7 +200,7 @@ Breakpoint: **`lg` (1024px)**. Cart is desktop-only (not in mobile bar or sideba
 
 ## Dashboard Shell (`DashboardLayout`)
 
-**Layouts:** `src/app/[locale]/{admin,instructor,sysadmin}/layout.tsx` → `DashboardLayout` with role-specific `*_DASHBOARD_ITEMS` and permission gate.
+**Layouts:** `src/app/[locale]/admin|sysadmin/layout.tsx` → `RoleDashboardLayout` → `DashboardLayout`; `src/app/[locale]/instructor/layout.tsx` uses `DashboardLayout` directly.
 
 **Screens:** `src/screen/{admin,instructor,sysadmin}/page.tsx` — placeholder pages inside `main`.
 
@@ -235,7 +257,9 @@ Header
       │     "signup" → SignupContent
       │     └── AuthSocialLogin [stub]
       ├── LoginContent → handleAuthSubmit("login") → loginAction → mutateMe()
+      │     └── !success → translateApiErrorCode(tErrors, result.code) — never result.message
       └── SignupContent → handleAuthSubmit("signup", …, locale) → registerAction
+            └── !success → translateApiErrorCode(tErrors, result.code); 4010 rate-limit shows countdown
 ```
 
 **Dedicated auth pages:** `ConfirmEmailContent` (`/confirm-email`), `LogoutContent` (`/logout`).
@@ -303,6 +327,9 @@ All primitives are re-exported from `src/components/ui/index.ts`.
 | Component | File | Role |
 |-----------|------|------|
 | `SearchBar` | `search-bar.tsx` | Controlled search input with optional icon, placeholder i18n, className props. Used in Header (hidden on mobile) and home SearchSection. |
+| `RequiredLabel` | `required-label.tsx` | Label with red asterisk for required fields — Taxonomy, Instructor approvals, Course create dialog. |
+| `FieldError` | `field-error.tsx` | Inline validation message under a field (resolves i18n key from Zod). |
+| `PermissionGate` | `permission-gate.tsx` | Declarative permission guard for dashboard / feature UI. |
 
 ---
 
@@ -322,6 +349,8 @@ All primitives are re-exported from `src/components/ui/index.ts`.
 | `"commonHeader"` | Mobile menu (`menu.open`, `browse.categoriesTitle`, `menu.language`, `menu.account`) |
 | `"commonFooter"` | Footer brand, copyright, course link labels |
 | `"auth"` | Auth forms; Zod keys resolved via `useTranslations("auth")` |
+| `"errors.codes"` | **All API failures** — numeric code keys from `src/messages/error-codes.ts` |
+| `"taxonomy.form.validation"` / `"media.validation"` / `"instructor.validation"` / `"course.validation"` | Pre-submit / Zod validation only (never mixed with API codes) |
 
 Translation files: `src/messages/en.ts` and `src/messages/vi.ts`. `LocaleSwitcher` uses `usePathname()` from `@/i18n/navigation` so locale changes keep the current route.
 
@@ -335,9 +364,36 @@ Defined in `src/constants/route.ts`:
 // src/constants/route.ts
 PUBLIC_ROUTES = {
   home: "/",
+  forgotPassword: "/forgot-password",
   confirmEmail: "/confirm-email",
   logout: "/logout",
 }
+
+PRIVATE_ROUTES = {
+  admin: { ... },
+  instructor: { root: "/instructor", courses: "/instructor/courses", ... },
+  sysadmin: { ... },
+  account: { ... },
+}
+
+PUBLIC_RESOURCE_ROUTES = {}
+
+PRIVATE_RESOURCE_ROUTES = {
+  instructor: {
+    courseEditor: "/instructor/courses/:courseId",
+  },
+}
+```
+
+Build final href with `src/lib/navigation/routes.ts` helpers (no string interpolation in screens):
+
+```ts
+toPublicRoute(PUBLIC_ROUTES.home)
+toPrivateRoute(PRIVATE_ROUTES.admin.courses)
+instructorCourseEditorHref(courseId)
+toPrivateResourceRoute(PRIVATE_RESOURCE_ROUTES.instructor.courseEditor, {
+  courseId: String(courseId),
+})
 ```
 
 Use with `@/i18n/navigation` `Link` / `router.push` — locale prefix is applied automatically. No `auth.login` / `auth.signup` constants (modal-only login/signup).
@@ -355,10 +411,16 @@ API_PUBLIC_ROUTES.auth.confirm   // POST /api/v1/auth/confirm
 API_PUBLIC_ROUTES.auth.refresh   // POST /api/v1/auth/refresh
 API_PUBLIC_ROUTES.auth.logout    // POST /api/v1/auth/logout
 
-API_PRIVATE_ROUTES.user.getMe    // GET  /api/v1/me
+API_PRIVATE_ROUTES.user.getMe           // GET    /api/v1/me
+API_PRIVATE_ROUTES.user.patchMe         // PATCH  /api/v1/me
+API_PRIVATE_ROUTES.user.deleteMe        // DELETE /api/v1/me
+API_PRIVATE_ROUTES.user.hardDeleteMe    // DELETE /api/v1/me/hard
+API_PRIVATE_ROUTES.user.getMyPermissions // GET   /api/v1/me/permissions
 ```
 
 `signupAction` in `actions/auth/auth.ts` is a **deprecated alias** of `registerAction`.
+
+Feature screens (taxonomy, media, instructor, course) catch API errors with `toastApiError(useTranslations("errors.codes"), error)` — see [`logic-flow.md` §8](./logic-flow.md).
 
 ---
 
@@ -379,6 +441,7 @@ Symbol and edge counts change as the codebase grows. Refresh the local graph wit
 | For details on… | See |
 |-----------------|-----|
 | Auth flow and token lifecycle | [`docs/flow.md`](flow.md) |
+| API error + validation patterns | [`docs/patterns.md`](patterns.md), [`docs/api-using.md`](api-using.md) |
 | Folder layout, tech stack, design decisions | [`docs/architecture.md`](architecture.md) |
 | Production deploy, env vars, Nginx | [`docs/deploy.md`](deploy.md) |
 | API contracts and BE response envelopes | [`README.md`](../README.md) |

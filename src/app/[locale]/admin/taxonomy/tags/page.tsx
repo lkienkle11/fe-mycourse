@@ -1,3 +1,5 @@
-import { AdminTaxonomyTagsPage } from "@/screen/admin/taxonomy/tags/page";
+import { TaxonomyListPage } from "@/screen/common/taxonomy";
 
-export default AdminTaxonomyTagsPage;
+export default function AdminTaxonomyTagsRoute() {
+  return <TaxonomyListPage resourceKey="tags" />;
+}

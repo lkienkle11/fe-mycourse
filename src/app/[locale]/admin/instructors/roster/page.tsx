@@ -1,3 +1,3 @@
-import { AdminInstructorRosterPage } from "@/screen/admin/instructor/roster/page";
+import { InstructorRosterPage } from "@/screen/common/instructor";
 
-export default AdminInstructorRosterPage;
+export default InstructorRosterPage;

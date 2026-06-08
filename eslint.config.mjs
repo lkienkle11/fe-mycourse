@@ -5,6 +5,19 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    ignores: [".jscpd-report/**", "src/messages/en.ts", "src/messages/vi.ts"],
+    rules: {
+      "max-lines": [
+        "error",
+        {
+          max: 700,
+          skipBlankLines: true,
+          skipComments: true,
+        },
+      ],
+    },
+  },
 
   // Cấm file .tsx trong src/constants và mọi thư mục con/cháu
   {
@@ -232,12 +245,45 @@ const eslintConfig = defineConfig([
     },
   },
 
+  // src/screen: only page.tsx or *-page.tsx (no feature components)
+  {
+    files: ["src/screen/**/*.tsx"],
+    ignores: ["src/screen/**/page.tsx", "src/screen/**/*-page.tsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Program",
+          message:
+            "src/screen only allows page.tsx or *-page.tsx. Move components to src/components/.",
+        },
+      ],
+    },
+  },
+
+  // src/screen: only index.ts barrels (no other .ts files)
+  {
+    files: ["src/screen/**/*.ts"],
+    ignores: ["src/screen/**/index.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Program",
+          message:
+            "src/screen only allows index.ts. Move other modules to src/lib, src/hooks, or src/components/.",
+        },
+      ],
+    },
+  },
+
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
+    ".jscpd-report/**",
     "next-env.d.ts",
   ]),
 ]);

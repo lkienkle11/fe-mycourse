@@ -13,7 +13,11 @@ export default function InstructorLayout({ children }: InstructorLayoutProps) {
   return (
     <DashboardLayout
       items={INSTRUCTOR_DASHBOARD_ITEMS}
-      permissions={[PERMISSIONS.InstructorModify]}
+      permissions={[
+        PERMISSIONS.InstructorModify,
+        PERMISSIONS.CourseInstructorRead,
+      ]}
+      permissionMode="any"
     >
       {children}
     </DashboardLayout>
