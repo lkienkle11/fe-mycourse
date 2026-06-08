@@ -476,6 +476,14 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `CourseDeltaEditor`, course editor state, and any future Delta import/export logic.
 - **Dependencies**: none.
 
+### Asset: course editor utils
+
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/course.ts`
+- **Purpose**: Pure course editor helpers — basic-info/sub-lesson form state factories, taxonomy id `Set` mapping, and root outline `stable_id` for drag-and-drop.
+- **Scope**: `use-course-editor-state`, `editor-page.tsx`.
+- **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`).
+
 ### Asset: dagre-tree utils
 - **Name**: `DagreTreeRoot`, `treeToFlowElements`, `getLayoutedElements`
 - **Type**: Utility functions

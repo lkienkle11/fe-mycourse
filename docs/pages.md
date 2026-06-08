@@ -71,9 +71,9 @@ All user-facing API failures use `errors.codes.{numericCode}` via `translateApiE
 | Confirm email / Logout pages | — | Inline code-based errors |
 | Taxonomy list + form dialog | `taxonomy.form.validation.*`, `RequiredLabel`, `FieldError` | `toastApiError` on delete / create / update |
 | Media collection + upload | `media.validation.*` (size, type, executable) | `toastApiError` |
-| Instructor roster / approvals / expertise / tickets / profiles | `instructor.validation.*`, `RequiredLabel` on approval dialogs | `toastApiError` on all mutations |
+| Instructor roster / approvals / expertise / tickets / profiles | `instructor.validation.*`, `RequiredLabel` on email/reject/topic/skill/ticket fields | `toastValidationError` pre-submit; `toastApiError` on API |
 | Instructor courses list | `course.validation.title` on create dialog | `toastApiError` on create / delete |
-| Instructor course editor | Pre-submit Zod in `useCourseEditorState` | `toastApiError` on save / lease / outline / collaborators |
+| Instructor course editor | `courseBasicInfoSchema` + outline dialogs; `RequiredLabel` on title/section/lesson/quiz fields | `toastValidationError` pre-submit; `toastApiError` on API |
 | Admin/sysadmin course review | Reject reason required (`course.validation.rejectReason`) | `toastApiError` on approve / reject |
 
 See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-admin.md`](./taxonomy-admin.md), [`instructor-admin.md`](./instructor-admin.md), [`media-collection.md`](./media-collection.md), [`modules.md`](./modules.md).

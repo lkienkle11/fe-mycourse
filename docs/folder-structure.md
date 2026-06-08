@@ -388,7 +388,9 @@ src/lib/
 │   ├── list-query.ts       # apiListQueryToRecord() — BE list filter → query record (taxonomy + media)
 │   ├── api.ts              # isApiSuccess() — ApiResponse success type guard
 │   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractAxiosApiError
-│   ├── validation-message.ts # resolveValidationMessage() for Zod i18n keys
+│   ├── validation-message.ts # resolveValidationMessage, toastValidationError, firstValidationMessageKey
+│   ├── course-delta.ts       # Quill Delta parse/stringify/text/image helpers for course text lessons
+│   ├── course.ts             # createCourseBasicInfoState, createCourseSubLessonFormState, rootOutlineStableId, selectedIdsToMap
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
 │   ├── media.ts            # isImageFilename, isExecutableExtension, validateMediaUploadBatch, isImageMedia, …
 │   ├── dagre-tree.ts       # treeToFlowElements, getLayoutedElements (React Flow + dagre)

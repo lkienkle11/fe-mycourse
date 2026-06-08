@@ -210,7 +210,7 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 
 `src/components/features/media/` — media library popup: `MediaCollectionDialog`, `MediaUploadDialog` (`media.validation.*` client checks + `toastApiError` on API fail; sr-only `DialogDescription`; uses shared `formatBytes` from `@/lib/utils`), `MediaItemCard` (overlay select button + menu above + full-filename tooltip; see a11y in `docs/media-collection.md`), `MediaTabPanel`. See `docs/media-collection.md`.
 
-`src/components/features/course/` — course editor tabs and dialogs (`course-editor-basic-tab`, `course-editor-outline-tab`, `course-editor-collaborators-tab`, `course-editor-dialogs`). API errors flow through `useCourseEditorState` → `toastApiError`; create-course title uses `RequiredLabel` + `course.validation.*` on `InstructorCoursesPage`.
+`src/components/features/course/` — course editor tabs and dialogs. `course-editor-basic-tab` — `RequiredLabel` on title (required) and optional fields marked `required={false}`. `course-editor-dialogs` — `RequiredLabel` on section/lesson/sublesson/quiz/video fields. `course-editor-collaborators-tab` — `RequiredLabel` on instructor picker. Pre-submit: `toastValidationError` via `useCourseEditorState`; API: `toastApiError`.
 
 `src/screen/instructor/courses/editor-page.tsx` uses shared `Skeleton` (`src/components/ui/skeleton.tsx`) for the course-editor loading state.
 

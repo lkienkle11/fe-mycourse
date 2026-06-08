@@ -69,12 +69,13 @@ _Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me
   - `src/components/features/course/course-status-badge.tsx`
   - `src/components/features/course/course-delta-editor.tsx`
   - `src/lib/utils/course-delta.ts` — shared Delta parsing/stringify/text/image/link helpers reused by the editor and course state
+  - `src/lib/utils/course.ts` — course editor form state factories and outline stable-id helpers (used by `use-course-editor-state` and `editor-page`)
   - `src/components/features/course/course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx` — split editor render helpers kept outside `src/screen/**` to satisfy the page-only screen rule
   - `src/components/features/instructor/instructor-action-controls.tsx` — shared instructor admin action/footer helpers
   - `src/components/features/instructor/instructor-list-pagination.tsx` — shared instructor/admin/sysadmin pagination helper
 - **Hooks**:
   - `src/hooks/course/use-course-editor-state.ts` — shared client editor state, lease lifecycle, pre-submit Zod checks (`course.validation.*`), API errors via `toastApiError`, and course draft mutation orchestration
-- **Validation**: `src/schema/course/course.ts`; `course.validation.*` i18n; `RequiredLabel` on create-course title dialog
+- **Validation**: `src/schema/course/course.ts` (`courseBasicInfoSchema` title 1–255, short_description max 500; section/lesson/sublesson title max 255; quiz prompt + options; reject reason max 2000); `course.validation.*` i18n; `RequiredLabel` on basic-info title, editor dialogs (section/lesson/sublesson/quiz/collaborator), create-course dialog, review reject
 - **Reuse points**:
   - `SortableList` for section / lesson / sub-lesson ordering
   - `MediaCollectionDialog` + `ImageFileField` for thumbnail / preview video / text-lesson images
