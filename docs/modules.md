@@ -1,12 +1,13 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-06-07 (review-v1 remediation helpers + shared route screens)._
+_Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me/Media/Taxonomy/Instructor/Course)._
 
 
 ## Module map
 - `Ui`: `src/components`, `src/screen`, `src/app/[locale]/(web)`, `src/app/[locale]/{admin,instructor,sysadmin}` (dashboard shells)
 - `Auth`: `src/actions/auth`, `src/components/common/auth-menu`, `src/schema/auth`, `src/types/auth`
-- `Api`: `src/api`, `src/constants/api-route.ts`, `src/constants/api-error-code.ts`, `src/types/api.ts`, `src/lib/utils/api.ts`
+- `Api`: `src/api`, `src/constants/api-route.ts`, `src/constants/api-error-code.ts`, `src/types/api.ts`, `src/lib/utils/api.ts`, `src/lib/utils/api-error.ts`
+- `Validation + i18n errors`: `src/schema/**`, `src/messages/error-codes.ts`, `src/components/shared/required-label.tsx`, `src/components/shared/field-error.tsx`, `src/lib/utils/validation-message.ts`
 - `Events`: `src/events`, `src/hooks/events`, `src/store/events`, `src/types/events`, `src/config/events`
 - `State`: `src/store` (auth, language, api-error, events), `src/hooks/auth`, `src/hooks/language`
 - `Routing + i18n`: `src/app`, `src/i18n`, `src/proxy.ts`, `src/messages`
@@ -18,8 +19,9 @@ _Last audited: 2026-06-07 (review-v1 remediation helpers + shared route screens)
 
 ## Responsibilities
 - `Ui` renders pages/sections and calls hooks/actions.
-- `Auth` handles login/signup flows and auth modal behavior.
-- `Api` centralizes HTTP transport, retries, and endpoint access.
+- `Auth` handles login/signup/confirm/logout flows and auth modal behavior; API failures use `errors.codes.{code}` (never BE `message`).
+- `Api` centralizes HTTP transport, retries, endpoint access, and unified error resolution (`toastApiError`, `translateApiErrorCode`).
+- `Validation + i18n errors` provides shared Zod schemas, form labels (`RequiredLabel`), field errors (`FieldError`), and two i18n namespaces: `errors.codes.*` (API) vs `*.validation.*` (pre-submit).
 - `Events` manages realtime transports (BroadcastChannel, SSE, WebSocket, NDJSON gRPC), normalization, and hook subscriptions.
 - `State` stores auth modal state, `/me` sync, **language** (`useLanguageStore`), API errors, and stream event log.
 - `Routing + i18n` controls locale-prefixed navigation and message loading.
@@ -71,7 +73,8 @@ _Last audited: 2026-06-07 (review-v1 remediation helpers + shared route screens)
   - `src/components/features/instructor/instructor-action-controls.tsx` — shared instructor admin action/footer helpers
   - `src/components/features/instructor/instructor-list-pagination.tsx` — shared instructor/admin/sysadmin pagination helper
 - **Hooks**:
-  - `src/hooks/course/use-course-editor-state.ts` — shared client editor state, lease lifecycle, translated toasts, and course draft mutation orchestration
+  - `src/hooks/course/use-course-editor-state.ts` — shared client editor state, lease lifecycle, pre-submit Zod checks (`course.validation.*`), API errors via `toastApiError`, and course draft mutation orchestration
+- **Validation**: `src/schema/course/course.ts`; `course.validation.*` i18n; `RequiredLabel` on create-course title dialog
 - **Reuse points**:
   - `SortableList` for section / lesson / sub-lesson ordering
   - `MediaCollectionDialog` + `ImageFileField` for thumbnail / preview video / text-lesson images
@@ -90,9 +93,18 @@ _Last audited: 2026-06-07 (review-v1 remediation helpers + shared route screens)
 - **UI**: `PermissionGate` (`src/components/shared/permission-gate.tsx`); user menu via `useFilteredUserMenuGroups` in `UserMenuDropdownItems`; dashboard sidebar via `useFilteredDashboardItems` in `DashboardLayout`.
 - **Note**: `MeResponse` has `permissions: string[]` only; no `roles[]` on `/me` yet — gate UI by permission, not role name alone.
 
+## Me API module
+
+- **Routes**: `API_PRIVATE_ROUTES.user` — `getMe`, `patchMe`, `deleteMe`, `hardDeleteMe`, `getMyPermissions`.
+- **Callers**: `src/api/callers/auth/auth.ts` — `getMeService`, `patchMeService`, `deleteMeService`, `hardDeleteMeService`, `getMyPermissionsService`.
+- **Hook**: `useAuth` exposes `{ me, isLoading, error, errorCode, mutate }`; 401 on GET `/me` → `null` (not an error).
+- **Schema**: `src/schema/me/me.ts` — `updateMeSchema` (`avatar_file_id` optional UUID).
+- **UI**: No dedicated account-settings page yet; callers ready for avatar PATCH via `MediaCollectionDialog`.
+
 ## Cross-module contracts
-- `Auth UI -> actions/auth/auth-client -> actions/auth -> api/callers` for login/signup submit.
+- `Auth UI -> actions/auth/auth-client -> actions/auth -> api/callers` for login/signup submit; UI maps `result.code` via `translateApiErrorCode(tErrors, code)`.
 - `api/hooks/auth/useAuth -> hooks/auth/use-auth-store` for SWR-to-Zustand sync.
+- All feature `catch` blocks after API calls → `toastApiError(useTranslations("errors.codes"), error)` (Auth, Media, Taxonomy, Instructor, Course).
 - `api/instance` depends on `lib/utils/cookie` for isomorphic token read/write.
 - `AppProviders -> EventsStreamProvider -> events/registry` starts transports; transports call `events/core/publish` → `store/events`.
 - Feature UI listens via `hooks/events/*` with shared source-scoping helpers under `src/hooks/events/internal/` (never import transports directly except outbound helpers).

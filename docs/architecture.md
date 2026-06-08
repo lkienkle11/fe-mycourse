@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-06-05 (centralized public/private route constants + route-constant adoption)._
+_Last audited: 2026-06-08 (api-error resolver, expanded schema/, Me API callers)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -143,7 +143,7 @@ fe/
 │   │   ├── raw-http.ts             # rawFetch / rawPost / … plain Axios (used by doTokenRefresh)
 │   │   ├── cache.ts                # (DISABLED) Client IndexedDB + server Map cache layer
 │   │   ├── callers/
-│   │   │   └── auth/auth.ts        # loginService, registerService, confirmService, logoutService, getMeService
+│   │   │   └── auth/auth.ts        # login/register/confirm/logout + getMe/patchMe/deleteMe/getMyPermissions
 │   │   └── hooks/
 │   │       └── auth/useAuth.ts     # SWR hook: { me, isLoading, error, mutate }
 │   │
@@ -164,12 +164,12 @@ fe/
 │   │   ├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiErrorCodeValue (types only)
 │   │   └── auth/auth.ts            # MeResponse, LoginResponse, RefreshTokenResponse
 │   │
-│   ├── schema/
+│   ├── schema/                     # Zod: auth, me, media, taxonomy, instructor, course (barrel @/schema)
 │   │   └── auth/auth.ts            # loginSchema, signupSchema (Zod + i18n keys)
 │   │
 │   ├── constants/
 │   │   ├── api-route.ts            # API_PUBLIC_ROUTES, API_PRIVATE_ROUTES
-│   │   ├── api-error-code.ts       # ApiErrorCode (mirrors be/pkg/errcode/codes.go)
+│   │   ├── api-error-code.ts       # ApiErrorCode (mirrors be/internal/shared/errors/errcode_codes.go)
 │   │   ├── route.ts                # PUBLIC_ROUTES + PRIVATE_ROUTES + PUBLIC_RESOURCE_ROUTES + PRIVATE_RESOURCE_ROUTES
 │   │   ├── browse-menu.ts          # BROWSE_MENU_ITEMS
 │   │   └── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (types: types/user-menu.ts)
@@ -266,7 +266,9 @@ All HTTP communication and token lifecycle management:
 | `scheduleAfterRefresh` / `flushRefreshQueue` | `api/instance.ts` | Client-side mutex queue |
 | `rawPost` / `rawFetch` / … | `api/raw-http.ts` | Plain Axios helpers → `ApiResult<T>`; imported by `instance.ts` only from here |
 | `apiFetch` / `apiPost` / `apiPut` / `apiDelete` / `apiOptions` | `api/methods.ts` | Low-level helpers on `apiInstance` → `ApiResult<T>` |
-| `getMeService` | `api/callers/auth/auth.ts` | `GET /api/v1/me` → `MeResponse \| null` |
+| `getMeService` / `patchMeService` / `deleteMeService` / `getMyPermissionsService` | `api/callers/auth/auth.ts` | Me API callers |
+| `toastApiError` / `translateApiErrorCode` | `lib/utils/api-error.ts` | Map `response.code` → `errors.codes.{code}` |
+| `RequiredLabel` / `FieldError` | `components/shared/` | Form required asterisk + inline Zod errors |
 | `loginService` | `api/callers/auth/auth.ts` | `POST /api/v1/auth/login` |
 | `listMediaFiles` / `uploadMediaFiles` / `deleteMediaFile` | `api/callers/media/media.ts` | Media library CRUD (multipart upload, delete by `object_key`) |
 | `useMediaFiles` | `api/hooks/media/useMediaFiles.ts` | SWR hook for paginated media list |
@@ -332,7 +334,7 @@ Realtime messages from BroadcastChannel, SSE, WebSocket, and NDJSON gRPC share o
 
 ### 8. API Response Envelope
 
-All Go API endpoints return a standard `{ code, message, data }` envelope (mirroring `be/pkg/response/response.go`). `code === 0` means success; any other value is an application error. The `ApiErrorCode` constant map in `src/constants/api-error-code.ts` mirrors `be/pkg/errcode/codes.go`. Success checks: `isApiSuccess()` in `src/lib/utils/api.ts`.
+All Go API endpoints return a standard `{ code, message, data }` envelope (mirroring `be/pkg/response/response.go`). `code === 0` means success; any other value is an application error. The `ApiErrorCode` constant map in `src/constants/api-error-code.ts` mirrors `be/internal/shared/errors/errcode_codes.go` (1:1). Success checks: `isApiSuccess()` in `src/lib/utils/api.ts`. User-facing errors: `toastApiError` / `translateApiErrorCode` in `src/lib/utils/api-error.ts` — never display BE `message`.
 
 ---
 

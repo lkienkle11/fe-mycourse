@@ -1,6 +1,6 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-06-05 (frontend test script + CI test job sync)._
+_Last audited: 2026-06-08 (validation/i18n refactor quality gate re-run)._
 
 Checks for **circular imports** (Madge), **duplicate code** (jscpd), and **ESLint** under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs `npm run quality:deps`, **`npm run lint`**, and **`npm run test`** in the **`test`** job **before** `npm run build` (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 
@@ -135,7 +135,9 @@ Feature components (tabs, dialogs, pagination blocks, …) belong in `src/compon
 
 ---
 
-## Baseline run (2026-06-05)
+**2026-06-08 refactor (validation + API errors):** `ApiErrorCode` stays in `src/constants/api-error-code.ts` (data-only); resolvers in `src/lib/utils/api-error.ts`; Zod schemas under `src/schema/{auth,me,media,taxonomy,instructor,course}/`; copy in `src/messages/error-codes.ts`. Do not put runtime helpers in `src/constants/**`.
+
+## Baseline run (2026-06-08)
 
 ### Full local gate
 
@@ -159,7 +161,7 @@ Recommended before PR: run the table above (or at minimum `biome`, `tsc`, `quali
 | `npm run cycles` | **Pass** | 311 files processed; no circular dependency |
 | `npm run dupl` | **Pass** | **215** files analyzed (UI primitives excluded); **0 clones** (0% duplicated lines) |
 
-_Re-run on 2026-06-05 after adding `biome` alias + syncing UI override: `biome`/`lint:biome`, `lint`, `tsc --noEmit`, `quality:deps`, `build` pass._
+_Re-run on 2026-06-08 after validation + code-based API error i18n across Auth/Me/Media/Taxonomy/Instructor/Course: `lint:biome`, `lint`, `tsc --noEmit`, `quality:deps`, `build` pass._
 
 **jscpd dedup refactors (2026-05-27):**
 

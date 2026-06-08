@@ -1,6 +1,6 @@
 # Taxonomy admin (FE)
 
-_Last audited: 2026-06-07 (shared app-route screens + SWR dedupe helpers)._
+_Last audited: 2026-06-08 (shared Zod schemas, RequiredLabel, code-based API errors)._
 
 Admin and sysadmin dashboards can manage five taxonomy resources aligned with BE `/api/v1/taxonomy/*`:
 
@@ -99,6 +99,13 @@ Taxonomy list screens now use the built-in `DataTable` toolbar instead of a page
 - When `FilterBy` is not `status`, the search input + search action are shown.
 - Status behavior is unchanged.
 - Text search sends `search_by` + `search_value` and resets page to `1`.
+
+## Validation and API errors
+
+- **Schemas**: `src/schema/taxonomy/taxonomy.ts` — `taxonomySlugStatusSchema`, `taxonomyTopicSchema`, `taxonomySkillSchema`, `taxonomyOutcomeSchema` (i18n keys under `taxonomy.form.validation.*`).
+- **Form UI**: `TaxonomyFormDialog` uses `RequiredLabel` + `FieldError` on `name` / `short_description`; Zod keys resolve via `useTranslations("taxonomy.form")` + `validation.*`; slug preview stays read-only (`required={false}`).
+- **Client checks**: Zod via `zodResolver` before submit; tree/description editors remain separate state (validated on submit through parent schema).
+- **API failures**: list delete and form create/update catch → `toastApiError(useTranslations("errors.codes"), error)` — never `taxonomy.common.errorGeneric` for API responses.
 
 ## Sample data
 

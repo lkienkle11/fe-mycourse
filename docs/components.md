@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-06-05 (auth spinner reuse + instructor course editor loading skeleton)._
+_Last audited: 2026-06-08 (RequiredLabel, FieldError for form validation)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -195,6 +195,8 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | Component | File | Description |
 |-----------|------|-------------|
 | `PermissionGate` | `permission-gate.tsx` | Client wrapper: shows `children` when `useSatisfiesPermissions` passes; optional `fallback`. Props: `permissions`, `permissionMode` (`"all"` \| `"any"`). |
+| `RequiredLabel` | `required-label.tsx` | Extends `Label` with optional required asterisk (`required` prop, default `true`). |
+| `FieldError` | `field-error.tsx` | Inline validation message below a control; pair with `resolveValidationMessage`. |
 | `ConfirmDeleteDialog` | `confirm-delete-dialog.tsx` | Alert dialog for soft-delete confirm; copy from `taxonomy.delete` namespace. |
 | `DataTable` | `data-table.tsx` | Generic sortable admin table (`columns`, `rows`, `sort`, `renderActions`) with optional built-in filter toolbar (`FilterBy`, search, per-option custom input via `DataTableFilterByOption.customInputComponent`). First used by taxonomy lists. |
 | `SortableList` | `sortable-list.tsx` | Vertical `@dnd-kit` reorder list; items need string `id`. |
@@ -202,11 +204,13 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | `DagreTreeDialog` | `dagre-tree-dialog.tsx` | Dagre layout popup (`@xyflow/react` + `dagre`); `nodesDraggable` prop (default `true`); node labels **name only**; vertical/horizontal toggle; CSS in this file. Taxonomy passes `nodesDraggable={false}`. |
 | `SearchBar` | `search-bar.tsx` | Global search input (UI stub). `visibility`: `"header"` (default, hidden below `md`) or `"sidebar"` (full-width flex for mobile sheet). |
 
-`src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog`, `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns; `child_render` column opens tree view).
+`src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog` (shared Zod schemas, `RequiredLabel`, `FieldError`, `toastApiError`), `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns; `child_render` column opens tree view).
 
-`src/components/features/instructor/` — instructor management: `InstructorProfileViewDialog`, `ConfirmAddInstructorDialog`, `InstructorApprovalActions` (reject requires reason). See `docs/instructor-admin.md`.
+`src/components/features/instructor/` — instructor management: `InstructorProfileViewDialog`, `ConfirmAddInstructorDialog` (`RequiredLabel`, email Zod), `InstructorApprovalActions` (`RequiredLabel` on reason, `toastApiError`). See `docs/instructor-admin.md`.
 
-`src/components/features/media/` — media library popup: `MediaCollectionDialog`, `MediaUploadDialog` (sr-only `DialogDescription`; uses shared `formatBytes` from `@/lib/utils`), `MediaItemCard` (overlay select button + menu above + full-filename tooltip; see a11y in `docs/media-collection.md`), `MediaTabPanel`. See `docs/media-collection.md`.
+`src/components/features/media/` — media library popup: `MediaCollectionDialog`, `MediaUploadDialog` (`media.validation.*` client checks + `toastApiError` on API fail; sr-only `DialogDescription`; uses shared `formatBytes` from `@/lib/utils`), `MediaItemCard` (overlay select button + menu above + full-filename tooltip; see a11y in `docs/media-collection.md`), `MediaTabPanel`. See `docs/media-collection.md`.
+
+`src/components/features/course/` — course editor tabs and dialogs (`course-editor-basic-tab`, `course-editor-outline-tab`, `course-editor-collaborators-tab`, `course-editor-dialogs`). API errors flow through `useCourseEditorState` → `toastApiError`; create-course title uses `RequiredLabel` + `course.validation.*` on `InstructorCoursesPage`.
 
 `src/screen/instructor/courses/editor-page.tsx` uses shared `Skeleton` (`src/components/ui/skeleton.tsx`) for the course-editor loading state.
 

@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-06-05 (synced Biome script alias `biome` -> `lint:biome`)._
+_Last audited: 2026-06-08 (Zod schemas per module + `errors.codes` i18n)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -55,7 +55,7 @@ Envelope validation uses existing **`zod`** (see `src/events/core/normalize-inbo
 | Package | Version | Role |
 |---------|---------|------|
 | `react-hook-form` | ^7.72.0 | Form state management and submission handling — used with Zod resolver |
-| `zod` | 4.3.6 | Schema validation — `loginSchema`, `signupSchema` in `src/schema/auth/auth.ts`; validation messages use i18n keys |
+| `zod` | 4.3.6 | Schema validation — `src/schema/{auth,me,media,taxonomy,instructor,course}/`; validation messages use module i18n keys (separate from `errors.codes.*`) |
 | `@hookform/resolvers` | ^5.2.2 | Bridge between `react-hook-form` and Zod (`zodResolver`) |
 
 ---

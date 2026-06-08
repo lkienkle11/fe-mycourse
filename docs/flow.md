@@ -1,6 +1,6 @@
 # Execution Flows (`fe`)
 
-_Last audited: 2026-06-07 (review-v1 auth helper move + shared route screen cleanup)._
+_Last audited: 2026-06-08 (code-based API errors on auth + feature modules)._
 
 
 This document traces the major user-visible and technical flows in the MyCourse frontend. Flows are derived from the **GitNexus** process index for repo **`fe-mycourse`** (12 tracked execution chains across the **Auth** and **Api** clusters) and from direct source inspection. Regenerate the graph after large UI changes with `npx gitnexus analyze --force` from the **fe-mycourse** repo root.
@@ -117,6 +117,8 @@ await setAuthSessionCookies({
 
 After a successful login, `login-content.tsx` calls **`mutateMe()`** from `useGetMe()` (Zustand mirror synced from SWR). This forces an immediate `GET /api/v1/me` with the new cookies; `AuthLayout` switches from `AuthButton` to `UserMenu`.
 
+**Errors in UI:** `translateApiErrorCode(useTranslations("errors.codes"), result.code)` — never `result.message`.
+
 ---
 
 ## 2. Register (Signup) Flow
@@ -133,7 +135,7 @@ SignupContent (client, locale from useLocale())
   → UI: registrationPending panel ("check your email"), modal stays open
 ```
 
-**Errors mapped in UI:** `4001`, `4003`, `4009`, `4010` (+ `Retry-After` countdown), `4011`.
+**Errors in UI:** `translateApiErrorCode(useTranslations("errors.codes"), result.code)` — all auth codes via `errors.codes.{code}`; rate-limit `4010` keeps `Retry-After` countdown UX.
 
 **Email link (BE):** `{APP_CLIENT_BASE_URL}/{locale}/confirm-email?token={uuid}` → see §2b.
 

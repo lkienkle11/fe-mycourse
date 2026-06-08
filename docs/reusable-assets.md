@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-06-07 (review-v1 remediation helpers + shared route screens)._
+_Last audited: 2026-06-08 (validation + code-based API error i18n across 5 modules)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -726,13 +726,13 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Used exclusively via `apiFetch`/`apiPost` etc. in `src/api/methods.ts`.
 - **Dependencies**: `axios`, `js-cookie`, `getCookieValue`, `setCookieValue`, `isServer`, `useApiError`.
 
-### Asset: getMeService / getMeEndpointKey
-- **Name**: `getMeService(): Promise<MeResponse | null>`, `getMeEndpointKey: string | null`
-- **Type**: API service + SWR key
+### Asset: Me API services
+- **Name**: `getMeService`, `patchMeService`, `deleteMeService`, `hardDeleteMeService`, `getMyPermissionsService`, `getMeEndpointKey`
+- **Type**: API services + SWR key
 - **Path**: `src/api/callers/auth/auth.ts`
-- **Purpose**: Fetches `GET /api/v1/me`. Returns `null` on 401. `getMeEndpointKey` is the canonical SWR cache key — always import from here instead of building the URL manually.
-- **Scope**: `useAuth` hook.
-- **Dependencies**: `apiFetch`, `buildQueryParams`, `API_PRIVATE_ROUTES`.
+- **Purpose**: `GET /api/v1/me` returns `null` on 401; PATCH/DELETE/permissions for profile lifecycle. `getMeEndpointKey` is the canonical SWR cache key.
+- **Scope**: `useAuth` hook (`errorCode` for non-401 failures); future account-settings UI.
+- **Dependencies**: `apiFetch`, `apiPatch`, `apiDelete`, `buildQueryParams`, `API_PRIVATE_ROUTES.user`.
 
 ### Asset: loginService
 - **Name**: `loginService(payload: LoginPayload): Promise<{ data, cookies }>`
@@ -751,7 +751,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Next.js Server Action (`"use server"`)
 - **Path**: `src/actions/auth/auth.ts`
 - **Purpose**: Handles login end-to-end on the server — calls `loginService`, sets `access_token`, `refresh_token`, `session_id` cookies for the browser, and returns `AuthActionResult`. Cookies are non-HttpOnly so client JS can read them for `Authorization` header attachment.
-- **Scope**: Login form's `onSubmit` handler in `login-content.tsx`.
+- **Scope**: Login form's `onSubmit` handler in `login-content.tsx`. UI maps `result.code` via `translateApiErrorCode` — never `result.message`.
 - **Dependencies**: `loginService`, `buildCookieOptions`, `getCookieDomain`, `next/headers cookies()`.
 
 ### Asset: registerAction / confirmAction
@@ -773,6 +773,38 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Returns `true` and narrows type to `ApiResponse<T> & { data: T }` when `res.code === 0`. Use instead of comparing `res.code === ApiErrorCode.Success` directly.
 - **Scope**: All API service functions and Server Actions that check response success.
 - **Dependencies**: `ApiErrorCode` (`src/constants/api-error-code.ts`), `ApiResponse` type.
+
+### Asset: toastApiError / translateApiErrorCode
+- **Name**: `toastApiError`, `translateApiErrorCode`, `extractAxiosApiError`, `resolveApiErrorMessageKey`
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/api-error.ts` (barrel: `@/lib/utils`)
+- **Purpose**: Unified API error resolver — maps `response.code` → `errors.codes.{code}` i18n key. Never passes BE `message` to UI.
+- **Scope**: Auth, Me, Media, Taxonomy, Instructor, Course — all `catch` blocks after API calls.
+- **Dependencies**: `src/messages/error-codes.ts`, `ApiErrorCode`.
+
+### Asset: RequiredLabel / FieldError
+- **Name**: `RequiredLabel`, `FieldError`
+- **Type**: React components
+- **Path**: `src/components/shared/required-label.tsx`, `src/components/shared/field-error.tsx`
+- **Purpose**: Form labels with required asterisk; inline Zod field errors below controls.
+- **Scope**: Taxonomy form dialog, instructor/course dialogs, any new forms.
+- **Dependencies**: `Label` from `@/components/ui/label`.
+
+### Asset: resolveValidationMessage
+- **Name**: `resolveValidationMessage`
+- **Type**: Utility function
+- **Path**: `src/lib/utils/validation-message.ts`
+- **Purpose**: Translates Zod i18n message keys through module-scoped `useTranslations` (e.g. `taxonomy.form.validation.*`).
+- **Scope**: All Zod + react-hook-form forms.
+- **Dependencies**: none.
+
+### Asset: Zod schemas (`src/schema/`)
+- **Name**: Module schemas (`auth`, `me`, `media`, `taxonomy`, `instructor`, `course`)
+- **Type**: Zod schemas
+- **Path**: `src/schema/**` (barrel: `@/schema`)
+- **Purpose**: FE pre-submit validation with i18n keys separate from `errors.codes.*`.
+- **Scope**: Forms across Auth, Me, Media, Taxonomy, Instructor, Course modules.
+- **Dependencies**: `zod`.
 
 ---
 

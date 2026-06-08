@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-06-07 (shared app-route screens + role dashboard wrapper)._
+_Last audited: 2026-06-08 (validation + code-based API error i18n on feature screens)._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -257,7 +257,9 @@ Header
       │     "signup" → SignupContent
       │     └── AuthSocialLogin [stub]
       ├── LoginContent → handleAuthSubmit("login") → loginAction → mutateMe()
+      │     └── !success → translateApiErrorCode(tErrors, result.code) — never result.message
       └── SignupContent → handleAuthSubmit("signup", …, locale) → registerAction
+            └── !success → translateApiErrorCode(tErrors, result.code); 4010 rate-limit shows countdown
 ```
 
 **Dedicated auth pages:** `ConfirmEmailContent` (`/confirm-email`), `LogoutContent` (`/logout`).
@@ -325,6 +327,9 @@ All primitives are re-exported from `src/components/ui/index.ts`.
 | Component | File | Role |
 |-----------|------|------|
 | `SearchBar` | `search-bar.tsx` | Controlled search input with optional icon, placeholder i18n, className props. Used in Header (hidden on mobile) and home SearchSection. |
+| `RequiredLabel` | `required-label.tsx` | Label with red asterisk for required fields — Taxonomy, Instructor approvals, Course create dialog. |
+| `FieldError` | `field-error.tsx` | Inline validation message under a field (resolves i18n key from Zod). |
+| `PermissionGate` | `permission-gate.tsx` | Declarative permission guard for dashboard / feature UI. |
 
 ---
 
@@ -344,6 +349,8 @@ All primitives are re-exported from `src/components/ui/index.ts`.
 | `"commonHeader"` | Mobile menu (`menu.open`, `browse.categoriesTitle`, `menu.language`, `menu.account`) |
 | `"commonFooter"` | Footer brand, copyright, course link labels |
 | `"auth"` | Auth forms; Zod keys resolved via `useTranslations("auth")` |
+| `"errors.codes"` | **All API failures** — numeric code keys from `src/messages/error-codes.ts` |
+| `"taxonomy.form.validation"` / `"media.validation"` / `"instructor.validation"` / `"course.validation"` | Pre-submit / Zod validation only (never mixed with API codes) |
 
 Translation files: `src/messages/en.ts` and `src/messages/vi.ts`. `LocaleSwitcher` uses `usePathname()` from `@/i18n/navigation` so locale changes keep the current route.
 
@@ -404,10 +411,16 @@ API_PUBLIC_ROUTES.auth.confirm   // POST /api/v1/auth/confirm
 API_PUBLIC_ROUTES.auth.refresh   // POST /api/v1/auth/refresh
 API_PUBLIC_ROUTES.auth.logout    // POST /api/v1/auth/logout
 
-API_PRIVATE_ROUTES.user.getMe    // GET  /api/v1/me
+API_PRIVATE_ROUTES.user.getMe           // GET    /api/v1/me
+API_PRIVATE_ROUTES.user.patchMe         // PATCH  /api/v1/me
+API_PRIVATE_ROUTES.user.deleteMe        // DELETE /api/v1/me
+API_PRIVATE_ROUTES.user.hardDeleteMe    // DELETE /api/v1/me/hard
+API_PRIVATE_ROUTES.user.getMyPermissions // GET   /api/v1/me/permissions
 ```
 
 `signupAction` in `actions/auth/auth.ts` is a **deprecated alias** of `registerAction`.
+
+Feature screens (taxonomy, media, instructor, course) catch API errors with `toastApiError(useTranslations("errors.codes"), error)` — see [`logic-flow.md` §8](./logic-flow.md).
 
 ---
 
@@ -428,6 +441,7 @@ Symbol and edge counts change as the codebase grows. Refresh the local graph wit
 | For details on… | See |
 |-----------------|-----|
 | Auth flow and token lifecycle | [`docs/flow.md`](flow.md) |
+| API error + validation patterns | [`docs/patterns.md`](patterns.md), [`docs/api-using.md`](api-using.md) |
 | Folder layout, tech stack, design decisions | [`docs/architecture.md`](architecture.md) |
 | Production deploy, env vars, Nginx | [`docs/deploy.md`](deploy.md) |
 | API contracts and BE response envelopes | [`README.md`](../README.md) |

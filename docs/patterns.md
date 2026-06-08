@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-06-05 (`src/screen` ESLint file-layout rules)._
+_Last audited: 2026-06-08 (code-based API errors + shared validation schemas)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -273,7 +273,58 @@ z.string().email({ message: "validation.email" })
 z.string().email({ message: "Please enter a valid email" })
 ```
 
-Translate keys in `auth-form-fields.tsx` (`resolveAuthValidationMessage`) — pass `error` from react-hook-form, not `t(errors.*.message)` in `login-content` / `signup-content` (calling `t(undefined)` throws `MISSING_MESSAGE`).
+Translate keys in `auth-form-fields.tsx` (`resolveAuthValidationMessage`) or shared `resolveValidationMessage()` from `src/lib/utils/validation-message.ts` — pass `error` from react-hook-form, not `t(errors.*.message)` in form shells (calling `t(undefined)` throws `MISSING_MESSAGE`).
+
+Schemas live under `src/schema/<domain>/` (barrel `@/schema`). Each module uses its own validation namespace:
+
+| Module | Zod path | i18n validation namespace |
+|--------|----------|---------------------------|
+| Auth | `schema/auth/auth.ts` | `auth.validation.*` |
+| Me | `schema/me/me.ts` | `me.validation.*` |
+| Media | `schema/media/media.ts` | `media.validation.*` |
+| Taxonomy | `schema/taxonomy/taxonomy.ts` | `taxonomy.form.validation.*` |
+| Instructor | `schema/instructor/instructor.ts` | `instructor.validation.*` |
+| Course | `schema/course/course.ts` | `course.validation.*` |
+
+**Validation keys in messages (en/vi):**
+
+| Namespace | Keys |
+|-----------|------|
+| `media.validation` | `tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected` |
+| `taxonomy.form.validation` | `name`, `shortDescription`, `shortDescriptionMax`, `descriptionMaxLines`, `descriptionLineMax` |
+| `instructor.validation` | `email`, `rejectionReason`, `rejectionReasonMax`, `topicId`, `skillId`, `ticketSubject`, `ticketMessage` |
+| `course.validation` | `title`, `sectionTitle`, `lessonTitle`, `subLessonTitle`, `subLessonKind`, `quizPrompt`, `collaboratorUserId`, `rejectReason`, `videoMediaRequired` |
+
+Taxonomy forms resolve Zod keys via `useTranslations("taxonomy.form")` + schema key `validation.*` (same parent-namespace pattern as auth).
+
+Use `RequiredLabel` + `FieldError` from `src/components/shared/` on required dialog fields.
+
+---
+
+## 6b. API Error Pattern (all modules)
+
+Never show the BE JSON `message` to users. Resolve by numeric `code` only:
+
+```ts
+import { useTranslations } from "next-intl";
+import { toastApiError, translateApiErrorCode } from "@/lib/utils/api-error";
+
+const tErrors = useTranslations("errors.codes");
+
+// catch after apiFetch / service call
+catch (error) {
+  toastApiError(tErrors, error);
+}
+
+// Server Action result (inline)
+setServerError(translateApiErrorCode(tErrors, result.code));
+```
+
+- Copy: `errors.codes.{code}` in `src/messages/en.ts` / `vi.ts` (sourced from `src/messages/error-codes.ts`).
+- Unknown codes fall back to `errors.codes.9999`.
+- `ApiErrorCode` in `src/constants/api-error-code.ts` mirrors `be/internal/shared/errors/errcode_codes.go` 1:1.
+- BE has **no** taxonomy/course/instructor-specific numeric codes — those modules reuse shared `2xxx`/`3xxx` (and media also `9010`–`9018`).
+- Do **not** use semantic per-module API keys (`auth.errors.emailAlreadyExists`, `media.upload.errors.*` for API responses, etc.).
 
 ---
 
@@ -286,8 +337,17 @@ Translations live in `src/messages/en.ts` and `vi.ts` (`vi` uses `satisfies Mess
 ```ts
 import { useTranslations } from "next-intl";
 const t = useTranslations("auth"); // namespace
+const tErrors = useTranslations("errors.codes"); // API errors only
 <p>{t("loginTitle")}</p>
+<p>{tErrors("4002")}</p> // Invalid credentials
 ```
+
+Two namespaces for errors — do not mix:
+
+| Purpose | Key pattern | Example |
+|---------|-------------|---------|
+| API failure (BE `code`) | `errors.codes.{code}` | `tErrors("4004")` |
+| Form validation (pre-submit) | `{module}.validation.*` | `tValidation("title")` |
 
 ### Navigation helpers
 

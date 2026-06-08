@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-06-07 (shared route screens + review-v1 remediation)._
+_Last audited: 2026-06-08 (validation + code-based API error i18n per screen)._
 
 ## Current pages
 
@@ -61,4 +61,19 @@ No `auth.login` / `auth.signup` route constants (login/signup stay modal-only).
 | Instructor pages | Implemented: dashboard shell, courses list/editor, tickets |
 | Sysadmin pages | Implemented: dashboard shell, taxonomy, instructors, course review |
 
-See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-admin.md`](./taxonomy-admin.md), [`instructor-admin.md`](./instructor-admin.md).
+## Validation & API errors by screen
+
+All user-facing API failures use `errors.codes.{numericCode}` via `translateApiErrorCode` / `toastApiError` — never the BE `message` string. Pre-submit checks use module-scoped `*.validation.*` keys (separate namespace). See [`patterns.md` §6b](./patterns.md) and [`api-using.md`](./api-using.md).
+
+| Screen / flow | Client validation | API error display |
+|---------------|-------------------|-------------------|
+| Login / Signup modal | `auth` Zod keys via `loginSchema` / `registerSchema` | Inline `translateApiErrorCode(tErrors, result.code)` |
+| Confirm email / Logout pages | — | Inline code-based errors |
+| Taxonomy list + form dialog | `taxonomy.form.validation.*`, `RequiredLabel`, `FieldError` | `toastApiError` on delete / create / update |
+| Media collection + upload | `media.validation.*` (size, type, executable) | `toastApiError` |
+| Instructor roster / approvals / expertise / tickets / profiles | `instructor.validation.*`, `RequiredLabel` on approval dialogs | `toastApiError` on all mutations |
+| Instructor courses list | `course.validation.title` on create dialog | `toastApiError` on create / delete |
+| Instructor course editor | Pre-submit Zod in `useCourseEditorState` | `toastApiError` on save / lease / outline / collaborators |
+| Admin/sysadmin course review | Reject reason required (`course.validation.rejectReason`) | `toastApiError` on approve / reject |
+
+See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-admin.md`](./taxonomy-admin.md), [`instructor-admin.md`](./instructor-admin.md), [`media-collection.md`](./media-collection.md), [`modules.md`](./modules.md).

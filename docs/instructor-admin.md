@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-06-07 (shared app-route screens + review-v1 remediation)._
+_Last audited: 2026-06-08 (Zod validation + code-based API errors)._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -84,6 +84,14 @@ Course authoring / review reuses the same dashboard and API patterns:
 
 Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalActions`.
 
+## Validation and API errors
+
+- **Schemas**: `src/schema/instructor/instructor.ts` — email, rejection reason, expertise topic/skill, ticket subject/message.
+- **Validation namespace**: `instructor.validation.*` in `src/messages/{en,vi}.ts`.
+- **Required fields UI**: `RequiredLabel` on roster email (`ConfirmAddInstructorDialog`) and rejection reason (`InstructorApprovalActions`).
+- **Pre-submit**: `instructorEmailSchema`, `instructorRejectionReasonSchema`, `instructorTicketSchema` — toast `instructor.validation.*` on failure.
+- **API failures**: all roster/approvals/expertise/tickets/profiles catches → `toastApiError(tErrors, error)`; do not use `instructor.common.errorGeneric` for API responses.
+
 ## Shared UI components
 
 `src/components/features/instructor/`:
@@ -118,7 +126,8 @@ Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, taxonomy list hook
 
 ## i18n
 
-- Screen copy: `instructor.*` in `src/messages/en.ts` and `vi.ts` (roster, approvals, profiles, expertise, tickets, common).
+- Screen copy: `instructor.*` in `src/messages/en.ts` and `vi.ts` (roster, approvals, profiles, expertise, tickets, common, **validation**).
+- API errors: global `errors.codes.*` (not under `instructor.*`).
 - Sidebar labels: `dashboard.instructor.menu.*` (same keys as taxonomy uses `dashboard.taxonomy.menu.*`).
 
 ## Out of scope (FE)

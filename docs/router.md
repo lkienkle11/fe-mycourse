@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-06-07 (shared app-route screens + role dashboard wrapper)._
+_Last audited: 2026-06-08 (no route changes; cross-ref validation/API error docs)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
@@ -258,7 +258,8 @@ import { Link, useRouter } from "@/i18n/navigation";
 4. Import and render the shared or role-specific screen component from the route page.
 5. Add or update the route value in `src/constants/route.ts` (`PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`).
 6. Add or reuse a builder/helper in `src/lib/navigation/routes.ts` instead of string interpolation in screens/components.
-7. Update `docs/screens.md` with the new route entry.
+7. Update `docs/screens.md` and `docs/pages.md` with the new route entry.
+8. If the screen has forms or API mutations, follow [`patterns.md` §6b](./patterns.md) for `errors.codes.*` (API) vs `*.validation.*` (client).
 
 Example:
 

@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-06-07 (review-v1 remediation: shared route screens, SWR helpers, auth client helper, delta utils)._
+_Last audited: 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -191,7 +191,7 @@ src/api/
 ├── cache.ts                # Dual-layer cache (IndexedDB + Map) — implemented but currently not wired in methods.ts
 ├── callers/
 │   ├── auth/
-│   │   └── auth.ts         # loginService, getMeService, getMeEndpointKey
+│   │   └── auth.ts         # auth + Me API: getMe/patchMe/deleteMe/getMyPermissions, getMeEndpointKey
 │   ├── taxonomy/
 │   │   └── taxonomy.ts     # list/create/patch/delete taxonomy services
 │   ├── instructor/
@@ -203,7 +203,7 @@ src/api/
 └── hooks/
     ├── shared.ts          # useApiListQuery / useApiRowsQuery / useApiDetailQuery
     ├── auth/
-    │   └── useAuth.ts      # SWR hook: { me, isLoading, error, mutate }
+    │   └── useAuth.ts      # SWR hook: { me, isLoading, error, errorCode, mutate }
     ├── taxonomy/
     │   └── useTaxonomy.ts  # useTaxonomyList(resourceKey, filters)
     ├── instructor/
@@ -324,10 +324,16 @@ src/types/
 
 ```
 src/schema/
-└── auth/
-    └── auth.ts             # loginSchema (email, password, rememberMe), signupSchema
-                            # Error messages use i18n keys; translated in auth-form-fields.tsx
+├── index.ts                # Barrel: auth, me, media, taxonomy, instructor, course
+├── auth/auth.ts            # loginSchema, signupSchema (auth.validation.*)
+├── me/me.ts                # updateMeSchema (avatar_file_id optional UUID)
+├── media/media.ts          # upload batch rules (media.validation.*)
+├── taxonomy/taxonomy.ts    # slug/status/topic/skill/outcome schemas
+├── instructor/instructor.ts # email, rejection reason, expertise, ticket
+└── course/course.ts        # create, section, lesson, sub-lesson, collaborator, reject
 ```
+
+Error messages in schemas use **i18n keys** (not hardcoded strings). Resolve in components via `resolveValidationMessage` or auth-specific `resolveAuthValidationMessage`.
 
 ### `src/constants/` — Application Constants
 
@@ -336,7 +342,7 @@ src/schema/
 ```
 src/constants/
 ├── api-route.ts            # API_PUBLIC_ROUTES + API_PRIVATE_ROUTES (me, taxonomy, media, instructor, …)
-├── api-error-code.ts       # ApiErrorCode — mirrors be/pkg/errcode/codes.go
+├── api-error-code.ts       # ApiErrorCode — mirrors be/internal/shared/errors/errcode_codes.go
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
 ├── route.ts                # PUBLIC_ROUTES + PRIVATE_ROUTES + PUBLIC_RESOURCE_ROUTES + PRIVATE_RESOURCE_ROUTES (central FE navigation values)
 ├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (user-menu config values incl. permissions/titleKey; roles group first)
@@ -381,6 +387,8 @@ src/lib/
 │   ├── url.ts              # buildQueryParams() — query string builder
 │   ├── list-query.ts       # apiListQueryToRecord() — BE list filter → query record (taxonomy + media)
 │   ├── api.ts              # isApiSuccess() — ApiResponse success type guard
+│   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractAxiosApiError
+│   ├── validation-message.ts # resolveValidationMessage() for Zod i18n keys
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
 │   ├── media.ts            # isImageFilename, isExecutableExtension, validateMediaUploadBatch, isImageMedia, …
 │   ├── dagre-tree.ts       # treeToFlowElements, getLayoutedElements (React Flow + dagre)
@@ -432,10 +440,13 @@ src/lib/i18n/
 
 ```
 src/messages/
-├── en.ts                   # English translations (as const)
+├── en.ts                   # English translations (imports error-codes)
 ├── vi.ts                   # Vietnamese (satisfies Messages from types.ts)
+├── error-codes.ts          # errors.codes.{code} copy (en + vi objects)
 └── types.ts                # export type Messages
 ```
+
+Global API error namespace: `errors.codes` (numeric string keys). Module validation namespaces: `auth.validation`, `me.validation`, `media.validation`, `taxonomy.form.validation`, `instructor.validation`, `course.validation`.
 
 ### `src/proxy.ts` — Next.js Middleware
 
