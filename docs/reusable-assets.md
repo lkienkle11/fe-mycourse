@@ -177,7 +177,9 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant object
 - **Path**: `src/constants/route.ts`
 - **Purpose**: Dynamic FE route templates with `:param` placeholders for resource/detail pages.
-- **Current Entries**: `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` (`/instructor/courses/:courseId`).
+- **Current Entries**:
+  - `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` (`/instructor/courses/:courseId/info`)
+  - `PRIVATE_RESOURCE_ROUTES.instructor.courseEditorTab` (`/instructor/courses/:courseId/:tab`)
 - **Scope**: Navigation helpers and screens that need parameterized routes.
 - **Dependencies**: none.
 
@@ -197,13 +199,22 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: auth components, header/user menu constants, dashboard constants.
 - **Dependencies**: route builder functions in same module.
 
-### Asset: `instructorCourseEditorHref(courseId)`
-- **Name**: `instructorCourseEditorHref`
+### Asset: `instructorCourseEditorHref(courseId)` / `instructorCourseEditorTabHref(courseId, tab)`
+- **Name**: `instructorCourseEditorHref`, `instructorCourseEditorTabHref`
 - **Type**: Utility function
 - **Path**: `src/lib/navigation/routes.ts`
-- **Purpose**: Build instructor course editor route from `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` without string interpolation.
-- **Scope**: instructor course list page and any future course detail navigation.
+- **Purpose**: Build instructor course editor routes from the centralized `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor*` templates without string interpolation.
+- **Scope**: instructor course list page, tab navigation, and any future instructor course detail navigation.
 - **Dependencies**: `toPrivateResourceRoute`.
+
+### Asset: `renderInstructorCourseEditorRoute(props, tab)`
+- **Name**: `renderInstructorCourseEditorRoute`, `InstructorCourseEditorRouteProps`
+- **Type**: Shared route adapter + route props type
+- **Path**: `src/components/features/instructor/instructor-course-editor-route.tsx`
+- **Purpose**: Keep instructor course editor route glue out of `src/app/**` by centralizing the `courseId` param unwrap and forwarding the selected `CourseEditorTab` into `InstructorCourseEditorPage`.
+- **Scope**: the 5 App Router pages under `src/app/[locale]/instructor/courses/[courseId]/{info,outline,collaborators,pricing,certificate}/page.tsx`.
+- **Dependencies**: `InstructorCourseEditorPage`, `CourseEditorTab`.
+- **Reuse Rule**: Reuse this adapter and its exported props type for instructor course editor routes instead of re-declaring `params` shapes or rebuilding the same route-to-screen handoff in each page file.
 
 ### Asset: PERMISSIONS
 - **Name**: `PERMISSIONS`
@@ -480,7 +491,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course.ts`
-- **Purpose**: Pure course editor helpers — basic-info/sub-lesson form state factories, taxonomy id `Set` mapping, and root outline `stable_id` for drag-and-drop.
+- **Purpose**: Pure course editor helpers — tab registry, basic-info/sub-lesson form state factories, payload mapping, taxonomy id `Set` mapping, and root outline `stable_id` for drag-and-drop.
 - **Scope**: `use-course-editor-state`, `editor-page.tsx`.
 - **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`).
 

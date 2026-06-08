@@ -67,7 +67,12 @@ src/app/
     │   ├── page.tsx
     │   ├── courses/
     │   │   ├── page.tsx        # InstructorCoursesPage
-    │   │   └── [courseId]/page.tsx  # InstructorCourseEditorPage
+    │   │   └── [courseId]/
+    │   │       ├── info/page.tsx
+    │   │       ├── outline/page.tsx
+    │   │       ├── collaborators/page.tsx
+    │   │       ├── pricing/page.tsx
+    │   │       └── certificate/page.tsx
     │   └── tickets/page.tsx
     └── sysadmin/
         ├── layout.tsx
@@ -149,7 +154,8 @@ src/components/
 │   │                       # CourseOutlineTab, CourseCollaboratorsTab, Course*Dialog helpers
 │   ├── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
 │   ├── instructor/         # InstructorProfileViewDialog, ConfirmAddInstructorDialog, InstructorApprovalActions,
-│   │                       # InstructorListPagination, instructor action/footer helpers
+│   │                       # InstructorListPagination, instructor action/footer helpers,
+│   │                       # shared instructor course editor route adapter for app pages
 │   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,

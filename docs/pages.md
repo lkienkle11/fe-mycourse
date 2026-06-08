@@ -13,7 +13,11 @@ _Last audited: 2026-06-08 (validation + code-based API error i18n per screen)._
 | `/{locale}/admin` | `src/app/[locale]/admin/page.tsx` | `AdminDashboardPage` (placeholder dashboard) | Implemented |
 | `/{locale}/instructor` | `src/app/[locale]/instructor/page.tsx` | `InstructorDashboardPage` (placeholder) | Implemented |
 | `/{locale}/instructor/courses` | `src/app/[locale]/instructor/courses/page.tsx` | `InstructorCoursesPage` | Implemented |
-| `/{locale}/instructor/courses/{courseId}` | `src/app/[locale]/instructor/courses/[courseId]/page.tsx` | `InstructorCourseEditorPage` | Implemented |
+| `/{locale}/instructor/courses/{courseId}/info` | `src/app/[locale]/instructor/courses/[courseId]/info/page.tsx` | `InstructorCourseEditorPage` (`tab="info"`) via shared `renderInstructorCourseEditorRoute` | Implemented |
+| `/{locale}/instructor/courses/{courseId}/outline` | `src/app/[locale]/instructor/courses/[courseId]/outline/page.tsx` | `InstructorCourseEditorPage` (`tab="outline"`) via shared `renderInstructorCourseEditorRoute` | Implemented |
+| `/{locale}/instructor/courses/{courseId}/collaborators` | `src/app/[locale]/instructor/courses/[courseId]/collaborators/page.tsx` | `InstructorCourseEditorPage` (`tab="collaborators"`) via shared `renderInstructorCourseEditorRoute` | Implemented |
+| `/{locale}/instructor/courses/{courseId}/pricing` | `src/app/[locale]/instructor/courses/[courseId]/pricing/page.tsx` | `InstructorCourseEditorPage` (`tab="pricing"`) via shared `renderInstructorCourseEditorRoute` | Implemented |
+| `/{locale}/instructor/courses/{courseId}/certificate` | `src/app/[locale]/instructor/courses/[courseId]/certificate/page.tsx` | `InstructorCourseEditorPage` (`tab="certificate"`) via shared `renderInstructorCourseEditorRoute` | Implemented |
 | `/{locale}/instructor/tickets` | `src/app/[locale]/instructor/tickets/page.tsx` | `InstructorTicketsPage` | Implemented |
 | `/{locale}/admin/courses` | `src/app/[locale]/admin/courses/page.tsx` | `CourseReviewPage` (`scope="admin"`) | Implemented |
 | `/{locale}/admin/instructors/roster` | `src/app/[locale]/admin/instructors/roster/page.tsx` | `InstructorRosterPage` | Implemented |
@@ -48,7 +52,7 @@ Route constants:
 - `PUBLIC_ROUTES` (`src/constants/route.ts`): public/no-login routes (`home`, `forgotPassword`, `confirmEmail`, `logout`)
 - `PRIVATE_ROUTES` (`src/constants/route.ts`): login-required routes (`admin`, `instructor`, `sysadmin`, `account`)
 - `PUBLIC_RESOURCE_ROUTES` / `PRIVATE_RESOURCE_ROUTES` (`src/constants/route.ts`): dynamic templates (`:param`) for resource pages
-- Route builders/helpers live in `src/lib/navigation/routes.ts` (for example `instructorCourseEditorHref(courseId)` for `/instructor/courses/:courseId`)
+- Route builders/helpers live in `src/lib/navigation/routes.ts` (for example `instructorCourseEditorHref(courseId)` for `/instructor/courses/:courseId/info` and `instructorCourseEditorTabHref(courseId, tab)` for the route-backed editor tabs)
 
 No `auth.login` / `auth.signup` route constants (login/signup stay modal-only).
 
@@ -73,7 +77,7 @@ All user-facing API failures use `errors.codes.{numericCode}` via `translateApiE
 | Media collection + upload | `media.validation.*` (size, type, executable) | `toastApiError` |
 | Instructor roster / approvals / expertise / tickets / profiles | `instructor.validation.*`, `RequiredLabel` on email/reject/topic/skill/ticket fields | `toastValidationError` pre-submit; `toastApiError` on API |
 | Instructor courses list | `course.validation.title` on create dialog | `toastApiError` on create / delete |
-| Instructor course editor | `courseBasicInfoSchema` + outline dialogs; `RequiredLabel` on title/section/lesson/quiz fields | `toastValidationError` pre-submit; `toastApiError` on API |
+| Instructor course editor | `courseBasicInfoSchema` via `react-hook-form + zodResolver`, outline dialogs, `RequiredLabel`, `FieldError` | `toastValidationError` pre-submit; `toastApiError` on API |
 | Admin/sysadmin course review | Reject reason required (`course.validation.rejectReason`) | `toastApiError` on approve / reject |
 
 See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-admin.md`](./taxonomy-admin.md), [`instructor-admin.md`](./instructor-admin.md), [`media-collection.md`](./media-collection.md), [`modules.md`](./modules.md).

@@ -94,7 +94,7 @@ Files under `src/constants/` must hold **plain values only** (no runtime logic i
 
 Put helpers in `src/lib/utils/` and types in `src/types/`. `import type` from types into constants is fine when building typed constant objects.
 
-Route constants policy: keep FE route strings centralized in `src/constants/route.ts` (`PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`). Build runtime URLs via helpers in `src/lib/navigation/routes.ts` (`toPublicRoute`, `toPrivateRoute`, `toPublicResourceRoute`, `toPrivateResourceRoute`, and feature helpers such as `instructorCourseEditorHref`) instead of hardcoded/interpolated strings.
+Route constants policy: keep FE route strings centralized in `src/constants/route.ts` (`PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`). Build runtime URLs via helpers in `src/lib/navigation/routes.ts` (`toPublicRoute`, `toPrivateRoute`, `toPublicResourceRoute`, `toPrivateResourceRoute`, and feature helpers such as `instructorCourseEditorHref` / `instructorCourseEditorTabHref`) instead of hardcoded/interpolated strings.
 
 **2026-06-07 refactor (screens):** admin/sysadmin taxonomy and instructor app routes now import shared screens directly from `src/screen/common/**`; duplicate `src/screen/{admin,sysadmin}/{taxonomy,instructor}/*` wrappers were removed.
 

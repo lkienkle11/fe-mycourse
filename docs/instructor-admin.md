@@ -15,7 +15,7 @@ Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `
 | Tickets (admin view, no close) | `/admin/instructors/tickets` | `/sysadmin/instructors/tickets` | — |
 | My tickets | — | — | `/instructor/tickets` |
 | My courses | — | — | `/instructor/courses` |
-| Course editor | — | — | `/instructor/courses/{courseId}` |
+| Course editor | — | — | `/instructor/courses/{courseId}/{info\|outline\|collaborators\|pricing\|certificate}` |
 | Course reviews | `/admin/courses` | `/sysadmin/courses` | — |
 
 Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages). Course review queues are implemented for admin/sysadmin; instructor course authoring is implemented under the instructor dashboard.
@@ -48,7 +48,7 @@ Instructor group on **admin** and **sysadmin** (`ADMIN_DASHBOARD_ITEMS` / `SYSAD
 - **My Courses** → `/instructor/courses`
 - **Support tickets** → `/instructor/tickets`
 
-`/instructor/courses` route base is centralized in `PRIVATE_ROUTES.instructor.courses` (`src/constants/route.ts`), while course editor/detail uses `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` (`/instructor/courses/:courseId`). Runtime href generation uses `instructorCourseEditorHref(courseId)` in `src/lib/navigation/routes.ts`.
+`/instructor/courses` route base is centralized in `PRIVATE_ROUTES.instructor.courses` (`src/constants/route.ts`), while the route-backed course editor uses `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` (`/instructor/courses/:courseId/info`) plus `PRIVATE_RESOURCE_ROUTES.instructor.courseEditorTab` (`/instructor/courses/:courseId/:tab`). Runtime href generation reuses `instructorCourseEditorHref(courseId)` for the canonical info tab and `instructorCourseEditorTabHref(courseId, tab)` for the other 4 tab routes. The shared route adapter lives in `src/components/features/instructor/instructor-course-editor-route.tsx`, so `src/app/**` keeps only minimal page glue.
 
 Instructor layout authorization now accepts either `instructor:modify` or `course_instructor:read`, so course collaborators are not blocked by the dashboard shell.
 
