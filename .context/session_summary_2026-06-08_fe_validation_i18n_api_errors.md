@@ -36,6 +36,13 @@ Implemented shared validation + API error infrastructure and migrated **Auth**, 
 
 Passed: `npm run lint:biome`, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run quality:deps`.
 
+## RequiredLabel + BE-aligned validation (2026-06-08 follow-up)
+
+- **Course**: `courseBasicInfoSchema` (title 1–255, short_description max 500); `RequiredLabel` on `course-editor-basic-tab`, section/lesson/sublesson/quiz dialogs, collaborators tab, review reject; quiz payload validation before save.
+- **Taxonomy**: `name` max 255 on shared slug/status schema (levels/topics/skills/tags).
+- **Instructor**: `RequiredLabel` + `toastValidationError` on expertise topic/skill, tickets subject/message.
+- **Shared**: `toastValidationError` in `validation-message.ts`; course editor form helpers in `src/lib/utils/course.ts` (not under `hooks/course/`).
+
 ## Messages audit (2026-06-08 follow-up)
 
 - `error-codes.ts`: all BE numeric codes present (taxonomy/course/instructor share `2xxx`/`3xxx`; media also `9010`–`9018`). Module pre-submit copy in `*.validation.*` namespaces.
