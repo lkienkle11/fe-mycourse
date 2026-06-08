@@ -1,3 +1,5 @@
-import { SysadminTaxonomyLevelsPage } from "@/screen/sysadmin/taxonomy/levels/page";
+import { TaxonomyListPage } from "@/screen/common/taxonomy";
 
-export default SysadminTaxonomyLevelsPage;
+export default function SysadminTaxonomyLevelsRoute() {
+  return <TaxonomyListPage resourceKey="levels" />;
+}

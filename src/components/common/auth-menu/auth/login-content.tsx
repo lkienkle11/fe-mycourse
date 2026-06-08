@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { registerAction } from "@/actions/auth";
+import { handleAuthSubmit } from "@/actions/auth/auth-client";
 import { Button, Spinner } from "@/components/ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field } from "@/components/ui/field";
@@ -12,14 +13,16 @@ import { Label } from "@/components/ui/label";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { useAuthStore, useGetMe } from "@/hooks";
 import { Link, useRouter } from "@/i18n/navigation";
+import { forgotPasswordHref } from "@/lib/navigation/routes";
 import { cn } from "@/lib/utils";
+import { translateApiErrorCode } from "@/lib/utils/api-error";
 import { type LoginFormValues, loginSchema } from "@/schema/auth";
 import { AuthSocialLogin } from "../auth-social-login";
 import { AuthEmailPasswordFields } from "./auth-form-fields";
-import { handleAuthSubmit } from "./auth-form-handler";
 
 export function LoginContent({ className }: { className?: string }) {
   const t = useTranslations("auth");
+  const tErrors = useTranslations("errors.codes");
   const locale = useLocale();
   const router = useRouter();
   const { openSignupModal, closeAllModals, nextLink } = useAuthStore();
@@ -65,9 +68,9 @@ export function LoginContent({ className }: { className?: string }) {
       }
     } else if (result.code === ApiErrorCode.EmailNotConfirmed) {
       setEmailNotConfirmed(true);
-      setServerError(t("errors.emailNotConfirmed"));
+      setServerError(translateApiErrorCode(tErrors, result.code));
     } else {
-      setServerError(result.message);
+      setServerError(translateApiErrorCode(tErrors, result.code));
     }
   };
 
@@ -87,7 +90,7 @@ export function LoginContent({ className }: { className?: string }) {
     if (result.success) {
       setResendMessage(t("resend.success"));
     } else {
-      setResendMessage(t("errors.generic"));
+      setResendMessage(translateApiErrorCode(tErrors, result.code));
     }
   };
 
@@ -131,7 +134,7 @@ export function LoginContent({ className }: { className?: string }) {
             className="justify-end items-center text-end"
           >
             <Link
-              href="/forgot-password"
+              href={forgotPasswordHref}
               className="hover:no-underline hover:cursor-pointer no-underlin"
             >
               <Label className="hover:no-underline hover:cursor-pointer no-underline text-[#3DCBB1] hover:brightness-110 transition-all duration-300">

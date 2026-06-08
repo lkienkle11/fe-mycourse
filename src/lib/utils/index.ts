@@ -1,3 +1,9 @@
+export {
+  extractAxiosApiError,
+  resolveApiErrorMessageKey,
+  toastApiError,
+  translateApiErrorCode,
+} from "./api-error";
 export { cn } from "./cn";
 export type {
   BuildCookieOptionsInput,
@@ -11,7 +17,25 @@ export {
   getCookieValue,
   setCookieValue,
 } from "./cookie";
+export {
+  createCourseBasicInfoState,
+  createCourseSubLessonFormState,
+  rootOutlineStableId,
+  selectedIdsToMap,
+} from "./course";
+export type { DeltaOp, DeltaShape } from "./course-delta";
+export {
+  createEmptyDelta,
+  createEmptyDeltaString,
+  extractImageOps,
+  extractImages,
+  extractPlainText,
+  normalizeSafeLink,
+  parseDelta,
+  stringifyDelta,
+} from "./course-delta";
 export { filterDashboardItems } from "./dashboard";
+export { formatUnixDateTime } from "./date";
 export { formatBytes } from "./format-bytes";
 export { apiListQueryToRecord } from "./list-query";
 export {
@@ -20,7 +44,6 @@ export {
   getMediaDeleteKey,
   isImageMedia,
   mediaTabToCategory,
-  mediaUploadErrorMessageKey,
   parseMediaSortOption,
   resolveMediaCollectionDefaultTab,
   resolveVisibleMediaTabs,

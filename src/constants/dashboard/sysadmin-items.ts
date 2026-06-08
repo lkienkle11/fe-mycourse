@@ -1,16 +1,32 @@
-import { LayoutDashboard, Server, Shield } from "lucide-react";
+import { BookOpen, LayoutDashboard, Server, Shield } from "lucide-react";
 import { INSTRUCTOR_MENU_ICONS } from "@/constants/dashboard/instructor-icons";
 import { TAXONOMY_MENU_ICONS } from "@/constants/dashboard/taxonomy-icons";
 import { INSTRUCTOR_GROUP_READ_PERMISSIONS } from "@/constants/instructor/resources";
 import { PERMISSIONS } from "@/constants/permissions";
 import { TAXONOMY_GROUP_READ_PERMISSIONS } from "@/constants/taxonomy/resources";
+import {
+  sysadminCoursesHref,
+  sysadminInstructorsApprovalsHref,
+  sysadminInstructorsExpertiseHref,
+  sysadminInstructorsProfilesHref,
+  sysadminInstructorsRosterHref,
+  sysadminInstructorsTicketsHref,
+  sysadminRolesHref,
+  sysadminRootHref,
+  sysadminSystemHref,
+  sysadminTaxonomyLevelsHref,
+  sysadminTaxonomyOutcomesHref,
+  sysadminTaxonomySkillsHref,
+  sysadminTaxonomyTagsHref,
+  sysadminTaxonomyTopicsHref,
+} from "@/lib/navigation/routes";
 import type { DashboardItem } from "@/types/dashboard";
 
 export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
   {
     id: "sysadmin-overview",
     title: "Overview",
-    href: "/sysadmin",
+    href: sysadminRootHref,
     icon: LayoutDashboard,
     permissions: [PERMISSIONS.SysadminModify],
   },
@@ -23,7 +39,7 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
       {
         id: "sysadmin-system-health",
         title: "Health",
-        href: "/sysadmin/system",
+        href: sysadminSystemHref,
         icon: Server,
         permissions: [PERMISSIONS.UserRead],
       },
@@ -32,9 +48,16 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
   {
     id: "sysadmin-roles",
     title: "Roles",
-    href: "/sysadmin/roles",
+    href: sysadminRolesHref,
     icon: Shield,
     permissions: [PERMISSIONS.SysadminModify],
+  },
+  {
+    id: "sysadmin-courses",
+    title: "Courses",
+    href: sysadminCoursesHref,
+    icon: BookOpen,
+    permissions: [PERMISSIONS.CourseRead],
   },
   {
     id: "sysadmin-taxonomy",
@@ -48,7 +71,7 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         id: "sysadmin-taxonomy-levels",
         title: "Course levels",
         titleKey: "taxonomy.menu.levels",
-        href: "/sysadmin/taxonomy/levels",
+        href: sysadminTaxonomyLevelsHref,
         icon: TAXONOMY_MENU_ICONS.levels,
         permissions: [PERMISSIONS.CourseLevelRead],
       },
@@ -56,7 +79,7 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         id: "sysadmin-taxonomy-topics",
         title: "Topics",
         titleKey: "taxonomy.menu.topics",
-        href: "/sysadmin/taxonomy/topics",
+        href: sysadminTaxonomyTopicsHref,
         icon: TAXONOMY_MENU_ICONS.topics,
         permissions: [PERMISSIONS.TopicRead],
       },
@@ -64,7 +87,7 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         id: "sysadmin-taxonomy-outcomes",
         title: "Outcomes",
         titleKey: "taxonomy.menu.outcomes",
-        href: "/sysadmin/taxonomy/outcomes",
+        href: sysadminTaxonomyOutcomesHref,
         icon: TAXONOMY_MENU_ICONS.outcomes,
         permissions: [PERMISSIONS.CourseOutcomeRead],
       },
@@ -72,7 +95,7 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         id: "sysadmin-taxonomy-skills",
         title: "Skills",
         titleKey: "taxonomy.menu.skills",
-        href: "/sysadmin/taxonomy/skills",
+        href: sysadminTaxonomySkillsHref,
         icon: TAXONOMY_MENU_ICONS.skills,
         permissions: [PERMISSIONS.CourseSkillRead],
       },
@@ -80,7 +103,7 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         id: "sysadmin-taxonomy-tags",
         title: "Tags",
         titleKey: "taxonomy.menu.tags",
-        href: "/sysadmin/taxonomy/tags",
+        href: sysadminTaxonomyTagsHref,
         icon: TAXONOMY_MENU_ICONS.tags,
         permissions: [PERMISSIONS.TagRead],
       },
@@ -98,7 +121,7 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         id: "sysadmin-instructors-roster",
         title: "Roster",
         titleKey: "instructor.menu.roster",
-        href: "/sysadmin/instructors/roster",
+        href: sysadminInstructorsRosterHref,
         icon: INSTRUCTOR_MENU_ICONS.roster,
         permissions: [PERMISSIONS.InstructorRosterRead],
       },
@@ -106,7 +129,7 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         id: "sysadmin-instructors-approvals",
         title: "Approvals",
         titleKey: "instructor.menu.approvals",
-        href: "/sysadmin/instructors/approvals",
+        href: sysadminInstructorsApprovalsHref,
         icon: INSTRUCTOR_MENU_ICONS.approvals,
         permissions: [PERMISSIONS.InstructorApplicationRead],
       },
@@ -114,7 +137,7 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         id: "sysadmin-instructors-profiles",
         title: "Profiles",
         titleKey: "instructor.menu.profiles",
-        href: "/sysadmin/instructors/profiles",
+        href: sysadminInstructorsProfilesHref,
         icon: INSTRUCTOR_MENU_ICONS.profiles,
         permissions: [PERMISSIONS.InstructorProfileRead],
       },
@@ -122,7 +145,7 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         id: "sysadmin-instructors-expertise",
         title: "Expertise",
         titleKey: "instructor.menu.expertise",
-        href: "/sysadmin/instructors/expertise",
+        href: sysadminInstructorsExpertiseHref,
         icon: INSTRUCTOR_MENU_ICONS.expertise,
         permissions: [PERMISSIONS.InstructorExpertiseRead],
       },
@@ -130,7 +153,7 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         id: "sysadmin-instructors-tickets",
         title: "Tickets",
         titleKey: "instructor.menu.tickets",
-        href: "/sysadmin/instructors/tickets",
+        href: sysadminInstructorsTicketsHref,
         icon: INSTRUCTOR_MENU_ICONS.tickets,
         permissions: [PERMISSIONS.InstructorApplicationRead],
       },

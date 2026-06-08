@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-06-02 (custom 404 page + thumbnail asset)._
+_Last audited: 2026-06-08 (validation + code-based API error i18n across 5 modules)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -17,6 +17,15 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Any component-level loading state that needs a compact spinner; currently reused by login and signup submit buttons during `isSubmitting`.
 - **Dependencies**: `lucide-react`, `cn`.
 - **Reuse Rule**: Import this component instead of creating local spinner SVGs, animated dots, or duplicate loading indicators.
+
+### Asset: Skeleton
+- **Name**: `Skeleton`
+- **Type**: React component
+- **Path**: `src/components/ui/skeleton.tsx` (barrel: `@/components/ui`)
+- **Purpose**: Shared pulse loading placeholder (`animate-pulse`) for page/section skeleton states.
+- **Scope**: Reused in instructor course editor loading state (`src/screen/instructor/courses/editor-page.tsx`) and other loading placeholders.
+- **Dependencies**: `cn`.
+- **Reuse Rule**: Prefer `Skeleton` for loading placeholders instead of custom local placeholder markup.
 
 ---
 
@@ -142,7 +151,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant object
 - **Path**: `src/constants/api-route.ts`
 - **Purpose**: All authenticated BE API endpoint paths.
-- **Current Entries**: `user.getMe`.
+- **Current Entries**: grouped constants for `user`, `taxonomy`, `media`, `instructor`, `course`.
 - **Scope**: API callers.
 - **Dependencies**: none.
 
@@ -151,9 +160,50 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant object
 - **Path**: `src/constants/route.ts`
 - **Purpose**: FE client-side route constants (paths for navigation).
-- **Current Entries**: `home`, `confirmEmail`, `logout` (paths without locale prefix — use `@/i18n/navigation`).
+- **Current Entries**: `home`, `forgotPassword`, `confirmEmail`, `logout` (paths without locale prefix — use `@/i18n/navigation`).
 - **Scope**: Navigation helpers, links, router.
 - **Dependencies**: none.
+
+### Asset: PRIVATE_ROUTES
+- **Name**: `PRIVATE_ROUTES`
+- **Type**: Constant object
+- **Path**: `src/constants/route.ts`
+- **Purpose**: FE private route map (login-required) grouped by module: `admin`, `instructor`, `sysadmin`, and account surfaces.
+- **Scope**: dashboard menus, user menu links, instructor/admin/sysadmin navigation.
+- **Dependencies**: none.
+
+### Asset: PUBLIC_RESOURCE_ROUTES / PRIVATE_RESOURCE_ROUTES
+- **Name**: `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`
+- **Type**: Constant object
+- **Path**: `src/constants/route.ts`
+- **Purpose**: Dynamic FE route templates with `:param` placeholders for resource/detail pages.
+- **Current Entries**: `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` (`/instructor/courses/:courseId`).
+- **Scope**: Navigation helpers and screens that need parameterized routes.
+- **Dependencies**: none.
+
+### Asset: route builders (`toPublicRoute`, `toPrivateRoute`, `toPublicResourceRoute`, `toPrivateResourceRoute`)
+- **Name**: `toPublicRoute`, `toPrivateRoute`, `toPublicResourceRoute`, `toPrivateResourceRoute`
+- **Type**: Utility functions
+- **Path**: `src/lib/navigation/routes.ts`
+- **Purpose**: Convert route constants/templates into runtime href strings (supports params/query/fragment through `buildQueryParams` reuse).
+- **Scope**: screens, shared menu/sidebar constants, navigation helpers.
+- **Dependencies**: `PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`, `buildQueryParams`.
+
+### Asset: pre-built navigation hrefs (`homeHref`, `logoutHref`, `adminCoursesHref`, ...)
+- **Name**: `homeHref`, `forgotPasswordHref`, `logoutHref`, `adminRootHref`, `instructorCoursesHref`, `sysadminCoursesHref`, `accountMyCoursesHref`, ...
+- **Type**: Constant strings
+- **Path**: `src/lib/navigation/routes.ts`
+- **Purpose**: Shared route outputs generated from route builders to avoid duplicated conversion in call sites.
+- **Scope**: auth components, header/user menu constants, dashboard constants.
+- **Dependencies**: route builder functions in same module.
+
+### Asset: `instructorCourseEditorHref(courseId)`
+- **Name**: `instructorCourseEditorHref`
+- **Type**: Utility function
+- **Path**: `src/lib/navigation/routes.ts`
+- **Purpose**: Build instructor course editor route from `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` without string interpolation.
+- **Scope**: instructor course list page and any future course detail navigation.
+- **Dependencies**: `toPrivateResourceRoute`.
 
 ### Asset: PERMISSIONS
 - **Name**: `PERMISSIONS`
@@ -260,10 +310,10 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `PERMISSIONS`, `TAXONOMY_MENU_ICONS`, `TAXONOMY_GROUP_READ_PERMISSIONS`, `DashboardItem`.
 
 ### Asset: Dashboard shell components
-- **Name**: `DashboardLayout`, `DashboardSidebar`, `HeaderDashboard`, `DashboardUnauthorized`
+- **Name**: `DashboardLayout`, `RoleDashboardLayout`, `DashboardSidebar`, `HeaderDashboard`, `DashboardUnauthorized`
 - **Type**: Client components
 - **Path**: `src/components/common/dashboard/`, `src/components/common/header/header-dashboard.tsx`
-- **Purpose**: Role dashboard chrome: `SidebarProvider` + fixed sidebar under `HeaderDashboard` (`h-16`); `collapsible="icon"` (collapsed = root icons + tooltips); mobile nav via `Sheet` with `DashboardSidebarMobileHeader` / `DashboardSidebarLocaleFooter`. Locale: `DashboardHeaderLocale` (`LocaleSwitcher` + `useCodeLabelLanguage`, `lg+`) and drawer footer (`fullWidth`, below `lg`) — same pattern as `header.tsx` / `header-mobile-sidebar.tsx`. `HeaderDashboard` exposes `leading` / `trailing` slots only (no built-in locale). Layout permission gate + unauthorized fallback.
+- **Purpose**: Role dashboard chrome: `DashboardLayout` owns the shell; `RoleDashboardLayout` centralizes admin/sysadmin role config (items + shell permission) and forwards into `DashboardLayout`. `DashboardLayout` still provides `SidebarProvider` + fixed sidebar under `HeaderDashboard` (`h-16`); `collapsible="icon"` (collapsed = root icons + tooltips); mobile nav via `Sheet` with `DashboardSidebarMobileHeader` / `DashboardSidebarLocaleFooter`. Locale: `DashboardHeaderLocale` (`LocaleSwitcher` + `useCodeLabelLanguage`, `lg+`) and drawer footer (`fullWidth`, below `lg`) — same pattern as `header.tsx` / `header-mobile-sidebar.tsx`. `HeaderDashboard` exposes `leading` / `trailing` slots only (no built-in locale). Layout permission gate + unauthorized fallback.
 - **Scope**: `/admin`, `/instructor`, `/sysadmin` routes.
 - **Dependencies**: shadcn `Sidebar*` (includes `TooltipProvider`), `LocaleSwitcher`, RBAC hooks, `LoginSignupPopup`.
 
@@ -363,10 +413,10 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `TaxonomyResourceKey`.
 
 ### Asset: Taxonomy config helpers
-- **Name**: `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`, `getTaxonomyTreeFromEntity`, `buildTaxonomyDagreRoot`, `countTaxonomyTreeNodes`
+- **Name**: `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`, `getTaxonomyTreeFromEntity`, `buildTaxonomyDagreRoot`, `toTaxonomyTreeWritePayload`, `createTaxonomyTreeNode`, `countTaxonomyTreeNodes`
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/taxonomy.ts`
-- **Purpose**: Resolve `TAXONOMY_RESOURCES` entry, searchable column ids, extract nested tree from entity, build dagre root for read-only popup, count nested nodes for button state.
+- **Purpose**: Resolve `TAXONOMY_RESOURCES` entry, searchable column ids, extract nested tree from entity, build dagre root for read-only popup, strip slug for write payloads, create empty editor node, count nested nodes for button state.
 - **Scope**: Taxonomy list page, form dialog, table columns, tree view button.
 - **Dependencies**: `TAXONOMY_RESOURCES` (`src/constants/taxonomy/resources.ts`), `TaxonomyTreeNode`, `DagreTreeRoot` (`dagre-tree.ts`).
 
@@ -378,12 +428,20 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Route/screen generation, iteration over resources; keep in sync with `TAXONOMY_RESOURCES` keys.
 - **Dependencies**: `TaxonomyResourceKey` type.
 
+### Asset: shared API query helpers
+- **Name**: `useApiListQuery`, `useApiRowsQuery`, `useApiDetailQuery`
+- **Type**: Client hook helpers
+- **Path**: `src/api/hooks/shared.ts`
+- **Purpose**: Normalize common SWR return shapes so domain hooks can reuse one list/detail implementation instead of duplicating `rows/pageInfo/isLoading/error/mutate`.
+- **Scope**: taxonomy, instructor, course, and media hooks.
+- **Dependencies**: `useSWR`, `ApiPaginatedData`.
+
 ### Asset: `TaxonomyListPage`
 - **Name**: `TaxonomyListPage`, `TaxonomyListPageProps`
 - **Type**: React component (client)
 - **Path**: `src/screen/common/taxonomy/taxonomy-list-page.tsx`
 - **Purpose**: Shared admin CRUD list for all five taxonomy resources (DataTable toolbar, form dialog, delete confirm, pagination).
-- **Scope**: Wrapped by `AdminTaxonomy*Page` / `SysadminTaxonomy*Page` in `src/screen/{admin,sysadmin}/taxonomy/*/page.tsx`; app routes re-export those role screens.
+- **Scope**: Imported directly by app routes under `src/app/[locale]/{admin,sysadmin}/taxonomy/*/page.tsx`.
 - **Dependencies**: `useTaxonomyList`, `TaxonomyFormDialog`, `DataTable`, `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`.
 
 ### Asset: Media filename / extension helpers
@@ -410,6 +468,22 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Taxonomy topics/skills (`TaxonomyTreeViewButton` with `nodesDraggable={false}`); reusable for any `{ id, name, children? }` tree.
 - **Dependencies**: `Dialog`, `ToggleGroup`, `useNodesState` / `useEdgesState`, `treeToFlowElements` in `src/lib/utils/dagre-tree.ts`. CSS: `@xyflow/react/dist/style.css` in the dialog file.
 
+### Asset: course delta helpers
+- **Name**: `createEmptyDelta`, `createEmptyDeltaString`, `parseDelta`, `stringifyDelta`, `extractPlainText`, `extractImages`, `extractImageOps`, `normalizeSafeLink`
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/course-delta.ts`
+- **Purpose**: Shared Quill-Delta parsing/stringify/text/image extraction plus safe link normalization for course text lessons.
+- **Scope**: `CourseDeltaEditor`, course editor state, and any future Delta import/export logic.
+- **Dependencies**: none.
+
+### Asset: course editor utils
+
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/course.ts`
+- **Purpose**: Pure course editor helpers — basic-info/sub-lesson form state factories, taxonomy id `Set` mapping, and root outline `stable_id` for drag-and-drop.
+- **Scope**: `use-course-editor-state`, `editor-page.tsx`.
+- **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`).
+
 ### Asset: dagre-tree utils
 - **Name**: `DagreTreeRoot`, `treeToFlowElements`, `getLayoutedElements`
 - **Type**: Utility functions
@@ -419,12 +493,12 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `@xyflow/react`, `dagre`.
 
 ### Asset: SortableTreeEditor
-- **Name**: `SortableTreeEditor`, `SortableTreeNode`
+- **Name**: `SortableTreeEditor`
 - **Type**: React component
 - **Path**: `src/components/shared/sortable-tree-editor.tsx`
-- **Purpose**: Nested drag-and-drop tree with name field and read-only slug preview per node.
+- **Purpose**: Nested drag-and-drop tree with name field and read-only slug preview per node. Uses shared `TaxonomyTreeNode` (no duplicate tree type).
 - **Scope**: Taxonomy topics/skills (`TaxonomyTreeEditor` wrapper); similar JSONB trees elsewhere.
-- **Dependencies**: `SortableList`, `slugifyName`.
+- **Dependencies**: `SortableList`, `slugifyName`, `createTaxonomyTreeNode`, `TaxonomyTreeNode`.
 
 ### Asset: ImageFileField
 - **Name**: `ImageFileField`, `ImageFileFieldProps`
@@ -446,7 +520,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `slugifyName(text: string): string`
 - **Type**: Utility function
 - **Path**: `src/lib/utils/slug.ts`
-- **Purpose**: Build slug from display name (`generateSlug` + `slugifyName` alias): trim, lowercase, remove Vietnamese accents (`đ/Đ -> d`), spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes. Used for read-only slug preview and API payloads.
+- **Purpose**: Build slug from display name (`generateSlug` + `slugifyName` alias): trim, lowercase, remove Vietnamese accents (`đ/Đ -> d`), spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes. Used for **read-only UI preview only**; persisted slugs are computed on BE (`utils.SlugifyName`).
 - **Scope**: Taxonomy form dialog, tree editor, submit handlers.
 - **Dependencies**: none.
 
@@ -660,13 +734,13 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Used exclusively via `apiFetch`/`apiPost` etc. in `src/api/methods.ts`.
 - **Dependencies**: `axios`, `js-cookie`, `getCookieValue`, `setCookieValue`, `isServer`, `useApiError`.
 
-### Asset: getMeService / getMeEndpointKey
-- **Name**: `getMeService(): Promise<MeResponse | null>`, `getMeEndpointKey: string | null`
-- **Type**: API service + SWR key
+### Asset: Me API services
+- **Name**: `getMeService`, `patchMeService`, `deleteMeService`, `hardDeleteMeService`, `getMyPermissionsService`, `getMeEndpointKey`
+- **Type**: API services + SWR key
 - **Path**: `src/api/callers/auth/auth.ts`
-- **Purpose**: Fetches `GET /api/v1/me`. Returns `null` on 401. `getMeEndpointKey` is the canonical SWR cache key — always import from here instead of building the URL manually.
-- **Scope**: `useAuth` hook.
-- **Dependencies**: `apiFetch`, `buildQueryParams`, `API_PRIVATE_ROUTES`.
+- **Purpose**: `GET /api/v1/me` returns `null` on 401; PATCH/DELETE/permissions for profile lifecycle. `getMeEndpointKey` is the canonical SWR cache key.
+- **Scope**: `useAuth` hook (`errorCode` for non-401 failures); future account-settings UI.
+- **Dependencies**: `apiFetch`, `apiPatch`, `apiDelete`, `buildQueryParams`, `API_PRIVATE_ROUTES.user`.
 
 ### Asset: loginService
 - **Name**: `loginService(payload: LoginPayload): Promise<{ data, cookies }>`
@@ -685,7 +759,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Next.js Server Action (`"use server"`)
 - **Path**: `src/actions/auth/auth.ts`
 - **Purpose**: Handles login end-to-end on the server — calls `loginService`, sets `access_token`, `refresh_token`, `session_id` cookies for the browser, and returns `AuthActionResult`. Cookies are non-HttpOnly so client JS can read them for `Authorization` header attachment.
-- **Scope**: Login form's `onSubmit` handler in `login-content.tsx`.
+- **Scope**: Login form's `onSubmit` handler in `login-content.tsx`. UI maps `result.code` via `translateApiErrorCode` — never `result.message`.
 - **Dependencies**: `loginService`, `buildCookieOptions`, `getCookieDomain`, `next/headers cookies()`.
 
 ### Asset: registerAction / confirmAction
@@ -707,6 +781,38 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Returns `true` and narrows type to `ApiResponse<T> & { data: T }` when `res.code === 0`. Use instead of comparing `res.code === ApiErrorCode.Success` directly.
 - **Scope**: All API service functions and Server Actions that check response success.
 - **Dependencies**: `ApiErrorCode` (`src/constants/api-error-code.ts`), `ApiResponse` type.
+
+### Asset: toastApiError / translateApiErrorCode
+- **Name**: `toastApiError`, `translateApiErrorCode`, `extractAxiosApiError`, `resolveApiErrorMessageKey`
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/api-error.ts` (barrel: `@/lib/utils`)
+- **Purpose**: Unified API error resolver — maps `response.code` → `errors.codes.{code}` i18n key. Never passes BE `message` to UI.
+- **Scope**: Auth, Me, Media, Taxonomy, Instructor, Course — all `catch` blocks after API calls.
+- **Dependencies**: `src/messages/error-codes.ts`, `ApiErrorCode`.
+
+### Asset: RequiredLabel / FieldError
+- **Name**: `RequiredLabel`, `FieldError`
+- **Type**: React components
+- **Path**: `src/components/shared/required-label.tsx`, `src/components/shared/field-error.tsx`
+- **Purpose**: Form labels with required asterisk; inline Zod field errors below controls.
+- **Scope**: Taxonomy form dialog, instructor/course dialogs, any new forms.
+- **Dependencies**: `Label` from `@/components/ui/label`.
+
+### Asset: resolveValidationMessage
+- **Name**: `resolveValidationMessage`
+- **Type**: Utility function
+- **Path**: `src/lib/utils/validation-message.ts`
+- **Purpose**: Translates Zod i18n message keys through module-scoped `useTranslations` (e.g. `taxonomy.form.validation.*`).
+- **Scope**: All Zod + react-hook-form forms.
+- **Dependencies**: none.
+
+### Asset: Zod schemas (`src/schema/`)
+- **Name**: Module schemas (`auth`, `me`, `media`, `taxonomy`, `instructor`, `course`)
+- **Type**: Zod schemas
+- **Path**: `src/schema/**` (barrel: `@/schema`)
+- **Purpose**: FE pre-submit validation with i18n keys separate from `errors.codes.*`.
+- **Scope**: Forms across Auth, Me, Media, Taxonomy, Instructor, Course modules.
+- **Dependencies**: `zod`.
 
 ---
 
@@ -840,7 +946,6 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - Shared form error display component.
 - Reusable paginated list hook when list endpoints are implemented.
 - Course, lesson, enrollment types and service callers (Phase 02+).
-- Shared loading skeleton component.
 
 ## Additional audited reusable assets
 

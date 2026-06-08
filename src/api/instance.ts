@@ -82,12 +82,6 @@ async function getRefreshSessionPair(): Promise<{
   refreshToken: string;
   sessionId: string;
 } | null> {
-  console.info("getRefreshSessionPair");
-  console.info("isServer", isServer());
-  console.info("getCookieValue", await getCookieValue("refresh_token"));
-  console.info("getCookieValue", await getCookieValue("session_id"));
-  console.info("Cookies.get", Cookies.get("refresh_token"));
-  console.info("Cookies.get", Cookies.get("session_id"));
   if (isServer()) {
     const refreshToken = await getCookieValue("refresh_token");
     const sessionId = await getCookieValue("session_id");

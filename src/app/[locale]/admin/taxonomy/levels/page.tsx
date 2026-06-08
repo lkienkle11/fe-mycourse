@@ -1,3 +1,5 @@
-import { AdminTaxonomyLevelsPage } from "@/screen/admin/taxonomy/levels/page";
+import { TaxonomyListPage } from "@/screen/common/taxonomy";
 
-export default AdminTaxonomyLevelsPage;
+export default function AdminTaxonomyLevelsRoute() {
+  return <TaxonomyListPage resourceKey="levels" />;
+}

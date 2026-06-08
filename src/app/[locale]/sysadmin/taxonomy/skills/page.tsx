@@ -1,3 +1,5 @@
-import { SysadminTaxonomySkillsPage } from "@/screen/sysadmin/taxonomy/skills/page";
+import { TaxonomyListPage } from "@/screen/common/taxonomy";
 
-export default SysadminTaxonomySkillsPage;
+export default function SysadminTaxonomySkillsRoute() {
+  return <TaxonomyListPage resourceKey="skills" />;
+}

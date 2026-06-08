@@ -10,27 +10,29 @@ import {
   getInstructorProfileByUserService,
 } from "@/api/callers/instructor";
 import { useInstructorRosterList } from "@/api/hooks/instructor";
+import { ConfirmAddInstructorDialog } from "@/components/features/instructor";
 import {
-  ConfirmAddInstructorDialog,
-  InstructorProfileViewDialog,
-} from "@/components/features/instructor";
-import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
+  buildInstructorPageFooterFromInfo,
+  InstructorProfileDeleteActions,
+  InstructorProfileDeleteFooter,
+  InstructorTableSection,
+} from "@/components/features/instructor/instructor-action-controls";
 import type { DataTableColumn } from "@/components/shared/data-table";
-import { DataTable } from "@/components/shared/data-table";
 import { PermissionGate } from "@/components/shared/permission-gate";
 import { Button } from "@/components/ui/button";
 import { PERMISSIONS } from "@/constants/permissions";
 import { pickCharacter } from "@/lib/utils";
+import { toastApiError } from "@/lib/utils/api-error";
 import type {
   InstructorListFilters,
   InstructorProfile,
   InstructorRosterMember,
 } from "@/types/instructor";
-import { InstructorListPagination } from "./instructor-list-pagination";
 
 export function InstructorRosterPage() {
   const t = useTranslations("instructor.roster");
   const tc = useTranslations("instructor.common");
+  const tErrors = useTranslations("errors.codes");
   const [filters, setFilters] = useState<InstructorListFilters>({
     page: 1,
     per_page: 20,
@@ -50,8 +52,20 @@ export function InstructorRosterPage() {
 
   const { rows, pageInfo, isLoading, mutate } =
     useInstructorRosterList(filters);
-  const page = pageInfo?.page ?? filters.page ?? 1;
-  const totalPages = pageInfo?.total_pages ?? 1;
+  const footerProps = buildInstructorPageFooterFromInfo(
+    pageInfo,
+    filters.page ?? 1,
+    (next) => setFilters((prev) => ({ ...prev, page: next })),
+    {
+      previousLabel: tc("previous"),
+      nextLabel: tc("next"),
+      buildPageOfLabel: (page, totalPages) =>
+        tc("pageOf", {
+          page: String(page),
+          totalPages: String(totalPages),
+        }),
+    },
+  );
 
   const columns = useMemo<DataTableColumn<InstructorRosterMember>[]>(
     () => [
@@ -111,8 +125,8 @@ export function InstructorRosterPage() {
       toast.success(t("addSuccess"));
       setAddOpen(false);
       await mutate();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsAdding(false);
     }
@@ -141,8 +155,8 @@ export function InstructorRosterPage() {
       setDeleteOpen(false);
       setDeleteTarget(null);
       await mutate();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsDeleting(false);
     }
@@ -159,88 +173,57 @@ export function InstructorRosterPage() {
         </PermissionGate>
       </div>
 
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">{tc("loading")}</p>
-      ) : (
-        <DataTable
-          columns={columns}
-          rows={rows}
-          actionsHeader={tc("actions")}
-          emptyMessage={tc("empty")}
-          searchValue={searchInput}
-          searchPlaceholder={t("searchPlaceholder")}
-          searchButtonLabel={tc("search")}
-          onSearchValueChange={setSearchInput}
-          onSearchSubmit={applySearch}
-          renderActions={(row) => (
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={isLoadingProfile}
-                onClick={() => void openProfile(row)}
-              >
-                {t("viewProfile")}
-              </Button>
-              <PermissionGate
-                permissions={[PERMISSIONS.InstructorRosterDelete]}
-              >
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    setDeleteTarget(row);
-                    setDeleteOpen(true);
-                  }}
-                >
-                  {tc("delete")}
-                </Button>
-              </PermissionGate>
-            </div>
-          )}
-        />
-      )}
-
-      <InstructorListPagination
-        page={page}
-        totalPages={totalPages}
-        onPageChange={(next) => setFilters((prev) => ({ ...prev, page: next }))}
-        previousLabel={tc("previous")}
-        nextLabel={tc("next")}
-        pageOfLabel={tc("pageOf", {
-          page: String(page),
-          totalPages: String(totalPages),
-        })}
+      <InstructorTableSection
+        isLoading={isLoading}
+        loadingLabel={tc("loading")}
+        columns={columns}
+        rows={rows}
+        actionsHeader={tc("actions")}
+        emptyMessage={tc("empty")}
+        searchValue={searchInput}
+        searchPlaceholder={t("searchPlaceholder")}
+        searchButtonLabel={tc("search")}
+        onSearchValueChange={setSearchInput}
+        onSearchSubmit={applySearch}
+        renderActions={(row) => (
+          <InstructorProfileDeleteActions
+            viewLabel={t("viewProfile")}
+            viewDisabled={isLoadingProfile}
+            onView={() => void openProfile(row)}
+            deletePermission={PERMISSIONS.InstructorRosterDelete}
+            deleteLabel={tc("delete")}
+            onDelete={() => {
+              setDeleteTarget(row);
+              setDeleteOpen(true);
+            }}
+          />
+        )}
       />
 
-      <ConfirmAddInstructorDialog
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        onConfirm={handleAdd}
-        isLoading={isAdding}
-      />
-
-      <ConfirmDeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleDelete}
-        isLoading={isDeleting}
-        title={t("deleteTitle")}
-        description={t("deleteDescription", {
-          name: deleteTarget?.full_name ?? "",
-        })}
-      />
-
-      <InstructorProfileViewDialog
-        open={profileOpen}
-        onOpenChange={setProfileOpen}
+      <InstructorProfileDeleteFooter
+        {...footerProps}
+        profileOpen={profileOpen}
+        onProfileOpenChange={setProfileOpen}
         profile={selectedProfile?.profile ?? null}
         fullName={selectedProfile?.full_name}
         avatarUrl={selectedProfile?.avatar}
-        title={profileTitle}
-      />
+        profileTitle={profileTitle}
+        deleteOpen={deleteOpen}
+        onDeleteOpenChange={setDeleteOpen}
+        onDeleteConfirm={handleDelete}
+        isDeleting={isDeleting}
+        deleteTitle={t("deleteTitle")}
+        deleteDescription={t("deleteDescription", {
+          name: deleteTarget?.full_name ?? "",
+        })}
+      >
+        <ConfirmAddInstructorDialog
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          onConfirm={handleAdd}
+          isLoading={isAdding}
+        />
+      </InstructorProfileDeleteFooter>
     </div>
   );
 }

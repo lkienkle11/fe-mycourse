@@ -60,6 +60,28 @@ export function buildTaxonomyDagreRoot(
   };
 }
 
+/** Strip slug before create/update payloads; BE derives slug from each node name. */
+export function toTaxonomyTreeWritePayload(
+  nodes: TaxonomyTreeNode[],
+): TaxonomyTreeNode[] {
+  return nodes.map(({ id, name, children }) => ({
+    id,
+    name,
+    children: children?.length
+      ? toTaxonomyTreeWritePayload(children)
+      : undefined,
+  }));
+}
+
+/** New empty tree node for taxonomy editors (local slug preview only). */
+export function createTaxonomyTreeNode(name = ""): TaxonomyTreeNode {
+  return {
+    id: crypto.randomUUID(),
+    name,
+    children: [],
+  };
+}
+
 /** Count nodes in a taxonomy tree (for button hints and disabled state). */
 export function countTaxonomyTreeNodes(
   nodes: TaxonomyTreeNode[] | undefined,

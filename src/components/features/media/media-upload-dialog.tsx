@@ -1,6 +1,5 @@
 "use client";
 
-import type { AxiosError } from "axios";
 import { Upload, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useRef, useState } from "react";
@@ -19,11 +18,8 @@ import {
 import { MEDIA_TAB_ACCEPT } from "@/constants/media/file-rules";
 import { PERMISSIONS } from "@/constants/permissions";
 import { formatBytes } from "@/lib/utils";
-import {
-  mediaUploadErrorMessageKey,
-  validateMediaUploadBatch,
-} from "@/lib/utils/media";
-import type { ApiResponse } from "@/types/api";
+import { toastApiError } from "@/lib/utils/api-error";
+import { validateMediaUploadBatch } from "@/lib/utils/media";
 import type { MediaTab } from "@/types/media";
 
 export type MediaUploadDialogProps = {
@@ -33,31 +29,6 @@ export type MediaUploadDialogProps = {
   onUploaded: () => void | Promise<void>;
 };
 
-type UploadErrorKey =
-  | "tooMany"
-  | "fileTooLarge"
-  | "totalTooLarge"
-  | "executableRejected"
-  | "generic";
-
-function uploadErrorMessage(
-  t: ReturnType<typeof useTranslations<"media.upload">>,
-  key: UploadErrorKey,
-): string {
-  switch (key) {
-    case "tooMany":
-      return t("errors.tooMany");
-    case "fileTooLarge":
-      return t("errors.fileTooLarge");
-    case "totalTooLarge":
-      return t("errors.totalTooLarge");
-    case "executableRejected":
-      return t("errors.executableRejected");
-    default:
-      return t("errors.generic");
-  }
-}
-
 export function MediaUploadDialog({
   open,
   onOpenChange,
@@ -65,6 +36,8 @@ export function MediaUploadDialog({
   onUploaded,
 }: MediaUploadDialogProps) {
   const t = useTranslations("media.upload");
+  const tValidation = useTranslations("media.validation");
+  const tErrors = useTranslations("errors.codes");
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -81,7 +54,7 @@ export function MediaUploadDialog({
     const next = [...files, ...Array.from(incoming)];
     const issue = validateMediaUploadBatch(next, tab);
     if (issue) {
-      toast.error(uploadErrorMessage(t, issue.messageKey as UploadErrorKey));
+      toast.error(tValidation(issue.messageKey));
       return;
     }
     setFiles(next);
@@ -90,7 +63,7 @@ export function MediaUploadDialog({
   const handleUpload = async () => {
     const issue = validateMediaUploadBatch(files, tab);
     if (issue) {
-      toast.error(uploadErrorMessage(t, issue.messageKey as UploadErrorKey));
+      toast.error(tValidation(issue.messageKey));
       return;
     }
     setIsUploading(true);
@@ -101,10 +74,7 @@ export function MediaUploadDialog({
       onOpenChange(false);
       await onUploaded();
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<unknown>>;
-      const code = axiosError.response?.data?.code;
-      const key = mediaUploadErrorMessageKey(code) as UploadErrorKey;
-      toast.error(uploadErrorMessage(t, key));
+      toastApiError(tErrors, error);
     } finally {
       setIsUploading(false);
     }

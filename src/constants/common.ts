@@ -1,4 +1,15 @@
 import { PERMISSIONS } from "@/constants/permissions";
+import {
+  accountMyCartHref,
+  accountMyCoursesHref,
+  accountNotificationsHref,
+  accountSettingsHref,
+  accountWishlistHref,
+  adminRootHref,
+  instructorRootHref,
+  logoutHref,
+  sysadminRootHref,
+} from "@/lib/navigation/routes";
 import type { UserMenuGroup } from "@/types/user-menu";
 
 export const HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
@@ -6,21 +17,21 @@ export const HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
     key: "roles",
     value: [
       {
-        href: "/sysadmin",
+        href: sysadminRootHref,
         title: "Sysadmin",
         titleKey: "sysadmin",
         status: "normal",
         permissions: [PERMISSIONS.SysadminModify],
       },
       {
-        href: "/admin",
+        href: adminRootHref,
         title: "Admin",
         titleKey: "admin",
         status: "normal",
         permissions: [PERMISSIONS.AdminModify],
       },
       {
-        href: "/instructor",
+        href: instructorRootHref,
         title: "Instructor",
         titleKey: "instructor",
         status: "normal",
@@ -32,21 +43,21 @@ export const HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
     key: "study",
     value: [
       {
-        href: "/my-courses",
+        href: accountMyCoursesHref,
         title: "My Courses",
         titleKey: "myCourses",
         status: "normal",
         // permissions: [PERMISSIONS.CourseRead],
       },
       {
-        href: "/my-cart",
+        href: accountMyCartHref,
         title: "My Cart",
         titleKey: "myCart",
         status: "normal",
         // permissions: [PERMISSIONS.ProfileRead],
       },
       {
-        href: "/wishlist",
+        href: accountWishlistHref,
         title: "Wishlist",
         titleKey: "wishlist",
         status: "normal",
@@ -58,14 +69,14 @@ export const HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
     key: "account",
     value: [
       {
-        href: "/notifications",
+        href: accountNotificationsHref,
         title: "Notifications",
         titleKey: "notifications",
         status: "normal",
         // permissions: [PERMISSIONS.ProfileRead],
       },
       {
-        href: "/account-settings",
+        href: accountSettingsHref,
         title: "Account Settings",
         titleKey: "accountSettings",
         status: "normal",
@@ -77,7 +88,7 @@ export const HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
     key: "session",
     value: [
       {
-        href: "/logout",
+        href: logoutHref,
         title: "Logout",
         titleKey: "logout",
         status: "warning",

@@ -1,6 +1,7 @@
 export type * from "./api";
 export type * from "./auth";
 export type * from "./browse-menu";
+export type * from "./course";
 export type * from "./dashboard";
 export type * from "./events";
 export type * from "./permissions";

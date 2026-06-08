@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-05-29 (added @xyflow/react, dagre, @types/dagre for read-only tree popup)._
+_Last audited: 2026-06-08 (Zod schemas per module + `errors.codes` i18n)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -55,7 +55,7 @@ Envelope validation uses existing **`zod`** (see `src/events/core/normalize-inbo
 | Package | Version | Role |
 |---------|---------|------|
 | `react-hook-form` | ^7.72.0 | Form state management and submission handling — used with Zod resolver |
-| `zod` | 4.3.6 | Schema validation — `loginSchema`, `signupSchema` in `src/schema/auth/auth.ts`; validation messages use i18n keys |
+| `zod` | 4.3.6 | Schema validation — `src/schema/{auth,me,media,taxonomy,instructor,course}/`; validation messages use module i18n keys (separate from `errors.codes.*`) |
 | `@hookform/resolvers` | ^5.2.2 | Bridge between `react-hook-form` and Zod (`zodResolver`) |
 
 ---
@@ -144,7 +144,7 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 | `@tailwindcss/postcss` | ^4 | Tailwind PostCSS plugin for v4 |
 | `eslint` | ^9 | Linter (`npm run lint`; CI `test` job on `dev`) |
 | `eslint-config-next` | 16.2.1 | ESLint rules for Next.js; extended in [`eslint.config.mjs`](../eslint.config.mjs) (`src/constants/**` data-only, `src/types/**` type-only) |
-| `@biomejs/biome` | ^2.4.9 | Fast formatter + linter (`npm run lint:biome`, `npm run format:biome`) |
+| `@biomejs/biome` | ^2.4.9 | Fast formatter + linter (`npm run biome` alias, `npm run lint:biome`, `npm run format:biome`) |
 | `@commitlint/cli` | ^20.5.0 | Commit message linting |
 | `@commitlint/config-conventional` | ^20.5.0 | Conventional Commits ruleset |
 | `shadcn` | 4.2.0 | CLI tool for adding shadcn/ui components to `src/components/ui/` |
@@ -171,4 +171,4 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 6. **Icons**: Always import icons from `lucide-react`. Do not add other icon libraries.
 7. **Toasts**: Use `sonner` (`toast.success`, `toast.error`, etc.) for user-facing notifications.
 8. **Stream events**: Subscribe with `hooks/events/*`; send WS via `postSocketOutbound`, broadcast via `postBroadcastOutbound`. Do not add a second WebSocket/SSE library without updating [`delivery.md`](./delivery.md).
-9. **Quality gates**: Run `npm run quality:deps` and `npm run lint` (or individual scripts) before large refactors. CI on **`dev`** enforces both in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.
+9. **Quality gates**: Run `npm run quality:deps`, `npm run lint`, and `npm run test` (or individual scripts) before large refactors. CI on **`dev`** enforces the same in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.

@@ -1,3 +1,3 @@
-import { AdminInstructorProfilesPage } from "@/screen/admin/instructor/profiles/page";
+import { InstructorProfilesPage } from "@/screen/common/instructor";
 
-export default AdminInstructorProfilesPage;
+export default InstructorProfilesPage;

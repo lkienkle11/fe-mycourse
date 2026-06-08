@@ -1,3 +1,5 @@
-import { AdminTaxonomyOutcomesPage } from "@/screen/admin/taxonomy/outcomes/page";
+import { TaxonomyListPage } from "@/screen/common/taxonomy";
 
-export default AdminTaxonomyOutcomesPage;
+export default function AdminTaxonomyOutcomesRoute() {
+  return <TaxonomyListPage resourceKey="outcomes" />;
+}

@@ -1,6 +1,6 @@
 # Logic Flow
 
-_Last audited: 2026-05-29 (permission utils paths synced)._
+_Last audited: 2026-06-08 (API error display flow + form result.code mapping)._
 
 
 Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifecycle, data fetching, and form submission patterns.
@@ -40,7 +40,7 @@ Server Action reads response:
 Client receives AuthActionResult:
   - success=true  → mutateMe() [invalidate SWR cache] → useAuthStore.closeAllModals()
                     → redirect to nextLink if set
-  - success=false → display error message (sonner toast or inline)
+  - success=false → translateApiErrorCode(tErrors, result.code) inline or toast — never result.message
 ```
 
 ---
@@ -104,11 +104,18 @@ getMeService()   [src/api/callers/auth/auth.ts]
   Other error?  → throw (network error, 5xx)
   200 response? → return MeResponse
   ↓
+useAuth exposes errorCode for non-401 GET failures:
+  → extractAxiosApiError(error)?.code → consumers can translate via errors.codes.*
+  ↓
 useSyncMeFromAuth:
   useEffect([me, isLoading, error, mutate]) → useMeStore.syncFromUseAuth({ me, isLoading, error, mePermissions, mutate })
   ↓
 All components read via useGetMe():
   → useMeStore(useShallow(...)) → { me, isLoading, isError, mePermissions, mutateMe }
+
+Me mutation callers (ready for account-settings UI):
+  patchMeService / deleteMeService / hardDeleteMeService / getMyPermissionsService
+  → API errors via toastApiError(tErrors, error) at call site
 ```
 
 **SWR revalidation triggers:**
@@ -137,7 +144,7 @@ Standard pattern for all forms (login, signup, future forms):
 
 5. Handle result:
    - result.success → update UI, mutate SWR if needed, navigate or close modal
-   - !result.success → display result.message (toast or inline error)
+   - !result.success → `translateApiErrorCode(useTranslations("errors.codes"), result.code)` (never `result.message`)
 ```
 
 ---
@@ -226,13 +233,34 @@ Server Component or Client Component:
 Message files: src/messages/vi.ts, src/messages/en.ts (loaded via src/lib/i18n/load-messages.ts)
 
 Convention:
-  → Zod validation messages = i18n key strings (e.g. "validation.email")
-  → auth-form-fields.tsx: resolveAuthValidationMessage(t, error?.message) — skip t() when message is undefined
+  → Zod validation messages = i18n key strings (e.g. "validation.email", "validation.title")
+  → Resolve via resolveValidationMessage / resolveAuthValidationMessage — skip t() when message is undefined
+  → API errors = errors.codes.{numericCode} only (src/messages/error-codes.ts)
+  → Form validation = module.validation.* namespaces (separate from API codes)
 ```
 
 ---
 
-## 8. API Error Global Capture Flow
+## 8. API Error Display Flow (user-facing)
+
+```
+API call fails (Axios throws or Server Action returns !success)
+  ↓
+extractAxiosApiError(error) or result.code from AuthActionResult
+  → { code, message }   // message = dev reference only (console.debug in development)
+  ↓
+translateApiErrorCode(tErrors, code)  OR  toastApiError(tErrors, error)
+  → tErrors = useTranslations("errors.codes")
+  → key = String(code); unknown → fallback 9999
+  ↓
+Toast or inline <p> — user never sees BE message string
+```
+
+Modules migrated: Auth, Me GET errorCode, Media, Taxonomy, Instructor, Course (incl. useCourseEditorState).
+
+---
+
+## 9. API Error Global Capture Flow
 
 ```
 Any apiInstance request fails (error response) on client
@@ -249,7 +277,7 @@ Components can subscribe to the global error store:
 
 ---
 
-## 9. Stream Event Ingest Flow
+## 10. Stream Event Ingest Flow
 
 ```
 EventsStreamProvider mounts (client)

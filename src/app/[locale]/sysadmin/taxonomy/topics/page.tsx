@@ -1,3 +1,5 @@
-import { SysadminTaxonomyTopicsPage } from "@/screen/sysadmin/taxonomy/topics/page";
+import { TaxonomyListPage } from "@/screen/common/taxonomy";
 
-export default SysadminTaxonomyTopicsPage;
+export default function SysadminTaxonomyTopicsRoute() {
+  return <TaxonomyListPage resourceKey="topics" />;
+}

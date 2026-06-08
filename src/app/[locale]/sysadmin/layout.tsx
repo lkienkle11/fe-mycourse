@@ -1,9 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { DashboardLayout } from "@/components/common/dashboard";
-import { SYSADMIN_DASHBOARD_ITEMS } from "@/constants/dashboard";
-import { PERMISSIONS } from "@/constants/permissions";
+import { RoleDashboardLayout } from "@/components/common/dashboard";
 
 type SysadminLayoutProps = {
   children: ReactNode;
@@ -11,11 +9,8 @@ type SysadminLayoutProps = {
 
 export default function SysadminLayout({ children }: SysadminLayoutProps) {
   return (
-    <DashboardLayout
-      items={SYSADMIN_DASHBOARD_ITEMS}
-      permissions={[PERMISSIONS.SysadminModify]}
-    >
+    <RoleDashboardLayout dashboardRole="sysadmin">
       {children}
-    </DashboardLayout>
+    </RoleDashboardLayout>
   );
 }

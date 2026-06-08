@@ -1,6 +1,6 @@
 # Media collection (FE)
 
-_Last audited: 2026-05-29 (`MEDIA_COLLECTION_ALL_TABS` in constants)._
+_Last audited: 2026-06-08 (code-based API errors + `media.validation.*` client checks)._
 
 Reusable media library popup for browsing, uploading, and selecting files. Wired into taxonomy topic/outcome forms for cover images.
 
@@ -24,7 +24,8 @@ Dialog width: `MediaCollectionDialog` uses `max-w-5xl` for a wider browsing surf
 | `src/constants/api-route.ts` | `media.files`, `media.fileById` |
 | `src/types/media/index.ts` | `MediaFile`, filters, tab types |
 | `src/constants/media/file-rules.ts` | Accept rules, size limits, extension lists, `MEDIA_COLLECTION_ALL_TABS` |
-| `src/lib/utils/media.ts` | `isImageFilename`, `getMediaTabExtensions`, `isExecutableExtension`, validation, `getMediaDeleteKey`, `isImageMedia` (uses shared `apiListQueryToRecord`) |
+| `src/lib/utils/media.ts` | `isImageFilename`, `getMediaTabExtensions`, `isExecutableExtension`, `validateMediaUploadBatch`, `getMediaDeleteKey`, `isImageMedia` (uses shared `apiListQueryToRecord`) |
+| `src/lib/utils/api-error.ts` | `toastApiError` — delete/upload API failures map to `errors.codes.{code}` |
 | `src/lib/utils/list-query.ts` | `apiListQueryToRecord()` — `page`, `per_page`, `search`, `sort_by`, `sort_order`, `category` |
 | `src/lib/utils/format-bytes.ts` | `formatBytes()` — per-file and total size labels in upload dialog |
 
@@ -103,6 +104,14 @@ Radix `DialogContent` requires a description for screen readers:
 - Rename: menu item disabled (“Coming soon”); no BE rename API.
 - Edit form preview: existing `image_file_id` shows truncated UUID until user re-picks from library (no GET-by-UUID on FE).
 
+## Validation and API errors
+
+- **Client upload checks**: `validateMediaUploadBatch()` in `src/lib/utils/media.ts` → toast `media.validation.*` (`tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected`).
+- **API upload/delete failures**: `toastApiError(useTranslations("errors.codes"), error)` — codes `2003`–`2009`, `9010`–`9018`, etc.
+- **API errors** use `errors.codes.{code}` only (`2003`–`2009`, `9010`–`9018`, etc.) via `toastApiError`.
+- **Client pre-submit** uses `media.validation.*` (`tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected`).
+- `media.upload.errors.*` is legacy UI copy — not used for API responses.
+
 ## i18n
 
 Namespaces in `src/messages/en.ts` and `vi.ts`:
@@ -110,6 +119,8 @@ Namespaces in `src/messages/en.ts` and `vi.ts`:
 | Namespace | Notable keys |
 |-----------|----------------|
 | `media.collection.*` | `title`, `description` (sr-only dialog), `tabs.*`, `sort.*`, `add.*`, pagination, delete confirm |
-| `media.upload.*` | `title.*`, `description` (sr-only dialog), `dropHint`, `limits`, `errors.*` |
+| `media.validation.*` | Client upload limits (`tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected`) |
+| `media.upload.*` | `title.*`, `description` (sr-only dialog), `dropHint`, `limits`, `success` |
 | `media.item.*` | `untitled`, `noPreview`, `rename`, `delete` |
 | `media.picker.*` | `browse`, `clear` (taxonomy cover field) |
+| `errors.codes.*` | All API failures (shared across modules) |

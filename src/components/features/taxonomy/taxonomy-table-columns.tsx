@@ -3,6 +3,7 @@
 import type { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { DataTableColumn } from "@/components/shared/data-table";
+import { formatUnixDateTime } from "@/lib/utils";
 import type {
   CourseOutcome,
   CourseSkill,
@@ -15,10 +16,6 @@ import type {
 import { TaxonomyTreeViewButton } from "./taxonomy-tree-view-button";
 
 type TaxonomyTranslate = ReturnType<typeof useTranslations<"taxonomy">>;
-
-function formatUnix(seconds: number): string {
-  return new Date(seconds * 1000).toLocaleString();
-}
 
 function columnLabel(
   t: TaxonomyTranslate,
@@ -61,7 +58,7 @@ function renderCell(
           ? t("common.statusActive")
           : t("common.statusInactive");
       case "updated_at":
-        return formatUnix(outcome.updated_at);
+        return formatUnixDateTime(outcome.updated_at);
       default:
         return "—";
     }
@@ -96,7 +93,7 @@ function renderCell(
       }
       return "—";
     case "updated_at":
-      return formatUnix(slugRow.updated_at);
+      return formatUnixDateTime(slugRow.updated_at);
     default:
       return "—";
   }

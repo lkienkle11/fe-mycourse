@@ -1,3 +1,3 @@
-import { SysadminInstructorRosterPage } from "@/screen/sysadmin/instructor/roster/page";
+import { InstructorRosterPage } from "@/screen/common/instructor";
 
-export default SysadminInstructorRosterPage;
+export default InstructorRosterPage;

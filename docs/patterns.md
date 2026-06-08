@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-05-29 (`src/constants` + `src/types` ESLint rules)._
+_Last audited: 2026-06-08 (code-based API errors + shared validation schemas)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -273,7 +273,62 @@ z.string().email({ message: "validation.email" })
 z.string().email({ message: "Please enter a valid email" })
 ```
 
-Translate keys in `auth-form-fields.tsx` (`resolveAuthValidationMessage`) — pass `error` from react-hook-form, not `t(errors.*.message)` in `login-content` / `signup-content` (calling `t(undefined)` throws `MISSING_MESSAGE`).
+Translate keys in `auth-form-fields.tsx` (`resolveAuthValidationMessage`) or shared helpers from `src/lib/utils/validation-message.ts`:
+- `resolveValidationMessage()` — inline field errors (react-hook-form)
+- `toastValidationError()` — pre-submit Zod `safeParse` failures (toast before API call)
+
+Pass `error` from react-hook-form, not `t(errors.*.message)` in form shells (calling `t(undefined)` throws `MISSING_MESSAGE`).
+
+Schemas live under `src/schema/<domain>/` (barrel `@/schema`). Each module uses its own validation namespace:
+
+| Module | Zod path | i18n validation namespace |
+|--------|----------|---------------------------|
+| Auth | `schema/auth/auth.ts` | `auth.validation.*` |
+| Me | `schema/me/me.ts` | `me.validation.*` |
+| Media | `schema/media/media.ts` | `media.validation.*` |
+| Taxonomy | `schema/taxonomy/taxonomy.ts` | `taxonomy.form.validation.*` |
+| Instructor | `schema/instructor/instructor.ts` | `instructor.validation.*` |
+| Course | `schema/course/course.ts` | `course.validation.*` |
+
+**Validation keys in messages (en/vi):**
+
+| Namespace | Keys |
+|-----------|------|
+| `media.validation` | `tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected` |
+| `taxonomy.form.validation` | `name`, `nameMax`, `shortDescription`, `shortDescriptionMax`, `descriptionMaxLines`, `descriptionLineMax` |
+| `instructor.validation` | `email`, `rejectionReason`, `rejectionReasonMax`, `topicId`, `skillId`, `ticketSubject`, `ticketMessage` |
+| `course.validation` | `title`, `titleMax`, `shortDescriptionMax`, `sectionTitle`, `lessonTitle`, `subLessonTitle`, `subLessonKind`, `quizPrompt`, `quizOptionBody`, `quizOptionsMin`, `collaboratorUserId`, `rejectReason`, `rejectReasonMax`, `videoMediaRequired` |
+
+Taxonomy forms resolve Zod keys via `useTranslations("taxonomy.form")` + schema key `validation.*` (same parent-namespace pattern as auth).
+
+Use `RequiredLabel` + `FieldError` from `src/components/shared/` on required dialog fields.
+
+---
+
+## 6b. API Error Pattern (all modules)
+
+Never show the BE JSON `message` to users. Resolve by numeric `code` only:
+
+```ts
+import { useTranslations } from "next-intl";
+import { toastApiError, translateApiErrorCode } from "@/lib/utils/api-error";
+
+const tErrors = useTranslations("errors.codes");
+
+// catch after apiFetch / service call
+catch (error) {
+  toastApiError(tErrors, error);
+}
+
+// Server Action result (inline)
+setServerError(translateApiErrorCode(tErrors, result.code));
+```
+
+- Copy: `errors.codes.{code}` in `src/messages/en.ts` / `vi.ts` (sourced from `src/messages/error-codes.ts`).
+- Unknown codes fall back to `errors.codes.9999`.
+- `ApiErrorCode` in `src/constants/api-error-code.ts` mirrors `be/internal/shared/errors/errcode_codes.go` 1:1.
+- BE has **no** taxonomy/course/instructor-specific numeric codes — those modules reuse shared `2xxx`/`3xxx` (and media also `9010`–`9018`).
+- Do **not** use semantic per-module API keys (`auth.errors.emailAlreadyExists`, `media.upload.errors.*` for API responses, etc.).
 
 ---
 
@@ -286,8 +341,17 @@ Translations live in `src/messages/en.ts` and `vi.ts` (`vi` uses `satisfies Mess
 ```ts
 import { useTranslations } from "next-intl";
 const t = useTranslations("auth"); // namespace
+const tErrors = useTranslations("errors.codes"); // API errors only
 <p>{t("loginTitle")}</p>
+<p>{tErrors("4002")}</p> // Invalid credentials
 ```
+
+Two namespaces for errors — do not mix:
+
+| Purpose | Key pattern | Example |
+|---------|-------------|---------|
+| API failure (BE `code`) | `errors.codes.{code}` | `tErrors("4004")` |
+| Form validation (pre-submit) | `{module}.validation.*` | `tValidation("title")` |
 
 ### Navigation helpers
 
@@ -391,15 +455,19 @@ For human-readable file sizes in the UI, use `formatBytes()` from `src/lib/utils
 
 Same ESLint config enforces **type-only** files under `src/types/` (no `const`, functions, or `export *`). Exception: value imports from `@/constants/**` are allowed when deriving types (e.g. `PermissionName`, `ApiErrorCodeValue`). Runtime maps like `ApiErrorCode` live in `src/constants/`; helpers like `isApiSuccess()` live in `src/lib/utils/`.
 
----
+## 13. `src/screen/` — pages only
 
-## 13. Slug fields
-
-Taxonomy slugs are **read-only** in the UI. Derive them with `generateSlug(name)` / `slugifyName(name)` on submit (and show a live preview while typing the name). Normalization includes Vietnamese accent removal, `đ/Đ -> d`, spaces/underscores → `-`, and Unicode-safe filtering. Do not expose an editable slug input.
+[`eslint.config.mjs`](../eslint.config.mjs) restricts each `src/screen/**` module folder to **`index.ts`** plus **`page.tsx`** or **`*-page.tsx`** only. Put reusable UI in `src/components/`. Details: [`docs/quality.md`](./quality.md#srcscreen--page-files-only).
 
 ---
 
-## 14. Adding New Features Checklist
+## 14. Slug fields
+
+Taxonomy and course-create slugs are **read-only** in the UI. Show a live preview with `generateSlug(name)` / `slugifyName(name)` while the user types the name or title. **Do not send `slug` in create/update API payloads** — the backend computes the persisted slug with `utils.SlugifyName`. Use one shared `TaxonomyTreeNode` type (`slug?` optional on write); strip slugs with `toTaxonomyTreeWritePayload()` before taxonomy mutations. Do not expose an editable slug input or duplicate tree node types.
+
+---
+
+## 15. Adding New Features Checklist
 
 Before writing code for a new feature:
 
@@ -412,6 +480,7 @@ Before writing code for a new feature:
 - [ ] Place Server Actions in `src/actions/<domain>/`
 - [ ] Place Zustand stores in `src/store/`
 - [ ] Add new i18n strings to both `en.ts` and `vi.ts` (keep `vi.ts` satisfying `Messages`)
-- [ ] Add route constants to `src/constants/route.ts`
+- [ ] Add/update route values in `src/constants/route.ts` (`PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`)
+- [ ] Build runtime URLs through `src/lib/navigation/routes.ts` helpers (no route string interpolation in screens/components)
 - [ ] Add API route constants to `src/constants/api-route.ts`
 - [ ] Update `docs/` after implementation
