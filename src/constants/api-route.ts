@@ -13,6 +13,10 @@ export const API_PUBLIC_ROUTES = {
 export const API_PRIVATE_ROUTES = {
   user: {
     getMe: "/api/v1/me",
+    patchMe: "/api/v1/me",
+    deleteMe: "/api/v1/me",
+    hardDeleteMe: "/api/v1/me/hard",
+    getMyPermissions: "/api/v1/me/permissions",
   },
   taxonomy: {
     levels: "/api/v1/taxonomy/levels",

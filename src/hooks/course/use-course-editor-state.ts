@@ -21,6 +21,13 @@ import {
   updateCourseSubLessonService,
 } from "@/api/callers/course";
 import { createEmptyDeltaString } from "@/lib/utils";
+import { toastApiError } from "@/lib/utils/api-error";
+import {
+  courseCollaboratorSchema,
+  courseLessonSchema,
+  courseSectionSchema,
+  courseSubLessonSchema,
+} from "@/schema/course";
 import type {
   CourseBasicInfoForm,
   CourseCollaborator,
@@ -221,10 +228,12 @@ function useCourseLeaseState({
   courseId,
   leaseVersionId,
   t,
+  tErrors,
 }: {
   courseId: number;
   leaseVersionId: number;
   t: ReturnType<typeof useTranslations<"course.editor.toast">>;
+  tErrors: ReturnType<typeof useTranslations<"errors.codes">>;
 }) {
   const [activeLease, setActiveLease] = useState<CourseLease | null>(null);
 
@@ -235,15 +244,15 @@ function useCourseLeaseState({
 
     const timer = window.setInterval(() => {
       void heartbeatCourseLeaseService(courseId, activeLease.lease_token).catch(
-        () => {
-          toast.error(t("lockExpired"));
+        (error) => {
+          toastApiError(tErrors, error);
           setActiveLease(null);
         },
       );
     }, 120000);
 
     return () => window.clearInterval(timer);
-  }, [activeLease, courseId, t]);
+  }, [activeLease, courseId, tErrors]);
 
   const releaseLease = async () => {
     if (!activeLease) {
@@ -272,8 +281,8 @@ function useCourseLeaseState({
       });
       setActiveLease(lease);
       return lease;
-    } catch {
-      toast.error(t("leaseHeld"));
+    } catch (error) {
+      toastApiError(tErrors, error);
       return null;
     }
   };
@@ -309,6 +318,8 @@ export function useCourseEditorState({
   mutate,
 }: UseCourseEditorStateParams) {
   const t = useTranslations("course.editor.toast");
+  const tValidation = useTranslations("course.validation");
+  const tErrors = useTranslations("errors.codes");
   const [activeTab, setActiveTab] = useState<CourseEditorTab>("basic");
   const [isPreparingDraft, setIsPreparingDraft] = useState(false);
   const [isSavingBasicInfo, setIsSavingBasicInfo] = useState(false);
@@ -352,6 +363,7 @@ export function useCourseEditorState({
       courseId,
       leaseVersionId,
       t,
+      tErrors,
     });
 
   const refreshDetail = async () => {
@@ -364,8 +376,8 @@ export function useCourseEditorState({
       await prepareCourseDraftService(courseId);
       toast.success(t("draftPrepared"));
       await refreshDetail();
-    } catch {
-      toast.error(t("draftPrepareError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsPreparingDraft(false);
     }
@@ -397,8 +409,8 @@ export function useCourseEditorState({
       });
       toast.success(t("basicInfoSaved"));
       await refreshDetail();
-    } catch {
-      toast.error(t("basicInfoSaveError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsSavingBasicInfo(false);
     }
@@ -429,6 +441,13 @@ export function useCourseEditorState({
     if (!sectionDialog) {
       return;
     }
+    const parsed = courseSectionSchema.safeParse({
+      title: sectionForm.title.trim(),
+    });
+    if (!parsed.success) {
+      toast.error(tValidation("sectionTitle"));
+      return;
+    }
     try {
       if (sectionDialog.mode === "create") {
         await createCourseSectionService(courseId, {
@@ -445,8 +464,8 @@ export function useCourseEditorState({
       toast.success(t("sectionSaved"));
       await closeSectionDialog();
       await refreshDetail();
-    } catch {
-      toast.error(t("sectionSaveError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     }
   };
 
@@ -479,6 +498,13 @@ export function useCourseEditorState({
     if (!lessonDialog) {
       return;
     }
+    const parsed = courseLessonSchema.safeParse({
+      title: lessonForm.title.trim(),
+    });
+    if (!parsed.success) {
+      toast.error(tValidation("lessonTitle"));
+      return;
+    }
     try {
       if (lessonDialog.mode === "create") {
         await createCourseLessonService(courseId, lessonForm);
@@ -492,8 +518,8 @@ export function useCourseEditorState({
       toast.success(t("lessonSaved"));
       await closeLessonDialog();
       await refreshDetail();
-    } catch {
-      toast.error(t("lessonSaveError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     }
   };
 
@@ -526,6 +552,18 @@ export function useCourseEditorState({
 
   const saveSubLesson = async () => {
     if (!subLessonDialog) {
+      return;
+    }
+    const parsed = courseSubLessonSchema.safeParse({
+      title: subLessonForm.title.trim(),
+      kind: subLessonForm.kind,
+    });
+    if (!parsed.success) {
+      toast.error(tValidation("subLessonTitle"));
+      return;
+    }
+    if (subLessonForm.kind === "VIDEO" && !subLessonForm.video_file_id) {
+      toast.error(tValidation("videoMediaRequired"));
       return;
     }
     const payload = {
@@ -567,16 +605,20 @@ export function useCourseEditorState({
       toast.success(t("itemSaved"));
       await closeSubLessonDialog();
       await refreshDetail();
-    } catch {
-      toast.error(t("itemSaveError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     }
   };
 
   const handleAddCollaborator = async () => {
-    const userId = Number(collaboratorUserId);
-    if (!userId) {
+    const parsed = courseCollaboratorSchema.safeParse({
+      user_id: collaboratorUserId,
+    });
+    if (!parsed.success) {
+      toast.error(tValidation("collaboratorUserId"));
       return;
     }
+    const userId = Number(collaboratorUserId);
     setIsSubmittingCollaborator(true);
     try {
       await addCourseCollaboratorService(courseId, {
@@ -586,8 +628,8 @@ export function useCourseEditorState({
       toast.success(t("collaboratorAdded"));
       setCollaboratorUserId("");
       await refreshDetail();
-    } catch {
-      toast.error(t("collaboratorAddError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsSubmittingCollaborator(false);
     }
@@ -598,8 +640,8 @@ export function useCourseEditorState({
       await removeCourseCollaboratorService(courseId, collaborator.user_id);
       toast.success(t("collaboratorRemoved"));
       await refreshDetail();
-    } catch {
-      toast.error(t("collaboratorRemoveError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     }
   };
 
@@ -608,8 +650,8 @@ export function useCourseEditorState({
       await submitCourseReviewService(courseId);
       toast.success(t("submitted"));
       await refreshDetail();
-    } catch {
-      toast.error(t("submitError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     }
   };
 
@@ -618,8 +660,8 @@ export function useCourseEditorState({
       await reopenCourseDraftService(courseId);
       toast.success(t("reopened"));
       await refreshDetail();
-    } catch {
-      toast.error(t("reopenError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     }
   };
 

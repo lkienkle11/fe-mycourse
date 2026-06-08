@@ -27,10 +27,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PERMISSIONS } from "@/constants/permissions";
+import { toastApiError } from "@/lib/utils/api-error";
 
 export function InstructorExpertisePage() {
   const t = useTranslations("instructor.expertise");
   const tc = useTranslations("instructor.common");
+  const tErrors = useTranslations("errors.codes");
   const [instructorId, setInstructorId] = useState<number | null>(null);
   const [topicToAdd, setTopicToAdd] = useState<string>("");
   const [skillToAdd, setSkillToAdd] = useState<string>("");
@@ -111,8 +113,8 @@ export function InstructorExpertisePage() {
       toast.success(t("addTopicSuccess"));
       setTopicToAdd("");
       await mutateTopics();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     }
   };
 
@@ -125,8 +127,8 @@ export function InstructorExpertisePage() {
       toast.success(t("addSkillSuccess"));
       setSkillToAdd("");
       await mutateSkills();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     }
   };
 
@@ -151,8 +153,8 @@ export function InstructorExpertisePage() {
       toast.success(tc("deleteSuccess"));
       setDeleteTopicId(null);
       setDeleteSkillId(null);
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsDeleting(false);
     }

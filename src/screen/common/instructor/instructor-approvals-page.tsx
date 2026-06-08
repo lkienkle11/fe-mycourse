@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PERMISSIONS } from "@/constants/permissions";
+import { toastApiError } from "@/lib/utils/api-error";
 import type {
   InstructorApplication,
   InstructorListFilters,
@@ -30,6 +31,7 @@ import type {
 export function InstructorApprovalsPage() {
   const t = useTranslations("instructor.approvals");
   const tc = useTranslations("instructor.common");
+  const tErrors = useTranslations("errors.codes");
   const [filters, setFilters] = useState<InstructorListFilters>({
     page: 1,
     per_page: 20,
@@ -111,8 +113,8 @@ export function InstructorApprovalsPage() {
       setDeleteOpen(false);
       setDeleteTarget(null);
       await mutate();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsDeleting(false);
     }

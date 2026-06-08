@@ -1,5 +1,5 @@
 import type { AxiosError } from "axios";
-import { apiFetch, apiPost } from "@/api/methods";
+import { apiDelete, apiFetch, apiPatch, apiPost } from "@/api/methods";
 import { API_PRIVATE_ROUTES, API_PUBLIC_ROUTES } from "@/constants/api-route";
 import { buildQueryParams } from "@/lib/utils";
 import type { ApiResponse } from "@/types/api";
@@ -23,6 +23,10 @@ export type SignupPayload = RegisterPayload;
 
 export interface ConfirmPayload {
   token: string;
+}
+
+export interface UpdateMePayload {
+  avatar_file_id?: string;
 }
 
 /**
@@ -138,6 +142,64 @@ export async function logoutService(
     },
   );
   return { data };
+}
+
+/** PATCH /api/v1/me — partial profile update (avatar_file_id). */
+export async function patchMeService(
+  payload: UpdateMePayload,
+): Promise<MeResponse> {
+  const endpointKey =
+    buildQueryParams(
+      API_PRIVATE_ROUTES.user.patchMe,
+      undefined,
+      undefined,
+      undefined,
+    ) ?? API_PRIVATE_ROUTES.user.patchMe;
+  const { data } = await apiPatch<ApiResponse<MeResponse>, UpdateMePayload>(
+    endpointKey,
+    payload,
+  );
+  if (!data.data) {
+    throw new Error("PATCH /me returned no data");
+  }
+  return data.data;
+}
+
+/** DELETE /api/v1/me — soft-delete account. */
+export async function deleteMeService(): Promise<void> {
+  const endpointKey =
+    buildQueryParams(
+      API_PRIVATE_ROUTES.user.deleteMe,
+      undefined,
+      undefined,
+      undefined,
+    ) ?? API_PRIVATE_ROUTES.user.deleteMe;
+  await apiDelete<ApiResponse<null>>(endpointKey);
+}
+
+/** DELETE /api/v1/me/hard — hard-delete account. */
+export async function hardDeleteMeService(): Promise<void> {
+  const endpointKey =
+    buildQueryParams(
+      API_PRIVATE_ROUTES.user.hardDeleteMe,
+      undefined,
+      undefined,
+      undefined,
+    ) ?? API_PRIVATE_ROUTES.user.hardDeleteMe;
+  await apiDelete<ApiResponse<null>>(endpointKey);
+}
+
+/** GET /api/v1/me/permissions — permission names for current user. */
+export async function getMyPermissionsService(): Promise<string[]> {
+  const endpointKey =
+    buildQueryParams(
+      API_PRIVATE_ROUTES.user.getMyPermissions,
+      undefined,
+      undefined,
+      undefined,
+    ) ?? API_PRIVATE_ROUTES.user.getMyPermissions;
+  const { data } = await apiFetch<ApiResponse<string[]>>(endpointKey);
+  return data.data ?? [];
 }
 
 // export async function refreshTokenService(

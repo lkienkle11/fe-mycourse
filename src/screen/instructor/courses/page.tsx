@@ -9,6 +9,7 @@ import { useEditableCourses } from "@/api/hooks/course";
 import { CourseStatusBadge } from "@/components/features/course/course-status-badge";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
+import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,11 +22,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { instructorCourseEditorHref } from "@/lib/navigation/routes";
 import { slugifyName } from "@/lib/utils";
+import { toastApiError } from "@/lib/utils/api-error";
+import { courseCreateSchema } from "@/schema/course";
 import type { CourseListItem } from "@/types/course";
 
 export function InstructorCoursesPage() {
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.list");
+  const tValidation = useTranslations("course.validation");
+  const tErrors = useTranslations("errors.codes");
   const router = useRouter();
   const { rows, isLoading, mutate } = useEditableCourses();
   const [createOpen, setCreateOpen] = useState(false);
@@ -67,6 +72,11 @@ export function InstructorCoursesPage() {
   );
 
   const handleCreate = async () => {
+    const parsed = courseCreateSchema.safeParse({ title: title.trim() });
+    if (!parsed.success) {
+      toast.error(tValidation("title"));
+      return;
+    }
     setIsSubmitting(true);
     try {
       const created = await createCourseService({
@@ -77,8 +87,8 @@ export function InstructorCoursesPage() {
       setTitle("");
       await mutate();
       router.push(instructorCourseEditorHref(created.course.id));
-    } catch {
-      toast.error(t("toast.createError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsSubmitting(false);
     }
@@ -94,8 +104,8 @@ export function InstructorCoursesPage() {
       toast.success(t("toast.deleted"));
       setDeleteTarget(null);
       await mutate();
-    } catch {
-      toast.error(t("toast.deleteError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsDeleting(false);
     }
@@ -153,9 +163,9 @@ export function InstructorCoursesPage() {
           </DialogHeader>
           <div className="grid gap-3">
             <div className="space-y-2">
-              <Label htmlFor="course-title">
+              <RequiredLabel htmlFor="course-title">
                 {t("createDialog.titleLabel")}
-              </Label>
+              </RequiredLabel>
               <Input
                 id="course-title"
                 value={title}

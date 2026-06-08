@@ -7,16 +7,19 @@ import { useGetMe } from "@/hooks";
 import { useSendBroadcastOutbound } from "@/hooks/events/broadcast/use-send-broadcast-outbound";
 import { useRouter } from "@/i18n/navigation";
 import { homeHref } from "@/lib/navigation/routes";
+import { translateApiErrorCode } from "@/lib/utils/api-error";
 import { clearAuthCookiesClient } from "@/lib/utils/cookie";
 
 type LogoutStatus = "loading" | "error" | "success";
 
 export function LogoutContent() {
   const t = useTranslations("auth.logout");
+  const tErrors = useTranslations("errors.codes");
   const router = useRouter();
   const { mutateMe } = useGetMe();
   const sendBroadcast = useSendBroadcastOutbound();
   const [status, setStatus] = useState<LogoutStatus>("loading");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const calledRef = useRef(false);
 
   useEffect(() => {
@@ -37,13 +40,16 @@ export function LogoutContent() {
         router.replace(homeHref);
         return;
       }
+      setErrorMessage(translateApiErrorCode(tErrors, result.code));
       setStatus("error");
     })();
-  }, [mutateMe, router, sendBroadcast]);
+  }, [mutateMe, router, sendBroadcast, tErrors]);
 
   if (status === "error") {
     return (
-      <p className="text-center text-destructive text-sm h-dvh">{t("error")}</p>
+      <p className="text-center text-destructive text-sm h-dvh">
+        {errorMessage ?? t("error")}
+      </p>
     );
   }
 

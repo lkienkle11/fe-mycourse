@@ -8,6 +8,7 @@ import {
   rejectInstructorApplicationService,
 } from "@/api/callers/instructor";
 import { PermissionGate } from "@/components/shared/permission-gate";
+import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,9 +18,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PERMISSIONS } from "@/constants/permissions";
+import { toastApiError } from "@/lib/utils/api-error";
+import { instructorRejectionReasonSchema } from "@/schema/instructor";
 import type { InstructorApplication } from "@/types/instructor";
 
 const REJECTION_MIN = 1;
@@ -37,6 +39,8 @@ export function InstructorApprovalActions({
   compact = false,
 }: InstructorApprovalActionsProps) {
   const t = useTranslations("instructor.approvals");
+  const tValidation = useTranslations("instructor.validation");
+  const tErrors = useTranslations("errors.codes");
   const [rejectOpen, setRejectOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [isApproving, setIsApproving] = useState(false);
@@ -53,15 +57,21 @@ export function InstructorApprovalActions({
       await approveInstructorApplicationService(application.id);
       toast.success(t("approveSuccess"));
       await onSuccess?.();
-    } catch {
-      toast.error(t("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsApproving(false);
     }
   };
 
   const handleReject = async () => {
-    if (!reasonValid) return;
+    const parsed = instructorRejectionReasonSchema.safeParse({
+      reason: reason.trim(),
+    });
+    if (!parsed.success) {
+      toast.error(tValidation("rejectionReason"));
+      return;
+    }
     setIsRejecting(true);
     try {
       await rejectInstructorApplicationService(application.id, {
@@ -71,8 +81,8 @@ export function InstructorApprovalActions({
       setRejectOpen(false);
       setReason("");
       await onSuccess?.();
-    } catch {
-      toast.error(t("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsRejecting(false);
     }
@@ -117,7 +127,9 @@ export function InstructorApprovalActions({
             <DialogDescription>{t("rejectDescription")}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-2">
-            <Label htmlFor="rejection-reason">{t("rejectReasonLabel")}</Label>
+            <RequiredLabel htmlFor="rejection-reason">
+              {t("rejectReasonLabel")}
+            </RequiredLabel>
             <Textarea
               id="rejection-reason"
               value={reason}

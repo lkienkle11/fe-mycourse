@@ -8,11 +8,13 @@ import { useGetMe } from "@/hooks";
 import { useSendBroadcastOutbound } from "@/hooks/events/broadcast/use-send-broadcast-outbound";
 import { useRouter } from "@/i18n/navigation";
 import { homeHref } from "@/lib/navigation/routes";
+import { translateApiErrorCode } from "@/lib/utils/api-error";
 
 type ConfirmStatus = "loading" | "missing" | "error" | "success";
 
 export function ConfirmEmailContent() {
   const t = useTranslations("auth.confirm");
+  const tErrors = useTranslations("errors.codes");
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const router = useRouter();
@@ -21,6 +23,7 @@ export function ConfirmEmailContent() {
   const [status, setStatus] = useState<ConfirmStatus>(
     token ? "loading" : "missing",
   );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const calledRef = useRef(false);
 
   useEffect(() => {
@@ -40,9 +43,10 @@ export function ConfirmEmailContent() {
         router.replace(homeHref);
         return;
       }
+      setErrorMessage(translateApiErrorCode(tErrors, result.code));
       setStatus("error");
     })();
-  }, [token, mutateMe, router, sendBroadcast]);
+  }, [token, mutateMe, router, sendBroadcast, tErrors]);
 
   if (status === "missing") {
     return (
@@ -55,7 +59,7 @@ export function ConfirmEmailContent() {
   if (status === "error") {
     return (
       <p className="text-center text-destructive text-sm h-dvh">
-        {t("invalidToken")}
+        {errorMessage}
       </p>
     );
   }

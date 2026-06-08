@@ -1,3 +1,9 @@
+export {
+  extractAxiosApiError,
+  resolveApiErrorMessageKey,
+  toastApiError,
+  translateApiErrorCode,
+} from "./api-error";
 export { cn } from "./cn";
 export type {
   BuildCookieOptionsInput,
@@ -32,7 +38,6 @@ export {
   getMediaDeleteKey,
   isImageMedia,
   mediaTabToCategory,
-  mediaUploadErrorMessageKey,
   parseMediaSortOption,
   resolveMediaCollectionDefaultTab,
   resolveVisibleMediaTabs,

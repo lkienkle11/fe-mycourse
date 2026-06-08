@@ -22,6 +22,7 @@ import { PermissionGate } from "@/components/shared/permission-gate";
 import { Button } from "@/components/ui/button";
 import { PERMISSIONS } from "@/constants/permissions";
 import { pickCharacter } from "@/lib/utils";
+import { toastApiError } from "@/lib/utils/api-error";
 import type {
   InstructorListFilters,
   InstructorProfile,
@@ -31,6 +32,7 @@ import type {
 export function InstructorRosterPage() {
   const t = useTranslations("instructor.roster");
   const tc = useTranslations("instructor.common");
+  const tErrors = useTranslations("errors.codes");
   const [filters, setFilters] = useState<InstructorListFilters>({
     page: 1,
     per_page: 20,
@@ -123,8 +125,8 @@ export function InstructorRosterPage() {
       toast.success(t("addSuccess"));
       setAddOpen(false);
       await mutate();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsAdding(false);
     }
@@ -153,8 +155,8 @@ export function InstructorRosterPage() {
       setDeleteOpen(false);
       setDeleteTarget(null);
       await mutate();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsDeleting(false);
     }

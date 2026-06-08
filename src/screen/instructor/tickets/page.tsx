@@ -28,6 +28,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PERMISSIONS } from "@/constants/permissions";
+import { toastApiError } from "@/lib/utils/api-error";
+import { instructorTicketSchema } from "@/schema/instructor";
 import type {
   InstructorTicket,
   InstructorTicketListFilters,
@@ -36,6 +38,8 @@ import type {
 export function InstructorTicketsPage() {
   const t = useTranslations("instructor.tickets");
   const tc = useTranslations("instructor.common");
+  const tValidation = useTranslations("instructor.validation");
+  const tErrors = useTranslations("errors.codes");
   const [filters, setFilters] = useState<InstructorTicketListFilters>({
     page: 1,
     per_page: 20,
@@ -78,7 +82,13 @@ export function InstructorTicketsPage() {
 
   const handleCreate = async () => {
     const trimmed = subject.trim();
-    if (!trimmed) return;
+    const parsed = instructorTicketSchema
+      .pick({ subject: true })
+      .safeParse({ subject: trimmed });
+    if (!parsed.success) {
+      toast.error(tValidation("ticketSubject"));
+      return;
+    }
     setIsCreating(true);
     try {
       await createInstructorTicketService({ subject: trimmed });
@@ -86,8 +96,8 @@ export function InstructorTicketsPage() {
       setCreateOpen(false);
       setSubject("");
       await mutate();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsCreating(false);
     }
@@ -96,14 +106,20 @@ export function InstructorTicketsPage() {
   const handleSendMessage = async () => {
     if (!selectedTicket) return;
     const body = messageBody.trim();
-    if (!body) return;
+    const parsed = instructorTicketSchema
+      .pick({ message: true })
+      .safeParse({ message: body });
+    if (!parsed.success) {
+      toast.error(tValidation("ticketMessage"));
+      return;
+    }
     setIsSending(true);
     try {
       await addInstructorTicketMessageService(selectedTicket.id, { body });
       setMessageBody("");
       await mutateMessages();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsSending(false);
     }
@@ -117,8 +133,8 @@ export function InstructorTicketsPage() {
       toast.success(t("closeSuccess"));
       setThreadOpen(false);
       await mutate();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsClosing(false);
     }

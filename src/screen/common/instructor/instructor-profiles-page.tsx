@@ -13,6 +13,7 @@ import {
 } from "@/components/features/instructor/instructor-action-controls";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { PERMISSIONS } from "@/constants/permissions";
+import { toastApiError } from "@/lib/utils/api-error";
 import type {
   InstructorListFilters,
   InstructorProfile,
@@ -21,6 +22,7 @@ import type {
 export function InstructorProfilesPage() {
   const t = useTranslations("instructor.profiles");
   const tc = useTranslations("instructor.common");
+  const tErrors = useTranslations("errors.codes");
   const [filters, setFilters] = useState<InstructorListFilters>({
     page: 1,
     per_page: 20,
@@ -76,8 +78,8 @@ export function InstructorProfilesPage() {
       setDeleteOpen(false);
       setDeleteTarget(null);
       await mutate();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsDeleting(false);
     }

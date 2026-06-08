@@ -6,32 +6,16 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { handleAuthSubmit } from "@/actions/auth/auth-client";
 import { Button, Spinner } from "@/components/ui";
-import { ApiErrorCode } from "@/constants/api-error-code";
 import { useAuthStore } from "@/hooks";
 import { cn } from "@/lib/utils";
+import { translateApiErrorCode } from "@/lib/utils/api-error";
 import { type SignupFormValues, signupSchema } from "@/schema/auth";
 import { AuthSocialLogin } from "../auth-social-login";
 import { AuthEmailPasswordFields, AuthFullNameField } from "./auth-form-fields";
 
-function registerErrorKey(code: number): string {
-  switch (code) {
-    case ApiErrorCode.EmailAlreadyExists:
-      return "errors.emailAlreadyExists";
-    case ApiErrorCode.WeakPassword:
-      return "errors.weakPassword";
-    case ApiErrorCode.RegistrationAbandoned:
-      return "errors.registrationAbandoned";
-    case ApiErrorCode.RegistrationEmailRateLimited:
-      return "errors.rateLimited";
-    case ApiErrorCode.ConfirmationEmailSendFailed:
-      return "errors.emailSendFailed";
-    default:
-      return "errors.generic";
-  }
-}
-
 export function SignupContent({ className }: { className?: string }) {
   const t = useTranslations("auth");
+  const tErrors = useTranslations("errors.codes");
   const locale = useLocale();
   const { openLoginModal } = useAuthStore();
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -80,8 +64,7 @@ export function SignupContent({ className }: { className?: string }) {
       if (result.retryAfterSeconds) {
         setRetryAfterSeconds(result.retryAfterSeconds);
       }
-      const key = registerErrorKey(result.code);
-      setServerError(t(key as "errors.generic"));
+      setServerError(translateApiErrorCode(tErrors, result.code));
     }
   };
 

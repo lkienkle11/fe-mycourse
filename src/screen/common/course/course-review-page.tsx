@@ -20,11 +20,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { toastApiError } from "@/lib/utils/api-error";
+import { courseRejectReasonSchema } from "@/schema/course";
 import type { CourseListItem } from "@/types/course";
 
 export function CourseReviewPage({ scope }: { scope: "admin" | "sysadmin" }) {
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.review");
+  const tValidation = useTranslations("course.validation");
+  const tErrors = useTranslations("errors.codes");
   const { rows, isLoading, mutate } = useCourseReviewQueue();
   const [rejectTarget, setRejectTarget] = useState<CourseListItem | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -62,8 +66,8 @@ export function CourseReviewPage({ scope }: { scope: "admin" | "sysadmin" }) {
       await approveCourseReviewService(course.id);
       toast.success(t("toast.approved"));
       await mutate();
-    } catch {
-      toast.error(t("toast.approveError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setPendingActionId(null);
     }
@@ -71,6 +75,13 @@ export function CourseReviewPage({ scope }: { scope: "admin" | "sysadmin" }) {
 
   const handleReject = async () => {
     if (!rejectTarget) {
+      return;
+    }
+    const parsed = courseRejectReasonSchema.safeParse({
+      reason: rejectionReason.trim(),
+    });
+    if (!parsed.success) {
+      toast.error(tValidation("rejectReason"));
       return;
     }
     setPendingActionId(rejectTarget.id);
@@ -82,8 +93,8 @@ export function CourseReviewPage({ scope }: { scope: "admin" | "sysadmin" }) {
       setRejectTarget(null);
       setRejectionReason("");
       await mutate();
-    } catch {
-      toast.error(t("toast.rejectError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setPendingActionId(null);
     }

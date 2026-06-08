@@ -1,3 +1,4 @@
+import { errorCodesVi } from "./error-codes";
 import type { Messages } from "./types";
 
 const messages = {
@@ -163,6 +164,14 @@ const messages = {
       success: "Đã gửi lại email xác thực. Vui lòng kiểm tra hộp thư.",
     },
   },
+  errors: {
+    codes: errorCodesVi,
+  },
+  me: {
+    validation: {
+      avatarFileId: "Vui lòng chọn tệp ảnh hợp lệ.",
+    },
+  },
   notFound: {
     metaTitle: "Không tìm thấy trang",
     title: "Rất tiếc! Không tìm thấy trang",
@@ -276,6 +285,12 @@ const messages = {
     },
   },
   media: {
+    validation: {
+      tooMany: "Bạn chỉ có thể tải lên tối đa 5 tệp cùng lúc.",
+      fileTooLarge: "Mỗi tệp phải nhỏ hơn hoặc bằng 2 GB.",
+      totalTooLarge: "Tổng dung lượng phải nhỏ hơn hoặc bằng 2 GB mỗi lần gửi.",
+      executableRejected: "Không cho phép tải lên tệp thực thi hoặc script.",
+    },
     collection: {
       title: "Thư viện media",
       description: "Duyệt, tải lên và chọn tệp từ thư viện media của bạn.",
@@ -349,6 +364,15 @@ const messages = {
     empty: "Không có nút con để hiển thị.",
   },
   instructor: {
+    validation: {
+      email: "Vui lòng nhập địa chỉ email hợp lệ.",
+      rejectionReason: "Vui lòng nhập lý do từ chối.",
+      rejectionReasonMax: "Lý do từ chối tối đa 2000 ký tự.",
+      topicId: "Vui lòng chọn chủ đề.",
+      skillId: "Vui lòng chọn kỹ năng.",
+      ticketSubject: "Vui lòng nhập tiêu đề.",
+      ticketMessage: "Vui lòng nhập nội dung tin nhắn.",
+    },
     menu: {
       group: "Giảng viên",
       roster: "Danh sách",
@@ -505,6 +529,17 @@ const messages = {
     },
   },
   course: {
+    validation: {
+      title: "Vui lòng nhập tiêu đề khóa học.",
+      sectionTitle: "Vui lòng nhập tiêu đề phần.",
+      lessonTitle: "Vui lòng nhập tiêu đề bài học.",
+      subLessonTitle: "Vui lòng nhập tiêu đề mục bài học.",
+      subLessonKind: "Vui lòng chọn loại mục bài học.",
+      quizPrompt: "Vui lòng nhập câu hỏi quiz.",
+      collaboratorUserId: "Vui lòng chọn cộng tác viên.",
+      rejectReason: "Vui lòng nhập lý do từ chối.",
+      videoMediaRequired: "Vui lòng chọn tệp video.",
+    },
     common: {
       actions: "Thao tác",
       cancel: "Hủy",
@@ -795,11 +830,11 @@ const messages = {
       imageFileId: "Ảnh bìa",
       imageFileIdHint: "Tùy chọn. Chọn ảnh từ thư viện media.",
       validation: {
-        nameRequired: "Vui lòng nhập tên.",
-        slugRequired: "Vui lòng nhập slug.",
-        shortDescriptionRequired: "Vui lòng nhập mô tả ngắn.",
-        descriptionMax: "Tối đa 8 đoạn mô tả.",
-        paragraphMaxLength: "Mỗi đoạn tối đa 120 ký tự.",
+        name: "Vui lòng nhập tên.",
+        shortDescription: "Vui lòng nhập mô tả ngắn.",
+        shortDescriptionMax: "Mô tả ngắn tối đa 100 ký tự.",
+        descriptionMaxLines: "Tối đa 8 đoạn mô tả.",
+        descriptionLineMax: "Mỗi đoạn tối đa 120 ký tự.",
       },
     },
     resources: {

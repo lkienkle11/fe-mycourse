@@ -2,6 +2,7 @@
 
 import useSWR from "swr";
 import { getMeEndpointKey, getMeService } from "@/api/callers/auth";
+import { extractAxiosApiError } from "@/lib/utils/api-error";
 import type { MeResponse } from "@/types/auth";
 
 export interface UseAuthReturn {
@@ -11,6 +12,8 @@ export interface UseAuthReturn {
   isLoading: boolean;
   /** Lỗi nếu xảy ra (không tính 401 — 401 là chưa đăng nhập, không phải lỗi). */
   error: unknown;
+  /** Numeric API error code when `error` is set; `null` otherwise. */
+  errorCode: number | null;
   /** Gọi để revalidate lại dữ liệu me (dùng sau khi login/logout xong). */
   mutate: () => void;
 }
@@ -32,10 +35,13 @@ export function useAuth(): UseAuthReturn {
     },
   );
 
+  const errorCode = error ? extractAxiosApiError(error).code : null;
+
   return {
     me: data ?? null,
     isLoading,
     error,
+    errorCode,
     mutate,
   };
 }

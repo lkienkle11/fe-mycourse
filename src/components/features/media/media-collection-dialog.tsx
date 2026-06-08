@@ -28,6 +28,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PERMISSIONS } from "@/constants/permissions";
 import { useSatisfiesPermissions } from "@/hooks/auth";
+import { toastApiError } from "@/lib/utils/api-error";
 import {
   getMediaDeleteKey,
   mediaTabToCategory,
@@ -58,6 +59,7 @@ export function MediaCollectionDialog({
   onSelect,
 }: MediaCollectionDialogProps) {
   const t = useTranslations("media.collection");
+  const tErrors = useTranslations("errors.codes");
   const visibleTabs = useMemo(
     () => resolveVisibleMediaTabs(visibleTabsProp),
     [visibleTabsProp],
@@ -125,8 +127,8 @@ export function MediaCollectionDialog({
       toast.success(t("deleteSuccess"));
       setDeleteTarget(null);
       await mutate();
-    } catch {
-      toast.error(t("deleteError"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsDeleting(false);
     }

@@ -1,3 +1,5 @@
+import { errorCodesEn } from "./error-codes";
+
 const messages = {
   home: {
     title: "FE boilerplate is ready",
@@ -162,6 +164,14 @@ const messages = {
       success: "Confirmation email sent. Please check your inbox.",
     },
   },
+  errors: {
+    codes: errorCodesEn,
+  },
+  me: {
+    validation: {
+      avatarFileId: "Please select a valid image file.",
+    },
+  },
   notFound: {
     metaTitle: "Page not found",
     title: "Oops! We can't find that page",
@@ -276,6 +286,12 @@ const messages = {
     },
   },
   media: {
+    validation: {
+      tooMany: "You can upload at most 5 files at once.",
+      fileTooLarge: "Each file must be 2 GB or smaller.",
+      totalTooLarge: "Combined size must be 2 GB or less per request.",
+      executableRejected: "Executable and script files are not allowed.",
+    },
     collection: {
       title: "Media library",
       description: "Browse, upload, and select files from your media library.",
@@ -349,6 +365,15 @@ const messages = {
     empty: "No child nodes to display.",
   },
   instructor: {
+    validation: {
+      email: "Please enter a valid email address.",
+      rejectionReason: "Please enter a rejection reason.",
+      rejectionReasonMax: "Rejection reason must be at most 2000 characters.",
+      topicId: "Please select a topic.",
+      skillId: "Please select a skill.",
+      ticketSubject: "Please enter a subject.",
+      ticketMessage: "Please enter a message.",
+    },
     menu: {
       group: "Instructors",
       roster: "Roster",
@@ -506,6 +531,17 @@ const messages = {
     },
   },
   course: {
+    validation: {
+      title: "Please enter a course title.",
+      sectionTitle: "Please enter a section title.",
+      lessonTitle: "Please enter a lesson title.",
+      subLessonTitle: "Please enter a lesson item title.",
+      subLessonKind: "Please select a lesson item type.",
+      quizPrompt: "Please enter a quiz prompt.",
+      collaboratorUserId: "Please select a collaborator.",
+      rejectReason: "Please enter a rejection reason.",
+      videoMediaRequired: "Please select a video file.",
+    },
     common: {
       actions: "Actions",
       cancel: "Cancel",
@@ -793,11 +829,12 @@ const messages = {
       imageFileId: "Cover image",
       imageFileIdHint: "Optional. Choose an image from the media library.",
       validation: {
-        nameRequired: "Name is required.",
-        slugRequired: "Slug is required.",
-        shortDescriptionRequired: "Short description is required.",
-        descriptionMax: "At most 8 description paragraphs are allowed.",
-        paragraphMaxLength: "Each paragraph must be at most 120 characters.",
+        name: "Name is required.",
+        shortDescription: "Short description is required.",
+        shortDescriptionMax:
+          "Short description must be at most 100 characters.",
+        descriptionMaxLines: "At most 8 description paragraphs are allowed.",
+        descriptionLineMax: "Each paragraph must be at most 120 characters.",
       },
     },
     resources: {

@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PERMISSIONS } from "@/constants/permissions";
+import { toastApiError } from "@/lib/utils/api-error";
 import type {
   InstructorTicket,
   InstructorTicketListFilters,
@@ -36,6 +37,7 @@ import type {
 export function InstructorTicketsAdminPage() {
   const t = useTranslations("instructor.tickets");
   const tc = useTranslations("instructor.common");
+  const tErrors = useTranslations("errors.codes");
   const [filters, setFilters] = useState<InstructorTicketListFilters>({
     page: 1,
     per_page: 20,
@@ -106,8 +108,8 @@ export function InstructorTicketsAdminPage() {
       await closeInstructorTicketService(ticket.id);
       toast.success(t("closeSuccess"));
       await mutate();
-    } catch {
-      toast.error(tc("errorGeneric"));
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       setIsClosing(false);
     }
