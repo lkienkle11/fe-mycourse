@@ -250,7 +250,7 @@ export type RejectCourseDraftPayload = {
 };
 
 export type CourseEditorTab =
-  | "basic"
+  | "info"
   | "outline"
   | "collaborators"
   | "pricing"
