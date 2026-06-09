@@ -21,10 +21,10 @@ export function useEditableCourses() {
   );
 }
 
-export function useCourseDetail(courseId: number | null) {
+export function useCourseDetail(courseId: string | null) {
   return useApiDetailQuery<CourseDetail>(
     courseId ? getCourseDetailKey(courseId) : null,
-    () => getCourseDetailService(courseId as number),
+    () => getCourseDetailService(courseId as string),
     { revalidateOnFocus: true },
   );
 }
@@ -45,10 +45,10 @@ export function usePublishedCourses() {
   );
 }
 
-export function useLearningCourse(courseId: number | null) {
+export function useLearningCourse(courseId: string | null) {
   return useApiDetailQuery<CourseDetail>(
     courseId ? `learning-course-${courseId}` : null,
-    () => getLearningCourseService(courseId as number),
+    () => getLearningCourseService(courseId as string),
     { revalidateOnFocus: true },
   );
 }

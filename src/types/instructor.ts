@@ -33,7 +33,7 @@ export type InstructorUserIdentity = {
 };
 
 export type InstructorRosterMember = {
-  id: number;
+  id: string;
   full_name: string;
   email: string;
   phone: string;
@@ -41,8 +41,8 @@ export type InstructorRosterMember = {
 };
 
 export type InstructorApplication = InstructorUserIdentity & {
-  id: number;
-  user_id: number;
+  id: string;
+  user_id: string;
   review_status: InstructorReviewStatus | string;
   rejection_reason?: string;
   profile: InstructorProfilePayload;
@@ -51,24 +51,24 @@ export type InstructorApplication = InstructorUserIdentity & {
 export type InstructorProfile = InstructorApplication;
 
 export type InstructorExpertiseTopic = {
-  id: number;
-  user_id: number;
-  topic_id: number;
+  id: string;
+  user_id: string;
+  topic_id: string;
   created_at: number;
   updated_at: number;
 };
 
 export type InstructorExpertiseSkill = {
-  id: number;
-  user_id: number;
-  skill_id: number;
+  id: string;
+  user_id: string;
+  skill_id: string;
   created_at: number;
   updated_at: number;
 };
 
 export type InstructorTicket = {
-  id: number;
-  user_id: number;
+  id: string;
+  user_id: string;
   subject: string;
   status: InstructorTicketStatus | string;
   created_at: number;
@@ -76,9 +76,9 @@ export type InstructorTicket = {
 };
 
 export type InstructorTicketMessage = {
-  id: number;
-  ticket_id: number;
-  author_user_id: number;
+  id: string;
+  ticket_id: string;
+  author_user_id: string;
   body: string;
   created_at: number;
   updated_at: number;
@@ -106,11 +106,11 @@ export type RejectApplicationPayload = {
 };
 
 export type AddExpertiseTopicPayload = {
-  topic_id: number;
+  topic_id: string;
 };
 
 export type AddExpertiseSkillPayload = {
-  skill_id: number;
+  skill_id: string;
 };
 
 export type CreateTicketPayload = {
@@ -122,6 +122,6 @@ export type AddTicketMessagePayload = {
 };
 
 export type UpsertProfileResponse = {
-  id: number;
-  user_id: number;
+  id: string;
+  user_id: string;
 };

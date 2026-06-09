@@ -17,11 +17,11 @@ export type CourseSubLessonKind = "VIDEO" | "QUIZ" | "TEXT";
 export type CourseProgressStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 
 export type Course = {
-  id: number;
-  owner_user_id: number;
+  id: string;
+  owner_user_id: string;
   slug: string;
-  current_published_version_id?: number;
-  current_draft_version_id?: number;
+  current_published_version_id?: string;
+  current_draft_version_id?: string;
   created_at: number;
   updated_at: number;
 };
@@ -39,11 +39,11 @@ export type CourseListItem = Course & {
 };
 
 export type CourseVersion = {
-  id: number;
-  course_id: number;
+  id: string;
+  course_id: string;
   version_no: number;
   status: CourseVersionStatus;
-  based_on_version_id?: number;
+  based_on_version_id?: string;
   title: string;
   short_description: string;
   about_course: string;
@@ -51,17 +51,17 @@ export type CourseVersion = {
   thumbnail_url?: string;
   preview_video_file_id?: string;
   preview_video_url?: string;
-  course_level_id?: number;
-  course_topic_id?: number;
-  tag_ids: number[];
-  skill_ids: number[];
-  outcome_ids: number[];
+  course_level_id?: string;
+  course_topic_id?: string;
+  tag_ids: string[];
+  skill_ids: string[];
+  outcome_ids: string[];
   row_version: number;
-  submitted_by_user_id?: number;
+  submitted_by_user_id?: string;
   submitted_at?: number;
-  approved_by_user_id?: number;
+  approved_by_user_id?: string;
   approved_at?: number;
-  rejected_by_user_id?: number;
+  rejected_by_user_id?: string;
   rejected_at?: number;
   rejection_reason: string;
   created_at: number;
@@ -69,7 +69,7 @@ export type CourseVersion = {
 };
 
 export type CourseCollaborator = {
-  user_id: number;
+  user_id: string;
   role: CourseCollaboratorRole;
   display_name: string;
   email: string;
@@ -78,7 +78,7 @@ export type CourseCollaborator = {
 };
 
 export type CourseQuizOption = {
-  id: number;
+  id: string;
   option_key: string;
   body: string;
   is_correct: boolean;
@@ -101,7 +101,7 @@ export type CourseQuizContent = {
 };
 
 export type CourseSubLesson = {
-  id: number;
+  id: string;
   stable_id: string;
   title: string;
   kind: CourseSubLessonKind;
@@ -114,7 +114,7 @@ export type CourseSubLesson = {
 };
 
 export type CourseLesson = {
-  id: number;
+  id: string;
   stable_id: string;
   title: string;
   summary: string;
@@ -124,7 +124,7 @@ export type CourseLesson = {
 };
 
 export type CourseSection = {
-  id: number;
+  id: string;
   stable_id: string;
   title: string;
   description: string;
@@ -143,12 +143,12 @@ export type CourseDetail = {
 };
 
 export type CourseLease = {
-  id: number;
-  course_id: number;
-  course_version_id: number;
+  id: string;
+  course_id: string;
+  course_version_id: string;
   resource_type: CourseResourceType;
   resource_stable_id: string;
-  holder_user_id: number;
+  holder_user_id: string;
   lease_token: string;
   expires_at: number;
   created_at: number;
@@ -156,16 +156,16 @@ export type CourseLease = {
 };
 
 export type CourseEnrollment = {
-  id: number;
-  course_id: number;
-  user_id: number;
-  current_version_id: number;
+  id: string;
+  course_id: string;
+  user_id: string;
+  current_version_id: string;
   created_at: number;
   updated_at: number;
 };
 
 export type CourseProgressItem = {
-  id: number;
+  id: string;
   stable_content_id: string;
   content_type: string;
   status: CourseProgressStatus | string;
@@ -190,11 +190,11 @@ export type UpdateCourseBasicInfoPayload = {
   about_course?: string;
   thumbnail_file_id?: string;
   preview_video_file_id?: string;
-  course_level_id?: number;
-  course_topic_id?: number;
-  tag_ids?: number[];
-  skill_ids?: number[];
-  outcome_ids?: number[];
+  course_level_id?: string;
+  course_topic_id?: string;
+  tag_ids?: string[];
+  skill_ids?: string[];
+  outcome_ids?: string[];
 };
 
 export type UpsertCourseSectionPayload = {
@@ -204,7 +204,7 @@ export type UpsertCourseSectionPayload = {
 };
 
 export type UpsertCourseLessonPayload = {
-  section_id: number;
+  section_id: string;
   expected_row_version?: number;
   title: string;
   summary: string;
@@ -217,7 +217,7 @@ export type UpsertCourseQuizOptionPayload = {
 };
 
 export type UpsertCourseSubLessonPayload = {
-  lesson_id: number;
+  lesson_id: string;
   expected_row_version?: number;
   title: string;
   kind: CourseSubLessonKind;
@@ -236,7 +236,7 @@ export type ReorderCoursePayload = {
 };
 
 export type AcquireCourseLeasePayload = {
-  course_version_id: number;
+  course_version_id: string;
   resource_type: CourseResourceType;
   resource_stable_id: string;
 };
@@ -268,9 +268,9 @@ export type CourseBasicInfoForm = {
   preview_video_url: string;
   course_level_id: string;
   course_topic_id: string;
-  tag_ids: number[];
-  skill_ids: number[];
-  outcome_ids: number[];
+  tag_ids: string[];
+  skill_ids: string[];
+  outcome_ids: string[];
   expected_row_version: number;
 };
 
@@ -281,14 +281,14 @@ export type CourseSectionFormState = {
 };
 
 export type CourseLessonFormState = {
-  section_id: number;
+  section_id: string;
   title: string;
   summary: string;
   expected_row_version: number;
 };
 
 export type CourseSubLessonFormState = {
-  lesson_id: number;
+  lesson_id: string;
   title: string;
   kind: CourseSubLessonKind;
   is_preview: boolean;

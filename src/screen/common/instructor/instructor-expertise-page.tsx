@@ -40,11 +40,11 @@ export function InstructorExpertisePage() {
   const tc = useTranslations("instructor.common");
   const tErrors = useTranslations("errors.codes");
   const tValidation = useTranslations("instructor.validation");
-  const [instructorId, setInstructorId] = useState<number | null>(null);
+  const [instructorId, setInstructorId] = useState<string | null>(null);
   const [topicToAdd, setTopicToAdd] = useState<string>("");
   const [skillToAdd, setSkillToAdd] = useState<string>("");
-  const [deleteTopicId, setDeleteTopicId] = useState<number | null>(null);
-  const [deleteSkillId, setDeleteSkillId] = useState<number | null>(null);
+  const [deleteTopicId, setDeleteTopicId] = useState<string | null>(null);
+  const [deleteSkillId, setDeleteSkillId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const { rows: roster } = useInstructorRosterList({ page: 1, per_page: 100 });
@@ -73,7 +73,7 @@ export function InstructorExpertisePage() {
   );
 
   const topicNameById = useMemo(() => {
-    const map = new Map<number, string>();
+    const map = new Map<string, string>();
     for (const topic of taxonomyTopics) {
       map.set(topic.id, topic.name);
     }
@@ -81,7 +81,7 @@ export function InstructorExpertisePage() {
   }, [taxonomyTopics]);
 
   const skillNameById = useMemo(() => {
-    const map = new Map<number, string>();
+    const map = new Map<string, string>();
     for (const skill of taxonomySkills) {
       map.set(skill.id, skill.name);
     }
@@ -106,10 +106,10 @@ export function InstructorExpertisePage() {
     [taxonomySkills, assignedSkillIds],
   );
 
-  const resolveTopicName = (topicId: number) =>
-    topicNameById.get(topicId) ?? t("unknownName", { id: String(topicId) });
-  const resolveSkillName = (skillId: number) =>
-    skillNameById.get(skillId) ?? t("unknownName", { id: String(skillId) });
+  const resolveTopicName = (topicId: string) =>
+    topicNameById.get(topicId) ?? t("unknownName", { id: topicId });
+  const resolveSkillName = (skillId: string) =>
+    skillNameById.get(skillId) ?? t("unknownName", { id: skillId });
 
   const addTopic = async () => {
     if (!instructorId) return;
@@ -122,7 +122,7 @@ export function InstructorExpertisePage() {
     }
     try {
       await addInstructorExpertiseTopicService(instructorId, {
-        topic_id: Number(topicToAdd),
+        topic_id: parsed.data.topic_id,
       });
       toast.success(t("addTopicSuccess"));
       setTopicToAdd("");
@@ -143,7 +143,7 @@ export function InstructorExpertisePage() {
     }
     try {
       await addInstructorExpertiseSkillService(instructorId, {
-        skill_id: Number(skillToAdd),
+        skill_id: parsed.data.skill_id,
       });
       toast.success(t("addSkillSuccess"));
       setSkillToAdd("");
@@ -189,10 +189,8 @@ export function InstructorExpertisePage() {
       <div className="flex max-w-md flex-col gap-2">
         <span className="text-sm font-medium">{t("selectInstructor")}</span>
         <Select
-          value={instructorId ? String(instructorId) : ""}
-          onValueChange={(value) =>
-            setInstructorId(value ? Number(value) : null)
-          }
+          value={instructorId ?? ""}
+          onValueChange={(value) => setInstructorId(value || null)}
         >
           <SelectTrigger>
             <SelectValue placeholder={t("selectInstructorPlaceholder")} />

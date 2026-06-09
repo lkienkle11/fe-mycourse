@@ -32,7 +32,7 @@ function requireUrl(url: string | null, message: string): string {
 
 function courseUrl(
   path: string,
-  courseId: number,
+  courseId: string,
   extra?: Record<string, string>,
 ) {
   return requireUrl(
@@ -55,7 +55,7 @@ export async function listEditableCoursesService(): Promise<CourseListItem[]> {
   return data.data ?? [];
 }
 
-export function getCourseDetailKey(courseId: number): string {
+export function getCourseDetailKey(courseId: string): string {
   return courseUrl(routes.byId, courseId);
 }
 
@@ -73,7 +73,7 @@ export async function createCourseService(
 }
 
 export async function getCourseDetailService(
-  courseId: number,
+  courseId: string,
 ): Promise<CourseDetail> {
   const { data } = await apiFetch<ApiResponse<CourseDetail>>(
     getCourseDetailKey(courseId),
@@ -85,7 +85,7 @@ export async function getCourseDetailService(
 }
 
 export async function prepareCourseDraftService(
-  courseId: number,
+  courseId: string,
 ): Promise<CourseDetail> {
   const { data } = await apiPost<ApiResponse<CourseDetail>>(
     courseUrl(routes.prepareDraft, courseId),
@@ -98,7 +98,7 @@ export async function prepareCourseDraftService(
 }
 
 export async function updateCourseBasicInfoService(
-  courseId: number,
+  courseId: string,
   payload: UpdateCourseBasicInfoPayload,
 ): Promise<CourseDetail> {
   const { data } = await apiPatch<
@@ -111,12 +111,12 @@ export async function updateCourseBasicInfoService(
   return data.data;
 }
 
-export async function deleteCourseService(courseId: number): Promise<void> {
+export async function deleteCourseService(courseId: string): Promise<void> {
   await apiDelete<ApiResponse<null>>(courseUrl(routes.byId, courseId));
 }
 
 export async function listCourseCollaboratorsService(
-  courseId: number,
+  courseId: string,
 ): Promise<CourseCollaborator[]> {
   const { data } = await apiFetch<ApiResponse<CourseCollaborator[]>>(
     courseUrl(routes.collaborators, courseId),
@@ -125,12 +125,12 @@ export async function listCourseCollaboratorsService(
 }
 
 export async function addCourseCollaboratorService(
-  courseId: number,
-  payload: { user_id: number; role: "OWNER" | "EDITOR" },
+  courseId: string,
+  payload: { user_id: string; role: "OWNER" | "EDITOR" },
 ): Promise<CourseCollaborator[]> {
   const { data } = await apiPost<
     ApiResponse<CourseCollaborator[]>,
-    { user_id: number; role: "OWNER" | "EDITOR" }
+    { user_id: string; role: "OWNER" | "EDITOR" }
   >(courseUrl(routes.collaborators, courseId), payload);
   if (!data.data) {
     throw new Error(data.message || "Failed to add collaborator");
@@ -139,8 +139,8 @@ export async function addCourseCollaboratorService(
 }
 
 export async function removeCourseCollaboratorService(
-  courseId: number,
-  userId: number,
+  courseId: string,
+  userId: string,
 ): Promise<CourseCollaborator[]> {
   const url = requireUrl(
     buildQueryParams(routes.collaboratorByUser, undefined, {
@@ -157,7 +157,7 @@ export async function removeCourseCollaboratorService(
 }
 
 export async function createCourseSectionService(
-  courseId: number,
+  courseId: string,
   payload: UpsertCourseSectionPayload,
 ): Promise<CourseSection> {
   const { data } = await apiPost<
@@ -171,8 +171,8 @@ export async function createCourseSectionService(
 }
 
 export async function updateCourseSectionService(
-  courseId: number,
-  sectionId: number,
+  courseId: string,
+  sectionId: string,
   payload: UpsertCourseSectionPayload,
 ): Promise<CourseSection> {
   const url = requireUrl(
@@ -193,8 +193,8 @@ export async function updateCourseSectionService(
 }
 
 export async function deleteCourseSectionService(
-  courseId: number,
-  sectionId: number,
+  courseId: string,
+  sectionId: string,
 ): Promise<CourseSection[]> {
   const url = requireUrl(
     buildQueryParams(routes.sectionById, undefined, {
@@ -211,7 +211,7 @@ export async function deleteCourseSectionService(
 }
 
 export async function reorderCourseSectionsService(
-  courseId: number,
+  courseId: string,
   payload: ReorderCoursePayload,
 ): Promise<CourseSection[]> {
   const { data } = await apiPost<
@@ -225,7 +225,7 @@ export async function reorderCourseSectionsService(
 }
 
 export async function createCourseLessonService(
-  courseId: number,
+  courseId: string,
   payload: UpsertCourseLessonPayload,
 ) {
   const { data } = await apiPost<
@@ -239,8 +239,8 @@ export async function createCourseLessonService(
 }
 
 export async function updateCourseLessonService(
-  courseId: number,
-  lessonId: number,
+  courseId: string,
+  lessonId: string,
   payload: UpsertCourseLessonPayload,
 ) {
   const url = requireUrl(
@@ -261,8 +261,8 @@ export async function updateCourseLessonService(
 }
 
 export async function deleteCourseLessonService(
-  courseId: number,
-  lessonId: number,
+  courseId: string,
+  lessonId: string,
 ): Promise<CourseSection[]> {
   const url = requireUrl(
     buildQueryParams(routes.lessonById, undefined, {
@@ -279,8 +279,8 @@ export async function deleteCourseLessonService(
 }
 
 export async function reorderCourseLessonsService(
-  courseId: number,
-  sectionId: number,
+  courseId: string,
+  sectionId: string,
   payload: ReorderCoursePayload,
 ) {
   const url = requireUrl(
@@ -301,7 +301,7 @@ export async function reorderCourseLessonsService(
 }
 
 export async function createCourseSubLessonService(
-  courseId: number,
+  courseId: string,
   payload: UpsertCourseSubLessonPayload,
 ) {
   const { data } = await apiPost<
@@ -317,8 +317,8 @@ export async function createCourseSubLessonService(
 }
 
 export async function updateCourseSubLessonService(
-  courseId: number,
-  subLessonId: number,
+  courseId: string,
+  subLessonId: string,
   payload: UpsertCourseSubLessonPayload,
 ) {
   const url = requireUrl(
@@ -341,8 +341,8 @@ export async function updateCourseSubLessonService(
 }
 
 export async function deleteCourseSubLessonService(
-  courseId: number,
-  subLessonId: number,
+  courseId: string,
+  subLessonId: string,
 ): Promise<CourseSection[]> {
   const url = requireUrl(
     buildQueryParams(routes.subLessonById, undefined, {
@@ -359,8 +359,8 @@ export async function deleteCourseSubLessonService(
 }
 
 export async function reorderCourseSubLessonsService(
-  courseId: number,
-  lessonId: number,
+  courseId: string,
+  lessonId: string,
   payload: ReorderCoursePayload,
 ) {
   const url = requireUrl(
@@ -383,7 +383,7 @@ export async function reorderCourseSubLessonsService(
 }
 
 export async function acquireCourseLeaseService(
-  courseId: number,
+  courseId: string,
   payload: AcquireCourseLeasePayload,
 ): Promise<CourseLease> {
   const { data } = await apiPost<
@@ -397,7 +397,7 @@ export async function acquireCourseLeaseService(
 }
 
 export async function heartbeatCourseLeaseService(
-  courseId: number,
+  courseId: string,
   leaseToken: string,
 ): Promise<CourseLease> {
   const { data } = await apiPost<
@@ -411,7 +411,7 @@ export async function heartbeatCourseLeaseService(
 }
 
 export async function releaseCourseLeaseService(
-  courseId: number,
+  courseId: string,
   payload: ReleaseCourseLeasePayload,
 ): Promise<void> {
   await apiPost<ApiResponse<null>, ReleaseCourseLeasePayload>(
@@ -421,7 +421,7 @@ export async function releaseCourseLeaseService(
 }
 
 export async function submitCourseReviewService(
-  courseId: number,
+  courseId: string,
 ): Promise<CourseDetail> {
   const { data } = await apiPost<ApiResponse<CourseDetail>>(
     courseUrl(routes.submitReview, courseId),
@@ -434,7 +434,7 @@ export async function submitCourseReviewService(
 }
 
 export async function reopenCourseDraftService(
-  courseId: number,
+  courseId: string,
 ): Promise<CourseDetail> {
   const { data } = await apiPost<ApiResponse<CourseDetail>>(
     courseUrl(routes.reopenDraft, courseId),
@@ -460,7 +460,7 @@ export async function listPendingCourseReviewsService(): Promise<
 }
 
 export async function approveCourseReviewService(
-  courseId: number,
+  courseId: string,
 ): Promise<CourseDetail> {
   const url = requireUrl(
     buildQueryParams(routes.approveReview, undefined, {
@@ -476,7 +476,7 @@ export async function approveCourseReviewService(
 }
 
 export async function rejectCourseReviewService(
-  courseId: number,
+  courseId: string,
   payload: RejectCourseDraftPayload,
 ): Promise<CourseDetail> {
   const url = requireUrl(
@@ -503,7 +503,7 @@ export async function listPublishedCoursesService(): Promise<CourseListItem[]> {
 }
 
 export async function getLearningCourseService(
-  courseId: number,
+  courseId: string,
 ): Promise<CourseDetail> {
   const { data } = await apiFetch<ApiResponse<CourseDetail>>(
     courseUrl(routes.learnerById, courseId),
@@ -515,7 +515,7 @@ export async function getLearningCourseService(
 }
 
 export async function enrollInCourseService(
-  courseId: number,
+  courseId: string,
 ): Promise<CourseEnrollment> {
   const { data } = await apiPost<ApiResponse<CourseEnrollment>>(
     courseUrl(routes.learnerEnroll, courseId),
@@ -528,7 +528,7 @@ export async function enrollInCourseService(
 }
 
 export async function getCourseProgressService(
-  courseId: number,
+  courseId: string,
 ): Promise<CourseProgress> {
   const { data } = await apiFetch<ApiResponse<CourseProgress>>(
     courseUrl(routes.learnerProgress, courseId),

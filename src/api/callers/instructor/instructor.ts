@@ -75,7 +75,7 @@ export async function addInstructorRosterService(
   return data.data;
 }
 
-export async function deleteInstructorRosterService(id: number): Promise<void> {
+export async function deleteInstructorRosterService(id: string): Promise<void> {
   const url = buildQueryParams(routes.rosterById, undefined, {
     id: String(id),
   });
@@ -102,7 +102,7 @@ export async function listInstructorApplicationsService(
 }
 
 export async function getInstructorApplicationService(
-  id: number,
+  id: string,
 ): Promise<InstructorApplication> {
   const url = buildQueryParams(routes.applicationById, undefined, {
     id: String(id),
@@ -114,7 +114,7 @@ export async function getInstructorApplicationService(
 }
 
 export async function approveInstructorApplicationService(
-  id: number,
+  id: string,
 ): Promise<InstructorApplication> {
   const url = buildQueryParams(routes.applicationApprove, undefined, {
     id: String(id),
@@ -126,7 +126,7 @@ export async function approveInstructorApplicationService(
 }
 
 export async function rejectInstructorApplicationService(
-  id: number,
+  id: string,
   payload: RejectApplicationPayload,
 ): Promise<InstructorApplication> {
   const url = buildQueryParams(routes.applicationReject, undefined, {
@@ -142,7 +142,7 @@ export async function rejectInstructorApplicationService(
 }
 
 export async function deleteInstructorApplicationService(
-  id: number,
+  id: string,
 ): Promise<void> {
   const url = buildQueryParams(routes.applicationById, undefined, {
     id: String(id),
@@ -169,7 +169,7 @@ export async function listInstructorProfilesService(
 }
 
 export async function getInstructorProfileByUserService(
-  userId: number,
+  userId: string,
 ): Promise<InstructorProfile> {
   const url = buildQueryParams(routes.profileByUser, undefined, {
     id: String(userId),
@@ -182,7 +182,7 @@ export async function getInstructorProfileByUserService(
 
 export async function upsertInstructorProfileService(
   payload: InstructorProfilePayload,
-  userId?: number,
+  userId?: string,
 ): Promise<UpsertProfileResponse> {
   if (userId != null) {
     const url = buildQueryParams(routes.profileByUser, undefined, {
@@ -205,7 +205,7 @@ export async function upsertInstructorProfileService(
 }
 
 export async function deleteInstructorProfileService(
-  userId: number,
+  userId: string,
 ): Promise<void> {
   const url = buildQueryParams(routes.profileByUser, undefined, {
     id: String(userId),
@@ -214,7 +214,7 @@ export async function deleteInstructorProfileService(
   await apiDelete<ApiResponse<null>>(url);
 }
 
-export function getInstructorExpertiseTopicsKey(instructorId: number): string {
+export function getInstructorExpertiseTopicsKey(instructorId: string): string {
   const url = buildQueryParams(routes.expertiseTopics, undefined, {
     id: String(instructorId),
   });
@@ -223,7 +223,7 @@ export function getInstructorExpertiseTopicsKey(instructorId: number): string {
 }
 
 export async function listInstructorExpertiseTopicsService(
-  instructorId: number,
+  instructorId: string,
 ): Promise<InstructorExpertiseTopic[]> {
   const { data } = await apiFetch<ApiResponse<InstructorExpertiseTopic[]>>(
     getInstructorExpertiseTopicsKey(instructorId),
@@ -233,7 +233,7 @@ export async function listInstructorExpertiseTopicsService(
 }
 
 export async function addInstructorExpertiseTopicService(
-  instructorId: number,
+  instructorId: string,
   payload: AddExpertiseTopicPayload,
 ): Promise<InstructorExpertiseTopic> {
   const url = buildQueryParams(routes.expertiseTopics, undefined, {
@@ -249,8 +249,8 @@ export async function addInstructorExpertiseTopicService(
 }
 
 export async function deleteInstructorExpertiseTopicService(
-  instructorId: number,
-  topicRowId: number,
+  instructorId: string,
+  topicRowId: string,
 ): Promise<void> {
   const url = buildQueryParams(routes.expertiseTopicByRow, undefined, {
     id: String(instructorId),
@@ -260,7 +260,7 @@ export async function deleteInstructorExpertiseTopicService(
   await apiDelete<ApiResponse<null>>(url);
 }
 
-export function getInstructorExpertiseSkillsKey(instructorId: number): string {
+export function getInstructorExpertiseSkillsKey(instructorId: string): string {
   const url = buildQueryParams(routes.expertiseSkills, undefined, {
     id: String(instructorId),
   });
@@ -269,7 +269,7 @@ export function getInstructorExpertiseSkillsKey(instructorId: number): string {
 }
 
 export async function listInstructorExpertiseSkillsService(
-  instructorId: number,
+  instructorId: string,
 ): Promise<InstructorExpertiseSkill[]> {
   const { data } = await apiFetch<ApiResponse<InstructorExpertiseSkill[]>>(
     getInstructorExpertiseSkillsKey(instructorId),
@@ -279,7 +279,7 @@ export async function listInstructorExpertiseSkillsService(
 }
 
 export async function addInstructorExpertiseSkillService(
-  instructorId: number,
+  instructorId: string,
   payload: AddExpertiseSkillPayload,
 ): Promise<InstructorExpertiseSkill> {
   const url = buildQueryParams(routes.expertiseSkills, undefined, {
@@ -295,8 +295,8 @@ export async function addInstructorExpertiseSkillService(
 }
 
 export async function deleteInstructorExpertiseSkillService(
-  instructorId: number,
-  skillRowId: number,
+  instructorId: string,
+  skillRowId: string,
 ): Promise<void> {
   const url = buildQueryParams(routes.expertiseSkillByRow, undefined, {
     id: String(instructorId),
@@ -334,7 +334,7 @@ export async function createInstructorTicketService(
   return data.data;
 }
 
-export async function closeInstructorTicketService(id: number): Promise<void> {
+export async function closeInstructorTicketService(id: string): Promise<void> {
   const url = buildQueryParams(routes.ticketClose, undefined, {
     id: String(id),
   });
@@ -342,7 +342,7 @@ export async function closeInstructorTicketService(id: number): Promise<void> {
   await apiPost<ApiResponse<null>>(url, {});
 }
 
-export function getInstructorTicketMessagesKey(ticketId: number): string {
+export function getInstructorTicketMessagesKey(ticketId: string): string {
   const url = buildQueryParams(routes.ticketMessages, undefined, {
     id: String(ticketId),
   });
@@ -351,7 +351,7 @@ export function getInstructorTicketMessagesKey(ticketId: number): string {
 }
 
 export async function listInstructorTicketMessagesService(
-  ticketId: number,
+  ticketId: string,
 ): Promise<InstructorTicketMessage[]> {
   const { data } = await apiFetch<ApiResponse<InstructorTicketMessage[]>>(
     getInstructorTicketMessagesKey(ticketId),
@@ -361,7 +361,7 @@ export async function listInstructorTicketMessagesService(
 }
 
 export async function addInstructorTicketMessageService(
-  ticketId: number,
+  ticketId: string,
   payload: AddTicketMessagePayload,
 ): Promise<InstructorTicketMessage> {
   const url = buildQueryParams(routes.ticketMessages, undefined, {

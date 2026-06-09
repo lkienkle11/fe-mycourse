@@ -1,5 +1,6 @@
 import { TAXONOMY_RESOURCES } from "@/constants/taxonomy/resources";
 import type { DagreTreeRoot } from "@/lib/utils/dagre-tree";
+import { newV7 } from "@/lib/utils/uuid";
 import type {
   CourseSkill,
   CourseTopic,
@@ -76,7 +77,7 @@ export function toTaxonomyTreeWritePayload(
 /** New empty tree node for taxonomy editors (local slug preview only). */
 export function createTaxonomyTreeNode(name = ""): TaxonomyTreeNode {
   return {
-    id: crypto.randomUUID(),
+    id: newV7(),
     name,
     children: [],
   };

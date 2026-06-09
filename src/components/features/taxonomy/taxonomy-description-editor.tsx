@@ -5,6 +5,7 @@ import { useState } from "react";
 import { SortableList } from "@/components/shared/sortable-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { newV7 } from "@/lib/utils/uuid";
 
 const MAX_PARAGRAPHS = 8;
 
@@ -15,7 +16,7 @@ type DescriptionRow = {
 
 function toRows(values: string[]): DescriptionRow[] {
   return values.map((value) => ({
-    id: crypto.randomUUID(),
+    id: newV7(),
     value,
   }));
 }
@@ -79,7 +80,7 @@ export function TaxonomyDescriptionEditor({
         size="sm"
         disabled={rows.length >= MAX_PARAGRAPHS}
         onClick={() => {
-          updateRows([...rows, { id: crypto.randomUUID(), value: "" }]);
+          updateRows([...rows, { id: newV7(), value: "" }]);
         }}
       >
         {t("addParagraph")}
