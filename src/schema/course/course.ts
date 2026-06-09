@@ -26,11 +26,17 @@ export const courseBasicInfoSchema = z.object({
     z.string().uuid({ message: "validation.previewVideoFileId" }),
   ]),
   preview_video_url: z.string(),
-  course_level_id: z.string(),
-  course_topic_id: z.string(),
-  tag_ids: z.array(z.number().int().nonnegative()),
-  skill_ids: z.array(z.number().int().nonnegative()),
-  outcome_ids: z.array(z.number().int().nonnegative()),
+  course_level_id: z.union([
+    z.literal(""),
+    z.string().uuid({ message: "validation.courseLevelId" }),
+  ]),
+  course_topic_id: z.union([
+    z.literal(""),
+    z.string().uuid({ message: "validation.courseTopicId" }),
+  ]),
+  tag_ids: z.array(z.string().uuid()),
+  skill_ids: z.array(z.string().uuid()),
+  outcome_ids: z.array(z.string().uuid()),
   expected_row_version: z
     .number({ message: "validation.expectedRowVersion" })
     .int({ message: "validation.expectedRowVersion" })
@@ -72,7 +78,8 @@ export const courseQuizOptionSchema = z.object({
 export const courseCollaboratorSchema = z.object({
   user_id: z
     .string({ message: "validation.collaboratorUserId" })
-    .min(1, { message: "validation.collaboratorUserId" }),
+    .min(1, { message: "validation.collaboratorUserId" })
+    .uuid({ message: "validation.collaboratorUserId" }),
 });
 
 export const courseRejectReasonSchema = z.object({

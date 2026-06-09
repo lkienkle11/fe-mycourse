@@ -34,7 +34,7 @@ export function CourseReviewPage({ scope }: { scope: "admin" | "sysadmin" }) {
   const { rows, isLoading, mutate } = useCourseReviewQueue();
   const [rejectTarget, setRejectTarget] = useState<CourseListItem | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [pendingActionId, setPendingActionId] = useState<number | null>(null);
+  const [pendingActionId, setPendingActionId] = useState<string | null>(null);
 
   const columns = useMemo<DataTableColumn<CourseListItem>[]>(
     () => [

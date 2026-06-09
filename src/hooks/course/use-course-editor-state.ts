@@ -56,7 +56,7 @@ import type {
 } from "@/types/course";
 
 type UseCourseEditorStateParams = {
-  courseId: number;
+  courseId: string;
   activeVersion?: CourseVersion;
   editableVersion?: CourseVersion;
   mutate: () => Promise<unknown>;
@@ -66,8 +66,8 @@ function useCourseBasicInfoState(activeVersion?: CourseVersion) {
   const [basicInfo, setBasicInfo] = useState<CourseBasicInfoForm>(() =>
     createCourseBasicInfoState(activeVersion),
   );
-  const syncedVersionIdRef = useRef(activeVersion?.id ?? 0);
-  const activeVersionId = activeVersion?.id ?? 0;
+  const syncedVersionIdRef = useRef(activeVersion?.id ?? "");
+  const activeVersionId = activeVersion?.id ?? "";
 
   if (syncedVersionIdRef.current !== activeVersionId) {
     syncedVersionIdRef.current = activeVersionId;
@@ -87,7 +87,7 @@ function useCourseBasicInfoState(activeVersion?: CourseVersion) {
     [basicInfo.outcome_ids],
   );
 
-  const toggleSelection = (key: CourseSelectionKey, value: number) => {
+  const toggleSelection = (key: CourseSelectionKey, value: string) => {
     setBasicInfo((prev) => {
       const next = new Set(prev[key]);
       if (next.has(value)) {
@@ -138,7 +138,7 @@ function useCourseOutlineDialogState() {
     expected_row_version: 0,
   });
   const [lessonForm, setLessonForm] = useState<CourseLessonFormState>({
-    section_id: 0,
+    section_id: "",
     title: "",
     summary: "",
     expected_row_version: 0,
@@ -175,8 +175,8 @@ function useCourseLeaseState({
   t,
   tErrors,
 }: {
-  courseId: number;
-  leaseVersionId: number;
+  courseId: string;
+  leaseVersionId: string;
   t: ReturnType<typeof useTranslations<"course.editor.toast">>;
   tErrors: ReturnType<typeof useTranslations<"errors.codes">>;
 }) {
@@ -267,7 +267,7 @@ export function useCourseEditorState({
   const tErrors = useTranslations("errors.codes");
   const [isPreparingDraft, setIsPreparingDraft] = useState(false);
   const [isSavingBasicInfo, setIsSavingBasicInfo] = useState(false);
-  const leaseVersionId = editableVersion?.id ?? 0;
+  const leaseVersionId = editableVersion?.id ?? "";
   const {
     basicInfo,
     setBasicInfo,
@@ -563,7 +563,7 @@ export function useCourseEditorState({
       toast.error(tValidation("collaboratorUserId"));
       return;
     }
-    const userId = Number(collaboratorUserId);
+    const userId = parsed.data.user_id;
     setIsSubmittingCollaborator(true);
     try {
       await addCourseCollaboratorService(courseId, {

@@ -73,7 +73,7 @@ export function InstructorCourseEditorPage({
   courseId,
   tab,
 }: {
-  courseId: number;
+  courseId: string;
   tab: CourseEditorTab;
 }) {
   const tCommon = useTranslations("course.common");

@@ -22,7 +22,7 @@ import {
 import type { ApiListQueryParams } from "@/types/api";
 
 export type DataTableRow = {
-  id: number | string;
+  id: string;
 };
 
 export type DataTableColumn<TRow extends DataTableRow> = {
