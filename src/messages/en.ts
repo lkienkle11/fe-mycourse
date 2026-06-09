@@ -535,6 +535,9 @@ const messages = {
       title: "Please enter a course title.",
       titleMax: "Title must be at most 255 characters.",
       shortDescriptionMax: "Short description must be at most 500 characters.",
+      thumbnailFileId: "Thumbnail reference is invalid.",
+      previewVideoFileId: "Preview video reference is invalid.",
+      expectedRowVersion: "Refresh the course and try again.",
       sectionTitle: "Please enter a section title.",
       lessonTitle: "Please enter a lesson title.",
       subLessonTitle: "Please enter a lesson item title.",
@@ -648,7 +651,7 @@ const messages = {
         "Learners stay on the approved version until this draft is reviewed and approved.",
       rejectionReason: "Rejection reason: {reason}",
       tabs: {
-        basic: "Basic Info",
+        info: "Basic Info",
         outline: "Outline",
         collaborators: "Collaborators",
         pricing: "Pricing",

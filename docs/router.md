@@ -117,7 +117,11 @@ src/app/[locale]/
 | `/vi/admin` | `[locale]/admin/page.tsx` | `AdminDashboardPage` | ✅ Shell + placeholder |
 | `/vi/instructor` | `[locale]/instructor/page.tsx` | `InstructorDashboardPage` | ✅ Shell + placeholder |
 | `/vi/instructor/courses` | `[locale]/instructor/courses/page.tsx` | `InstructorCoursesPage` | ✅ Implemented |
-| `/vi/instructor/courses/{courseId}` | `[locale]/instructor/courses/[courseId]/page.tsx` | `InstructorCourseEditorPage` | ✅ Implemented |
+| `/vi/instructor/courses/{courseId}/info` | `[locale]/instructor/courses/[courseId]/info/page.tsx` | `InstructorCourseEditorPage` (`tab="info"`) | ✅ Implemented |
+| `/vi/instructor/courses/{courseId}/outline` | `[locale]/instructor/courses/[courseId]/outline/page.tsx` | `InstructorCourseEditorPage` (`tab="outline"`) | ✅ Implemented |
+| `/vi/instructor/courses/{courseId}/collaborators` | `[locale]/instructor/courses/[courseId]/collaborators/page.tsx` | `InstructorCourseEditorPage` (`tab="collaborators"`) | ✅ Implemented |
+| `/vi/instructor/courses/{courseId}/pricing` | `[locale]/instructor/courses/[courseId]/pricing/page.tsx` | `InstructorCourseEditorPage` (`tab="pricing"`) | ✅ Implemented |
+| `/vi/instructor/courses/{courseId}/certificate` | `[locale]/instructor/courses/[courseId]/certificate/page.tsx` | `InstructorCourseEditorPage` (`tab="certificate"`) | ✅ Implemented |
 | `/vi/instructor/tickets` | `[locale]/instructor/tickets/page.tsx` | `InstructorTicketsPage` | ✅ Implemented |
 | `/vi/admin/courses` | `[locale]/admin/courses/page.tsx` | `CourseReviewPage` (`scope="admin"`) | ✅ Implemented |
 | `/vi/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | `admin/instructors/*/page.tsx` | Shared instructor screens | ✅ Implemented |
@@ -140,7 +144,9 @@ Temporary classification for app navigation:
 - **Resource routes (dynamic params `:param`):**
   - `PUBLIC_RESOURCE_ROUTES` for public dynamic routes.
   - `PRIVATE_RESOURCE_ROUTES` for authenticated dynamic routes.
-  - Current private resource route: `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` (`/instructor/courses/:courseId`).
+  - Current private resource routes:
+    - `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` (`/instructor/courses/:courseId/info`)
+    - `PRIVATE_RESOURCE_ROUTES.instructor.courseEditorTab` (`/instructor/courses/:courseId/:tab`)
 
 This classification is defined in `src/constants/route.ts` and used by shared menu/sidebar constants.
 
@@ -214,6 +220,7 @@ Use route constants from `src/constants/route.ts` plus helper builders in `src/l
 import { PRIVATE_RESOURCE_ROUTES, PRIVATE_ROUTES, PUBLIC_ROUTES } from "@/constants/route";
 import {
   instructorCourseEditorHref,
+  instructorCourseEditorTabHref,
   toPrivateRoute,
   toPrivateResourceRoute,
   toPublicRoute,
@@ -222,9 +229,11 @@ import {
 router.push(toPublicRoute(PUBLIC_ROUTES.home));
 router.push(toPrivateRoute(PRIVATE_ROUTES.admin.courses));
 router.push(instructorCourseEditorHref(courseId));
+router.push(instructorCourseEditorTabHref(courseId, "outline"));
 router.push(
-  toPrivateResourceRoute(PRIVATE_RESOURCE_ROUTES.instructor.courseEditor, {
+  toPrivateResourceRoute(PRIVATE_RESOURCE_ROUTES.instructor.courseEditorTab, {
     courseId: String(courseId),
+    tab: "certificate",
   }),
 );
 ```
@@ -238,7 +247,7 @@ router.push(
 `src/lib/navigation/routes.ts` centralizes route builders/helpers:
 - `toPublicRoute` / `toPrivateRoute`
 - `toPublicResourceRoute` / `toPrivateResourceRoute`
-- feature helpers like `instructorCourseEditorHref(courseId)`
+- feature helpers like `instructorCourseEditorHref(courseId)` and `instructorCourseEditorTabHref(courseId, tab)`
 - pre-built href constants like `homeHref`, `logoutHref`, `adminCoursesHref`
 
 For reusable home navigation touchpoints (logo/title in header/dashboard), use `src/lib/navigation/home.ts`:

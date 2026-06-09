@@ -18,40 +18,44 @@ import type {
 type CourseOutlineTabProps = {
   editable: boolean;
   outline: CourseSection[];
-  onAddSection: () => void;
-  onReverseSections: () => void;
-  onReorderSections: (sections: CourseSection[]) => void;
-  onEditSection: (section: CourseSection) => void;
-  onDeleteSection: (section: CourseSection) => void;
-  onAddLesson: (section: CourseSection) => void;
-  onEditLesson: (section: CourseSection, lesson: CourseLesson) => void;
-  onDeleteLesson: (lesson: CourseLesson) => void;
-  onReorderLessons: (section: CourseSection, lessons: CourseLesson[]) => void;
-  onAddSubLesson: (lesson: CourseLesson) => void;
-  onEditSubLesson: (lesson: CourseLesson, subLesson: CourseSubLesson) => void;
-  onDeleteSubLesson: (subLesson: CourseSubLesson) => void;
-  onReorderSubLessons: (
-    lesson: CourseLesson,
-    subLessons: CourseSubLesson[],
-  ) => void;
+  actions: {
+    onAddSection: () => void;
+    onReverseSections: () => void;
+    onReorderSections: (sections: CourseSection[]) => void;
+    onEditSection: (section: CourseSection) => void;
+    onDeleteSection: (section: CourseSection) => void;
+    onAddLesson: (section: CourseSection) => void;
+    onEditLesson: (section: CourseSection, lesson: CourseLesson) => void;
+    onDeleteLesson: (lesson: CourseLesson) => void;
+    onReorderLessons: (section: CourseSection, lessons: CourseLesson[]) => void;
+    onAddSubLesson: (lesson: CourseLesson) => void;
+    onEditSubLesson: (lesson: CourseLesson, subLesson: CourseSubLesson) => void;
+    onDeleteSubLesson: (subLesson: CourseSubLesson) => void;
+    onReorderSubLessons: (
+      lesson: CourseLesson,
+      subLessons: CourseSubLesson[],
+    ) => void;
+  };
 };
 
 export function CourseOutlineTab({
   editable,
   outline,
-  onAddSection,
-  onReverseSections,
-  onReorderSections,
-  onEditSection,
-  onDeleteSection,
-  onAddLesson,
-  onEditLesson,
-  onDeleteLesson,
-  onReorderLessons,
-  onAddSubLesson,
-  onEditSubLesson,
-  onDeleteSubLesson,
-  onReorderSubLessons,
+  actions: {
+    onAddSection,
+    onReverseSections,
+    onReorderSections,
+    onEditSection,
+    onDeleteSection,
+    onAddLesson,
+    onEditLesson,
+    onDeleteLesson,
+    onReorderLessons,
+    onAddSubLesson,
+    onEditSubLesson,
+    onDeleteSubLesson,
+    onReorderSubLessons,
+  },
 }: CourseOutlineTabProps) {
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.editor.outline");
@@ -66,7 +70,7 @@ export function CourseOutlineTab({
           {!editable ? (
             <p className="text-sm text-muted-foreground">{t("emptyDraft")}</p>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               <Button type="button" variant="secondary" onClick={onAddSection}>
                 {t("addSection")}
               </Button>
@@ -156,14 +160,14 @@ function SectionOutlineCard({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 rounded-md border p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-1">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0 space-y-1">
             <div className="font-medium">{section.title}</div>
             <div className="text-sm text-muted-foreground">
               {section.description || tCommon("noSectionDescription")}
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button
               type="button"
               variant="secondary"
@@ -198,14 +202,14 @@ function SectionOutlineCard({
             }
             renderItem={(item) => (
               <div className="space-y-3">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-1">
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="min-w-0 space-y-1">
                     <div className="font-medium">{item.lesson.title}</div>
                     <div className="text-sm text-muted-foreground">
                       {item.lesson.summary || tCommon("noLessonSummary")}
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     <Button
                       type="button"
                       variant="secondary"
@@ -248,8 +252,8 @@ function SectionOutlineCard({
                     }
                     renderItem={(entry) => (
                       <div className="rounded-md border p-3">
-                        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                          <div className="space-y-1">
+                        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                          <div className="min-w-0 space-y-1">
                             <div className="font-medium">
                               {entry.subLesson.title}
                             </div>
@@ -260,7 +264,7 @@ function SectionOutlineCard({
                                 : ""}
                             </div>
                           </div>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <Button
                               type="button"
                               variant="outline"

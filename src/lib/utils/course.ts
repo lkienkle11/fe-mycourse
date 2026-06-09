@@ -1,10 +1,20 @@
 import { createEmptyDeltaString } from "@/lib/utils/course-delta";
 import type {
   CourseBasicInfoForm,
+  CourseEditorTab,
   CourseSubLesson,
   CourseSubLessonFormState,
   CourseVersion,
+  UpdateCourseBasicInfoPayload,
 } from "@/types/course";
+
+export const courseEditorTabs = [
+  "info",
+  "outline",
+  "collaborators",
+  "pricing",
+  "certificate",
+] as const satisfies ReadonlyArray<CourseEditorTab>;
 
 export function createCourseBasicInfoState(
   activeVersion?: CourseVersion,
@@ -27,6 +37,28 @@ export function createCourseBasicInfoState(
     skill_ids: activeVersion?.skill_ids ?? [],
     outcome_ids: activeVersion?.outcome_ids ?? [],
     expected_row_version: activeVersion?.row_version ?? 0,
+  };
+}
+
+export function toUpdateCourseBasicInfoPayload(
+  basicInfo: CourseBasicInfoForm,
+): UpdateCourseBasicInfoPayload {
+  return {
+    expected_row_version: basicInfo.expected_row_version,
+    title: basicInfo.title,
+    short_description: basicInfo.short_description,
+    about_course: basicInfo.about_course,
+    thumbnail_file_id: basicInfo.thumbnail_file_id || undefined,
+    preview_video_file_id: basicInfo.preview_video_file_id || undefined,
+    course_level_id: basicInfo.course_level_id
+      ? Number(basicInfo.course_level_id)
+      : undefined,
+    course_topic_id: basicInfo.course_topic_id
+      ? Number(basicInfo.course_topic_id)
+      : undefined,
+    tag_ids: basicInfo.tag_ids,
+    skill_ids: basicInfo.skill_ids,
+    outcome_ids: basicInfo.outcome_ids,
   };
 }
 
@@ -65,6 +97,8 @@ export function selectedIdsToMap(ids: number[]) {
   return new Set(ids);
 }
 
+/** Deterministic OUTLINE_ROOT lease key — must be a UUID (see `course_edit_leases.resource_stable_id`). */
 export function rootOutlineStableId(courseId: number): string {
-  return `course-${courseId}-outline-root`;
+  const suffix = courseId.toString(16).padStart(12, "0").slice(-12);
+  return `00000000-0000-4000-8000-${suffix}`;
 }

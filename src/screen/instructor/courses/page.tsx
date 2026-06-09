@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -20,7 +19,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { instructorCourseEditorHref } from "@/lib/navigation/routes";
+import { useRouter } from "@/i18n/navigation";
+import {
+  instructorCourseEditorHref,
+  instructorCourseEditorTabHref,
+} from "@/lib/navigation/routes";
 import { slugifyName } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
 import { toastValidationError } from "@/lib/utils/validation-message";
@@ -87,7 +90,7 @@ export function InstructorCoursesPage() {
       setCreateOpen(false);
       setTitle("");
       await mutate();
-      router.push(instructorCourseEditorHref(created.course.id));
+      router.push(instructorCourseEditorTabHref(created.course.id, "info"));
     } catch (error) {
       toastApiError(tErrors, error);
     } finally {
@@ -114,7 +117,7 @@ export function InstructorCoursesPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">{t("description")}</p>
@@ -127,34 +130,86 @@ export function InstructorCoursesPage() {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("loading")}</p>
       ) : (
-        <DataTable
-          columns={columns}
-          rows={rows}
-          actionsHeader={tCommon("actions")}
-          emptyMessage={t("empty")}
-          renderActions={(row) => (
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => router.push(instructorCourseEditorHref(row.id))}
-              >
-                {tCommon("open")}
-              </Button>
-              {row.collaborator_role === "OWNER" ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => setDeleteTarget(row)}
-                >
-                  {tCommon("delete")}
-                </Button>
-              ) : null}
-            </div>
-          )}
-        />
+        <>
+          <div className="grid gap-3 md:hidden">
+            {rows.length === 0 ? (
+              <p className="rounded-md border p-4 text-sm text-muted-foreground">
+                {t("empty")}
+              </p>
+            ) : (
+              rows.map((row) => (
+                <div key={row.id} className="space-y-3 rounded-md border p-4">
+                  <div className="space-y-1">
+                    <div className="font-medium">{row.title || row.slug}</div>
+                    <div className="text-xs text-muted-foreground">
+                      /{row.slug}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span>
+                      {tCommon(`collaboratorRole.${row.collaborator_role}`)}
+                    </span>
+                    <span>v{row.version_no || 1}</span>
+                    <CourseStatusBadge status={row.review_status} />
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() =>
+                        router.push(instructorCourseEditorHref(row.id))
+                      }
+                    >
+                      {tCommon("open")}
+                    </Button>
+                    {row.collaborator_role === "OWNER" ? (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => setDeleteTarget(row)}
+                      >
+                        {tCommon("delete")}
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="hidden md:block">
+            <DataTable
+              columns={columns}
+              rows={rows}
+              actionsHeader={tCommon("actions")}
+              emptyMessage={t("empty")}
+              renderActions={(row) => (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      router.push(instructorCourseEditorHref(row.id))
+                    }
+                  >
+                    {tCommon("open")}
+                  </Button>
+                  {row.collaborator_role === "OWNER" ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => setDeleteTarget(row)}
+                    >
+                      {tCommon("delete")}
+                    </Button>
+                  ) : null}
+                </div>
+              )}
+            />
+          </div>
+        </>
       )}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

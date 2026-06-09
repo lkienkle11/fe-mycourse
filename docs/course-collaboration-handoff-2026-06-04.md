@@ -28,7 +28,7 @@ The frontend work was added on top of the existing app shell and API/hook patter
 
 All course-facing copy in the implemented instructor and review surfaces now comes from `next-intl` message dictionaries in `src/messages/en.ts` and `src/messages/vi.ts`. The instructor dashboard course menu entry also uses translation keys instead of screen-local hardcoded labels.
 
-The course editing experience is organized into tabs:
+The course editing experience is organized into route-backed tabs:
 
 - `Basic Info`
 - `Outline`
@@ -72,9 +72,10 @@ Implemented API integration for:
 Added:
 
 - `src/app/[locale]/instructor/courses/page.tsx`
-- `src/app/[locale]/instructor/courses/[courseId]/page.tsx`
+- `src/app/[locale]/instructor/courses/[courseId]/{info,outline,collaborators,pricing,certificate}/page.tsx`
 - `src/screen/instructor/courses/page.tsx`
 - `src/screen/instructor/courses/editor-page.tsx`
+- `src/components/features/instructor/instructor-course-editor-route.tsx`
 - `src/components/features/course/course-editor-basic-tab.tsx`
 - `src/components/features/course/course-editor-outline-tab.tsx`
 - `src/components/features/course/course-editor-collaborators-tab.tsx`

@@ -64,6 +64,7 @@ export const PUBLIC_RESOURCE_ROUTES = {} as const;
 
 export const PRIVATE_RESOURCE_ROUTES = {
   instructor: {
-    courseEditor: `${PRIVATE_ROUTES.instructor.courses}/:courseId`,
+    courseEditor: `${PRIVATE_ROUTES.instructor.courses}/:courseId/info`,
+    courseEditorTab: `${PRIVATE_ROUTES.instructor.courses}/:courseId/:tab`,
   },
 } as const;
