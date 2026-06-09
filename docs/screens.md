@@ -31,7 +31,11 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/admin` | Active | Admin dashboard shell (`AdminDashboardPage` placeholder) |
 | `/{locale}/instructor` | Active | Instructor dashboard shell (`InstructorDashboardPage` placeholder) |
 | `/{locale}/instructor/courses` | Active | `InstructorCoursesPage` — editable course list, create dialog, owner-only delete |
-| `/{locale}/instructor/courses/{courseId}` | Active | `InstructorCourseEditorPage` — basic info, outline, collaborators, pricing placeholder, certificate placeholder |
+| `/{locale}/instructor/courses/{courseId}/info` | Active | `InstructorCourseEditorPage` — route-backed basic info tab |
+| `/{locale}/instructor/courses/{courseId}/outline` | Active | `InstructorCourseEditorPage` — route-backed outline tab |
+| `/{locale}/instructor/courses/{courseId}/collaborators` | Active | `InstructorCourseEditorPage` — route-backed collaborators tab |
+| `/{locale}/instructor/courses/{courseId}/pricing` | Active | `InstructorCourseEditorPage` — route-backed pricing placeholder |
+| `/{locale}/instructor/courses/{courseId}/certificate` | Active | `InstructorCourseEditorPage` — route-backed certificate placeholder |
 | `/{locale}/instructor/tickets` | Active | `InstructorTicketsPage` — create ticket, thread, close (P58) |
 | `/{locale}/admin/courses` | Active | `CourseReviewPage` — admin draft review queue |
 | `/{locale}/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | Active | Shared `Instructor*Page` screens imported directly from app routes |
@@ -50,7 +54,7 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 > Route builders/helpers (single source: `src/lib/navigation/routes.ts`):
 > - `toPublicRoute` / `toPrivateRoute`
 > - `toPublicResourceRoute` / `toPrivateResourceRoute`
-> - feature helpers like `instructorCourseEditorHref(courseId)`
+> - feature helpers like `instructorCourseEditorHref(courseId)` and `instructorCourseEditorTabHref(courseId, tab)`
 >   Login/signup remain **modal-only** via `LoginSignupPopup`.
 
 ---
@@ -96,11 +100,11 @@ Each layout layer adds a concern without re-rendering the parent:
 - **`src/screen/index.ts`** — re-exports `common`, `admin`, `instructor`, and `sysadmin` barrels.
 - **`src/screen/common/`** — shared screens used by multiple roles (e.g. marketing `HomePage`, `NotFoundPage`, `TaxonomyListPage`, instructor management pages). Barrel: `src/screen/common/index.ts`.
 - **`src/screen/admin/`** — `AdminDashboardPage` (`page.tsx`) only. Shared admin/sysadmin content now lives under `src/screen/common/**`; app route files import those screens directly.
-- **`src/screen/instructor/`** — `InstructorDashboardPage`, `InstructorTicketsPage` (`tickets/page.tsx`), `InstructorCourseEditorPage` shell under `courses/`; barrel: `src/screen/instructor/index.ts`.
+- **`src/screen/instructor/`** — `InstructorDashboardPage`, `InstructorTicketsPage` (`tickets/page.tsx`), `InstructorCourseEditorPage` shell under `courses/` with route-backed tab triggers and active-panel mapping; barrel: `src/screen/instructor/index.ts`.
 - **`src/screen/common/instructor/`** — shared admin screens: roster, approvals, profiles, expertise, admin tickets; barrel: `src/screen/common/instructor/index.ts`.
 - **`src/screen/common/course/`** — shared course review screen used by admin and sysadmin.
-- **`src/components/features/course/`** — non-page course editor tabs and dialogs (`course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx`).
-- **`src/components/features/instructor/`** — shared instructor/admin/sysadmin pagination and action/footer helper components.
+- **`src/components/features/course/`** — non-page course editor tabs and dialogs (`course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx`); the three tab components consume grouped prop objects from the screen shell to keep page JSX short as tabs grow.
+- **`src/components/features/instructor/`** — shared instructor/admin/sysadmin pagination, action/footer helpers, and the `renderInstructorCourseEditorRoute` adapter reused by the 5 instructor course editor route pages.
 - **`src/screen/sysadmin/`** — `SysadminDashboardPage` only. Shared admin/sysadmin content lives under `src/screen/common/**`.
 
 ---
@@ -380,7 +384,8 @@ PUBLIC_RESOURCE_ROUTES = {}
 
 PRIVATE_RESOURCE_ROUTES = {
   instructor: {
-    courseEditor: "/instructor/courses/:courseId",
+    courseEditor: "/instructor/courses/:courseId/info",
+    courseEditorTab: "/instructor/courses/:courseId/:tab",
   },
 }
 ```
@@ -391,8 +396,10 @@ Build final href with `src/lib/navigation/routes.ts` helpers (no string interpol
 toPublicRoute(PUBLIC_ROUTES.home)
 toPrivateRoute(PRIVATE_ROUTES.admin.courses)
 instructorCourseEditorHref(courseId)
-toPrivateResourceRoute(PRIVATE_RESOURCE_ROUTES.instructor.courseEditor, {
+instructorCourseEditorTabHref(courseId, "outline")
+toPrivateResourceRoute(PRIVATE_RESOURCE_ROUTES.instructor.courseEditorTab, {
   courseId: String(courseId),
+  tab: "certificate",
 })
 ```
 

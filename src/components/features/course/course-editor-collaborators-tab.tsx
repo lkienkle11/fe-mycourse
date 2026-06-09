@@ -22,24 +22,30 @@ import type { InstructorRosterMember } from "@/types/instructor";
 
 type CourseCollaboratorsTabProps = {
   canManageCollaborators: boolean;
-  collaboratorUserId: string;
-  setCollaboratorUserId: (value: string) => void;
-  rosterRows: InstructorRosterMember[];
-  isSubmittingCollaborator: boolean;
-  onAddCollaborator: () => void;
-  collaborators: CourseCollaborator[];
-  onRemoveCollaborator: (collaborator: CourseCollaborator) => void;
+  state: {
+    collaboratorUserId: string;
+    setCollaboratorUserId: (value: string) => void;
+    isSubmittingCollaborator: boolean;
+  };
+  data: {
+    rosterRows: InstructorRosterMember[];
+    collaborators: CourseCollaborator[];
+  };
+  actions: {
+    onAddCollaborator: () => void;
+    onRemoveCollaborator: (collaborator: CourseCollaborator) => void;
+  };
 };
 
 export function CourseCollaboratorsTab({
   canManageCollaborators,
-  collaboratorUserId,
-  setCollaboratorUserId,
-  rosterRows,
-  isSubmittingCollaborator,
-  onAddCollaborator,
-  collaborators,
-  onRemoveCollaborator,
+  state: {
+    collaboratorUserId,
+    setCollaboratorUserId,
+    isSubmittingCollaborator,
+  },
+  data: { rosterRows, collaborators },
+  actions: { onAddCollaborator, onRemoveCollaborator },
 }: CourseCollaboratorsTabProps) {
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.editor.collaborators");
@@ -52,7 +58,7 @@ export function CourseCollaboratorsTab({
         </CardHeader>
         <CardContent className="space-y-4">
           {canManageCollaborators ? (
-            <div className="flex flex-col gap-3 rounded-md border p-3 lg:flex-row lg:items-end">
+            <div className="flex flex-col gap-3 rounded-md border p-3 xl:flex-row xl:items-end">
               <div className="min-w-0 flex-1 space-y-2">
                 <RequiredLabel>{t("addInstructorLabel")}</RequiredLabel>
                 <Select
@@ -80,6 +86,7 @@ export function CourseCollaboratorsTab({
                 type="button"
                 disabled={!collaboratorUserId || isSubmittingCollaborator}
                 onClick={onAddCollaborator}
+                className="w-full xl:w-auto"
               >
                 {isSubmittingCollaborator ? t("adding") : t("addEditor")}
               </Button>
@@ -90,7 +97,7 @@ export function CourseCollaboratorsTab({
             {collaborators.map((collaborator) => (
               <div
                 key={collaborator.user_id}
-                className="flex flex-col gap-2 rounded-md border p-3 lg:flex-row lg:items-center lg:justify-between"
+                className="flex flex-col gap-3 rounded-md border p-3 xl:flex-row xl:items-center xl:justify-between"
               >
                 <div className="space-y-1">
                   <div className="font-medium">{collaborator.display_name}</div>
@@ -98,7 +105,7 @@ export function CourseCollaboratorsTab({
                     {collaborator.email}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                   <Badge variant="outline">
                     {tCommon(`collaboratorRole.${collaborator.role}`)}
                   </Badge>

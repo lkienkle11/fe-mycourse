@@ -395,7 +395,8 @@ PRIVATE_ROUTES = {
 PUBLIC_RESOURCE_ROUTES = { ... }     // dynamic templates for public pages
 PRIVATE_RESOURCE_ROUTES = {
   instructor: {
-    courseEditor: "/instructor/courses/:courseId",
+    courseEditor: "/instructor/courses/:courseId/info",
+    courseEditorTab: "/instructor/courses/:courseId/:tab",
   },
 }
 ```
@@ -405,10 +406,8 @@ Runtime href generation is centralized in `src/lib/navigation/routes.ts`:
 ```ts
 toPublicRoute(PUBLIC_ROUTES.home)
 toPrivateRoute(PRIVATE_ROUTES.admin.courses)
-toPrivateResourceRoute(PRIVATE_RESOURCE_ROUTES.instructor.courseEditor, {
-  courseId: String(courseId),
-})
 instructorCourseEditorHref(courseId)
+instructorCourseEditorTabHref(courseId, "outline")
 ```
 
 All FE internal navigation uses these route maps + helper builders (menus/sidebar/screen navigation) instead of hardcoded/interpolated path strings.

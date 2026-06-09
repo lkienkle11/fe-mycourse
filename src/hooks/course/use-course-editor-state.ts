@@ -26,10 +26,11 @@ import {
   createCourseSubLessonFormState,
   rootOutlineStableId,
   selectedIdsToMap,
+  toUpdateCourseBasicInfoPayload,
 } from "@/lib/utils/course";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import {
-  courseBasicInfoSchema,
+  type CourseBasicInfoValues,
   courseCollaboratorSchema,
   courseLessonSchema,
   courseQuizOptionSchema,
@@ -39,7 +40,6 @@ import {
 import type {
   CourseBasicInfoForm,
   CourseCollaborator,
-  CourseEditorTab,
   CourseLease,
   CourseLesson,
   CourseLessonDialogState,
@@ -265,7 +265,6 @@ export function useCourseEditorState({
   const t = useTranslations("course.editor.toast");
   const tValidation = useTranslations("course.validation");
   const tErrors = useTranslations("errors.codes");
-  const [activeTab, setActiveTab] = useState<CourseEditorTab>("basic");
   const [isPreparingDraft, setIsPreparingDraft] = useState(false);
   const [isSavingBasicInfo, setIsSavingBasicInfo] = useState(false);
   const leaseVersionId = editableVersion?.id ?? 0;
@@ -328,38 +327,17 @@ export function useCourseEditorState({
     }
   };
 
-  const handleSaveBasicInfo = async () => {
+  const handleSaveBasicInfo = async (values: CourseBasicInfoValues) => {
     if (!editableVersion) {
       toast.error(t("draftRequiredInfo"));
       return;
     }
-    const parsedBasic = courseBasicInfoSchema.safeParse({
-      title: basicInfo.title,
-      short_description: basicInfo.short_description,
-    });
-    if (!parsedBasic.success) {
-      toastValidationError(tValidation, parsedBasic.error.issues, "title");
-      return;
-    }
     setIsSavingBasicInfo(true);
     try {
-      await updateCourseBasicInfoService(courseId, {
-        expected_row_version: basicInfo.expected_row_version,
-        title: basicInfo.title,
-        short_description: basicInfo.short_description,
-        about_course: basicInfo.about_course,
-        thumbnail_file_id: basicInfo.thumbnail_file_id || undefined,
-        preview_video_file_id: basicInfo.preview_video_file_id || undefined,
-        course_level_id: basicInfo.course_level_id
-          ? Number(basicInfo.course_level_id)
-          : undefined,
-        course_topic_id: basicInfo.course_topic_id
-          ? Number(basicInfo.course_topic_id)
-          : undefined,
-        tag_ids: basicInfo.tag_ids,
-        skill_ids: basicInfo.skill_ids,
-        outcome_ids: basicInfo.outcome_ids,
-      });
+      await updateCourseBasicInfoService(
+        courseId,
+        toUpdateCourseBasicInfoPayload(values),
+      );
       toast.success(t("basicInfoSaved"));
       await refreshDetail();
     } catch (error) {
@@ -633,8 +611,6 @@ export function useCourseEditorState({
   };
 
   return {
-    activeTab,
-    setActiveTab,
     isPreparingDraft,
     isSavingBasicInfo,
     thumbnailDialogOpen,

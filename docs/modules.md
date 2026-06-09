@@ -64,18 +64,19 @@ _Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me
 - **API**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourses.ts`; routes under `API_PRIVATE_ROUTES.course`.
 - **UI**:
   - `src/screen/instructor/courses/page.tsx` — editable course list + create/delete owner flow
-  - `src/screen/instructor/courses/editor-page.tsx` — editor shell, status header, and tab orchestration
+  - `src/screen/instructor/courses/editor-page.tsx` — editor shell, status header, route-backed tab trigger list, and `CourseEditorTab` → `Component` panel mapping for active-tab rendering
   - `src/screen/common/course/course-review-page.tsx` — shared admin/sysadmin review queue
   - `src/components/features/course/course-status-badge.tsx`
   - `src/components/features/course/course-delta-editor.tsx`
   - `src/lib/utils/course-delta.ts` — shared Delta parsing/stringify/text/image/link helpers reused by the editor and course state
-  - `src/lib/utils/course.ts` — course editor form state factories and outline stable-id helpers (used by `use-course-editor-state` and `editor-page`)
-  - `src/components/features/course/course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx` — split editor render helpers kept outside `src/screen/**` to satisfy the page-only screen rule
+  - `src/lib/utils/course.ts` — course editor tab registry, form state factories, payload mapping, and outline stable-id helpers (used by `use-course-editor-state` and `editor-page`)
+  - `src/components/features/course/course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx` — split editor render helpers kept outside `src/screen/**` to satisfy the page-only screen rule; tab components receive grouped `state` / `taxonomyRows|data` / `actions` props instead of long flat prop lists
+  - `src/components/features/instructor/instructor-course-editor-route.tsx` — shared route renderer reused by the 5 App Router course editor pages so route glue stays out of `src/app/**`
   - `src/components/features/instructor/instructor-action-controls.tsx` — shared instructor admin action/footer helpers
   - `src/components/features/instructor/instructor-list-pagination.tsx` — shared instructor/admin/sysadmin pagination helper
 - **Hooks**:
   - `src/hooks/course/use-course-editor-state.ts` — shared client editor state, lease lifecycle, pre-submit Zod checks (`course.validation.*`), API errors via `toastApiError`, and course draft mutation orchestration
-- **Validation**: `src/schema/course/course.ts` (`courseBasicInfoSchema` title 1–255, short_description max 500; section/lesson/sublesson title max 255; quiz prompt + options; reject reason max 2000); `course.validation.*` i18n; `RequiredLabel` on basic-info title, editor dialogs (section/lesson/sublesson/quiz/collaborator), create-course dialog, review reject
+- **Validation**: `src/schema/course/course.ts` (`courseBasicInfoSchema` title 1–255, short_description max 500, UUID checks for selected media ids, `expected_row_version` min 1, section/lesson/sublesson title max 255, quiz prompt + options, reject reason max 2000); `course.validation.*` i18n; `course-editor-basic-tab.tsx` reuses `react-hook-form + zodResolver` with `RequiredLabel`, `FieldError`, and `toastValidationError` on invalid submit
 - **Reuse points**:
   - `SortableList` for section / lesson / sub-lesson ordering
   - `MediaCollectionDialog` + `ImageFileField` for thumbnail / preview video / text-lesson images

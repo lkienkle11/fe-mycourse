@@ -15,6 +15,26 @@ export const courseBasicInfoSchema = z.object({
   short_description: z
     .string()
     .max(500, { message: "validation.shortDescriptionMax" }),
+  about_course: z.string(),
+  thumbnail_file_id: z.union([
+    z.literal(""),
+    z.string().uuid({ message: "validation.thumbnailFileId" }),
+  ]),
+  thumbnail_url: z.string(),
+  preview_video_file_id: z.union([
+    z.literal(""),
+    z.string().uuid({ message: "validation.previewVideoFileId" }),
+  ]),
+  preview_video_url: z.string(),
+  course_level_id: z.string(),
+  course_topic_id: z.string(),
+  tag_ids: z.array(z.number().int().nonnegative()),
+  skill_ids: z.array(z.number().int().nonnegative()),
+  outcome_ids: z.array(z.number().int().nonnegative()),
+  expected_row_version: z
+    .number({ message: "validation.expectedRowVersion" })
+    .int({ message: "validation.expectedRowVersion" })
+    .min(1, { message: "validation.expectedRowVersion" }),
 });
 
 export const courseSectionSchema = z.object({

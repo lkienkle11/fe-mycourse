@@ -4,6 +4,7 @@ import {
   PUBLIC_ROUTES as publicRoutes,
 } from "@/constants/route";
 import { buildQueryParams } from "@/lib/utils/url";
+import type { CourseEditorTab } from "@/types/course";
 
 type RouteQuery = Record<string, string>;
 type RouteParam = Record<string, string>;
@@ -68,6 +69,20 @@ export function instructorCourseEditorHref(
   return toPrivateResourceRoute(
     privateResourceRoutes.instructor.courseEditor,
     { courseId: String(courseId) },
+    query,
+    fragment,
+  );
+}
+
+export function instructorCourseEditorTabHref(
+  courseId: number | string,
+  tab: CourseEditorTab,
+  query?: RouteQuery,
+  fragment?: string,
+): string {
+  return toPrivateResourceRoute(
+    privateResourceRoutes.instructor.courseEditorTab,
+    { courseId: String(courseId), tab },
     query,
     fragment,
   );

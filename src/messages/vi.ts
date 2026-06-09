@@ -533,6 +533,9 @@ const messages = {
       title: "Vui lòng nhập tiêu đề khóa học.",
       titleMax: "Tiêu đề tối đa 255 ký tự.",
       shortDescriptionMax: "Mô tả ngắn tối đa 500 ký tự.",
+      thumbnailFileId: "Mã thumbnail không hợp lệ.",
+      previewVideoFileId: "Mã video xem trước không hợp lệ.",
+      expectedRowVersion: "Hãy tải lại khóa học và thử lại.",
       sectionTitle: "Vui lòng nhập tiêu đề phần.",
       lessonTitle: "Vui lòng nhập tiêu đề bài học.",
       subLessonTitle: "Vui lòng nhập tiêu đề mục bài học.",
@@ -646,7 +649,7 @@ const messages = {
         "Người học sẽ tiếp tục sử dụng phiên bản đã duyệt cho đến khi bản nháp này được duyệt và chấp thuận.",
       rejectionReason: "Lý do từ chối: {reason}",
       tabs: {
-        basic: "Thông tin cơ bản",
+        info: "Thông tin cơ bản",
         outline: "Đề cương",
         collaborators: "Cộng tác viên",
         pricing: "Giá bán",
