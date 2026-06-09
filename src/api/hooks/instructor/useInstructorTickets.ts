@@ -21,10 +21,10 @@ export function useInstructorTicketsList(filters: InstructorTicketListFilters) {
   );
 }
 
-export function useInstructorTicketMessages(ticketId: number | null) {
+export function useInstructorTicketMessages(ticketId: string | null) {
   return useApiRowsQuery<InstructorTicketMessage>(
     ticketId ? getInstructorTicketMessagesKey(ticketId) : null,
-    () => listInstructorTicketMessagesService(ticketId as number),
+    () => listInstructorTicketMessagesService(ticketId as string),
     { revalidateOnFocus: true },
   );
 }

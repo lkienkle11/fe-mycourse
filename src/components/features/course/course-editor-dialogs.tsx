@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { newV7 } from "@/lib/utils/uuid";
 import type {
   CourseBasicInfoForm,
   CourseLessonDialogState,
@@ -433,7 +434,7 @@ export function CourseSubLessonDialog({
                       quiz_options: [
                         ...prev.quiz_options,
                         {
-                          option_key: crypto.randomUUID(),
+                          option_key: newV7(),
                           body: "",
                           is_correct: false,
                         },

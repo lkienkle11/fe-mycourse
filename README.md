@@ -215,8 +215,8 @@ Mirrors `be/dto/auth.go → MeResponse`:
 
 ```ts
 interface MeResponse {
-  user_id: number;
-  user_code: string;
+  user_id: string; // UUID v7
+  user_code: string; // ULID
   email: string;
   display_name: string;
   avatar_url: string;

@@ -59,11 +59,11 @@ export type TaxonomyListFilters = ApiListQueryParams & {
 };
 
 export type SlugStatusTaxonomy = {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   status: TaxonomyStatus;
-  created_by?: number;
+  created_by?: string;
   created_at: number;
   updated_at: number;
 };
@@ -79,13 +79,13 @@ export type CourseSkill = SlugStatusTaxonomy & {
 };
 
 export type CourseOutcome = {
-  id: number;
+  id: string;
   short_description: string;
   description: string[];
   image_file_id?: string;
   image_file_url?: string;
   status: TaxonomyStatus;
-  created_by?: number;
+  created_by?: string;
   created_at: number;
   updated_at: number;
 };

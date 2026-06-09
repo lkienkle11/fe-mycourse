@@ -17,13 +17,15 @@ export const instructorRejectionReasonSchema = z.object({
 export const instructorExpertiseTopicSchema = z.object({
   topic_id: z
     .string({ message: "validation.topicId" })
-    .min(1, { message: "validation.topicId" }),
+    .min(1, { message: "validation.topicId" })
+    .uuid({ message: "validation.topicId" }),
 });
 
 export const instructorExpertiseSkillSchema = z.object({
   skill_id: z
     .string({ message: "validation.skillId" })
-    .min(1, { message: "validation.skillId" }),
+    .min(1, { message: "validation.skillId" })
+    .uuid({ message: "validation.skillId" }),
 });
 
 export const instructorTicketSchema = z.object({

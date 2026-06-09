@@ -10,5 +10,5 @@ export async function renderInstructorCourseEditorRoute(
   tab: CourseEditorTab,
 ) {
   const { courseId } = await params;
-  return <InstructorCourseEditorPage courseId={Number(courseId)} tab={tab} />;
+  return <InstructorCourseEditorPage courseId={courseId} tab={tab} />;
 }

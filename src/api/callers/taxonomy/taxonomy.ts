@@ -61,7 +61,7 @@ export async function createTaxonomyService<K extends TaxonomyResourceKey>(
 
 export async function updateTaxonomyService<K extends TaxonomyResourceKey>(
   resourceKey: K,
-  id: number,
+  id: string,
   payload: UpdateTaxonomyPayloadMap[K],
 ): Promise<TaxonomyEntityMap[K]> {
   const url = buildQueryParams(API_PRIVATE_ROUTES.taxonomy.byId, undefined, {
@@ -83,7 +83,7 @@ export async function updateTaxonomyService<K extends TaxonomyResourceKey>(
 
 export async function deleteTaxonomyService(
   resourceKey: TaxonomyResourceKey,
-  id: number,
+  id: string,
 ): Promise<void> {
   const url = buildQueryParams(API_PRIVATE_ROUTES.taxonomy.byId, undefined, {
     segment: getTaxonomyResourceConfig(resourceKey).apiSegment,

@@ -12,18 +12,18 @@ import type {
   InstructorExpertiseTopic,
 } from "@/types/instructor";
 
-export function useInstructorExpertiseTopics(instructorId: number | null) {
+export function useInstructorExpertiseTopics(instructorId: string | null) {
   return useApiRowsQuery<InstructorExpertiseTopic>(
     instructorId ? getInstructorExpertiseTopicsKey(instructorId) : null,
-    () => listInstructorExpertiseTopicsService(instructorId as number),
+    () => listInstructorExpertiseTopicsService(instructorId as string),
     { revalidateOnFocus: true },
   );
 }
 
-export function useInstructorExpertiseSkills(instructorId: number | null) {
+export function useInstructorExpertiseSkills(instructorId: string | null) {
   return useApiRowsQuery<InstructorExpertiseSkill>(
     instructorId ? getInstructorExpertiseSkillsKey(instructorId) : null,
-    () => listInstructorExpertiseSkillsService(instructorId as number),
+    () => listInstructorExpertiseSkillsService(instructorId as string),
     { revalidateOnFocus: true },
   );
 }

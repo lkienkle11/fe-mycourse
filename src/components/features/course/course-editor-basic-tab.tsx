@@ -45,9 +45,9 @@ type CourseBasicInfoTabProps = {
   state: {
     basicInfo: CourseBasicInfoForm;
     setBasicInfo: Dispatch<SetStateAction<CourseBasicInfoForm>>;
-    tagSelection: Set<number>;
-    skillSelection: Set<number>;
-    outcomeSelection: Set<number>;
+    tagSelection: Set<string>;
+    skillSelection: Set<string>;
+    outcomeSelection: Set<string>;
   };
   taxonomyRows: {
     levelRows: SlugStatusTaxonomy[];
@@ -57,7 +57,7 @@ type CourseBasicInfoTabProps = {
     outcomeRows: CourseOutcome[];
   };
   actions: {
-    onToggleSelection: (key: CourseSelectionKey, value: number) => void;
+    onToggleSelection: (key: CourseSelectionKey, value: string) => void;
     isSavingBasicInfo: boolean;
     onSave: (values: CourseBasicInfoValues) => void;
     onOpenThumbnailDialog: () => void;
@@ -410,10 +410,10 @@ function SelectionPanel({
   onToggle,
 }: {
   title: string;
-  rows: Array<{ id: number; label: string }>;
-  selected: Set<number>;
+  rows: Array<{ id: string; label: string }>;
+  selected: Set<string>;
   disabled: boolean;
-  onToggle: (id: number) => void;
+  onToggle: (id: string) => void;
 }) {
   return (
     <div className="min-w-0 space-y-2 rounded-md border p-3">
