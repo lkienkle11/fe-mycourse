@@ -24,7 +24,10 @@ import {
 } from "@/components/ui/select";
 import { TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { resolveValidationMessage } from "@/lib/utils/validation-message";
+import {
+  resolveValidationMessage,
+  toastValidationError,
+} from "@/lib/utils/validation-message";
 import {
   type CourseBasicInfoValues,
   courseBasicInfoSchema,
@@ -82,11 +85,19 @@ export function CourseBasicInfoTab({
 }: CourseBasicInfoTabProps) {
   const tCourse = useTranslations("course");
   const tCommon = useTranslations("course.common");
+  const tValidation = useTranslations("course.validation");
   const t = useTranslations("course.editor.basicInfo");
   const form = useForm<CourseBasicInfoValues>({
     resolver: zodResolver(courseBasicInfoSchema),
     values: basicInfo,
   });
+
+  const handleInvalidSubmit = () => {
+    const parsed = courseBasicInfoSchema.safeParse(basicInfo);
+    if (!parsed.success) {
+      toastValidationError(tValidation, parsed.error.issues, "title");
+    }
+  };
 
   return (
     <TabsContent value="info" className="space-y-4">
@@ -98,7 +109,10 @@ export function CourseBasicInfoTab({
         <CardContent>
           <form
             className="space-y-4"
-            onSubmit={form.handleSubmit((values) => onSave(values))}
+            onSubmit={form.handleSubmit(
+              (values) => onSave(values),
+              handleInvalidSubmit,
+            )}
           >
             {!editable ? (
               <p className="text-sm text-muted-foreground">{t("emptyDraft")}</p>

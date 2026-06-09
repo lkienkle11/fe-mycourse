@@ -97,6 +97,8 @@ export function selectedIdsToMap(ids: number[]) {
   return new Set(ids);
 }
 
+/** Deterministic OUTLINE_ROOT lease key — must be a UUID (see `course_edit_leases.resource_stable_id`). */
 export function rootOutlineStableId(courseId: number): string {
-  return `course-${courseId}-outline-root`;
+  const suffix = courseId.toString(16).padStart(12, "0").slice(-12);
+  return `00000000-0000-4000-8000-${suffix}`;
 }
