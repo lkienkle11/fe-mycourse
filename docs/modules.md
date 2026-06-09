@@ -76,7 +76,7 @@ _Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me
   - `src/components/features/instructor/instructor-list-pagination.tsx` — shared instructor/admin/sysadmin pagination helper
 - **Hooks**:
   - `src/hooks/course/use-course-editor-state.ts` — shared client editor state, lease lifecycle, pre-submit Zod checks (`course.validation.*`), API errors via `toastApiError`, and course draft mutation orchestration
-- **Validation**: `src/schema/course/course.ts` (`courseBasicInfoSchema` title 1–255, short_description max 500, UUID checks for selected media ids, row-version check, section/lesson/sublesson title max 255, quiz prompt + options, reject reason max 2000); `course.validation.*` i18n; `course-editor-basic-tab.tsx` reuses `react-hook-form + zodResolver` with `RequiredLabel` and `FieldError`
+- **Validation**: `src/schema/course/course.ts` (`courseBasicInfoSchema` title 1–255, short_description max 500, UUID checks for selected media ids, `expected_row_version` min 1, section/lesson/sublesson title max 255, quiz prompt + options, reject reason max 2000); `course.validation.*` i18n; `course-editor-basic-tab.tsx` reuses `react-hook-form + zodResolver` with `RequiredLabel`, `FieldError`, and `toastValidationError` on invalid submit
 - **Reuse points**:
   - `SortableList` for section / lesson / sub-lesson ordering
   - `MediaCollectionDialog` + `ImageFileField` for thumbnail / preview video / text-lesson images
