@@ -491,7 +491,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course.ts`
-- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories, payload mapping, taxonomy id `Set` mapping, and `rootOutlineStableId(courseId)` (deterministic RFC-4122 UUID for `OUTLINE_ROOT` lease acquire/reorder; matches `course_edit_leases.resource_stable_id` UUID column).
+- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, and `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE).
 - **Scope**: `use-course-editor-state`, `editor-page.tsx`.
 - **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`).
 

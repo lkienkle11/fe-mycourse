@@ -82,6 +82,8 @@ Course authoring / review reuses the same dashboard and API patterns:
 
 **My Courses** (`InstructorCoursesPage`): create dialog sends `{ title }` only; slug preview is read-only (`slugifyName(title)`). Create is enabled when slugify is non-empty (`length >= 1`); BE rejects only empty slugify output.
 
+**Course editor basic info** (`/instructor/courses/:id/info`): title is read-only after create (matches BE — `PATCH /basic-info` does not accept `title`). Save uses `courseBasicInfoSaveSchema` + `toUpdateCourseBasicInfoPayload` (metadata, media refs, taxonomy ids, `expected_row_version` only).
+
 Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalActions`.
 
 ## Validation and API errors
