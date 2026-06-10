@@ -59,7 +59,7 @@ type CourseBasicInfoTabProps = {
   actions: {
     onToggleSelection: (key: CourseSelectionKey, value: string) => void;
     isSavingBasicInfo: boolean;
-    onSave: (values: CourseBasicInfoValues) => void;
+    onSave: () => void;
     onOpenThumbnailDialog: () => void;
     onOpenPreviewDialog: () => void;
   };
@@ -109,10 +109,7 @@ export function CourseBasicInfoTab({
         <CardContent>
           <form
             className="space-y-4"
-            onSubmit={form.handleSubmit(
-              (values) => onSave(values),
-              handleInvalidSubmit,
-            )}
+            onSubmit={form.handleSubmit(() => onSave(), handleInvalidSubmit)}
           >
             {!editable ? (
               <p className="text-sm text-muted-foreground">{t("emptyDraft")}</p>

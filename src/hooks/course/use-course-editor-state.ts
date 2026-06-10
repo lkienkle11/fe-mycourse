@@ -30,7 +30,6 @@ import {
 } from "@/lib/utils/course";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import {
-  type CourseBasicInfoValues,
   courseCollaboratorSchema,
   courseLessonSchema,
   courseQuizOptionSchema,
@@ -327,7 +326,7 @@ export function useCourseEditorState({
     }
   };
 
-  const handleSaveBasicInfo = async (values: CourseBasicInfoValues) => {
+  const handleSaveBasicInfo = async () => {
     if (!editableVersion) {
       toast.error(t("draftRequiredInfo"));
       return;
@@ -336,7 +335,7 @@ export function useCourseEditorState({
     try {
       await updateCourseBasicInfoService(
         courseId,
-        toUpdateCourseBasicInfoPayload(values),
+        toUpdateCourseBasicInfoPayload(basicInfo),
       );
       toast.success(t("basicInfoSaved"));
       await refreshDetail();

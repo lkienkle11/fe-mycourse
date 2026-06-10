@@ -199,7 +199,7 @@ export function InstructorCourseEditorPage({
     actions: {
       isSavingBasicInfo,
       onToggleSelection: toggleSelection,
-      onSave: (values) => void handleSaveBasicInfo(values),
+      onSave: () => void handleSaveBasicInfo(),
       onOpenThumbnailDialog: () => setThumbnailDialogOpen(true),
       onOpenPreviewDialog: () => setPreviewDialogOpen(true),
     },

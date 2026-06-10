@@ -608,7 +608,7 @@ const messages = {
       deleteDialog: {
         title: "Delete course",
         description:
-          "This only works for the course owner and removes the course root.",
+          "This only works for the course owner and cannot be undone after deletion.",
         deleting: "Deleting...",
       },
       toast: {
@@ -669,6 +669,8 @@ const messages = {
           "Edit the draft metadata that will go live after approval.",
         emptyDraft: "Prepare a draft to edit the course information.",
         titleLabel: "Title",
+        titleReadOnlyHint:
+          "Course title is set when the course is created and cannot be changed here.",
         shortDescriptionLabel: "Short description",
         aboutLabel: "About course",
         thumbnailLabel: "Thumbnail",

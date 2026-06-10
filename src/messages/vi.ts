@@ -606,7 +606,7 @@ const messages = {
       deleteDialog: {
         title: "Xóa khóa học",
         description:
-          "Chỉ chủ sở hữu khóa học mới có thể thực hiện thao tác này và nó sẽ xóa course root.",
+          "Chỉ chủ sở hữu khóa học mới có thể thực hiện thao tác này và không thể hoàn tác sau khi xóa.",
         deleting: "Đang xóa...",
       },
       toast: {
@@ -667,6 +667,8 @@ const messages = {
           "Chỉnh sửa metadata của bản nháp sẽ được đưa lên sau khi được duyệt.",
         emptyDraft: "Hãy chuẩn bị bản nháp để chỉnh sửa thông tin khóa học.",
         titleLabel: "Tiêu đề",
+        titleReadOnlyHint:
+          "Tiêu đề khóa học được đặt khi tạo khóa học và không thể đổi tại đây.",
         shortDescriptionLabel: "Mô tả ngắn",
         aboutLabel: "Giới thiệu khóa học",
         thumbnailLabel: "Ảnh thumbnail",
