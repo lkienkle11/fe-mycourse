@@ -58,6 +58,7 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
     ? selectedFilterBy
     : defaultFilterBy;
   const [formOpen, setFormOpen] = useState(false);
+  const [formDialogKey, setFormDialogKey] = useState(0);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [selectedRow, setSelectedRow] = useState<TaxonomyEntity | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -156,12 +157,14 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
   const openCreate = () => {
     setFormMode("create");
     setSelectedRow(null);
+    setFormDialogKey((key) => key + 1);
     setFormOpen(true);
   };
 
   const openEdit = (row: TaxonomyEntity) => {
     setFormMode("edit");
     setSelectedRow(row);
+    setFormDialogKey((key) => key + 1);
     setFormOpen(true);
   };
 
@@ -278,6 +281,7 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
       </div>
 
       <TaxonomyFormDialog
+        key={formDialogKey}
         resourceKey={resourceKey}
         mode={formMode}
         open={formOpen}

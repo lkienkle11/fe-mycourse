@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { type FieldPath, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
@@ -65,6 +65,74 @@ import { TaxonomyTreeEditor } from "./taxonomy-tree-editor";
 const TAXONOMY_TREE_INDENT_PX = 12;
 const TAXONOMY_DIALOG_BASE_MIN_PX = 672;
 
+function buildTaxonomyFormDefaultValues(
+  resourceKey: TaxonomyResourceKey,
+  initialData?: TaxonomyEntity | null,
+) {
+  if (resourceKey === "outcomes") {
+    const row = initialData as CourseOutcome | undefined;
+    return {
+      short_description: row?.short_description ?? "",
+      description: row?.description ?? [],
+      image_file_id: row?.image_file_id ?? "",
+      status: row?.status ?? "ACTIVE",
+    };
+  }
+
+  const row = initialData as SlugStatusTaxonomy | undefined;
+  return {
+    name: row?.name ?? "",
+    status: row?.status ?? "ACTIVE",
+    short_description: "",
+    description: [],
+    image_file_id:
+      resourceKey === "topics"
+        ? ((initialData as CourseTopic | undefined)?.image_file_id ?? "")
+        : "",
+    child_topics: [],
+    children: [],
+  };
+}
+
+function buildTaxonomyDescriptionState(
+  resourceKey: TaxonomyResourceKey,
+  initialData?: TaxonomyEntity | null,
+): string[] {
+  if (resourceKey !== "outcomes") return [""];
+  const row = initialData as CourseOutcome | undefined;
+  return row?.description?.length ? [...row.description] : [""];
+}
+
+function buildTaxonomyInitialImageFileURL(
+  resourceKey: TaxonomyResourceKey,
+  initialData?: TaxonomyEntity | null,
+): string {
+  if (resourceKey === "outcomes") {
+    return (initialData as CourseOutcome | undefined)?.image_file_url ?? "";
+  }
+  if (resourceKey === "topics") {
+    return (initialData as CourseTopic | undefined)?.image_file_url ?? "";
+  }
+  return "";
+}
+
+function getPersistedTaxonomySlug(
+  resourceKey: TaxonomyResourceKey,
+  initialData?: TaxonomyEntity | null,
+): string {
+  if (resourceKey === "outcomes" || !initialData) return "";
+  return (initialData as SlugStatusTaxonomy).slug ?? "";
+}
+
+function resolveTaxonomySlugPreview(
+  name: string,
+  persistedSlug: string,
+): string {
+  const trimmed = name.trim();
+  if (trimmed) return slugifyName(trimmed);
+  return persistedSlug;
+}
+
 function getTaxonomyTreeMaxDepth(nodes: TaxonomyTreeNode[]): number {
   let max = 0;
   const visit = (items: TaxonomyTreeNode[], depth: number) => {
@@ -87,6 +155,7 @@ export type TaxonomyFormDialogProps = {
   initialData?: TaxonomyEntity | null;
   onSuccess: () => void;
 };
+
 export function TaxonomyFormDialog({
   resourceKey,
   mode,
@@ -101,11 +170,20 @@ export function TaxonomyFormDialog({
   const tErrors = useTranslations("errors.codes");
   const config = getTaxonomyResourceConfig(resourceKey);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tree, setTree] = useState<TaxonomyTreeNode[]>([]);
-  const [description, setDescription] = useState<string[]>([]);
+  const [tree, setTree] = useState<TaxonomyTreeNode[]>(() =>
+    getTaxonomyTreeFromEntity(resourceKey, initialData),
+  );
+  const [description, setDescription] = useState<string[]>(() =>
+    buildTaxonomyDescriptionState(resourceKey, initialData),
+  );
   const [mediaOpen, setMediaOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<MediaFile | null>(null);
-  const [initialImageFileURL, setInitialImageFileURL] = useState("");
+  const [initialImageFileURL, setInitialImageFileURL] = useState(() =>
+    buildTaxonomyInitialImageFileURL(resourceKey, initialData),
+  );
+  const [persistedSlug] = useState(() =>
+    getPersistedTaxonomySlug(resourceKey, initialData),
+  );
 
   const schema = useMemo(() => {
     if (resourceKey === "outcomes") return taxonomyOutcomeSchema;
@@ -118,75 +196,28 @@ export function TaxonomyFormDialog({
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      name: "",
-      status: "ACTIVE" as TaxonomyStatus,
-      short_description: "",
-      description: [],
-      image_file_id: "",
-      child_topics: [],
-      children: [],
-    } as FormValues,
+    defaultValues: buildTaxonomyFormDefaultValues(
+      resourceKey,
+      initialData,
+    ) as FormValues,
   });
-
-  const syncFormState = useCallback(() => {
-    if (resourceKey === "outcomes") {
-      const row = initialData as CourseOutcome | undefined;
-      form.reset({
-        short_description: row?.short_description ?? "",
-        description: row?.description ?? [],
-        image_file_id: row?.image_file_id ?? "",
-        status: row?.status ?? "ACTIVE",
-      } as FormValues);
-      setDescription(row?.description?.length ? row.description : [""]);
-      setImagePreview(null);
-      setInitialImageFileURL(row?.image_file_url ?? "");
-      return;
-    }
-
-    const row = initialData as SlugStatusTaxonomy | undefined;
-    form.reset({
-      name: row?.name ?? "",
-      status: row?.status ?? "ACTIVE",
-      image_file_id:
-        resourceKey === "topics"
-          ? ((initialData as CourseTopic | undefined)?.image_file_id ?? "")
-          : "",
-    } as FormValues);
-    setTree(getTaxonomyTreeFromEntity(resourceKey, initialData));
-    setImagePreview(null);
-    setInitialImageFileURL(
-      resourceKey === "topics"
-        ? ((initialData as CourseTopic | undefined)?.image_file_url ?? "")
-        : "",
-    );
-  }, [form, initialData, resourceKey]);
-
-  const handleOpenChange = (next: boolean) => {
-    if (next) {
-      syncFormState();
-    }
-    onOpenChange(next);
-  };
 
   const imageFileId = useWatch({
     control: form.control,
     name: "image_file_id" as FieldPath<FormValues>,
-    defaultValue: "",
   }) as string | undefined;
 
   const nameValue =
     (useWatch({
       control: form.control,
       name: "name" as FieldPath<FormValues>,
-      defaultValue: "",
-    }) as string) ?? "";
+    }) as string | undefined) ?? "";
 
-  const statusValue = useWatch({
-    control: form.control,
-    name: "status",
-    defaultValue: "ACTIVE" as TaxonomyStatus,
-  }) as TaxonomyStatus;
+  const statusValue =
+    (useWatch({
+      control: form.control,
+      name: "status",
+    }) as TaxonomyStatus | undefined) ?? "ACTIVE";
 
   const resourceLabel = t(`resources.${resourceKey}.singular`);
   const dialogTitle =
@@ -266,7 +297,10 @@ export function TaxonomyFormDialog({
     }
   };
 
-  const derivedSlug = slugifyName(nameValue);
+  const slugPreview = useMemo(
+    () => resolveTaxonomySlugPreview(nameValue, persistedSlug),
+    [nameValue, persistedSlug],
+  );
   const imagePreviewURL = imagePreview?.url || initialImageFileURL;
 
   const treeMaxDepth = useMemo(
@@ -280,7 +314,7 @@ export function TaxonomyFormDialog({
       : undefined;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="scrollbar-app max-h-[90vh] w-full max-w-[calc(100%-2rem)] overflow-x-auto overflow-y-auto sm:w-max sm:min-w-2xl sm:max-w-[calc(100%-2rem)]"
         style={dialogMinWidth ? { minWidth: dialogMinWidth } : undefined}
@@ -351,7 +385,7 @@ export function TaxonomyFormDialog({
                 <Input
                   id="slug"
                   readOnly
-                  value={derivedSlug}
+                  value={slugPreview}
                   className="cursor-not-allowed bg-muted"
                   aria-readonly
                 />
@@ -411,7 +445,6 @@ export function TaxonomyFormDialog({
 
           {config.hasTree ? (
             <TaxonomyTreeEditor
-              key={`${mode}-${initialData?.id ?? "new"}-${open}`}
               resourceKey={config.key}
               value={tree}
               onChange={setTree}
@@ -420,7 +453,6 @@ export function TaxonomyFormDialog({
 
           {config.hasDescriptionList ? (
             <TaxonomyDescriptionEditor
-              key={`${mode}-${initialData?.id ?? "new"}-${open}`}
               value={description}
               onChange={setDescription}
             />
