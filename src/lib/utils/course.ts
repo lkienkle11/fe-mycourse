@@ -2,7 +2,10 @@ import { createEmptyDeltaString } from "@/lib/utils/course-delta";
 import { newV7 } from "@/lib/utils/uuid";
 import type {
   CourseBasicInfoForm,
+  CourseDetail,
   CourseEditorTab,
+  CourseLesson,
+  CourseSection,
   CourseSubLesson,
   CourseSubLessonFormState,
   CourseVersion,
@@ -23,7 +26,7 @@ export function createCourseBasicInfoState(
   return {
     title: activeVersion?.title ?? "",
     short_description: activeVersion?.short_description ?? "",
-    about_course: activeVersion?.about_course ?? "",
+    about_course: activeVersion?.about_course ?? createEmptyDeltaString(),
     thumbnail_file_id: activeVersion?.thumbnail_file_id ?? "",
     thumbnail_url: activeVersion?.thumbnail_url ?? "",
     preview_video_file_id: activeVersion?.preview_video_file_id ?? "",
@@ -40,19 +43,22 @@ export function createCourseBasicInfoState(
 export function toUpdateCourseBasicInfoPayload(
   basicInfo: CourseBasicInfoForm,
 ): UpdateCourseBasicInfoPayload {
-  return {
+  const payload: UpdateCourseBasicInfoPayload = {
     expected_row_version: basicInfo.expected_row_version,
-    title: basicInfo.title,
-    short_description: basicInfo.short_description,
-    about_course: basicInfo.about_course,
-    thumbnail_file_id: basicInfo.thumbnail_file_id || undefined,
-    preview_video_file_id: basicInfo.preview_video_file_id || undefined,
-    course_level_id: basicInfo.course_level_id || undefined,
-    course_topic_id: basicInfo.course_topic_id || undefined,
+    title: basicInfo.title.trim(),
+    short_description: basicInfo.short_description.trim(),
+    about_course: basicInfo.about_course.trim(),
+    thumbnail_file_id: basicInfo.thumbnail_file_id,
+    course_level_id: basicInfo.course_level_id,
+    course_topic_id: basicInfo.course_topic_id,
     tag_ids: basicInfo.tag_ids,
     skill_ids: basicInfo.skill_ids,
     outcome_ids: basicInfo.outcome_ids,
   };
+  if (basicInfo.preview_video_file_id) {
+    payload.preview_video_file_id = basicInfo.preview_video_file_id;
+  }
+  return payload;
 }
 
 function createEmptyQuizOption() {
@@ -93,4 +99,72 @@ export function selectedIdsToMap(ids: string[]) {
 /** OUTLINE_ROOT lease key — course id is already a UUID v7 from BE. */
 export function rootOutlineStableId(courseId: string): string {
   return courseId;
+}
+
+/** Assign `order_index` 0..n-1 to match UI sort order (optimistic outline updates). */
+export function assignSequentialOrderIndex<T extends { order_index: number }>(
+  items: readonly T[],
+): T[] {
+  return items.map((item, index) =>
+    item.order_index === index ? item : { ...item, order_index: index },
+  );
+}
+
+export function withOutlineSections(
+  detail: CourseDetail,
+  sections: CourseSection[],
+): CourseDetail {
+  return { ...detail, outline: sections };
+}
+
+export function replaceSectionLessons(
+  outline: CourseSection[],
+  sectionId: string,
+  lessons: CourseLesson[],
+): CourseSection[] {
+  const orderedLessons = assignSequentialOrderIndex(lessons);
+  return outline.map((section) =>
+    section.id === sectionId
+      ? { ...section, lessons: orderedLessons }
+      : section,
+  );
+}
+
+export function replaceLessonSubLessons(
+  outline: CourseSection[],
+  lessonId: string,
+  subLessons: CourseSubLesson[],
+): CourseSection[] {
+  const orderedSubLessons = assignSequentialOrderIndex(subLessons);
+  return outline.map((section) => ({
+    ...section,
+    lessons: section.lessons.map((lesson) =>
+      lesson.id === lessonId
+        ? { ...lesson, sub_lessons: orderedSubLessons }
+        : lesson,
+    ),
+  }));
+}
+
+export function mergeReorderedLessons(
+  outline: CourseSection[],
+  sectionId: string,
+  lessons: CourseLesson[],
+): CourseSection[] {
+  return outline.map((section) =>
+    section.id === sectionId ? { ...section, lessons } : section,
+  );
+}
+
+export function mergeReorderedSubLessons(
+  outline: CourseSection[],
+  lessonId: string,
+  subLessons: CourseSubLesson[],
+): CourseSection[] {
+  return outline.map((section) => ({
+    ...section,
+    lessons: section.lessons.map((lesson) =>
+      lesson.id === lessonId ? { ...lesson, sub_lessons: subLessons } : lesson,
+    ),
+  }));
 }

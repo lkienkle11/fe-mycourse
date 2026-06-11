@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { PermissionGate } from "@/components/shared/permission-gate";
+import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type { PermissionName } from "@/types/permissions";
@@ -20,6 +21,7 @@ export type ImageFileFieldProps = {
   onClear: () => void;
   hiddenInput: ReactNode;
   browsePermissions?: PermissionName[];
+  required?: boolean;
 };
 
 export function ImageFileField({
@@ -35,10 +37,15 @@ export function ImageFileField({
   onClear,
   hiddenInput,
   browsePermissions,
+  required = false,
 }: ImageFileFieldProps) {
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      {required ? (
+        <RequiredLabel>{label}</RequiredLabel>
+      ) : (
+        <Label>{label}</Label>
+      )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
           {previewUrl ? (

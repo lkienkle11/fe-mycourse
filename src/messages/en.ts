@@ -533,13 +533,28 @@ const messages = {
   course: {
     validation: {
       title: "Please enter a course title.",
+      titleMin: "Title must contain at least 5 non-whitespace characters.",
       titleMax: "Title must be at most 255 characters.",
+      shortDescriptionMin:
+        "Short description must contain at least 20 non-whitespace characters.",
       shortDescriptionMax: "Short description must be at most 500 characters.",
+      aboutCourseMin:
+        "About course must contain at least 30 non-whitespace characters.",
+      thumbnailRequired: "Please select a thumbnail image.",
       thumbnailFileId: "Thumbnail reference is invalid.",
       previewVideoFileId: "Preview video reference is invalid.",
+      courseLevelId: "Please select a course level.",
+      courseTopicId: "Please select a course topic.",
+      tagIdsMin: "Select at least one tag.",
+      skillIdsMin: "Select at least one skill.",
+      outcomeIdRequired: "Please select a learning outcome.",
       expectedRowVersion: "Refresh the course and try again.",
       sectionTitle: "Please enter a section title.",
+      sectionDescriptionMin:
+        "Section description must contain at least 20 non-whitespace characters.",
       lessonTitle: "Please enter a lesson title.",
+      lessonSummaryMin:
+        "Lesson summary must contain at least 20 non-whitespace characters.",
       subLessonTitle: "Please enter a lesson item title.",
       subLessonKind: "Please select a lesson item type.",
       quizPrompt: "Please enter a quiz prompt.",
@@ -608,7 +623,7 @@ const messages = {
       deleteDialog: {
         title: "Delete course",
         description:
-          "This only works for the course owner and removes the course root.",
+          "This only works for the course owner and cannot be undone after deletion.",
         deleting: "Deleting...",
       },
       toast: {
@@ -669,6 +684,8 @@ const messages = {
           "Edit the draft metadata that will go live after approval.",
         emptyDraft: "Prepare a draft to edit the course information.",
         titleLabel: "Title",
+        titleReadOnlyHint:
+          "Course title is set when the course is created and cannot be changed here.",
         shortDescriptionLabel: "Short description",
         aboutLabel: "About course",
         thumbnailLabel: "Thumbnail",
@@ -687,7 +704,9 @@ const messages = {
         noTopic: "No topic",
         tagsTitle: "Tags",
         skillsTitle: "Skills",
-        outcomesTitle: "Outcomes",
+        outcomesTitle: "Learning outcome",
+        selectOutcome: "Select outcome",
+        noOutcome: "No outcome",
         save: "Save basic info",
         saving: "Saving...",
       },
@@ -753,17 +772,15 @@ const messages = {
       },
       deltaEditor: {
         lessonTextLabel: "Lesson text",
-        lessonTextPlaceholder:
-          "Write the lesson body here. This editor stores Quill Delta JSON.",
-        linkEmbedLabel: "Link embed",
-        linkPlaceholder: "https://example.com/resource",
-        addLink: "Add link",
-        invalidLink: "Enter a valid http:// or https:// link.",
-        imagesLabel: "Images",
-        insertImage: "Insert image",
-        embeddedImagesLabel: "Embedded images",
-        deltaJsonLabel: "Delta JSON",
-        deltaPlaceholder: '{"ops":[{"insert":"Lesson body"}]}',
+        placeholder:
+          "Write content here. Use the toolbar, paste (Ctrl+V), or drag and drop images/videos to embed media.",
+        placeholderTextOnly: "Write content here.",
+        dropHint: "Drop an image or video here",
+        uploading: "Uploading media…",
+        uploadNoPermission: "You do not have permission to upload media.",
+        unsupportedFile: "Only images or videos are supported (not documents).",
+        removeEmbed: "Remove media",
+        embedHandlerMissing: "Media upload is not configured for this editor.",
       },
       toast: {
         lockExpired: "The edit lock expired. Please reopen the editor action.",
@@ -779,12 +796,15 @@ const messages = {
         sectionSaved: "Section saved.",
         sectionSaveError: "Could not save section.",
         sectionDeleted: "Section deleted.",
+        sectionsReordered: "Section order saved.",
         lessonSaved: "Lesson saved.",
         lessonSaveError: "Could not save lesson.",
         lessonDeleted: "Lesson deleted.",
+        lessonsReordered: "Lesson order saved.",
         itemSaved: "Lesson item saved.",
         itemSaveError: "Could not save lesson item.",
         itemDeleted: "Lesson item deleted.",
+        itemsReordered: "Lesson item order saved.",
         collaboratorAdded: "Collaborator added.",
         collaboratorAddError: "Could not add collaborator.",
         collaboratorRemoved: "Collaborator removed.",

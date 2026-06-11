@@ -7,9 +7,6 @@ import {
   deleteCourseLessonService,
   deleteCourseSectionService,
   deleteCourseSubLessonService,
-  reorderCourseLessonsService,
-  reorderCourseSectionsService,
-  reorderCourseSubLessonsService,
 } from "@/api/callers/course";
 import { useCourseDetail } from "@/api/hooks/course";
 import { useInstructorRosterList } from "@/api/hooks/instructor";
@@ -41,7 +38,7 @@ import {
   instructorCourseEditorTabHref,
   instructorCoursesHref,
 } from "@/lib/navigation/routes";
-import { courseEditorTabs, rootOutlineStableId } from "@/lib/utils/course";
+import { courseEditorTabs } from "@/lib/utils/course";
 import type { CourseEditorTab } from "@/types/course";
 
 type CourseEditorTabPropsMap = {
@@ -112,7 +109,8 @@ export function InstructorCourseEditorPage({
     setBasicInfo,
     tagSelection,
     skillSelection,
-    outcomeSelection,
+    outcomeId,
+    setOutcomeId,
     withEphemeralLease,
     handlePrepareDraft,
     handleSaveBasicInfo,
@@ -131,11 +129,16 @@ export function InstructorCourseEditorPage({
     handleSubmitReview,
     handleReopenDraft,
     refreshDetail,
+    handleReorderSections,
+    handleReverseSections,
+    handleReorderLessons,
+    handleReorderSubLessons,
   } = useCourseEditorState({
     courseId,
+    courseDetail: data,
     activeVersion,
     editableVersion,
-    mutate,
+    mutateDetail: mutate,
   });
   const basicInfoFilters = tab === "info" ? { page: 1, per_page: 100 } : null;
   const rosterFilters =
@@ -187,7 +190,7 @@ export function InstructorCourseEditorPage({
       setBasicInfo,
       tagSelection,
       skillSelection,
-      outcomeSelection,
+      outcomeId,
     },
     taxonomyRows: {
       levelRows,
@@ -199,7 +202,8 @@ export function InstructorCourseEditorPage({
     actions: {
       isSavingBasicInfo,
       onToggleSelection: toggleSelection,
-      onSave: (values) => void handleSaveBasicInfo(values),
+      setOutcomeId,
+      onSave: () => void handleSaveBasicInfo(),
       onOpenThumbnailDialog: () => setThumbnailDialogOpen(true),
       onOpenPreviewDialog: () => setPreviewDialogOpen(true),
     },
@@ -210,31 +214,8 @@ export function InstructorCourseEditorPage({
     outline,
     actions: {
       onAddSection: () => void openSectionDialog(),
-      onReverseSections: () =>
-        void withEphemeralLease(
-          "OUTLINE_ROOT",
-          rootOutlineStableId(courseId),
-          async () => {
-            await reorderCourseSectionsService(courseId, {
-              ordered_stable_ids: outline
-                .slice()
-                .reverse()
-                .map((section) => section.stable_id),
-            });
-            await refreshDetail();
-          },
-        ),
-      onReorderSections: (sections) =>
-        void withEphemeralLease(
-          "OUTLINE_ROOT",
-          rootOutlineStableId(courseId),
-          async () => {
-            await reorderCourseSectionsService(courseId, {
-              ordered_stable_ids: sections.map((section) => section.stable_id),
-            });
-            await refreshDetail();
-          },
-        ),
+      onReverseSections: () => handleReverseSections(outline),
+      onReorderSections: handleReorderSections,
       onEditSection: (section) => void openSectionDialog(section),
       onDeleteSection: (section) =>
         void withEphemeralLease("SECTION", section.stable_id, async () => {
@@ -250,13 +231,7 @@ export function InstructorCourseEditorPage({
           toast.success(tToast("lessonDeleted"));
           await refreshDetail();
         }),
-      onReorderLessons: (section, lessons) =>
-        void withEphemeralLease("SECTION", section.stable_id, async () => {
-          await reorderCourseLessonsService(courseId, section.id, {
-            ordered_stable_ids: lessons.map((lesson) => lesson.stable_id),
-          });
-          await refreshDetail();
-        }),
+      onReorderLessons: handleReorderLessons,
       onAddSubLesson: (lesson) => void openSubLessonDialog(lesson),
       onEditSubLesson: (lesson, subLesson) =>
         void openSubLessonDialog(lesson, subLesson),
@@ -266,15 +241,7 @@ export function InstructorCourseEditorPage({
           toast.success(tToast("itemDeleted"));
           await refreshDetail();
         }),
-      onReorderSubLessons: (lesson, subLessons) =>
-        void withEphemeralLease("LESSON", lesson.stable_id, async () => {
-          await reorderCourseSubLessonsService(courseId, lesson.id, {
-            ordered_stable_ids: subLessons.map(
-              (subLesson) => subLesson.stable_id,
-            ),
-          });
-          await refreshDetail();
-        }),
+      onReorderSubLessons: handleReorderSubLessons,
     },
   } satisfies ComponentProps<typeof CourseOutlineTab>;
 

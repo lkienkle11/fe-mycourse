@@ -108,7 +108,7 @@ src/screen/
 │   │   └── not-found-page.tsx  # NotFoundPage — localized 404 (image, i18n copy, CTA)
 │   └── taxonomy/
 │       ├── index.ts
-│       └── taxonomy-list-page.tsx  # TaxonomyListPage (client CRUD list, shared by admin + sysadmin)
+│       └── taxonomy-list-page.tsx  # TaxonomyListPage (client CRUD list, formDialogKey remount, shared by admin + sysadmin)
 ├── admin/
 │   ├── index.ts
 │   └── page.tsx            # AdminDashboardPage (placeholder)
@@ -150,17 +150,19 @@ src/components/
 │                           #   AdvancedPromoSection, TrendingCoursesSection,
 │                           #   UpcomingWebinarsSection, PromoSection, CourseCard
 ├── features/
-│   ├── course/             # CourseStatusBadge, CourseDeltaEditor, CourseBasicInfoTab,
+│   ├── course/             # CourseStatusBadge, CourseBasicInfoTab,
 │   │                       # CourseOutlineTab, CourseCollaboratorsTab, Course*Dialog helpers
 │   │                       # grouped tab prop objects (`state` / `data|taxonomyRows` / `actions`)
-│   ├── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
+│   ├── taxonomy/           # TaxonomyFormDialog (mount init from initialData; persistedSlug slug preview), tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
 │   ├── instructor/         # InstructorProfileViewDialog, ConfirmAddInstructorDialog, InstructorApprovalActions,
 │   │                       # InstructorListPagination, instructor action/footer helpers,
 │   │                       # shared instructor course editor route adapter for app pages
 │   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
-│                           #   SortableList, SortableTreeEditor, SearchBar (stub), ImageFileField
+│                           #   DeltaEditor, DeltaViewer, SortableList,
+│                           #   SortableTreeEditor,
+│                           #   SearchBar (stub), ImageFileField
 ├── providers/
 │   └── app-providers.tsx   # SWRConfig + EventsStreamProvider
 │                           # + MeSwrSync (useSyncMeFromAuth)
@@ -253,8 +255,9 @@ src/hooks/
 │   ├── use-auth-confirm-tab-sync.ts
 │   └── use-auth-logout-tab-sync.ts
 ├── course/
-│   ├── index.ts            # Barrel: use-course-editor-state
-│   └── use-course-editor-state.ts  # Course editor state, lease handling, translated toasts
+│   ├── index.ts            # Barrel: use-course-editor-state, use-course-outline-reorder
+│   ├── use-course-editor-state.ts  # Course editor state, lease handling, translated toasts
+│   └── use-course-outline-reorder.ts  # Optimistic outline reorder (SWR patch + reorder API)
 ├── events/
 │   ├── index.ts            # Barrel: useStreamEvent + per-channel hooks
 │   ├── use-stream-event.ts # subscribeStreamEvents + optional source/type filter
@@ -266,6 +269,9 @@ src/hooks/
 │   ├── index.ts            # useCustomLanguage, useSyncLanguageFromLocale
 │   ├── use-custom-language.ts
 │   └── use-sync-language-from-locale.ts
+├── quill/
+│   ├── index.ts            # useDeltaEditorMediaHandlers
+│   └── use-delta-editor-media-handlers.ts
 └── use-mobile.ts           # useIsMobile
 ```
 
@@ -388,6 +394,10 @@ src/lib/
 ├── navigation/
 │   ├── home.ts             # navigateToHome(router) helper for header/dashboard brand touchpoints
 │   └── routes.ts           # route builders + shared href constants (public/private/resource)
+├── quill/
+│   ├── index.ts            # Barrel: DeltaEditor Quill blots, toolbar, paste/drop handlers
+│   ├── delta-editor-quill.ts
+│   └── delta-editor.css    # Quill font picker + embed remove styles (imported by delta-editor-quill.ts)
 ├── utils/                  # Shared helper functions — import as @/lib/utils
 │   ├── index.ts            # Barrel: client-safe utils only (cn, url, cookie, …)
 │   ├── cn.ts               # cn() — clsx + tailwind-merge class combiner
@@ -396,7 +406,7 @@ src/lib/
 │   ├── api.ts              # isApiSuccess() — ApiResponse success type guard
 │   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractAxiosApiError
 │   ├── validation-message.ts # resolveValidationMessage, toastValidationError, firstValidationMessageKey
-│   ├── course-delta.ts       # Quill Delta parse/stringify/text/image helpers for course text lessons
+│   ├── course-delta.ts       # Quill Delta parse/stringify/text helpers + countDeltaNonWhitespace
 │   ├── course.ts             # createCourseBasicInfoState, createCourseSubLessonFormState, rootOutlineStableId, selectedIdsToMap
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
 │   ├── media.ts            # isImageFilename, isExecutableExtension, validateMediaUploadBatch, isImageMedia, …

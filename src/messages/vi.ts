@@ -531,13 +531,28 @@ const messages = {
   course: {
     validation: {
       title: "Vui lòng nhập tiêu đề khóa học.",
+      titleMin: "Tiêu đề cần ít nhất 5 ký tự (không tính khoảng trắng).",
       titleMax: "Tiêu đề tối đa 255 ký tự.",
+      shortDescriptionMin:
+        "Mô tả ngắn cần ít nhất 20 ký tự (không tính khoảng trắng).",
       shortDescriptionMax: "Mô tả ngắn tối đa 500 ký tự.",
+      aboutCourseMin:
+        "Giới thiệu khóa học cần ít nhất 30 ký tự (không tính khoảng trắng).",
+      thumbnailRequired: "Vui lòng chọn ảnh thumbnail.",
       thumbnailFileId: "Mã thumbnail không hợp lệ.",
       previewVideoFileId: "Mã video xem trước không hợp lệ.",
+      courseLevelId: "Vui lòng chọn cấp độ khóa học.",
+      courseTopicId: "Vui lòng chọn chủ đề khóa học.",
+      tagIdsMin: "Chọn ít nhất một thẻ.",
+      skillIdsMin: "Chọn ít nhất một kỹ năng.",
+      outcomeIdRequired: "Vui lòng chọn kết quả học tập.",
       expectedRowVersion: "Hãy tải lại khóa học và thử lại.",
       sectionTitle: "Vui lòng nhập tiêu đề phần.",
+      sectionDescriptionMin:
+        "Mô tả phần cần ít nhất 20 ký tự (không tính khoảng trắng).",
       lessonTitle: "Vui lòng nhập tiêu đề bài học.",
+      lessonSummaryMin:
+        "Tóm tắt bài học cần ít nhất 20 ký tự (không tính khoảng trắng).",
       subLessonTitle: "Vui lòng nhập tiêu đề mục bài học.",
       subLessonKind: "Vui lòng chọn loại mục bài học.",
       quizPrompt: "Vui lòng nhập câu hỏi quiz.",
@@ -606,7 +621,7 @@ const messages = {
       deleteDialog: {
         title: "Xóa khóa học",
         description:
-          "Chỉ chủ sở hữu khóa học mới có thể thực hiện thao tác này và nó sẽ xóa course root.",
+          "Chỉ chủ sở hữu khóa học mới có thể thực hiện thao tác này và không thể hoàn tác sau khi xóa.",
         deleting: "Đang xóa...",
       },
       toast: {
@@ -667,6 +682,8 @@ const messages = {
           "Chỉnh sửa metadata của bản nháp sẽ được đưa lên sau khi được duyệt.",
         emptyDraft: "Hãy chuẩn bị bản nháp để chỉnh sửa thông tin khóa học.",
         titleLabel: "Tiêu đề",
+        titleReadOnlyHint:
+          "Tiêu đề khóa học được đặt khi tạo khóa học và không thể đổi tại đây.",
         shortDescriptionLabel: "Mô tả ngắn",
         aboutLabel: "Giới thiệu khóa học",
         thumbnailLabel: "Ảnh thumbnail",
@@ -686,6 +703,8 @@ const messages = {
         tagsTitle: "Thẻ",
         skillsTitle: "Kỹ năng",
         outcomesTitle: "Kết quả học tập",
+        selectOutcome: "Chọn kết quả học tập",
+        noOutcome: "Chưa chọn",
         save: "Lưu thông tin cơ bản",
         saving: "Đang lưu...",
       },
@@ -752,17 +771,15 @@ const messages = {
       },
       deltaEditor: {
         lessonTextLabel: "Nội dung bài học",
-        lessonTextPlaceholder:
-          "Nhập nội dung bài học tại đây. Trình chỉnh sửa này lưu Quill Delta JSON.",
-        linkEmbedLabel: "Chèn liên kết",
-        linkPlaceholder: "https://example.com/resource",
-        addLink: "Thêm liên kết",
-        invalidLink: "Hãy nhập liên kết http:// hoặc https:// hợp lệ.",
-        imagesLabel: "Hình ảnh",
-        insertImage: "Chèn ảnh",
-        embeddedImagesLabel: "Ảnh đã chèn",
-        deltaJsonLabel: "Delta JSON",
-        deltaPlaceholder: '{"ops":[{"insert":"Nội dung bài học"}]}',
+        placeholder:
+          "Viết nội dung tại đây. Dùng thanh công cụ, dán (Ctrl+V) hoặc kéo thả ảnh/video để chèn media.",
+        placeholderTextOnly: "Viết nội dung tại đây.",
+        dropHint: "Thả ảnh hoặc video vào đây",
+        uploading: "Đang tải media lên…",
+        uploadNoPermission: "Bạn không có quyền tải media lên.",
+        unsupportedFile: "Chỉ hỗ trợ ảnh hoặc video (không phải tài liệu).",
+        removeEmbed: "Xóa media",
+        embedHandlerMissing: "Chưa cấu hình tải media cho trình soạn thảo này.",
       },
       toast: {
         lockExpired:
@@ -780,12 +797,15 @@ const messages = {
         sectionSaved: "Đã lưu section.",
         sectionSaveError: "Không thể lưu section.",
         sectionDeleted: "Đã xóa section.",
+        sectionsReordered: "Đã lưu thứ tự section.",
         lessonSaved: "Đã lưu lesson.",
         lessonSaveError: "Không thể lưu lesson.",
         lessonDeleted: "Đã xóa lesson.",
+        lessonsReordered: "Đã lưu thứ tự lesson.",
         itemSaved: "Đã lưu lesson item.",
         itemSaveError: "Không thể lưu lesson item.",
         itemDeleted: "Đã xóa lesson item.",
+        itemsReordered: "Đã lưu thứ tự lesson item.",
         collaboratorAdded: "Đã thêm cộng tác viên.",
         collaboratorAddError: "Không thể thêm cộng tác viên.",
         collaboratorRemoved: "Đã gỡ cộng tác viên.",

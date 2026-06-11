@@ -21,7 +21,7 @@ export function HeaderDashboard({ leading, trailing }: HeaderDashboardProps) {
   const handleNavigateHome = () => navigateToHome(router);
 
   return (
-    <header className="relative z-20 flex h-16 w-full shrink-0 items-center justify-between border-b border-border bg-background px-4 max-md:px-2">
+    <header className="relative md:sticky top-0 z-20 flex h-16 w-full shrink-0 items-center justify-between border-b border-border bg-background px-4 max-md:px-2">
       <div className="flex min-w-0 items-center gap-2">
         {leading}
         <button

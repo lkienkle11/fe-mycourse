@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 import type { Dispatch, SetStateAction } from "react";
-import { CourseDeltaEditor } from "@/components/features/course/course-delta-editor";
 import { MediaCollectionDialog } from "@/components/features/media";
+import { DeltaEditor } from "@/components/shared/delta-editor";
 import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,11 +21,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useDeltaEditorMediaHandlers } from "@/hooks";
 import { newV7 } from "@/lib/utils/uuid";
 import type {
   CourseBasicInfoForm,
   CourseLessonDialogState,
   CourseLessonFormState,
+  CourseOutlineItemKind,
   CourseSectionDialogState,
   CourseSectionFormState,
   CourseSubLessonDialogState,
@@ -33,6 +35,80 @@ import type {
   CourseSubLessonKind,
 } from "@/types/course";
 import type { MediaFile } from "@/types/media";
+
+type CourseOutlineItemDialogProps = {
+  open: boolean;
+  kind: CourseOutlineItemKind;
+  mode: "create" | "edit";
+  title: string;
+  body: string;
+  onTitleChange: (title: string) => void;
+  onBodyChange: (body: string) => void;
+  onClose: () => void;
+  onSave: () => void;
+};
+
+function CourseOutlineItemDialog({
+  open,
+  kind,
+  mode,
+  title,
+  body,
+  onTitleChange,
+  onBodyChange,
+  onClose,
+  onSave,
+}: CourseOutlineItemDialogProps) {
+  const tCommon = useTranslations("course.common");
+  const t = useTranslations("course.editor.dialogs");
+  const titleKey =
+    kind === "section"
+      ? mode === "create"
+        ? "sectionCreateTitle"
+        : "sectionEditTitle"
+      : mode === "create"
+        ? "lessonCreateTitle"
+        : "lessonEditTitle";
+  const bodyLabel =
+    kind === "section" ? t("descriptionLabel") : t("summaryLabel");
+  const fieldId = `${kind}-${mode}-title`;
+
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent className="scrollbar-app max-h-[90vh] max-w-3xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{t(titleKey)}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <RequiredLabel htmlFor={fieldId}>{t("titleLabel")}</RequiredLabel>
+            <Input
+              id={fieldId}
+              value={title}
+              onChange={(event) => onTitleChange(event.target.value)}
+            />
+          </div>
+          <DeltaEditor
+            value={body}
+            label={bodyLabel}
+            required
+            allowMediaEmbed={false}
+            surfaceClassName="max-h-[320px]"
+            onChange={onBodyChange}
+          />
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            {tCommon("cancel")}
+          </Button>
+          <Button type="button" onClick={onSave}>
+            {tCommon("save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 type CourseSectionDialogProps = {
   sectionDialog: CourseSectionDialogState | null;
@@ -49,64 +125,22 @@ export function CourseSectionDialog({
   onClose,
   onSave,
 }: CourseSectionDialogProps) {
-  const tCommon = useTranslations("course.common");
-  const t = useTranslations("course.editor.dialogs");
   return (
-    <Dialog
+    <CourseOutlineItemDialog
       open={Boolean(sectionDialog)}
-      onOpenChange={(open) => !open && onClose()}
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {sectionDialog?.mode === "create"
-              ? t("sectionCreateTitle")
-              : t("sectionEditTitle")}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <RequiredLabel htmlFor="section-title">
-              {t("titleLabel")}
-            </RequiredLabel>
-            <Input
-              id="section-title"
-              value={sectionForm.title}
-              onChange={(event) =>
-                setSectionForm((prev) => ({
-                  ...prev,
-                  title: event.target.value,
-                }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <RequiredLabel htmlFor="section-description" required={false}>
-              {t("descriptionLabel")}
-            </RequiredLabel>
-            <Textarea
-              id="section-description"
-              rows={4}
-              value={sectionForm.description}
-              onChange={(event) =>
-                setSectionForm((prev) => ({
-                  ...prev,
-                  description: event.target.value,
-                }))
-              }
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            {tCommon("cancel")}
-          </Button>
-          <Button type="button" onClick={onSave}>
-            {tCommon("save")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      kind="section"
+      mode={sectionDialog?.mode ?? "create"}
+      title={sectionForm.title}
+      body={sectionForm.description}
+      onTitleChange={(nextTitle) =>
+        setSectionForm((prev) => ({ ...prev, title: nextTitle }))
+      }
+      onBodyChange={(nextBody) =>
+        setSectionForm((prev) => ({ ...prev, description: nextBody }))
+      }
+      onClose={onClose}
+      onSave={onSave}
+    />
   );
 }
 
@@ -125,64 +159,22 @@ export function CourseLessonDialog({
   onClose,
   onSave,
 }: CourseLessonDialogProps) {
-  const tCommon = useTranslations("course.common");
-  const t = useTranslations("course.editor.dialogs");
   return (
-    <Dialog
+    <CourseOutlineItemDialog
       open={Boolean(lessonDialog)}
-      onOpenChange={(open) => !open && onClose()}
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {lessonDialog?.mode === "create"
-              ? t("lessonCreateTitle")
-              : t("lessonEditTitle")}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <RequiredLabel htmlFor="lesson-title">
-              {t("titleLabel")}
-            </RequiredLabel>
-            <Input
-              id="lesson-title"
-              value={lessonForm.title}
-              onChange={(event) =>
-                setLessonForm((prev) => ({
-                  ...prev,
-                  title: event.target.value,
-                }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <RequiredLabel htmlFor="lesson-summary" required={false}>
-              {t("summaryLabel")}
-            </RequiredLabel>
-            <Textarea
-              id="lesson-summary"
-              rows={4}
-              value={lessonForm.summary}
-              onChange={(event) =>
-                setLessonForm((prev) => ({
-                  ...prev,
-                  summary: event.target.value,
-                }))
-              }
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            {tCommon("cancel")}
-          </Button>
-          <Button type="button" onClick={onSave}>
-            {tCommon("save")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      kind="lesson"
+      mode={lessonDialog?.mode ?? "create"}
+      title={lessonForm.title}
+      body={lessonForm.summary}
+      onTitleChange={(nextTitle) =>
+        setLessonForm((prev) => ({ ...prev, title: nextTitle }))
+      }
+      onBodyChange={(nextBody) =>
+        setLessonForm((prev) => ({ ...prev, summary: nextBody }))
+      }
+      onClose={onClose}
+      onSave={onSave}
+    />
   );
 }
 
@@ -206,6 +198,7 @@ export function CourseSubLessonDialog({
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.editor.dialogs");
   const tBasic = useTranslations("course.editor.basicInfo");
+  const { onObjectEmbedded, onDelete } = useDeltaEditorMediaHandlers();
   return (
     <Dialog
       open={Boolean(subLessonDialog)}
@@ -244,6 +237,7 @@ export function CourseSubLessonDialog({
                   setSubLessonForm((prev) => ({
                     ...prev,
                     kind: value as CourseSubLessonKind,
+                    is_preview: value === "QUIZ" ? false : prev.is_preview,
                   }))
                 }
               >
@@ -265,18 +259,20 @@ export function CourseSubLessonDialog({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={subLessonForm.is_preview}
-              onCheckedChange={(checked) =>
-                setSubLessonForm((prev) => ({
-                  ...prev,
-                  is_preview: checked === true,
-                }))
-              }
-            />
-            <span className="text-sm">{t("previewCheckbox")}</span>
-          </div>
+          {subLessonForm.kind === "VIDEO" || subLessonForm.kind === "TEXT" ? (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={subLessonForm.is_preview}
+                onCheckedChange={(checked) =>
+                  setSubLessonForm((prev) => ({
+                    ...prev,
+                    is_preview: checked === true,
+                  }))
+                }
+              />
+              <span className="text-sm">{t("previewCheckbox")}</span>
+            </div>
+          ) : null}
 
           {subLessonForm.kind === "VIDEO" ? (
             <div className="space-y-2">
@@ -325,8 +321,10 @@ export function CourseSubLessonDialog({
           ) : null}
 
           {subLessonForm.kind === "TEXT" ? (
-            <CourseDeltaEditor
+            <DeltaEditor
               value={subLessonForm.text_delta}
+              onObjectEmbedded={onObjectEmbedded}
+              onDelete={onDelete}
               onChange={(value) =>
                 setSubLessonForm((prev) => ({ ...prev, text_delta: value }))
               }

@@ -451,9 +451,17 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `TaxonomyListPage`, `TaxonomyListPageProps`
 - **Type**: React component (client)
 - **Path**: `src/screen/common/taxonomy/taxonomy-list-page.tsx`
-- **Purpose**: Shared admin CRUD list for all five taxonomy resources (DataTable toolbar, form dialog, delete confirm, pagination).
+- **Purpose**: Shared admin CRUD list for all five taxonomy resources (DataTable toolbar, form dialog with `formDialogKey` remount on create/edit, delete confirm, pagination).
 - **Scope**: Imported directly by app routes under `src/app/[locale]/{admin,sysadmin}/taxonomy/*/page.tsx`.
 - **Dependencies**: `useTaxonomyList`, `TaxonomyFormDialog`, `DataTable`, `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`.
+
+### Asset: `TaxonomyFormDialog`
+- **Name**: `TaxonomyFormDialog`, `TaxonomyFormDialogProps`
+- **Type**: React component (client)
+- **Path**: `src/components/features/taxonomy/taxonomy-form-dialog.tsx`
+- **Purpose**: Create/update taxonomy rows per `resourceKey`; initializes `useForm` and local tree/description/image state from `initialData` on mount (no `useEffect` sync). Slug preview is read-only via `resolveTaxonomySlugPreview(name, persistedSlug)`.
+- **Scope**: Opened from `TaxonomyListPage`; parent must remount with `key` when controlled `open` toggles from table actions.
+- **Dependencies**: `getTaxonomyResourceConfig`, `getTaxonomyTreeFromEntity`, `toTaxonomyTreeWritePayload`, `slugifyName`, `MediaCollectionDialog`, taxonomy Zod schemas.
 
 ### Asset: Media filename / extension helpers
 - **Name**: `isImageFilename`, `getMediaTabExtensions`, `isExecutableExtension`
@@ -468,8 +476,24 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: React component
 - **Path**: `src/components/shared/sortable-list.tsx`
 - **Purpose**: Vertical drag-and-drop reorder via `@dnd-kit` (first DnD usage in the repo).
-- **Scope**: Taxonomy description editor, tree editor; any list with stable string `id`.
+- **Scope**: Course outline tab (sections/lessons/sub-lessons), taxonomy description editor, tree editor; any list with stable string `id`.
 - **Dependencies**: `@dnd-kit/core`, `@dnd-kit/sortable`.
+
+### Asset: course outline reorder helpers
+- **Name**: `assignSequentialOrderIndex`, `withOutlineSections`, `replaceSectionLessons`, `replaceLessonSubLessons`, `mergeReorderedLessons`, `mergeReorderedSubLessons`
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/course.ts`
+- **Purpose**: Patch `CourseDetail.outline` for optimistic drag reorder and merge reorder API responses without duplicating nested outline shape logic.
+- **Scope**: `useCourseOutlineReorder` hook; pairs with `reorderCourseSectionsService` / `reorderCourseLessonsService` / `reorderCourseSubLessonsService`.
+- **Dependencies**: `CourseDetail` / outline node types from `src/types/course.ts`.
+
+### Asset: useCourseOutlineReorder
+- **Name**: `useCourseOutlineReorder`
+- **Type**: React hook
+- **Path**: `src/hooks/course/use-course-outline-reorder.ts`
+- **Purpose**: Optimistic section/lesson/sub-lesson reorder for the course editor: immediate SWR cache update, ephemeral lease, reorder API, success toast + API merge, failure toast + snapshot rollback.
+- **Scope**: Composed by `useCourseEditorState`; wired from `InstructorCourseEditorPage` outline tab actions.
+- **Dependencies**: `course.ts` outline helpers, reorder API callers, `toastApiError`, lease acquire/release from `useCourseLeaseState`.
 
 ### Asset: DagreTreeDialog
 - **Name**: `DagreTreeDialog`, `DagreTreeDialogProps`, `DagreTreeDialogLabels`
@@ -480,18 +504,43 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `Dialog`, `ToggleGroup`, `useNodesState` / `useEdgesState`, `treeToFlowElements` in `src/lib/utils/dagre-tree.ts`. CSS: `@xyflow/react/dist/style.css` in the dialog file.
 
 ### Asset: course delta helpers
-- **Name**: `createEmptyDelta`, `createEmptyDeltaString`, `parseDelta`, `stringifyDelta`, `extractPlainText`, `extractImages`, `extractImageOps`, `normalizeSafeLink`
+- **Name**: `createEmptyDelta`, `createEmptyDeltaString`, `parseDelta`, `coerceToDelta`, `stringifyDelta`, `extractPlainText`, `extractDeltaPreviewText`, `stripMediaEmbedsFromDelta`, `extractMediaEmbedsFromDelta`, `diffRemovedMediaEmbeds`, `countDeltaNonWhitespace`
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course-delta.ts`
-- **Purpose**: Shared Quill-Delta parsing/stringify/text/image extraction plus safe link normalization for course text lessons.
-- **Scope**: `CourseDeltaEditor`, course editor state, and any future Delta import/export logic.
-- **Dependencies**: none.
+- **Purpose**: Shared Quill-Delta parsing/stringify/text extraction, legacy plain-text coercion (`coerceToDelta`), outline preview text (`extractDeltaPreviewText`), media-embed diffing, and non-whitespace counting for course validation (matches BE `CountDeltaNonWhitespace` fallback for non-JSON values).
+- **Scope**: `DeltaEditor`, course editor state, outline tab previews, and Zod schemas.
+- **Dependencies**: `media.ts` (`MediaEmbedKind` for `DeltaMediaEmbed`).
+
+### Asset: DeltaEditor / DeltaViewer
+- **Name**: `DeltaEditor`, `DeltaEditorProps`, `DeltaViewer`, `DeltaViewerProps`, `registerQuillFormats`, `QUILL_FONT_WHITELIST`
+- **Type**: React components + Quill setup helper
+- **Path**: `src/components/shared/delta-editor.tsx` (exported from `src/components/shared/index.ts`); Quill helpers + styles in `src/lib/quill/` (`delta-editor-quill.ts`, `delta-editor.css`)
+- **Purpose**: Word-like WYSIWYG editing and read-only rendering for Quill Delta JSON. Toolbar includes font family (Roboto, Gilroy, Geist Mono, serif, monospace), text formatting, and inline image/video via toolbar + `MediaCollectionDialog`, paste (Ctrl+V), or drag-and-drop. Embeds show an **×** remove control; removal (button or Backspace/Delete) calls `onDelete`. Paste/drop does **not** call upload APIs inside the shared component — parent supplies `onObjectEmbedded`. Default surface `max-h-[500px]` (overridable); content scrolls inside `.ql-container` (`scrollbar-app`).
+- **Props**: `allowMediaEmbed` (default `true`) — when `false`, hides image/video toolbar actions, blocks paste/drop media, strips embed ops from saved Delta (text formatting only), and uses short i18n placeholder (`placeholderTextOnly`: “Write content here.” / “Viết nội dung tại đây.”) instead of the media paste/drop hint. `surfaceClassName` — Quill bordered surface (default `max-h-[500px]` via `DELTA_EDITOR_DEFAULT_MAX_HEIGHT_CLASS`; override e.g. `max-h-[600px]`). `DeltaViewer` uses `className` on the same surface. `onObjectEmbedded(file, kind) => Promise<MediaFile | null>` — parent uploads and returns the file (required for paste/drop). `onDelete(embed: DeltaMediaEmbedRef)` — parent deletes the backing media file (e.g. `deleteMediaFile(object_key)`).
+- **Scope**: Course basic info (`about_course`), section `description` / lesson `summary` (text-only via `allowMediaEmbed={false}`), TEXT sub-lessons (`text_delta`), and any future Delta-backed rich text.
+- **Dependencies**: `quill` (+ snow CSS via `@/lib/quill`), `course-delta.ts`, `media.ts` (`classifyMediaEmbedFile`, `DeltaMediaEmbedRef`, paste/drop helpers), `MediaCollectionDialog`. Upload/delete wiring: `useDeltaEditorMediaHandlers` in `src/hooks/quill/`.
+
+### Asset: Quill editor helpers
+- **Name**: `registerQuillFormats`, `QUILL_FONT_WHITELIST`, `bindQuillMediaPasteAndDrop`, `bindQuillMediaEmbedRemove`, …
+- **Type**: Quill setup utilities (no React)
+- **Path**: `src/lib/quill/delta-editor-quill.ts`, `delta-editor.css` (barrel: `src/lib/quill/index.ts`)
+- **Purpose**: Custom image/video blots, toolbar config, paste/drop interception, embed × remove click handler, media embed registry helpers; side-effect imports Quill snow + project Quill CSS.
+- **Scope**: `DeltaEditor`, `DeltaViewer`.
+- **Dependencies**: `quill`, `course-delta.ts`, `media.ts`.
+
+### Asset: useDeltaEditorMediaHandlers
+- **Name**: `useDeltaEditorMediaHandlers`
+- **Type**: React hook
+- **Path**: `src/hooks/quill/use-delta-editor-media-handlers.ts` (barrels: `src/hooks/quill/index.ts`, `src/hooks/index.ts`)
+- **Purpose**: Shared `onObjectEmbedded` / `onDelete` callbacks for `DeltaEditor` — validates upload batch, calls `uploadMediaFiles` / `deleteMediaFile`, permission gates (`MediaFileCreate` / `MediaFileDelete`), and `toastApiError`.
+- **Scope**: `course-editor-basic-tab.tsx`, `course-editor-dialogs.tsx` (TEXT sub-lesson with media embeds only).
+- **Dependencies**: `api/callers/media`, `media.ts` (`validateMediaUploadBatch`), `useSatisfiesPermissions`.
 
 ### Asset: course editor utils
 
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course.ts`
-- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories, payload mapping, taxonomy id `Set` mapping, and `rootOutlineStableId(courseId)` (deterministic RFC-4122 UUID for `OUTLINE_ROOT` lease acquire/reorder; matches `course_edit_leases.resource_stable_id` UUID column).
+- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, and `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE).
 - **Scope**: `use-course-editor-state`, `editor-page.tsx`.
 - **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`).
 

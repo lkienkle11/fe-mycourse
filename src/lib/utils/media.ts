@@ -126,3 +126,66 @@ export function validateMediaUploadBatch(
   }
   return null;
 }
+
+export type MediaEmbedKind = "image" | "video";
+
+/** Media embed removed from DeltaEditor — enough to call `deleteMediaFile(object_key)`. */
+export type DeltaMediaEmbedRef = Pick<
+  MediaFile,
+  "id" | "object_key" | "url"
+> & {
+  kind: MediaEmbedKind;
+};
+
+/** Maps a local file to an editor embed kind (image/video), or null if unsupported. */
+export function classifyMediaEmbedFile(file: File): MediaEmbedKind | null {
+  const mime = file.type.toLowerCase();
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+
+  const lower = file.name.toLowerCase();
+  if (MEDIA_IMAGE_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
+    return "image";
+  }
+  if (MEDIA_VIDEO_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
+    return "video";
+  }
+  return null;
+}
+
+function mediaEmbedFileKey(file: File): string {
+  return `${file.name}:${file.size}:${file.lastModified}`;
+}
+
+/** Collects unique image/video files from a paste or drop DataTransfer. */
+export function getMediaEmbedFilesFromDataTransfer(
+  dataTransfer: DataTransfer,
+): File[] {
+  const seen = new Set<string>();
+  const files: File[] = [];
+
+  const push = (file: File | null) => {
+    if (!file || !classifyMediaEmbedFile(file)) return;
+    const key = mediaEmbedFileKey(file);
+    if (seen.has(key)) return;
+    seen.add(key);
+    files.push(file);
+  };
+
+  for (const file of dataTransfer.files) {
+    push(file);
+  }
+  for (const item of dataTransfer.items) {
+    if (item.kind === "file") {
+      push(item.getAsFile());
+    }
+  }
+
+  return files;
+}
+
+export function hasMediaEmbedFilesInDataTransfer(
+  dataTransfer: DataTransfer,
+): boolean {
+  return getMediaEmbedFilesFromDataTransfer(dataTransfer).length > 0;
+}
