@@ -27,21 +27,22 @@ export type { DeltaOp, DeltaShape } from "./course-delta";
 export {
   createEmptyDelta,
   createEmptyDeltaString,
-  extractImageOps,
-  extractImages,
   extractPlainText,
-  normalizeSafeLink,
   parseDelta,
   stringifyDelta,
+  stripMediaEmbedsFromDelta,
 } from "./course-delta";
 export { filterDashboardItems } from "./dashboard";
 export { formatUnixDateTime } from "./date";
 export { formatBytes } from "./format-bytes";
 export { apiListQueryToRecord } from "./list-query";
 export {
+  classifyMediaEmbedFile,
   classifyMediaTab,
   formatMediaDate,
   getMediaDeleteKey,
+  getMediaEmbedFilesFromDataTransfer,
+  hasMediaEmbedFilesInDataTransfer,
   isImageMedia,
   mediaTabToCategory,
   parseMediaSortOption,

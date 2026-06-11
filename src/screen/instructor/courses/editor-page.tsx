@@ -112,7 +112,8 @@ export function InstructorCourseEditorPage({
     setBasicInfo,
     tagSelection,
     skillSelection,
-    outcomeSelection,
+    outcomeId,
+    setOutcomeId,
     withEphemeralLease,
     handlePrepareDraft,
     handleSaveBasicInfo,
@@ -187,7 +188,7 @@ export function InstructorCourseEditorPage({
       setBasicInfo,
       tagSelection,
       skillSelection,
-      outcomeSelection,
+      outcomeId,
     },
     taxonomyRows: {
       levelRows,
@@ -199,6 +200,7 @@ export function InstructorCourseEditorPage({
     actions: {
       isSavingBasicInfo,
       onToggleSelection: toggleSelection,
+      setOutcomeId,
       onSave: () => void handleSaveBasicInfo(),
       onOpenThumbnailDialog: () => setThumbnailDialogOpen(true),
       onOpenPreviewDialog: () => setPreviewDialogOpen(true),

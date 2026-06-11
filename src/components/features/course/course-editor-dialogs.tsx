@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 import type { Dispatch, SetStateAction } from "react";
-import { CourseDeltaEditor } from "@/components/features/course/course-delta-editor";
 import { MediaCollectionDialog } from "@/components/features/media";
+import { DeltaEditor } from "@/components/shared/delta-editor";
 import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -81,7 +81,7 @@ export function CourseSectionDialog({
             />
           </div>
           <div className="space-y-2">
-            <RequiredLabel htmlFor="section-description" required={false}>
+            <RequiredLabel htmlFor="section-description">
               {t("descriptionLabel")}
             </RequiredLabel>
             <Textarea
@@ -157,7 +157,7 @@ export function CourseLessonDialog({
             />
           </div>
           <div className="space-y-2">
-            <RequiredLabel htmlFor="lesson-summary" required={false}>
+            <RequiredLabel htmlFor="lesson-summary">
               {t("summaryLabel")}
             </RequiredLabel>
             <Textarea
@@ -244,6 +244,7 @@ export function CourseSubLessonDialog({
                   setSubLessonForm((prev) => ({
                     ...prev,
                     kind: value as CourseSubLessonKind,
+                    is_preview: value === "QUIZ" ? false : prev.is_preview,
                   }))
                 }
               >
@@ -265,18 +266,20 @@ export function CourseSubLessonDialog({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={subLessonForm.is_preview}
-              onCheckedChange={(checked) =>
-                setSubLessonForm((prev) => ({
-                  ...prev,
-                  is_preview: checked === true,
-                }))
-              }
-            />
-            <span className="text-sm">{t("previewCheckbox")}</span>
-          </div>
+          {subLessonForm.kind === "VIDEO" || subLessonForm.kind === "TEXT" ? (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={subLessonForm.is_preview}
+                onCheckedChange={(checked) =>
+                  setSubLessonForm((prev) => ({
+                    ...prev,
+                    is_preview: checked === true,
+                  }))
+                }
+              />
+              <span className="text-sm">{t("previewCheckbox")}</span>
+            </div>
+          ) : null}
 
           {subLessonForm.kind === "VIDEO" ? (
             <div className="space-y-2">
@@ -325,7 +328,7 @@ export function CourseSubLessonDialog({
           ) : null}
 
           {subLessonForm.kind === "TEXT" ? (
-            <CourseDeltaEditor
+            <DeltaEditor
               value={subLessonForm.text_delta}
               onChange={(value) =>
                 setSubLessonForm((prev) => ({ ...prev, text_delta: value }))

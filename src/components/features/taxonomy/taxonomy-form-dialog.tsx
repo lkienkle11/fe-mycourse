@@ -2,8 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useCallback, useMemo, useState } from "react";
+import { type FieldPath, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 import {
@@ -111,9 +111,7 @@ export function TaxonomyFormDialog({
     } as FormValues,
   });
 
-  useEffect(() => {
-    if (!open) return;
-
+  const syncFormState = useCallback(() => {
     if (resourceKey === "outcomes") {
       const row = initialData as CourseOutcome | undefined;
       form.reset({
@@ -144,11 +142,33 @@ export function TaxonomyFormDialog({
         ? ((initialData as CourseTopic | undefined)?.image_file_url ?? "")
         : "",
     );
-  }, [open, initialData, resourceKey, form]);
+  }, [form, initialData, resourceKey]);
 
-  const imageFileId = form.watch("image_file_id" as keyof FormValues) as
-    | string
-    | undefined;
+  const handleOpenChange = (next: boolean) => {
+    if (next) {
+      syncFormState();
+    }
+    onOpenChange(next);
+  };
+
+  const imageFileId = useWatch({
+    control: form.control,
+    name: "image_file_id" as FieldPath<FormValues>,
+    defaultValue: "",
+  }) as string | undefined;
+
+  const nameValue =
+    (useWatch({
+      control: form.control,
+      name: "name" as FieldPath<FormValues>,
+      defaultValue: "",
+    }) as string) ?? "";
+
+  const statusValue = useWatch({
+    control: form.control,
+    name: "status",
+    defaultValue: "ACTIVE" as TaxonomyStatus,
+  }) as TaxonomyStatus;
 
   const resourceLabel = t(`resources.${resourceKey}.singular`);
   const dialogTitle =
@@ -228,12 +248,11 @@ export function TaxonomyFormDialog({
     }
   };
 
-  const nameValue = (form.watch("name" as keyof FormValues) as string) ?? "";
   const derivedSlug = slugifyName(nameValue);
   const imagePreviewURL = imagePreview?.url || initialImageFileURL;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="scrollbar-app max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
@@ -299,7 +318,7 @@ export function TaxonomyFormDialog({
           <div className="space-y-2">
             <RequiredLabel required={false}>{tForm("status")}</RequiredLabel>
             <Select
-              value={form.watch("status") as TaxonomyStatus}
+              value={statusValue}
               onValueChange={(value) =>
                 form.setValue("status", value as TaxonomyStatus)
               }

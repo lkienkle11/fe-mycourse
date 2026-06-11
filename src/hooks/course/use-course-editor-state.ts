@@ -30,6 +30,7 @@ import {
 } from "@/lib/utils/course";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import {
+  courseBasicInfoSchema,
   courseCollaboratorSchema,
   courseLessonSchema,
   courseQuizOptionSchema,
@@ -81,10 +82,7 @@ function useCourseBasicInfoState(activeVersion?: CourseVersion) {
     () => selectedIdsToMap(basicInfo.skill_ids),
     [basicInfo.skill_ids],
   );
-  const outcomeSelection = useMemo(
-    () => selectedIdsToMap(basicInfo.outcome_ids),
-    [basicInfo.outcome_ids],
-  );
+  const outcomeId = basicInfo.outcome_ids[0] ?? "";
 
   const toggleSelection = (key: CourseSelectionKey, value: string) => {
     setBasicInfo((prev) => {
@@ -98,12 +96,20 @@ function useCourseBasicInfoState(activeVersion?: CourseVersion) {
     });
   };
 
+  const setOutcomeId = (value: string) => {
+    setBasicInfo((prev) => ({
+      ...prev,
+      outcome_ids: value ? [value] : [],
+    }));
+  };
+
   return {
     basicInfo,
     setBasicInfo,
     tagSelection,
     skillSelection,
-    outcomeSelection,
+    outcomeId,
+    setOutcomeId,
     toggleSelection,
   };
 }
@@ -272,7 +278,8 @@ export function useCourseEditorState({
     setBasicInfo,
     tagSelection,
     skillSelection,
-    outcomeSelection,
+    outcomeId,
+    setOutcomeId,
     toggleSelection,
   } = useCourseBasicInfoState(activeVersion);
   const {
@@ -331,6 +338,11 @@ export function useCourseEditorState({
       toast.error(t("draftRequiredInfo"));
       return;
     }
+    const parsed = courseBasicInfoSchema.safeParse(basicInfo);
+    if (!parsed.success) {
+      toastValidationError(tValidation, parsed.error.issues, "title");
+      return;
+    }
     setIsSavingBasicInfo(true);
     try {
       await updateCourseBasicInfoService(
@@ -372,7 +384,8 @@ export function useCourseEditorState({
       return;
     }
     const parsed = courseSectionSchema.safeParse({
-      title: sectionForm.title.trim(),
+      title: sectionForm.title,
+      description: sectionForm.description,
     });
     if (!parsed.success) {
       toastValidationError(tValidation, parsed.error.issues, "sectionTitle");
@@ -429,7 +442,8 @@ export function useCourseEditorState({
       return;
     }
     const parsed = courseLessonSchema.safeParse({
-      title: lessonForm.title.trim(),
+      title: lessonForm.title,
+      summary: lessonForm.summary,
     });
     if (!parsed.success) {
       toastValidationError(tValidation, parsed.error.issues, "lessonTitle");
@@ -510,12 +524,14 @@ export function useCourseEditorState({
         return;
       }
     }
+    const isPreview =
+      subLessonForm.kind === "QUIZ" ? false : subLessonForm.is_preview;
     const payload = {
       lesson_id: subLessonForm.lesson_id,
       expected_row_version: subLessonForm.expected_row_version,
       title: subLessonForm.title,
       kind: subLessonForm.kind,
-      is_preview: subLessonForm.is_preview,
+      is_preview: isPreview,
       video:
         subLessonForm.kind === "VIDEO" && subLessonForm.video_file_id
           ? {
@@ -634,7 +650,8 @@ export function useCourseEditorState({
     setBasicInfo,
     tagSelection,
     skillSelection,
-    outcomeSelection,
+    outcomeId,
+    setOutcomeId,
     withEphemeralLease,
     handlePrepareDraft,
     handleSaveBasicInfo,

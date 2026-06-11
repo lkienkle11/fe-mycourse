@@ -23,7 +23,7 @@ export function createCourseBasicInfoState(
   return {
     title: activeVersion?.title ?? "",
     short_description: activeVersion?.short_description ?? "",
-    about_course: activeVersion?.about_course ?? "",
+    about_course: activeVersion?.about_course ?? createEmptyDeltaString(),
     thumbnail_file_id: activeVersion?.thumbnail_file_id ?? "",
     thumbnail_url: activeVersion?.thumbnail_url ?? "",
     preview_video_file_id: activeVersion?.preview_video_file_id ?? "",
@@ -40,19 +40,22 @@ export function createCourseBasicInfoState(
 export function toUpdateCourseBasicInfoPayload(
   basicInfo: CourseBasicInfoForm,
 ): UpdateCourseBasicInfoPayload {
-  return {
+  const payload: UpdateCourseBasicInfoPayload = {
     expected_row_version: basicInfo.expected_row_version,
-    title: basicInfo.title,
-    short_description: basicInfo.short_description,
-    about_course: basicInfo.about_course,
-    thumbnail_file_id: basicInfo.thumbnail_file_id || undefined,
-    preview_video_file_id: basicInfo.preview_video_file_id || undefined,
-    course_level_id: basicInfo.course_level_id || undefined,
-    course_topic_id: basicInfo.course_topic_id || undefined,
+    title: basicInfo.title.trim(),
+    short_description: basicInfo.short_description.trim(),
+    about_course: basicInfo.about_course.trim(),
+    thumbnail_file_id: basicInfo.thumbnail_file_id,
+    course_level_id: basicInfo.course_level_id,
+    course_topic_id: basicInfo.course_topic_id,
     tag_ids: basicInfo.tag_ids,
     skill_ids: basicInfo.skill_ids,
     outcome_ids: basicInfo.outcome_ids,
   };
+  if (basicInfo.preview_video_file_id) {
+    payload.preview_video_file_id = basicInfo.preview_video_file_id;
+  }
+  return payload;
 }
 
 function createEmptyQuizOption() {

@@ -1,19 +1,13 @@
+export type DeltaInsert = string | { image: string } | { video: string };
+
 export type DeltaOp = {
-  insert: string | { image: string };
+  insert: DeltaInsert;
   attributes?: Record<string, unknown>;
 };
 
 export type DeltaShape = {
   ops: DeltaOp[];
 };
-
-function hasImageInsert(
-  op: DeltaOp,
-): op is DeltaOp & { insert: { image: string } } {
-  return (
-    typeof op.insert === "object" && op.insert != null && "image" in op.insert
-  );
-}
 
 export function createEmptyDelta(): DeltaShape {
   return { ops: [{ insert: "" }] };
@@ -35,7 +29,7 @@ export function parseDelta(value: string): DeltaShape {
 }
 
 export function stringifyDelta(delta: DeltaShape): string {
-  return JSON.stringify(delta, null, 2);
+  return JSON.stringify(delta);
 }
 
 export function extractPlainText(delta: DeltaShape): string {
@@ -44,34 +38,41 @@ export function extractPlainText(delta: DeltaShape): string {
     .join("");
 }
 
-export function extractImages(delta: DeltaShape): string[] {
-  return delta.ops
-    .map((op) => (hasImageInsert(op) ? op.insert.image : ""))
-    .filter(Boolean);
+function isMediaEmbedOp(op: DeltaOp): boolean {
+  return (
+    typeof op.insert === "object" &&
+    op.insert != null &&
+    ("image" in op.insert || "video" in op.insert)
+  );
 }
 
-export function extractImageOps(delta: DeltaShape): DeltaOp[] {
-  return delta.ops.filter(hasImageInsert);
+/** Remove image/video embed ops (text inserts only). */
+export function stripMediaEmbedsFromDelta(delta: DeltaShape): DeltaShape {
+  const ops = delta.ops.filter((op) => !isMediaEmbedOp(op));
+  return ops.length > 0 ? { ops } : createEmptyDelta();
 }
 
-export function normalizeSafeLink(value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  const candidate = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmed)
-    ? trimmed
-    : `https://${trimmed}`;
-
-  try {
-    const url = new URL(candidate);
-    if (url.protocol !== "http:" && url.protocol !== "https:") {
-      return null;
+/** Count visible characters ignoring whitespace (matches BE text rules). */
+export function countNonWhitespace(value: string): number {
+  let count = 0;
+  for (const char of value.trim()) {
+    if (!/\s/u.test(char)) {
+      count += 1;
     }
+  }
+  return count;
+}
 
-    return url.toString();
+/** Count non-whitespace text inside Quill Delta JSON string inserts. */
+export function countDeltaNonWhitespace(raw: string): number {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return 0;
+  }
+  try {
+    const delta = parseDelta(trimmed);
+    return countNonWhitespace(extractPlainText(delta));
   } catch {
-    return null;
+    return countNonWhitespace(trimmed);
   }
 }

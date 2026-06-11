@@ -1,10 +1,19 @@
 import { z } from "zod";
+import {
+  countDeltaNonWhitespace,
+  countNonWhitespace,
+} from "@/lib/utils/course-delta";
 
 const titleField = z
   .string({ message: "validation.title" })
   .trim()
-  .min(1, { message: "validation.title" })
+  .refine((value) => countNonWhitespace(value) >= 5, {
+    message: "validation.titleMin",
+  })
   .max(255, { message: "validation.titleMax" });
+
+const requiredUuid = (message: string) =>
+  z.string().trim().min(1, { message }).uuid({ message });
 
 export const courseCreateSchema = z.object({
   title: titleField,
@@ -14,29 +23,34 @@ export const courseBasicInfoSchema = z.object({
   title: titleField,
   short_description: z
     .string()
+    .trim()
+    .refine((value) => countNonWhitespace(value) >= 20, {
+      message: "validation.shortDescriptionMin",
+    })
     .max(500, { message: "validation.shortDescriptionMax" }),
-  about_course: z.string(),
-  thumbnail_file_id: z.union([
-    z.literal(""),
-    z.string().uuid({ message: "validation.thumbnailFileId" }),
-  ]),
+  about_course: z
+    .string()
+    .refine((value) => countDeltaNonWhitespace(value) >= 30, {
+      message: "validation.aboutCourseMin",
+    }),
+  thumbnail_file_id: requiredUuid("validation.thumbnailRequired"),
   thumbnail_url: z.string(),
   preview_video_file_id: z.union([
     z.literal(""),
     z.string().uuid({ message: "validation.previewVideoFileId" }),
   ]),
   preview_video_url: z.string(),
-  course_level_id: z.union([
-    z.literal(""),
-    z.string().uuid({ message: "validation.courseLevelId" }),
-  ]),
-  course_topic_id: z.union([
-    z.literal(""),
-    z.string().uuid({ message: "validation.courseTopicId" }),
-  ]),
-  tag_ids: z.array(z.string().uuid()),
-  skill_ids: z.array(z.string().uuid()),
-  outcome_ids: z.array(z.string().uuid()),
+  course_level_id: requiredUuid("validation.courseLevelId"),
+  course_topic_id: requiredUuid("validation.courseTopicId"),
+  tag_ids: z
+    .array(z.string().uuid())
+    .min(1, { message: "validation.tagIdsMin" }),
+  skill_ids: z
+    .array(z.string().uuid())
+    .min(1, { message: "validation.skillIdsMin" }),
+  outcome_ids: z
+    .array(z.string().uuid())
+    .length(1, { message: "validation.outcomeIdRequired" }),
   expected_row_version: z
     .number({ message: "validation.expectedRowVersion" })
     .int({ message: "validation.expectedRowVersion" })
@@ -45,10 +59,22 @@ export const courseBasicInfoSchema = z.object({
 
 export const courseSectionSchema = z.object({
   title: titleField,
+  description: z
+    .string()
+    .trim()
+    .refine((value) => countNonWhitespace(value) >= 20, {
+      message: "validation.sectionDescriptionMin",
+    }),
 });
 
 export const courseLessonSchema = z.object({
   title: titleField,
+  summary: z
+    .string()
+    .trim()
+    .refine((value) => countNonWhitespace(value) >= 20, {
+      message: "validation.lessonSummaryMin",
+    }),
 });
 
 export const courseSubLessonSchema = z.object({

@@ -1,0 +1,59 @@
+/**
+ * Quill font picker + inline font classes for DeltaEditor / DeltaViewer.
+ * Uses app font CSS variables from layout (Roboto, Gilroy, Geist Mono).
+ */
+
+.ql-font-roboto {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.ql-font-gilroy {
+  font-family: var(--font-gilroy), ui-sans-serif, system-ui, sans-serif;
+}
+
+.ql-font-geist-mono {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.ql-font-serif {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+.ql-font-monospace {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="roboto"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="roboto"]::before {
+  content: "Roboto";
+  font-family: var(--font-sans), sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="gilroy"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="gilroy"]::before {
+  content: "Gilroy";
+  font-family: var(--font-gilroy), sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="geist-mono"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="geist-mono"]::before {
+  content: "Geist Mono";
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="serif"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="serif"]::before {
+  content: "Serif";
+  font-family: ui-serif, Georgia, serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="monospace"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="monospace"]::before {
+  content: "Monospace";
+  font-family: ui-monospace, monospace;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label:not([data-value])::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item:not([data-value])::before {
+  content: "Font";
+}

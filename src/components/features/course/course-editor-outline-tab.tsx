@@ -259,7 +259,8 @@ function SectionOutlineCard({
                             </div>
                             <div className="text-sm text-muted-foreground">
                               {tCommon(`subLessonKind.${entry.subLesson.kind}`)}
-                              {entry.subLesson.is_preview
+                              {entry.subLesson.is_preview &&
+                              entry.subLesson.kind !== "QUIZ"
                                 ? ` · ${tCommon("preview")}`
                                 : ""}
                             </div>

@@ -531,13 +531,28 @@ const messages = {
   course: {
     validation: {
       title: "Vui lòng nhập tiêu đề khóa học.",
+      titleMin: "Tiêu đề cần ít nhất 5 ký tự (không tính khoảng trắng).",
       titleMax: "Tiêu đề tối đa 255 ký tự.",
+      shortDescriptionMin:
+        "Mô tả ngắn cần ít nhất 20 ký tự (không tính khoảng trắng).",
       shortDescriptionMax: "Mô tả ngắn tối đa 500 ký tự.",
+      aboutCourseMin:
+        "Giới thiệu khóa học cần ít nhất 30 ký tự (không tính khoảng trắng).",
+      thumbnailRequired: "Vui lòng chọn ảnh thumbnail.",
       thumbnailFileId: "Mã thumbnail không hợp lệ.",
       previewVideoFileId: "Mã video xem trước không hợp lệ.",
+      courseLevelId: "Vui lòng chọn cấp độ khóa học.",
+      courseTopicId: "Vui lòng chọn chủ đề khóa học.",
+      tagIdsMin: "Chọn ít nhất một thẻ.",
+      skillIdsMin: "Chọn ít nhất một kỹ năng.",
+      outcomeIdRequired: "Vui lòng chọn kết quả học tập.",
       expectedRowVersion: "Hãy tải lại khóa học và thử lại.",
       sectionTitle: "Vui lòng nhập tiêu đề phần.",
+      sectionDescriptionMin:
+        "Mô tả phần cần ít nhất 20 ký tự (không tính khoảng trắng).",
       lessonTitle: "Vui lòng nhập tiêu đề bài học.",
+      lessonSummaryMin:
+        "Tóm tắt bài học cần ít nhất 20 ký tự (không tính khoảng trắng).",
       subLessonTitle: "Vui lòng nhập tiêu đề mục bài học.",
       subLessonKind: "Vui lòng chọn loại mục bài học.",
       quizPrompt: "Vui lòng nhập câu hỏi quiz.",
@@ -688,6 +703,8 @@ const messages = {
         tagsTitle: "Thẻ",
         skillsTitle: "Kỹ năng",
         outcomesTitle: "Kết quả học tập",
+        selectOutcome: "Chọn kết quả học tập",
+        noOutcome: "Chưa chọn",
         save: "Lưu thông tin cơ bản",
         saving: "Đang lưu...",
       },
@@ -754,17 +771,12 @@ const messages = {
       },
       deltaEditor: {
         lessonTextLabel: "Nội dung bài học",
-        lessonTextPlaceholder:
-          "Nhập nội dung bài học tại đây. Trình chỉnh sửa này lưu Quill Delta JSON.",
-        linkEmbedLabel: "Chèn liên kết",
-        linkPlaceholder: "https://example.com/resource",
-        addLink: "Thêm liên kết",
-        invalidLink: "Hãy nhập liên kết http:// hoặc https:// hợp lệ.",
-        imagesLabel: "Hình ảnh",
-        insertImage: "Chèn ảnh",
-        embeddedImagesLabel: "Ảnh đã chèn",
-        deltaJsonLabel: "Delta JSON",
-        deltaPlaceholder: '{"ops":[{"insert":"Nội dung bài học"}]}',
+        placeholder:
+          "Viết nội dung tại đây. Dùng thanh công cụ, dán (Ctrl+V) hoặc kéo thả ảnh/video để chèn media.",
+        dropHint: "Thả ảnh hoặc video vào đây",
+        uploading: "Đang tải media lên…",
+        uploadNoPermission: "Bạn không có quyền tải media lên.",
+        unsupportedFile: "Chỉ hỗ trợ ảnh hoặc video (không phải tài liệu).",
       },
       toast: {
         lockExpired:

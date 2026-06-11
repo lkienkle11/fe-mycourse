@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import type { Dispatch, SetStateAction } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { DeltaEditor } from "@/components/shared/delta-editor";
 import { FieldError } from "@/components/shared/field-error";
 import { ImageFileField } from "@/components/shared/image-file-field";
 import { RequiredLabel } from "@/components/shared/required-label";
@@ -23,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TabsContent } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import {
   resolveValidationMessage,
   toastValidationError,
@@ -47,7 +47,7 @@ type CourseBasicInfoTabProps = {
     setBasicInfo: Dispatch<SetStateAction<CourseBasicInfoForm>>;
     tagSelection: Set<string>;
     skillSelection: Set<string>;
-    outcomeSelection: Set<string>;
+    outcomeId: string;
   };
   taxonomyRows: {
     levelRows: SlugStatusTaxonomy[];
@@ -58,6 +58,7 @@ type CourseBasicInfoTabProps = {
   };
   actions: {
     onToggleSelection: (key: CourseSelectionKey, value: string) => void;
+    setOutcomeId: (value: string) => void;
     isSavingBasicInfo: boolean;
     onSave: () => void;
     onOpenThumbnailDialog: () => void;
@@ -67,16 +68,11 @@ type CourseBasicInfoTabProps = {
 
 export function CourseBasicInfoTab({
   editable,
-  state: {
-    basicInfo,
-    setBasicInfo,
-    tagSelection,
-    skillSelection,
-    outcomeSelection,
-  },
+  state: { basicInfo, setBasicInfo, tagSelection, skillSelection, outcomeId },
   taxonomyRows: { levelRows, topicRows, tagRows, skillRows, outcomeRows },
   actions: {
     onToggleSelection,
+    setOutcomeId,
     isSavingBasicInfo,
     onSave,
     onOpenThumbnailDialog,
@@ -152,10 +148,7 @@ export function CourseBasicInfoTab({
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <div className="space-y-2">
-                    <RequiredLabel
-                      htmlFor="course-basic-short-description"
-                      required={false}
-                    >
+                    <RequiredLabel htmlFor="course-basic-short-description">
                       {t("shortDescriptionLabel")}
                     </RequiredLabel>
                     <Input
@@ -185,23 +178,27 @@ export function CourseBasicInfoTab({
             <Controller
               name="about_course"
               control={form.control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <div className="space-y-2">
-                  <RequiredLabel htmlFor="course-basic-about" required={false}>
-                    {t("aboutLabel")}
-                  </RequiredLabel>
-                  <Textarea
-                    {...field}
-                    id="course-basic-about"
-                    rows={6}
+                  <DeltaEditor
+                    value={field.value}
+                    label={t("aboutLabel")}
+                    required
                     disabled={!editable}
-                    onChange={(event) => {
-                      field.onChange(event);
+                    onChange={(value) => {
+                      field.onChange(value);
                       setBasicInfo((prev) => ({
                         ...prev,
-                        about_course: event.target.value,
+                        about_course: value,
                       }));
                     }}
+                  />
+                  <FieldError
+                    error={fieldState.error}
+                    message={resolveValidationMessage(
+                      tCourse as unknown as (key: string) => string,
+                      fieldState.error?.message,
+                    )}
                   />
                 </div>
               )}
@@ -215,6 +212,7 @@ export function CourseBasicInfoTab({
                 clearLabel={t("clear")}
                 previewAlt={t("thumbnailAlt")}
                 noImageSelectedLabel={t("noImage")}
+                required
                 imageFileId={basicInfo.thumbnail_file_id}
                 previewUrl={basicInfo.thumbnail_url}
                 onBrowse={onOpenThumbnailDialog}
@@ -260,6 +258,7 @@ export function CourseBasicInfoTab({
                   <Button
                     type="button"
                     variant="secondary"
+                    disabled={!editable}
                     onClick={onOpenPreviewDialog}
                   >
                     {t("browseVideos")}
@@ -268,6 +267,7 @@ export function CourseBasicInfoTab({
                     <Button
                       type="button"
                       variant="outline"
+                      disabled={!editable}
                       onClick={() =>
                         setBasicInfo((prev) => ({
                           ...prev,
@@ -287,11 +287,9 @@ export function CourseBasicInfoTab({
               <Controller
                 name="course_level_id"
                 control={form.control}
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <div className="space-y-2">
-                    <RequiredLabel required={false}>
-                      {t("courseLevelLabel")}
-                    </RequiredLabel>
+                    <RequiredLabel>{t("courseLevelLabel")}</RequiredLabel>
                     <Select
                       value={field.value || "none"}
                       disabled={!editable}
@@ -316,6 +314,13 @@ export function CourseBasicInfoTab({
                         ))}
                       </SelectContent>
                     </Select>
+                    <FieldError
+                      error={fieldState.error}
+                      message={resolveValidationMessage(
+                        tCourse as unknown as (key: string) => string,
+                        fieldState.error?.message,
+                      )}
+                    />
                   </div>
                 )}
               />
@@ -323,11 +328,9 @@ export function CourseBasicInfoTab({
               <Controller
                 name="course_topic_id"
                 control={form.control}
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <div className="space-y-2">
-                    <RequiredLabel required={false}>
-                      {t("courseTopicLabel")}
-                    </RequiredLabel>
+                    <RequiredLabel>{t("courseTopicLabel")}</RequiredLabel>
                     <Select
                       value={field.value || "none"}
                       disabled={!editable}
@@ -352,6 +355,13 @@ export function CourseBasicInfoTab({
                         ))}
                       </SelectContent>
                     </Select>
+                    <FieldError
+                      error={fieldState.error}
+                      message={resolveValidationMessage(
+                        tCourse as unknown as (key: string) => string,
+                        fieldState.error?.message,
+                      )}
+                    />
                   </div>
                 )}
               />
@@ -360,6 +370,7 @@ export function CourseBasicInfoTab({
             <div className="grid gap-4 xl:grid-cols-3">
               <SelectionPanel
                 title={t("tagsTitle")}
+                required
                 rows={tagRows.map((row) => ({ id: row.id, label: row.name }))}
                 selected={tagSelection}
                 disabled={!editable}
@@ -367,6 +378,7 @@ export function CourseBasicInfoTab({
               />
               <SelectionPanel
                 title={t("skillsTitle")}
+                required
                 rows={skillRows.map((row) => ({
                   id: row.id,
                   label: row.name,
@@ -375,16 +387,28 @@ export function CourseBasicInfoTab({
                 disabled={!editable}
                 onToggle={(id) => onToggleSelection("skill_ids", id)}
               />
-              <SelectionPanel
-                title={t("outcomesTitle")}
-                rows={outcomeRows.map((row) => ({
-                  id: row.id,
-                  label: row.short_description,
-                }))}
-                selected={outcomeSelection}
-                disabled={!editable}
-                onToggle={(id) => onToggleSelection("outcome_ids", id)}
-              />
+              <div className="min-w-0 space-y-2 rounded-md border p-3">
+                <RequiredLabel>{t("outcomesTitle")}</RequiredLabel>
+                <Select
+                  value={outcomeId || "none"}
+                  disabled={!editable}
+                  onValueChange={(value) => {
+                    setOutcomeId(value === "none" ? "" : value);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("selectOutcome")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t("noOutcome")}</SelectItem>
+                    {outcomeRows.map((row) => (
+                      <SelectItem key={row.id} value={String(row.id)}>
+                        {row.short_description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="flex justify-end">
@@ -401,12 +425,14 @@ export function CourseBasicInfoTab({
 
 function SelectionPanel({
   title,
+  required,
   rows,
   selected,
   disabled,
   onToggle,
 }: {
   title: string;
+  required?: boolean;
   rows: Array<{ id: string; label: string }>;
   selected: Set<string>;
   disabled: boolean;
@@ -414,7 +440,11 @@ function SelectionPanel({
 }) {
   return (
     <div className="min-w-0 space-y-2 rounded-md border p-3">
-      <div className="font-medium">{title}</div>
+      {required ? (
+        <RequiredLabel>{title}</RequiredLabel>
+      ) : (
+        <div className="font-medium">{title}</div>
+      )}
       <div className="scrollbar-app max-h-60 space-y-2 overflow-y-auto pr-1">
         {rows.map((row) => (
           <div key={row.id} className="flex items-start gap-2 text-sm">

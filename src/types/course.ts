@@ -185,16 +185,16 @@ export type CreateCoursePayload = {
 
 export type UpdateCourseBasicInfoPayload = {
   expected_row_version: number;
-  title?: string;
-  short_description?: string;
-  about_course?: string;
-  thumbnail_file_id?: string;
+  title: string;
+  short_description: string;
+  about_course: string;
+  thumbnail_file_id: string;
   preview_video_file_id?: string;
-  course_level_id?: string;
-  course_topic_id?: string;
-  tag_ids?: string[];
-  skill_ids?: string[];
-  outcome_ids?: string[];
+  course_level_id: string;
+  course_topic_id: string;
+  tag_ids: string[];
+  skill_ids: string[];
+  outcome_ids: string[];
 };
 
 export type UpsertCourseSectionPayload = {
