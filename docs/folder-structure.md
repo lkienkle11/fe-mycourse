@@ -108,7 +108,7 @@ src/screen/
 │   │   └── not-found-page.tsx  # NotFoundPage — localized 404 (image, i18n copy, CTA)
 │   └── taxonomy/
 │       ├── index.ts
-│       └── taxonomy-list-page.tsx  # TaxonomyListPage (client CRUD list, shared by admin + sysadmin)
+│       └── taxonomy-list-page.tsx  # TaxonomyListPage (client CRUD list, formDialogKey remount, shared by admin + sysadmin)
 ├── admin/
 │   ├── index.ts
 │   └── page.tsx            # AdminDashboardPage (placeholder)
@@ -153,7 +153,7 @@ src/components/
 │   ├── course/             # CourseStatusBadge, CourseBasicInfoTab,
 │   │                       # CourseOutlineTab, CourseCollaboratorsTab, Course*Dialog helpers
 │   │                       # grouped tab prop objects (`state` / `data|taxonomyRows` / `actions`)
-│   ├── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
+│   ├── taxonomy/           # TaxonomyFormDialog (mount init from initialData; persistedSlug slug preview), tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
 │   ├── instructor/         # InstructorProfileViewDialog, ConfirmAddInstructorDialog, InstructorApprovalActions,
 │   │                       # InstructorListPagination, instructor action/footer helpers,
 │   │                       # shared instructor course editor route adapter for app pages

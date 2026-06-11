@@ -204,7 +204,7 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | `DagreTreeDialog` | `dagre-tree-dialog.tsx` | Dagre layout popup (`@xyflow/react` + `dagre`); `nodesDraggable` prop (default `true`); node labels **name only**; vertical/horizontal toggle; CSS in this file. Taxonomy passes `nodesDraggable={false}`. |
 | `SearchBar` | `search-bar.tsx` | Global search input (UI stub). `visibility`: `"header"` (default, hidden below `md`) or `"sidebar"` (full-width flex for mobile sheet). |
 
-`src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog` (shared Zod schemas, `RequiredLabel`, `FieldError`, `toastApiError`), `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns; `child_render` column opens tree view).
+`src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog` (shared Zod schemas, `RequiredLabel`, `FieldError`, `toastApiError`; `useForm`/`useState` initialized from `initialData` on mount — parent remounts via `key`; slug preview uses `slugifyName(name)` with API `slug` fallback until `useWatch` reports name), `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns; `child_render` column opens tree view).
 
 `src/components/features/instructor/` — instructor management + instructor route glue: `InstructorProfileViewDialog`, `ConfirmAddInstructorDialog` (`RequiredLabel`, email Zod), `InstructorApprovalActions` (`RequiredLabel` on reason, `toastApiError`), `renderInstructorCourseEditorRoute` (shared renderer reused by the 5 course editor route pages). See `docs/instructor-admin.md`.
 

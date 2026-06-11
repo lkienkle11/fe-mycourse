@@ -451,9 +451,17 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `TaxonomyListPage`, `TaxonomyListPageProps`
 - **Type**: React component (client)
 - **Path**: `src/screen/common/taxonomy/taxonomy-list-page.tsx`
-- **Purpose**: Shared admin CRUD list for all five taxonomy resources (DataTable toolbar, form dialog, delete confirm, pagination).
+- **Purpose**: Shared admin CRUD list for all five taxonomy resources (DataTable toolbar, form dialog with `formDialogKey` remount on create/edit, delete confirm, pagination).
 - **Scope**: Imported directly by app routes under `src/app/[locale]/{admin,sysadmin}/taxonomy/*/page.tsx`.
 - **Dependencies**: `useTaxonomyList`, `TaxonomyFormDialog`, `DataTable`, `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`.
+
+### Asset: `TaxonomyFormDialog`
+- **Name**: `TaxonomyFormDialog`, `TaxonomyFormDialogProps`
+- **Type**: React component (client)
+- **Path**: `src/components/features/taxonomy/taxonomy-form-dialog.tsx`
+- **Purpose**: Create/update taxonomy rows per `resourceKey`; initializes `useForm` and local tree/description/image state from `initialData` on mount (no `useEffect` sync). Slug preview is read-only via `resolveTaxonomySlugPreview(name, persistedSlug)`.
+- **Scope**: Opened from `TaxonomyListPage`; parent must remount with `key` when controlled `open` toggles from table actions.
+- **Dependencies**: `getTaxonomyResourceConfig`, `getTaxonomyTreeFromEntity`, `toTaxonomyTreeWritePayload`, `slugifyName`, `MediaCollectionDialog`, taxonomy Zod schemas.
 
 ### Asset: Media filename / extension helpers
 - **Name**: `isImageFilename`, `getMediaTabExtensions`, `isExecutableExtension`

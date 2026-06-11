@@ -42,7 +42,7 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}` | Active | Same shared screens |
 | `/{locale}/sysadmin` | Active | Sysadmin dashboard shell (`SysadminDashboardPage` placeholder) |
 | `/{locale}/sysadmin/courses` | Active | `CourseReviewPage` — sysadmin draft review queue |
-| `/{locale}/admin/taxonomy/{resource}` | Active | Shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags) |
+| `/{locale}/admin/taxonomy/{resource}` | Active | Shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags); create/edit increments `formDialogKey` and passes `key={formDialogKey}` to `TaxonomyFormDialog` so edit hydrates from list row `initialData` |
 | `/{locale}/sysadmin/taxonomy/{resource}` | Active | Same shared `TaxonomyListPage` (sysadmin menu + permissions) |
 | `/{locale}/*` (unknown path) | Active | Custom 404 — `NotFoundPage` via `not-found.tsx` chain |
 
