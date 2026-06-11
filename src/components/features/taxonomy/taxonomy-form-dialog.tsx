@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
 import { type FieldPath, useForm, useWatch } from "react-hook-form";
@@ -60,6 +61,23 @@ import type {
 } from "@/types/taxonomy";
 import { TaxonomyDescriptionEditor } from "./taxonomy-description-editor";
 import { TaxonomyTreeEditor } from "./taxonomy-tree-editor";
+
+const TAXONOMY_TREE_INDENT_PX = 12;
+const TAXONOMY_DIALOG_BASE_MIN_PX = 672;
+
+function getTaxonomyTreeMaxDepth(nodes: TaxonomyTreeNode[]): number {
+  let max = 0;
+  const visit = (items: TaxonomyTreeNode[], depth: number) => {
+    for (const node of items) {
+      max = Math.max(max, depth);
+      if (node.children?.length) {
+        visit(node.children, depth + 1);
+      }
+    }
+  };
+  visit(nodes, 0);
+  return max;
+}
 
 export type TaxonomyFormDialogProps = {
   resourceKey: TaxonomyResourceKey;
@@ -251,12 +269,38 @@ export function TaxonomyFormDialog({
   const derivedSlug = slugifyName(nameValue);
   const imagePreviewURL = imagePreview?.url || initialImageFileURL;
 
+  const treeMaxDepth = useMemo(
+    () => (config.hasTree ? getTaxonomyTreeMaxDepth(tree) : 0),
+    [config.hasTree, tree],
+  );
+
+  const dialogMinWidth =
+    config.hasTree && treeMaxDepth > 0
+      ? `min(100%, ${TAXONOMY_DIALOG_BASE_MIN_PX + treeMaxDepth * TAXONOMY_TREE_INDENT_PX}px)`
+      : undefined;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="scrollbar-app max-h-[90vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
-        </DialogHeader>
+      <DialogContent
+        className="scrollbar-app max-h-[90vh] w-full max-w-[calc(100%-2rem)] overflow-x-auto overflow-y-auto sm:w-max sm:min-w-2xl sm:max-w-[calc(100%-2rem)]"
+        style={dialogMinWidth ? { minWidth: dialogMinWidth } : undefined}
+        showCloseButton={false}
+      >
+        <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-2 flex items-start justify-between gap-2 bg-popover px-4 pt-4 pb-2">
+          <DialogHeader className="min-w-0 flex-1 gap-2">
+            <DialogTitle>{dialogTitle}</DialogTitle>
+          </DialogHeader>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0"
+            onClick={() => onOpenChange(false)}
+          >
+            <XIcon />
+            <span className="sr-only">Close</span>
+          </Button>
+        </div>
         <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
           {resourceKey === "outcomes" ? (
             <div className="space-y-2">
