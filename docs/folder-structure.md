@@ -160,7 +160,7 @@ src/components/
 │   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
-│                           #   DeltaEditor, DeltaViewer (+ delta-editor.css), SortableList,
+│                           #   DeltaEditor, DeltaViewer, SortableList,
 │                           #   SortableTreeEditor,
 │                           #   SearchBar (stub), ImageFileField
 ├── providers/
@@ -268,6 +268,9 @@ src/hooks/
 │   ├── index.ts            # useCustomLanguage, useSyncLanguageFromLocale
 │   ├── use-custom-language.ts
 │   └── use-sync-language-from-locale.ts
+├── quill/
+│   ├── index.ts            # useDeltaEditorMediaHandlers
+│   └── use-delta-editor-media-handlers.ts
 └── use-mobile.ts           # useIsMobile
 ```
 
@@ -390,6 +393,10 @@ src/lib/
 ├── navigation/
 │   ├── home.ts             # navigateToHome(router) helper for header/dashboard brand touchpoints
 │   └── routes.ts           # route builders + shared href constants (public/private/resource)
+├── quill/
+│   ├── index.ts            # Barrel: DeltaEditor Quill blots, toolbar, paste/drop handlers
+│   ├── delta-editor-quill.ts
+│   └── delta-editor.css    # Quill font picker + embed remove styles (imported by delta-editor-quill.ts)
 ├── utils/                  # Shared helper functions — import as @/lib/utils
 │   ├── index.ts            # Barrel: client-safe utils only (cn, url, cookie, …)
 │   ├── cn.ts               # cn() — clsx + tailwind-merge class combiner

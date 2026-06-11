@@ -82,7 +82,7 @@ Course authoring / review reuses the same dashboard and API patterns:
 
 **My Courses** (`InstructorCoursesPage`): create dialog sends `{ title }` only; slug preview is read-only (`slugifyName(title)`). Title must have ≥5 non-whitespace characters (FE `courseCreateSchema` + BE `nonwhitespace_min=5`).
 
-**Course editor basic info** (`/instructor/courses/:id/info`): title is editable on save; BE recomputes `courses.slug` from the new title. About course uses `DeltaEditor` (Word-like WYSIWYG Quill; Delta JSON with font picker and inline image/video via dialog, paste, or drag-and-drop). Save uses `courseBasicInfoSchema` + `toUpdateCourseBasicInfoPayload` (all required basic-info fields including `title`; preview video optional). Learning outcome is a single required dropdown (exactly one `outcome_ids` entry).
+**Course editor basic info** (`/instructor/courses/:id/info`): title is editable on save; BE recomputes `courses.slug` from the new title. About course uses `DeltaEditor` (Word-like WYSIWYG Quill; Delta JSON with font picker and inline image/video via dialog, paste, or drag-and-drop; embed × remove calls `onDelete` → `deleteMediaFile`; paste/drop upload via `useDeltaEditorMediaHandlers` → `onObjectEmbedded`). Save uses `courseBasicInfoSchema` + `toUpdateCourseBasicInfoPayload` (all required basic-info fields including `title`; preview video optional). Learning outcome is a single required dropdown (exactly one `outcome_ids` entry).
 
 Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalActions`.
 

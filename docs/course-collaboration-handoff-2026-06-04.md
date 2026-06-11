@@ -114,7 +114,7 @@ Added:
 - `src/components/features/course/course-status-badge.tsx`
 - `src/components/shared/delta-editor.tsx`
 
-The text lesson editor stores Quill Delta JSON in a WYSIWYG Quill editor (`DeltaEditor`). Toolbar font picker (Roboto, Gilroy, Geist Mono, serif, monospace). Image/video via `MediaCollectionDialog`, paste (Ctrl+V), or drag-and-drop — uploads to `media_files`, stores URL in Delta (no manual URL fields, no base64).
+The text lesson editor stores Quill Delta JSON in a WYSIWYG Quill editor (`DeltaEditor`). Toolbar font picker (Roboto, Gilroy, Geist Mono, serif, monospace). Image/video via `MediaCollectionDialog`, paste (Ctrl+V), or drag-and-drop — paste/drop upload is delegated to `onObjectEmbedded` (`useDeltaEditorMediaHandlers` → `uploadMediaFiles`); embed removal (× or Backspace/Delete) calls `onDelete` → `deleteMediaFile`. Delta stores URL references only (no base64).
 
 ## Important fixes already completed
 

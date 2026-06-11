@@ -67,8 +67,10 @@ _Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me
   - `src/screen/instructor/courses/editor-page.tsx` — editor shell, status header, route-backed tab trigger list, and `CourseEditorTab` → `Component` panel mapping for active-tab rendering
   - `src/screen/common/course/course-review-page.tsx` — shared admin/sysadmin review queue
   - `src/components/features/course/course-status-badge.tsx`
-  - `src/components/shared/delta-editor.tsx` + `delta-editor.css` — shared WYSIWYG `DeltaEditor` + read-only `DeltaViewer` (Delta JSON; font picker; inline image/video via toolbar, paste, or drag-and-drop)
-  - `src/lib/utils/course-delta.ts` — shared Delta parse/stringify/text helpers for validation and editor state
+  - `src/components/shared/delta-editor.tsx` — shared WYSIWYG `DeltaEditor` + read-only `DeltaViewer` (Delta JSON; font picker; inline image/video via toolbar, paste, or drag-and-drop; embed × remove; `onObjectEmbedded` / `onDelete`)
+  - `src/lib/quill/` — Quill blots, toolbar, paste/drop, embed-remove helpers + `delta-editor.css`
+  - `src/hooks/quill/use-delta-editor-media-handlers.ts` — shared upload/delete callbacks wired into course editor `DeltaEditor` instances
+  - `src/lib/utils/course-delta.ts` — shared Delta parse/stringify/text/embed-diff helpers for validation and editor state
   - `src/lib/utils/course.ts` — course editor tab registry, form state factories, payload mapping, and outline stable-id helpers (used by `use-course-editor-state` and `editor-page`)
   - `src/components/features/course/course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx` — split editor render helpers kept outside `src/screen/**` to satisfy the page-only screen rule; tab components receive grouped `state` / `taxonomyRows|data` / `actions` props instead of long flat prop lists
   - `src/components/features/instructor/instructor-course-editor-route.tsx` — shared route renderer reused by the 5 App Router course editor pages so route glue stays out of `src/app/**`
