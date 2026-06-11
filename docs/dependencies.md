@@ -64,7 +64,7 @@ Envelope validation uses existing **`zod`** (see `src/events/core/normalize-inbo
 
 | Package | Version | Role |
 |---------|---------|------|
-| `quill` | 1.3.7 | WYSIWYG editor core — `DeltaEditor` stores Quill Delta JSON (`about_course`, TEXT sub-lesson `text_delta`); font picker + toolbar/paste/drag-drop image/video via `MediaCollectionDialog`; paste/drop upload delegated to parent `onObjectEmbedded` (`useDeltaEditorMediaHandlers` → `uploadMediaFiles`); embed removal via `onDelete` |
+| `quill` | 1.3.7 | WYSIWYG editor core — `DeltaEditor` stores Quill Delta JSON (`about_course`, section `description`, lesson `summary`, TEXT sub-lesson `text_delta`); font picker + toolbar/paste/drag-drop image/video via `MediaCollectionDialog` when `allowMediaEmbed` (section/lesson dialogs set `false`); paste/drop upload delegated to parent `onObjectEmbedded` (`useDeltaEditorMediaHandlers` → `uploadMediaFiles`); embed removal via `onDelete` |
 | `@types/quill` | 1.3.10 | TypeScript types for Quill (dev) |
 
 > **Note:** We use **Quill directly** with a thin React wrapper (`DeltaEditor` in `src/components/shared/delta-editor.tsx`), not `react-quill`, because `react-quill@2.0.0` peer-depends on React ≤18 and breaks `npm ci` on React 19 without workarounds.

@@ -488,11 +488,11 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `Dialog`, `ToggleGroup`, `useNodesState` / `useEdgesState`, `treeToFlowElements` in `src/lib/utils/dagre-tree.ts`. CSS: `@xyflow/react/dist/style.css` in the dialog file.
 
 ### Asset: course delta helpers
-- **Name**: `createEmptyDelta`, `createEmptyDeltaString`, `parseDelta`, `stringifyDelta`, `extractPlainText`, `stripMediaEmbedsFromDelta`, `extractMediaEmbedsFromDelta`, `diffRemovedMediaEmbeds`, `countDeltaNonWhitespace`
+- **Name**: `createEmptyDelta`, `createEmptyDeltaString`, `parseDelta`, `coerceToDelta`, `stringifyDelta`, `extractPlainText`, `extractDeltaPreviewText`, `stripMediaEmbedsFromDelta`, `extractMediaEmbedsFromDelta`, `diffRemovedMediaEmbeds`, `countDeltaNonWhitespace`
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course-delta.ts`
-- **Purpose**: Shared Quill-Delta parsing/stringify/text extraction, media-embed diffing, and non-whitespace counting for course validation.
-- **Scope**: `DeltaEditor`, course editor state, and Zod schemas.
+- **Purpose**: Shared Quill-Delta parsing/stringify/text extraction, legacy plain-text coercion (`coerceToDelta`), outline preview text (`extractDeltaPreviewText`), media-embed diffing, and non-whitespace counting for course validation (matches BE `CountDeltaNonWhitespace` fallback for non-JSON values).
+- **Scope**: `DeltaEditor`, course editor state, outline tab previews, and Zod schemas.
 - **Dependencies**: `media.ts` (`MediaEmbedKind` for `DeltaMediaEmbed`).
 
 ### Asset: DeltaEditor / DeltaViewer
@@ -500,8 +500,8 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: React components + Quill setup helper
 - **Path**: `src/components/shared/delta-editor.tsx` (exported from `src/components/shared/index.ts`); Quill helpers + styles in `src/lib/quill/` (`delta-editor-quill.ts`, `delta-editor.css`)
 - **Purpose**: Word-like WYSIWYG editing and read-only rendering for Quill Delta JSON. Toolbar includes font family (Roboto, Gilroy, Geist Mono, serif, monospace), text formatting, and inline image/video via toolbar + `MediaCollectionDialog`, paste (Ctrl+V), or drag-and-drop. Embeds show an **×** remove control; removal (button or Backspace/Delete) calls `onDelete`. Paste/drop does **not** call upload APIs inside the shared component — parent supplies `onObjectEmbedded`. Default surface `max-h-[500px]` (overridable); content scrolls inside `.ql-container` (`scrollbar-app`).
-- **Props**: `allowMediaEmbed` (default `true`) — when `false`, hides image/video toolbar actions, blocks paste/drop media, and strips embed ops from saved Delta (text formatting only). `surfaceClassName` — Quill bordered surface (default `max-h-[500px]` via `DELTA_EDITOR_DEFAULT_MAX_HEIGHT_CLASS`; override e.g. `max-h-[600px]`). `DeltaViewer` uses `className` on the same surface. `onObjectEmbedded(file, kind) => Promise<MediaFile | null>` — parent uploads and returns the file (required for paste/drop). `onDelete(embed: DeltaMediaEmbedRef)` — parent deletes the backing media file (e.g. `deleteMediaFile(object_key)`).
-- **Scope**: Course basic info (`about_course`), TEXT sub-lessons (`text_delta`), and any future Delta-backed rich text.
+- **Props**: `allowMediaEmbed` (default `true`) — when `false`, hides image/video toolbar actions, blocks paste/drop media, strips embed ops from saved Delta (text formatting only), and uses short i18n placeholder (`placeholderTextOnly`: “Write content here.” / “Viết nội dung tại đây.”) instead of the media paste/drop hint. `surfaceClassName` — Quill bordered surface (default `max-h-[500px]` via `DELTA_EDITOR_DEFAULT_MAX_HEIGHT_CLASS`; override e.g. `max-h-[600px]`). `DeltaViewer` uses `className` on the same surface. `onObjectEmbedded(file, kind) => Promise<MediaFile | null>` — parent uploads and returns the file (required for paste/drop). `onDelete(embed: DeltaMediaEmbedRef)` — parent deletes the backing media file (e.g. `deleteMediaFile(object_key)`).
+- **Scope**: Course basic info (`about_course`), section `description` / lesson `summary` (text-only via `allowMediaEmbed={false}`), TEXT sub-lessons (`text_delta`), and any future Delta-backed rich text.
 - **Dependencies**: `quill` (+ snow CSS via `@/lib/quill`), `course-delta.ts`, `media.ts` (`classifyMediaEmbedFile`, `DeltaMediaEmbedRef`, paste/drop helpers), `MediaCollectionDialog`. Upload/delete wiring: `useDeltaEditorMediaHandlers` in `src/hooks/quill/`.
 
 ### Asset: Quill editor helpers
@@ -517,7 +517,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: React hook
 - **Path**: `src/hooks/quill/use-delta-editor-media-handlers.ts` (barrels: `src/hooks/quill/index.ts`, `src/hooks/index.ts`)
 - **Purpose**: Shared `onObjectEmbedded` / `onDelete` callbacks for `DeltaEditor` — validates upload batch, calls `uploadMediaFiles` / `deleteMediaFile`, permission gates (`MediaFileCreate` / `MediaFileDelete`), and `toastApiError`.
-- **Scope**: `course-editor-basic-tab.tsx`, `course-editor-dialogs.tsx` (TEXT sub-lesson).
+- **Scope**: `course-editor-basic-tab.tsx`, `course-editor-dialogs.tsx` (TEXT sub-lesson with media embeds only).
 - **Dependencies**: `api/callers/media`, `media.ts` (`validateMediaUploadBatch`), `useSatisfiesPermissions`.
 
 ### Asset: course editor utils
