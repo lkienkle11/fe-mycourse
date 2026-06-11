@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import type { KeyedMutator } from "swr";
 import {
   acquireCourseLeaseService,
   addCourseCollaboratorService,
@@ -20,6 +21,7 @@ import {
   updateCourseSectionService,
   updateCourseSubLessonService,
 } from "@/api/callers/course";
+import { useCourseOutlineReorder } from "@/hooks/course/use-course-outline-reorder";
 import { toastApiError } from "@/lib/utils/api-error";
 import {
   createCourseBasicInfoState,
@@ -41,6 +43,7 @@ import {
 import type {
   CourseBasicInfoForm,
   CourseCollaborator,
+  CourseDetail,
   CourseLease,
   CourseLesson,
   CourseLessonDialogState,
@@ -58,9 +61,10 @@ import type {
 
 type UseCourseEditorStateParams = {
   courseId: string;
+  courseDetail?: CourseDetail;
   activeVersion?: CourseVersion;
   editableVersion?: CourseVersion;
-  mutate: () => Promise<unknown>;
+  mutateDetail: KeyedMutator<CourseDetail>;
 };
 
 function useCourseBasicInfoState(activeVersion?: CourseVersion) {
@@ -266,9 +270,10 @@ function useCourseLeaseState({
 
 export function useCourseEditorState({
   courseId,
+  courseDetail,
   activeVersion,
   editableVersion,
-  mutate,
+  mutateDetail,
 }: UseCourseEditorStateParams) {
   const t = useTranslations("course.editor.toast");
   const tValidation = useTranslations("course.validation");
@@ -318,9 +323,23 @@ export function useCourseEditorState({
       t,
       tErrors,
     });
+  const {
+    handleReorderSections,
+    handleReverseSections,
+    handleReorderLessons,
+    handleReorderSubLessons,
+  } = useCourseOutlineReorder({
+    courseId,
+    courseDetail,
+    mutateDetail,
+    acquireLease,
+    releaseLease,
+    tSuccess: t,
+    tErrors,
+  });
 
   const refreshDetail = async () => {
-    await mutate();
+    await mutateDetail();
   };
 
   const handlePrepareDraft = async () => {
@@ -673,5 +692,9 @@ export function useCourseEditorState({
     handleSubmitReview,
     handleReopenDraft,
     refreshDetail,
+    handleReorderSections,
+    handleReverseSections,
+    handleReorderLessons,
+    handleReorderSubLessons,
   };
 }

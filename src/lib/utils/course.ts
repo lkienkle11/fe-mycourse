@@ -2,7 +2,10 @@ import { createEmptyDeltaString } from "@/lib/utils/course-delta";
 import { newV7 } from "@/lib/utils/uuid";
 import type {
   CourseBasicInfoForm,
+  CourseDetail,
   CourseEditorTab,
+  CourseLesson,
+  CourseSection,
   CourseSubLesson,
   CourseSubLessonFormState,
   CourseVersion,
@@ -96,4 +99,72 @@ export function selectedIdsToMap(ids: string[]) {
 /** OUTLINE_ROOT lease key — course id is already a UUID v7 from BE. */
 export function rootOutlineStableId(courseId: string): string {
   return courseId;
+}
+
+/** Assign `order_index` 0..n-1 to match UI sort order (optimistic outline updates). */
+export function assignSequentialOrderIndex<T extends { order_index: number }>(
+  items: readonly T[],
+): T[] {
+  return items.map((item, index) =>
+    item.order_index === index ? item : { ...item, order_index: index },
+  );
+}
+
+export function withOutlineSections(
+  detail: CourseDetail,
+  sections: CourseSection[],
+): CourseDetail {
+  return { ...detail, outline: sections };
+}
+
+export function replaceSectionLessons(
+  outline: CourseSection[],
+  sectionId: string,
+  lessons: CourseLesson[],
+): CourseSection[] {
+  const orderedLessons = assignSequentialOrderIndex(lessons);
+  return outline.map((section) =>
+    section.id === sectionId
+      ? { ...section, lessons: orderedLessons }
+      : section,
+  );
+}
+
+export function replaceLessonSubLessons(
+  outline: CourseSection[],
+  lessonId: string,
+  subLessons: CourseSubLesson[],
+): CourseSection[] {
+  const orderedSubLessons = assignSequentialOrderIndex(subLessons);
+  return outline.map((section) => ({
+    ...section,
+    lessons: section.lessons.map((lesson) =>
+      lesson.id === lessonId
+        ? { ...lesson, sub_lessons: orderedSubLessons }
+        : lesson,
+    ),
+  }));
+}
+
+export function mergeReorderedLessons(
+  outline: CourseSection[],
+  sectionId: string,
+  lessons: CourseLesson[],
+): CourseSection[] {
+  return outline.map((section) =>
+    section.id === sectionId ? { ...section, lessons } : section,
+  );
+}
+
+export function mergeReorderedSubLessons(
+  outline: CourseSection[],
+  lessonId: string,
+  subLessons: CourseSubLesson[],
+): CourseSection[] {
+  return outline.map((section) => ({
+    ...section,
+    lessons: section.lessons.map((lesson) =>
+      lesson.id === lessonId ? { ...lesson, sub_lessons: subLessons } : lesson,
+    ),
+  }));
 }
