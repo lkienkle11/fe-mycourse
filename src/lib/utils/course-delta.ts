@@ -1,4 +1,11 @@
+import type { MediaEmbedKind } from "./media";
+
 export type DeltaInsert = string | { image: string } | { video: string };
+
+export type DeltaMediaEmbed = {
+  kind: MediaEmbedKind;
+  url: string;
+};
 
 export type DeltaOp = {
   insert: DeltaInsert;
@@ -38,12 +45,57 @@ export function extractPlainText(delta: DeltaShape): string {
     .join("");
 }
 
-function isMediaEmbedOp(op: DeltaOp): boolean {
+function isMediaEmbedOp(op: DeltaOp): op is DeltaOp & {
+  insert: { image: string } | { video: string };
+} {
   return (
     typeof op.insert === "object" &&
     op.insert != null &&
     ("image" in op.insert || "video" in op.insert)
   );
+}
+
+function mediaEmbedFromOp(op: DeltaOp): DeltaMediaEmbed | null {
+  if (!isMediaEmbedOp(op)) {
+    return null;
+  }
+  if ("image" in op.insert) {
+    return { kind: "image", url: op.insert.image };
+  }
+  return { kind: "video", url: op.insert.video };
+}
+
+/** Lists image/video embeds in Delta op order. */
+export function extractMediaEmbedsFromDelta(
+  delta: DeltaShape,
+): DeltaMediaEmbed[] {
+  return delta.ops.flatMap((op) => {
+    const embed = mediaEmbedFromOp(op);
+    return embed ? [embed] : [];
+  });
+}
+
+/** Embeds present in `previous` but not in `next` (multiset — duplicate URLs counted). */
+export function diffRemovedMediaEmbeds(
+  previous: readonly DeltaMediaEmbed[],
+  next: readonly DeltaMediaEmbed[],
+): DeltaMediaEmbed[] {
+  const remaining = [...next];
+  const removed: DeltaMediaEmbed[] = [];
+
+  for (const embed of previous) {
+    const index = remaining.findIndex(
+      (candidate) =>
+        candidate.kind === embed.kind && candidate.url === embed.url,
+    );
+    if (index === -1) {
+      removed.push(embed);
+    } else {
+      remaining.splice(index, 1);
+    }
+  }
+
+  return removed;
 }
 
 /** Remove image/video embed ops (text inserts only). */

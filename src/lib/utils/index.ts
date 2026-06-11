@@ -23,10 +23,12 @@ export {
   rootOutlineStableId,
   selectedIdsToMap,
 } from "./course";
-export type { DeltaOp, DeltaShape } from "./course-delta";
+export type { DeltaMediaEmbed, DeltaOp, DeltaShape } from "./course-delta";
 export {
   createEmptyDelta,
   createEmptyDeltaString,
+  diffRemovedMediaEmbeds,
+  extractMediaEmbedsFromDelta,
   extractPlainText,
   parseDelta,
   stringifyDelta,
@@ -36,6 +38,7 @@ export { filterDashboardItems } from "./dashboard";
 export { formatUnixDateTime } from "./date";
 export { formatBytes } from "./format-bytes";
 export { apiListQueryToRecord } from "./list-query";
+export type { DeltaMediaEmbedRef, MediaEmbedKind } from "./media";
 export {
   classifyMediaEmbedFile,
   classifyMediaTab,

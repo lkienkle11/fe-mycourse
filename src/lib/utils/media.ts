@@ -129,6 +129,14 @@ export function validateMediaUploadBatch(
 
 export type MediaEmbedKind = "image" | "video";
 
+/** Media embed removed from DeltaEditor — enough to call `deleteMediaFile(object_key)`. */
+export type DeltaMediaEmbedRef = Pick<
+  MediaFile,
+  "id" | "object_key" | "url"
+> & {
+  kind: MediaEmbedKind;
+};
+
 /** Maps a local file to an editor embed kind (image/video), or null if unsupported. */
 export function classifyMediaEmbedFile(file: File): MediaEmbedKind | null {
   const mime = file.type.toLowerCase();

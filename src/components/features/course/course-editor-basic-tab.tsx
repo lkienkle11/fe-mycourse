@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TabsContent } from "@/components/ui/tabs";
+import { useDeltaEditorMediaHandlers } from "@/hooks";
 import {
   resolveValidationMessage,
   toastValidationError,
@@ -83,6 +84,7 @@ export function CourseBasicInfoTab({
   const tCommon = useTranslations("course.common");
   const tValidation = useTranslations("course.validation");
   const t = useTranslations("course.editor.basicInfo");
+  const { onObjectEmbedded, onDelete } = useDeltaEditorMediaHandlers();
   const form = useForm<CourseBasicInfoValues>({
     resolver: zodResolver(courseBasicInfoSchema),
     values: basicInfo,
@@ -185,6 +187,8 @@ export function CourseBasicInfoTab({
                     label={t("aboutLabel")}
                     required
                     disabled={!editable}
+                    onObjectEmbedded={onObjectEmbedded}
+                    onDelete={onDelete}
                     onChange={(value) => {
                       field.onChange(value);
                       setBasicInfo((prev) => ({

@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useDeltaEditorMediaHandlers } from "@/hooks";
 import { newV7 } from "@/lib/utils/uuid";
 import type {
   CourseBasicInfoForm,
@@ -206,6 +207,7 @@ export function CourseSubLessonDialog({
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.editor.dialogs");
   const tBasic = useTranslations("course.editor.basicInfo");
+  const { onObjectEmbedded, onDelete } = useDeltaEditorMediaHandlers();
   return (
     <Dialog
       open={Boolean(subLessonDialog)}
@@ -330,6 +332,8 @@ export function CourseSubLessonDialog({
           {subLessonForm.kind === "TEXT" ? (
             <DeltaEditor
               value={subLessonForm.text_delta}
+              onObjectEmbedded={onObjectEmbedded}
+              onDelete={onDelete}
               onChange={(value) =>
                 setSubLessonForm((prev) => ({ ...prev, text_delta: value }))
               }

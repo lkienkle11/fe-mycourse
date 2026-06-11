@@ -777,6 +777,8 @@ const messages = {
         uploading: "Đang tải media lên…",
         uploadNoPermission: "Bạn không có quyền tải media lên.",
         unsupportedFile: "Chỉ hỗ trợ ảnh hoặc video (không phải tài liệu).",
+        removeEmbed: "Xóa media",
+        embedHandlerMissing: "Chưa cấu hình tải media cho trình soạn thảo này.",
       },
       toast: {
         lockExpired:

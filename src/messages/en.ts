@@ -778,6 +778,8 @@ const messages = {
         uploading: "Uploading media…",
         uploadNoPermission: "You do not have permission to upload media.",
         unsupportedFile: "Only images or videos are supported (not documents).",
+        removeEmbed: "Remove media",
+        embedHandlerMissing: "Media upload is not configured for this editor.",
       },
       toast: {
         lockExpired: "The edit lock expired. Please reopen the editor action.",
