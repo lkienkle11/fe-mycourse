@@ -150,7 +150,7 @@ src/components/
 │                           #   AdvancedPromoSection, TrendingCoursesSection,
 │                           #   UpcomingWebinarsSection, PromoSection, CourseCard
 ├── features/
-│   ├── course/             # CourseStatusBadge, CourseDeltaEditor, CourseBasicInfoTab,
+│   ├── course/             # CourseStatusBadge, CourseBasicInfoTab,
 │   │                       # CourseOutlineTab, CourseCollaboratorsTab, Course*Dialog helpers
 │   │                       # grouped tab prop objects (`state` / `data|taxonomyRows` / `actions`)
 │   ├── taxonomy/           # TaxonomyFormDialog, tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
@@ -160,7 +160,9 @@ src/components/
 │   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
-│                           #   SortableList, SortableTreeEditor, SearchBar (stub), ImageFileField
+│                           #   DeltaEditor, DeltaViewer (+ delta-editor.css), SortableList,
+│                           #   SortableTreeEditor,
+│                           #   SearchBar (stub), ImageFileField
 ├── providers/
 │   └── app-providers.tsx   # SWRConfig + EventsStreamProvider
 │                           # + MeSwrSync (useSyncMeFromAuth)
@@ -396,7 +398,7 @@ src/lib/
 │   ├── api.ts              # isApiSuccess() — ApiResponse success type guard
 │   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractAxiosApiError
 │   ├── validation-message.ts # resolveValidationMessage, toastValidationError, firstValidationMessageKey
-│   ├── course-delta.ts       # Quill Delta parse/stringify/text/image helpers for course text lessons
+│   ├── course-delta.ts       # Quill Delta parse/stringify/text helpers + countDeltaNonWhitespace
 │   ├── course.ts             # createCourseBasicInfoState, createCourseSubLessonFormState, rootOutlineStableId, selectedIdsToMap
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
 │   ├── media.ts            # isImageFilename, isExecutableExtension, validateMediaUploadBatch, isImageMedia, …

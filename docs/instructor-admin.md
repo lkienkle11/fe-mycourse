@@ -80,9 +80,9 @@ Course authoring / review reuses the same dashboard and API patterns:
 - hooks in `src/api/hooks/course/useCourses.ts`
 - types in `src/types/course.ts`
 
-**My Courses** (`InstructorCoursesPage`): create dialog sends `{ title }` only; slug preview is read-only (`slugifyName(title)`). Create is enabled when slugify is non-empty (`length >= 1`); BE rejects only empty slugify output.
+**My Courses** (`InstructorCoursesPage`): create dialog sends `{ title }` only; slug preview is read-only (`slugifyName(title)`). Title must have ≥5 non-whitespace characters (FE `courseCreateSchema` + BE `nonwhitespace_min=5`).
 
-**Course editor basic info** (`/instructor/courses/:id/info`): title is read-only after create (matches BE — `PATCH /basic-info` does not accept `title`). Save uses `courseBasicInfoSaveSchema` + `toUpdateCourseBasicInfoPayload` (metadata, media refs, taxonomy ids, `expected_row_version` only).
+**Course editor basic info** (`/instructor/courses/:id/info`): title is editable on save; BE recomputes `courses.slug` from the new title. About course uses `DeltaEditor` (Word-like WYSIWYG Quill; Delta JSON with font picker and inline image/video via dialog, paste, or drag-and-drop). Save uses `courseBasicInfoSchema` + `toUpdateCourseBasicInfoPayload` (all required basic-info fields including `title`; preview video optional). Learning outcome is a single required dropdown (exactly one `outcome_ids` entry).
 
 Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalActions`.
 

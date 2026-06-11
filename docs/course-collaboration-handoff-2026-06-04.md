@@ -112,9 +112,9 @@ Implemented:
 Added:
 
 - `src/components/features/course/course-status-badge.tsx`
-- `src/components/features/course/course-delta-editor.tsx`
+- `src/components/shared/delta-editor.tsx`
 
-The text lesson editor stores Quill-style Delta JSON and supports image insertion through the existing media dialog flow.
+The text lesson editor stores Quill Delta JSON in a WYSIWYG Quill editor (`DeltaEditor`). Toolbar font picker (Roboto, Gilroy, Geist Mono, serif, monospace). Image/video via `MediaCollectionDialog`, paste (Ctrl+V), or drag-and-drop — uploads to `media_files`, stores URL in Delta (no manual URL fields, no base64).
 
 ## Important fixes already completed
 

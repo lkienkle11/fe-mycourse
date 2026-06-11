@@ -67,8 +67,8 @@ _Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me
   - `src/screen/instructor/courses/editor-page.tsx` — editor shell, status header, route-backed tab trigger list, and `CourseEditorTab` → `Component` panel mapping for active-tab rendering
   - `src/screen/common/course/course-review-page.tsx` — shared admin/sysadmin review queue
   - `src/components/features/course/course-status-badge.tsx`
-  - `src/components/features/course/course-delta-editor.tsx`
-  - `src/lib/utils/course-delta.ts` — shared Delta parsing/stringify/text/image/link helpers reused by the editor and course state
+  - `src/components/shared/delta-editor.tsx` + `delta-editor.css` — shared WYSIWYG `DeltaEditor` + read-only `DeltaViewer` (Delta JSON; font picker; inline image/video via toolbar, paste, or drag-and-drop)
+  - `src/lib/utils/course-delta.ts` — shared Delta parse/stringify/text helpers for validation and editor state
   - `src/lib/utils/course.ts` — course editor tab registry, form state factories, payload mapping, and outline stable-id helpers (used by `use-course-editor-state` and `editor-page`)
   - `src/components/features/course/course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx` — split editor render helpers kept outside `src/screen/**` to satisfy the page-only screen rule; tab components receive grouped `state` / `taxonomyRows|data` / `actions` props instead of long flat prop lists
   - `src/components/features/instructor/instructor-course-editor-route.tsx` — shared route renderer reused by the 5 App Router course editor pages so route glue stays out of `src/app/**`
@@ -76,10 +76,10 @@ _Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me
   - `src/components/features/instructor/instructor-list-pagination.tsx` — shared instructor/admin/sysadmin pagination helper
 - **Hooks**:
   - `src/hooks/course/use-course-editor-state.ts` — shared client editor state, lease lifecycle, pre-submit Zod checks (`course.validation.*`), API errors via `toastApiError`, and course draft mutation orchestration
-- **Validation**: `src/schema/course/course.ts` — `courseBasicInfoSaveSchema` (PATCH basic-info: no `title`; short_description max 500; UUID checks for media/level/topic ids; `expected_row_version` min 1); create dialog uses `courseCreateSchema` (title 1–255); section/lesson/sublesson title max 255; quiz prompt + options; reject reason max 2000. Editor basic-info tab shows title read-only (`titleReadOnlyHint`); `toUpdateCourseBasicInfoPayload` omits `title`. `course.validation.*` i18n; `course-editor-basic-tab.tsx` uses `react-hook-form + zodResolver` with `toastValidationError` on invalid submit.
+- **Validation**: `src/schema/course/course.ts` — `courseBasicInfoSchema` mirrors BE basic-info rules (title ≥5 non-whitespace, editable on save; short description ≥20; about course ≥30 via Delta JSON using `countDeltaNonWhitespace`; required thumbnail, level, topic, tags ≥1, skills ≥1, exactly one outcome; preview video optional; `expected_row_version` min 1). Create dialog uses `courseCreateSchema` (title ≥5 non-whitespace). Outline: section title ≥5 + description ≥20; lesson title ≥5 + summary ≥20; sub-lesson title ≥5. QUIZ items cannot be preview (checkbox hidden; BE rejects). `course-editor-basic-tab.tsx` uses `DeltaEditor` (Quill + Delta JSON) for about course, single-outcome `Select`, `react-hook-form + zodResolver`, and `toastValidationError` on invalid submit; `toUpdateCourseBasicInfoPayload` sends all required fields including `title`.
 - **Reuse points**:
   - `SortableList` for section / lesson / sub-lesson ordering
-  - `MediaCollectionDialog` + `ImageFileField` for thumbnail / preview video / text-lesson images
+  - `MediaCollectionDialog` + `ImageFileField` for thumbnail / preview video / Quill toolbar image & video embeds
   - `useTaxonomyList` for metadata pickers
   - `useInstructorRosterList` for collaborator selection
   - `next-intl` message dictionaries in `src/messages/{en,vi}.ts` for all course editor, review, badge, and menu copy

@@ -480,12 +480,21 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `Dialog`, `ToggleGroup`, `useNodesState` / `useEdgesState`, `treeToFlowElements` in `src/lib/utils/dagre-tree.ts`. CSS: `@xyflow/react/dist/style.css` in the dialog file.
 
 ### Asset: course delta helpers
-- **Name**: `createEmptyDelta`, `createEmptyDeltaString`, `parseDelta`, `stringifyDelta`, `extractPlainText`, `extractImages`, `extractImageOps`, `normalizeSafeLink`
+- **Name**: `createEmptyDelta`, `createEmptyDeltaString`, `parseDelta`, `stringifyDelta`, `extractPlainText`, `stripMediaEmbedsFromDelta`, `countDeltaNonWhitespace`
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course-delta.ts`
-- **Purpose**: Shared Quill-Delta parsing/stringify/text/image extraction plus safe link normalization for course text lessons.
-- **Scope**: `CourseDeltaEditor`, course editor state, and any future Delta import/export logic.
+- **Purpose**: Shared Quill-Delta parsing/stringify/text extraction and non-whitespace counting for course validation.
+- **Scope**: `DeltaEditor`, course editor state, and Zod schemas.
 - **Dependencies**: none.
+
+### Asset: DeltaEditor / DeltaViewer
+- **Name**: `DeltaEditor`, `DeltaEditorProps`, `DeltaViewer`, `DeltaViewerProps`, `registerQuillFormats`
+- **Type**: React components + Quill setup helper
+- **Path**: `src/components/shared/delta-editor.tsx` (exported from `src/components/shared/index.ts`)
+- **Purpose**: Word-like WYSIWYG editing and read-only rendering for Quill Delta JSON. Toolbar includes font family (Roboto, Gilroy, Geist Mono, serif, monospace), text formatting, and inline image/video via toolbar + `MediaCollectionDialog`, paste (Ctrl+V), or drag-and-drop — all media uploads store **URL references** (no base64 in DB).
+- **Props**: `allowMediaEmbed` (default `true`) — when `false`, hides image/video toolbar actions, blocks paste/drop media, and strips embed ops from saved Delta (text formatting only).
+- **Scope**: Course basic info (`about_course`), TEXT sub-lessons (`text_delta`), and any future Delta-backed rich text.
+- **Dependencies**: `quill`, `delta-editor.css`, `course-delta.ts`, `media.ts` (`classifyMediaEmbedFile`, paste/drop helpers), `uploadMediaFiles`, `MediaCollectionDialog`.
 
 ### Asset: course editor utils
 
