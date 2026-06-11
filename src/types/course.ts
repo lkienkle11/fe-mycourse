@@ -274,17 +274,20 @@ export type CourseBasicInfoForm = {
   expected_row_version: number;
 };
 
-export type CourseSectionFormState = {
+export type CourseOutlineItemKind = "section" | "lesson";
+
+export type CourseOutlineItemFormBase = {
   title: string;
-  description: string;
   expected_row_version: number;
 };
 
-export type CourseLessonFormState = {
+export type CourseSectionFormState = CourseOutlineItemFormBase & {
+  description: string;
+};
+
+export type CourseLessonFormState = CourseOutlineItemFormBase & {
   section_id: string;
-  title: string;
   summary: string;
-  expected_row_version: number;
 };
 
 export type CourseSubLessonFormState = {
@@ -301,13 +304,15 @@ export type CourseSubLessonFormState = {
   quiz_options: UpsertCourseQuizOptionPayload[];
 };
 
-export type CourseSectionDialogState = {
+export type CourseOutlineItemDialogMode = {
   mode: "create" | "edit";
+};
+
+export type CourseSectionDialogState = CourseOutlineItemDialogMode & {
   section?: CourseSection;
 };
 
-export type CourseLessonDialogState = {
-  mode: "create" | "edit";
+export type CourseLessonDialogState = CourseOutlineItemDialogMode & {
   section: CourseSection;
   lesson?: CourseLesson;
 };

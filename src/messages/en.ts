@@ -774,6 +774,7 @@ const messages = {
         lessonTextLabel: "Lesson text",
         placeholder:
           "Write content here. Use the toolbar, paste (Ctrl+V), or drag and drop images/videos to embed media.",
+        placeholderTextOnly: "Write content here.",
         dropHint: "Drop an image or video here",
         uploading: "Uploading media…",
         uploadNoPermission: "You do not have permission to upload media.",

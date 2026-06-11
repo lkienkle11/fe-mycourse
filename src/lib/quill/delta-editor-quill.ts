@@ -2,9 +2,9 @@ import "quill/dist/quill.snow.css";
 import type { DeltaStatic } from "quill";
 import Quill from "quill";
 import "./delta-editor.css";
-import type { DeltaMediaEmbed } from "@/lib/utils/course-delta";
+import type { DeltaMediaEmbed, DeltaShape } from "@/lib/utils/course-delta";
 import {
-  parseDelta,
+  coerceToDelta,
   stripMediaEmbedsFromDelta,
 } from "@/lib/utils/course-delta";
 import type { DeltaMediaEmbedRef, MediaEmbedKind } from "@/lib/utils/media";
@@ -253,17 +253,15 @@ export function registerQuillFormats(): void {
   Quill.register(Html5VideoBlot, true);
 }
 
-export function toQuillContents(
-  delta: ReturnType<typeof parseDelta>,
-): DeltaStatic {
+export function toQuillContents(delta: DeltaShape): DeltaStatic {
   return delta as unknown as DeltaStatic;
 }
 
 export function normalizeDeltaForEditor(
   raw: string,
   allowMediaEmbed: boolean,
-): ReturnType<typeof parseDelta> {
-  const parsed = parseDelta(raw);
+): ReturnType<typeof coerceToDelta> {
+  const parsed = coerceToDelta(raw);
   return allowMediaEmbed ? parsed : stripMediaEmbedsFromDelta(parsed);
 }
 

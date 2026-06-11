@@ -57,24 +57,19 @@ export const courseBasicInfoSchema = z.object({
     .min(1, { message: "validation.expectedRowVersion" }),
 });
 
+const outlineBodyField = (message: string) =>
+  z.string().refine((value) => countDeltaNonWhitespace(value) >= 20, {
+    message,
+  });
+
 export const courseSectionSchema = z.object({
   title: titleField,
-  description: z
-    .string()
-    .trim()
-    .refine((value) => countNonWhitespace(value) >= 20, {
-      message: "validation.sectionDescriptionMin",
-    }),
+  description: outlineBodyField("validation.sectionDescriptionMin"),
 });
 
 export const courseLessonSchema = z.object({
   title: titleField,
-  summary: z
-    .string()
-    .trim()
-    .refine((value) => countNonWhitespace(value) >= 20, {
-      message: "validation.lessonSummaryMin",
-    }),
+  summary: outlineBodyField("validation.lessonSummaryMin"),
 });
 
 export const courseSubLessonSchema = z.object({

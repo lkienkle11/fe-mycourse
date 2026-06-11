@@ -125,12 +125,15 @@ export function DeltaEditor({
   );
 
   const textLabel = label ?? t("lessonTextLabel");
-  const editorPlaceholder = placeholder ?? t("placeholder");
+  const editorPlaceholder =
+    placeholder ??
+    (allowMediaEmbed ? t("placeholder") : t("placeholderTextOnly"));
   const editorPlaceholderRef = useRef(editorPlaceholder);
   const removeEmbedLabel = t("removeEmbed");
 
   useEffect(() => {
     editorPlaceholderRef.current = editorPlaceholder;
+    quillRef.current?.root.setAttribute("data-placeholder", editorPlaceholder);
   }, [editorPlaceholder]);
 
   useEffect(() => {

@@ -35,6 +35,28 @@ export function parseDelta(value: string): DeltaShape {
   return createEmptyDelta();
 }
 
+/** Parse Delta JSON or wrap legacy plain-text values (matches BE CountDeltaNonWhitespace). */
+export function coerceToDelta(value: string): DeltaShape {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return createEmptyDelta();
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as DeltaShape;
+    if (parsed && Array.isArray(parsed.ops)) {
+      return parsed;
+    }
+  } catch {}
+
+  return { ops: [{ insert: trimmed }] };
+}
+
+/** Plain-text preview for outline cards (Delta JSON or legacy plain text). */
+export function extractDeltaPreviewText(value: string): string {
+  return extractPlainText(coerceToDelta(value)).trim();
+}
+
 export function stringifyDelta(delta: DeltaShape): string {
   return JSON.stringify(delta);
 }
@@ -122,9 +144,11 @@ export function countDeltaNonWhitespace(raw: string): number {
     return 0;
   }
   try {
-    const delta = parseDelta(trimmed);
-    return countNonWhitespace(extractPlainText(delta));
-  } catch {
-    return countNonWhitespace(trimmed);
-  }
+    const parsed = JSON.parse(trimmed) as DeltaShape;
+    if (parsed && Array.isArray(parsed.ops)) {
+      return countNonWhitespace(extractPlainText(parsed));
+    }
+  } catch {}
+
+  return countNonWhitespace(trimmed);
 }

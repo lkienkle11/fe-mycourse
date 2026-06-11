@@ -773,6 +773,7 @@ const messages = {
         lessonTextLabel: "Nội dung bài học",
         placeholder:
           "Viết nội dung tại đây. Dùng thanh công cụ, dán (Ctrl+V) hoặc kéo thả ảnh/video để chèn media.",
+        placeholderTextOnly: "Viết nội dung tại đây.",
         dropHint: "Thả ảnh hoặc video vào đây",
         uploading: "Đang tải media lên…",
         uploadNoPermission: "Bạn không có quyền tải media lên.",

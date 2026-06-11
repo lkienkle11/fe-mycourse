@@ -25,9 +25,11 @@ export {
 } from "./course";
 export type { DeltaMediaEmbed, DeltaOp, DeltaShape } from "./course-delta";
 export {
+  coerceToDelta,
   createEmptyDelta,
   createEmptyDeltaString,
   diffRemovedMediaEmbeds,
+  extractDeltaPreviewText,
   extractMediaEmbedsFromDelta,
   extractPlainText,
   parseDelta,

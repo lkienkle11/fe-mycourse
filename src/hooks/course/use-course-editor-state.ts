@@ -28,6 +28,7 @@ import {
   selectedIdsToMap,
   toUpdateCourseBasicInfoPayload,
 } from "@/lib/utils/course";
+import { createEmptyDeltaString } from "@/lib/utils/course-delta";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import {
   courseBasicInfoSchema,
@@ -139,13 +140,13 @@ function useCourseOutlineDialogState() {
   const [videoDialogOpen, setVideoDialogOpen] = useState(false);
   const [sectionForm, setSectionForm] = useState<CourseSectionFormState>({
     title: "",
-    description: "",
+    description: createEmptyDeltaString(),
     expected_row_version: 0,
   });
   const [lessonForm, setLessonForm] = useState<CourseLessonFormState>({
     section_id: "",
     title: "",
-    summary: "",
+    summary: createEmptyDeltaString(),
     expected_row_version: 0,
   });
   const [subLessonForm, setSubLessonForm] = useState<CourseSubLessonFormState>(
@@ -248,6 +249,8 @@ function useCourseLeaseState({
     }
     try {
       await run();
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       await releaseLease();
     }
