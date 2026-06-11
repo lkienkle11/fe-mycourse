@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
+import { extractDeltaPreviewText } from "@/lib/utils/course-delta";
 import type {
   CourseLesson,
   CourseSection,
@@ -164,7 +165,8 @@ function SectionOutlineCard({
           <div className="min-w-0 space-y-1">
             <div className="font-medium">{section.title}</div>
             <div className="text-sm text-muted-foreground">
-              {section.description || tCommon("noSectionDescription")}
+              {extractDeltaPreviewText(section.description) ||
+                tCommon("noSectionDescription")}
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -206,7 +208,8 @@ function SectionOutlineCard({
                   <div className="min-w-0 space-y-1">
                     <div className="font-medium">{item.lesson.title}</div>
                     <div className="text-sm text-muted-foreground">
-                      {item.lesson.summary || tCommon("noLessonSummary")}
+                      {extractDeltaPreviewText(item.lesson.summary) ||
+                        tCommon("noLessonSummary")}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -259,7 +262,8 @@ function SectionOutlineCard({
                             </div>
                             <div className="text-sm text-muted-foreground">
                               {tCommon(`subLessonKind.${entry.subLesson.kind}`)}
-                              {entry.subLesson.is_preview
+                              {entry.subLesson.is_preview &&
+                              entry.subLesson.kind !== "QUIZ"
                                 ? ` · ${tCommon("preview")}`
                                 : ""}
                             </div>

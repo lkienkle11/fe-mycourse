@@ -1,0 +1,118 @@
+/**
+ * Quill font picker + inline font classes for DeltaEditor / DeltaViewer.
+ * Uses app font CSS variables from layout (Roboto, Gilroy, Geist Mono).
+ */
+
+/* Scroll layout: max-height comes from Tailwind on `.delta-editor-surface` (overridable). */
+.delta-editor-surface {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.delta-editor-surface > div {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.delta-editor-surface .ql-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.ql-font-roboto {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.ql-font-gilroy {
+  font-family: var(--font-gilroy), ui-sans-serif, system-ui, sans-serif;
+}
+
+.ql-font-geist-mono {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.ql-font-serif {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+.ql-font-monospace {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="roboto"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="roboto"]::before {
+  content: "Roboto";
+  font-family: var(--font-sans), sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="gilroy"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="gilroy"]::before {
+  content: "Gilroy";
+  font-family: var(--font-gilroy), sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="geist-mono"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="geist-mono"]::before {
+  content: "Geist Mono";
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="serif"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="serif"]::before {
+  content: "Serif";
+  font-family: ui-serif, Georgia, serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="monospace"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="monospace"]::before {
+  content: "Monospace";
+  font-family: ui-monospace, monospace;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label:not([data-value])::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item:not([data-value])::before {
+  content: "Font";
+}
+
+/* Inline image/video embed remove control (DeltaEditor only). */
+.ql-editor .ql-media-embed {
+  position: relative;
+}
+
+.ql-editor .ql-media-embed-remove {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  z-index: 2;
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background) / 0.92);
+  color: hsl(var(--foreground));
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.ql-editor .ql-media-embed:hover .ql-media-embed-remove,
+.ql-editor .ql-media-embed-remove:focus-visible {
+  opacity: 1;
+}
+
+.ql-editor .ql-media-embed-remove:hover {
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  border-color: hsl(var(--destructive));
+}

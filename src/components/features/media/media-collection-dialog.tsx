@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { deleteMediaFile } from "@/api/callers/media";
 import { useMediaFiles } from "@/api/hooks/media/useMediaFiles";
@@ -80,15 +80,19 @@ export function MediaCollectionDialog({
   const [deleteTarget, setDeleteTarget] = useState<MediaFile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const listActiveTab = visibleTabs.includes(activeTab)
+    ? activeTab
+    : (visibleTabs[0] ?? "image");
+
   const listFilters = useMemo(
     () => ({
       page,
       per_page: 20,
       search: search || undefined,
-      category: mediaTabToCategory(activeTab),
+      category: mediaTabToCategory(listActiveTab),
       ...parseMediaSortOption(sortOption),
     }),
-    [activeTab, page, search, sortOption],
+    [listActiveTab, page, search, sortOption],
   );
 
   const { rows, pageInfo, isLoading, mutate } = useMediaFiles(listFilters);
@@ -96,27 +100,22 @@ export function MediaCollectionDialog({
     permissions: [PERMISSIONS.MediaFileDelete],
   });
 
-  useEffect(() => {
-    if (!open) return;
-    setActiveTab(resolveMediaCollectionDefaultTab(defaultTab, visibleTabs));
-    setSearchInput("");
-    setSearch("");
-    setPage(1);
-  }, [open, defaultTab, visibleTabs]);
-
-  useEffect(() => {
-    if (!visibleTabs.includes(activeTab)) {
-      setActiveTab(visibleTabs[0] ?? "image");
+  const handleOpenChange = (next: boolean) => {
+    if (next) {
+      setActiveTab(resolveMediaCollectionDefaultTab(defaultTab, visibleTabs));
+      setSearchInput("");
+      setSearch("");
       setPage(1);
     }
-  }, [activeTab, visibleTabs]);
+    onOpenChange(next);
+  };
 
   const totalPages = pageInfo?.total_pages ?? 1;
   const currentPage = pageInfo?.page ?? page;
 
   const handleSelect = (file: MediaFile) => {
-    onSelect?.(file, activeTab);
-    onOpenChange(false);
+    onSelect?.(file, listActiveTab);
+    handleOpenChange(false);
   };
 
   const handleDelete = async () => {
@@ -205,8 +204,8 @@ export function MediaCollectionDialog({
       className="scrollbar-app mt-0 min-h-0 flex-1 overflow-y-auto px-6 py-4"
     >
       <MediaTabPanel
-        files={tab === activeTab ? rows : []}
-        isLoading={tab === activeTab && isLoading}
+        files={tab === listActiveTab ? rows : []}
+        isLoading={tab === listActiveTab && isLoading}
         selectionMode={selectionMode}
         selectedId={selectedFileId}
         onSelect={handleSelect}
@@ -218,7 +217,7 @@ export function MediaCollectionDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="flex max-h-[90vh] max-w-5xl sm:max-w-3xl flex-col gap-0 overflow-hidden p-0">
           <DialogHeader className="space-y-0 border-b px-6 py-4">
             <DialogTitle>{t("title")}</DialogTitle>

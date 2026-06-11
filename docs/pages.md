@@ -73,7 +73,7 @@ All user-facing API failures use `errors.codes.{numericCode}` via `translateApiE
 |---------------|-------------------|-------------------|
 | Login / Signup modal | `auth` Zod keys via `loginSchema` / `registerSchema` | Inline `translateApiErrorCode(tErrors, result.code)` |
 | Confirm email / Logout pages | — | Inline code-based errors |
-| Taxonomy list + form dialog | `taxonomy.form.validation.*`, `RequiredLabel`, `FieldError` | `toastApiError` on delete / create / update |
+| Taxonomy list + form dialog | `taxonomy.form.validation.*`, `RequiredLabel`, `FieldError`; create/edit remounts `TaxonomyFormDialog` via `formDialogKey` so `initialData` hydrates form + slug preview (controlled `open` does not invoke Radix `onOpenChange(true)`) | `toastApiError` on delete / create / update |
 | Media collection + upload | `media.validation.*` (size, type, executable) | `toastApiError` |
 | Instructor roster / approvals / expertise / tickets / profiles | `instructor.validation.*`, `RequiredLabel` on email/reject/topic/skill/ticket fields | `toastValidationError` pre-submit; `toastApiError` on API |
 | Instructor courses list | `course.validation.title` on create dialog | `toastApiError` on create / delete |

@@ -274,7 +274,7 @@ Example:
 
 ```
 src/app/[locale]/admin/taxonomy/levels/page.tsx   → route: /vi/admin/taxonomy/levels
-src/screen/common/taxonomy/taxonomy-list-page.tsx → TaxonomyListPage (shared CRUD UI imported directly by the route)
+src/screen/common/taxonomy/taxonomy-list-page.tsx → TaxonomyListPage (shared CRUD UI imported directly by the route; `formDialogKey` remounts `TaxonomyFormDialog` on each create/edit open — no route change)
 
 src/app/[locale]/admin/courses/page.tsx           → route: /vi/admin/courses
 src/screen/common/course/course-review-page.tsx   → CourseReviewPage (shared by admin + sysadmin)

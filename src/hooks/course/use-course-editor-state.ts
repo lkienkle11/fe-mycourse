@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import type { KeyedMutator } from "swr";
 import {
   acquireCourseLeaseService,
   addCourseCollaboratorService,
@@ -20,6 +21,7 @@ import {
   updateCourseSectionService,
   updateCourseSubLessonService,
 } from "@/api/callers/course";
+import { useCourseOutlineReorder } from "@/hooks/course/use-course-outline-reorder";
 import { toastApiError } from "@/lib/utils/api-error";
 import {
   createCourseBasicInfoState,
@@ -28,9 +30,10 @@ import {
   selectedIdsToMap,
   toUpdateCourseBasicInfoPayload,
 } from "@/lib/utils/course";
+import { createEmptyDeltaString } from "@/lib/utils/course-delta";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import {
-  type CourseBasicInfoValues,
+  courseBasicInfoSchema,
   courseCollaboratorSchema,
   courseLessonSchema,
   courseQuizOptionSchema,
@@ -40,6 +43,7 @@ import {
 import type {
   CourseBasicInfoForm,
   CourseCollaborator,
+  CourseDetail,
   CourseLease,
   CourseLesson,
   CourseLessonDialogState,
@@ -57,9 +61,10 @@ import type {
 
 type UseCourseEditorStateParams = {
   courseId: string;
+  courseDetail?: CourseDetail;
   activeVersion?: CourseVersion;
   editableVersion?: CourseVersion;
-  mutate: () => Promise<unknown>;
+  mutateDetail: KeyedMutator<CourseDetail>;
 };
 
 function useCourseBasicInfoState(activeVersion?: CourseVersion) {
@@ -82,10 +87,7 @@ function useCourseBasicInfoState(activeVersion?: CourseVersion) {
     () => selectedIdsToMap(basicInfo.skill_ids),
     [basicInfo.skill_ids],
   );
-  const outcomeSelection = useMemo(
-    () => selectedIdsToMap(basicInfo.outcome_ids),
-    [basicInfo.outcome_ids],
-  );
+  const outcomeId = basicInfo.outcome_ids[0] ?? "";
 
   const toggleSelection = (key: CourseSelectionKey, value: string) => {
     setBasicInfo((prev) => {
@@ -99,12 +101,20 @@ function useCourseBasicInfoState(activeVersion?: CourseVersion) {
     });
   };
 
+  const setOutcomeId = (value: string) => {
+    setBasicInfo((prev) => ({
+      ...prev,
+      outcome_ids: value ? [value] : [],
+    }));
+  };
+
   return {
     basicInfo,
     setBasicInfo,
     tagSelection,
     skillSelection,
-    outcomeSelection,
+    outcomeId,
+    setOutcomeId,
     toggleSelection,
   };
 }
@@ -134,13 +144,13 @@ function useCourseOutlineDialogState() {
   const [videoDialogOpen, setVideoDialogOpen] = useState(false);
   const [sectionForm, setSectionForm] = useState<CourseSectionFormState>({
     title: "",
-    description: "",
+    description: createEmptyDeltaString(),
     expected_row_version: 0,
   });
   const [lessonForm, setLessonForm] = useState<CourseLessonFormState>({
     section_id: "",
     title: "",
-    summary: "",
+    summary: createEmptyDeltaString(),
     expected_row_version: 0,
   });
   const [subLessonForm, setSubLessonForm] = useState<CourseSubLessonFormState>(
@@ -243,6 +253,8 @@ function useCourseLeaseState({
     }
     try {
       await run();
+    } catch (error) {
+      toastApiError(tErrors, error);
     } finally {
       await releaseLease();
     }
@@ -258,9 +270,10 @@ function useCourseLeaseState({
 
 export function useCourseEditorState({
   courseId,
+  courseDetail,
   activeVersion,
   editableVersion,
-  mutate,
+  mutateDetail,
 }: UseCourseEditorStateParams) {
   const t = useTranslations("course.editor.toast");
   const tValidation = useTranslations("course.validation");
@@ -273,7 +286,8 @@ export function useCourseEditorState({
     setBasicInfo,
     tagSelection,
     skillSelection,
-    outcomeSelection,
+    outcomeId,
+    setOutcomeId,
     toggleSelection,
   } = useCourseBasicInfoState(activeVersion);
   const {
@@ -309,9 +323,23 @@ export function useCourseEditorState({
       t,
       tErrors,
     });
+  const {
+    handleReorderSections,
+    handleReverseSections,
+    handleReorderLessons,
+    handleReorderSubLessons,
+  } = useCourseOutlineReorder({
+    courseId,
+    courseDetail,
+    mutateDetail,
+    acquireLease,
+    releaseLease,
+    tSuccess: t,
+    tErrors,
+  });
 
   const refreshDetail = async () => {
-    await mutate();
+    await mutateDetail();
   };
 
   const handlePrepareDraft = async () => {
@@ -327,16 +355,21 @@ export function useCourseEditorState({
     }
   };
 
-  const handleSaveBasicInfo = async (values: CourseBasicInfoValues) => {
+  const handleSaveBasicInfo = async () => {
     if (!editableVersion) {
       toast.error(t("draftRequiredInfo"));
+      return;
+    }
+    const parsed = courseBasicInfoSchema.safeParse(basicInfo);
+    if (!parsed.success) {
+      toastValidationError(tValidation, parsed.error.issues, "title");
       return;
     }
     setIsSavingBasicInfo(true);
     try {
       await updateCourseBasicInfoService(
         courseId,
-        toUpdateCourseBasicInfoPayload(values),
+        toUpdateCourseBasicInfoPayload(basicInfo),
       );
       toast.success(t("basicInfoSaved"));
       await refreshDetail();
@@ -373,7 +406,8 @@ export function useCourseEditorState({
       return;
     }
     const parsed = courseSectionSchema.safeParse({
-      title: sectionForm.title.trim(),
+      title: sectionForm.title,
+      description: sectionForm.description,
     });
     if (!parsed.success) {
       toastValidationError(tValidation, parsed.error.issues, "sectionTitle");
@@ -430,7 +464,8 @@ export function useCourseEditorState({
       return;
     }
     const parsed = courseLessonSchema.safeParse({
-      title: lessonForm.title.trim(),
+      title: lessonForm.title,
+      summary: lessonForm.summary,
     });
     if (!parsed.success) {
       toastValidationError(tValidation, parsed.error.issues, "lessonTitle");
@@ -511,12 +546,14 @@ export function useCourseEditorState({
         return;
       }
     }
+    const isPreview =
+      subLessonForm.kind === "QUIZ" ? false : subLessonForm.is_preview;
     const payload = {
       lesson_id: subLessonForm.lesson_id,
       expected_row_version: subLessonForm.expected_row_version,
       title: subLessonForm.title,
       kind: subLessonForm.kind,
-      is_preview: subLessonForm.is_preview,
+      is_preview: isPreview,
       video:
         subLessonForm.kind === "VIDEO" && subLessonForm.video_file_id
           ? {
@@ -635,7 +672,8 @@ export function useCourseEditorState({
     setBasicInfo,
     tagSelection,
     skillSelection,
-    outcomeSelection,
+    outcomeId,
+    setOutcomeId,
     withEphemeralLease,
     handlePrepareDraft,
     handleSaveBasicInfo,
@@ -654,5 +692,9 @@ export function useCourseEditorState({
     handleSubmitReview,
     handleReopenDraft,
     refreshDetail,
+    handleReorderSections,
+    handleReverseSections,
+    handleReorderLessons,
+    handleReorderSubLessons,
   };
 }

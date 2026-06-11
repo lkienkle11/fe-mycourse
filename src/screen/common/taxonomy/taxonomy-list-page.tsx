@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { deleteTaxonomyService } from "@/api/callers/taxonomy";
 import { useTaxonomyList } from "@/api/hooks/taxonomy/useTaxonomy";
@@ -49,10 +49,16 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
     sort_desc: false,
   });
   const [searchInput, setSearchInput] = useState("");
-  const [selectedFilterBy, setSelectedFilterBy] = useState<string>(
-    searchableColumns[0] ?? "status",
-  );
+  const defaultFilterBy = searchableColumns[0] ?? "status";
+  const [selectedFilterBy, setSelectedFilterBy] =
+    useState<string>(defaultFilterBy);
+  const resolvedFilterBy = searchableColumns.includes(
+    selectedFilterBy as TaxonomySearchBy,
+  )
+    ? selectedFilterBy
+    : defaultFilterBy;
   const [formOpen, setFormOpen] = useState(false);
+  const [formDialogKey, setFormDialogKey] = useState(0);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [selectedRow, setSelectedRow] = useState<TaxonomyEntity | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -67,68 +73,58 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
   const page = pageInfo?.page ?? filters.page ?? 1;
   const totalPages = pageInfo?.total_pages ?? 1;
 
-  const permissions = useMemo(
-    () => ({
-      create: [config.permissions.create as PermissionName],
-      update: [config.permissions.update as PermissionName],
-      delete: [config.permissions.delete as PermissionName],
-    }),
-    [config],
+  const permissions = {
+    create: [config.permissions.create as PermissionName],
+    update: [config.permissions.update as PermissionName],
+    delete: [config.permissions.delete as PermissionName],
+  };
+
+  const tableColumns = buildTaxonomyTableColumns(
+    resourceKey,
+    config.listColumns,
+    t,
+  );
+  const statusFilterInput = (
+    <Select
+      value={filters.status ?? "ALL"}
+      onValueChange={(value) => {
+        setFilters((prev) => ({
+          ...prev,
+          page: 1,
+          status: value === "ALL" ? undefined : (value as TaxonomyStatus),
+        }));
+      }}
+    >
+      <SelectTrigger className="w-[180px]">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="ALL">{t("common.statusAll")}</SelectItem>
+        <SelectItem value="ACTIVE">{t("common.statusActive")}</SelectItem>
+        <SelectItem value="INACTIVE">{t("common.statusInactive")}</SelectItem>
+      </SelectContent>
+    </Select>
   );
 
-  const tableColumns = useMemo(
-    () => buildTaxonomyTableColumns(resourceKey, config.listColumns, t),
-    [resourceKey, config.listColumns, t],
-  );
-  const filterByOptions = useMemo<DataTableFilterByOption[]>(() => {
-    const statusCustomInput = (
-      <Select
-        value={filters.status ?? "ALL"}
-        onValueChange={(value) => {
-          setFilters((prev) => ({
-            ...prev,
-            page: 1,
-            status: value === "ALL" ? undefined : (value as TaxonomyStatus),
-          }));
-        }}
-      >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="ALL">{t("common.statusAll")}</SelectItem>
-          <SelectItem value="ACTIVE">{t("common.statusActive")}</SelectItem>
-          <SelectItem value="INACTIVE">{t("common.statusInactive")}</SelectItem>
-        </SelectContent>
-      </Select>
-    );
-
-    const searchableSet = new Set<string>(searchableColumns);
-    return tableColumns
-      .filter(
-        (column) => column.id === "status" || searchableSet.has(column.id),
-      )
-      .map((column) => ({
-        value: column.id,
-        label: column.header,
-        customInputComponent:
-          column.id === "status" ? statusCustomInput : undefined,
-      }));
-  }, [filters.status, searchableColumns, tableColumns, t]);
-
-  useEffect(() => {
-    setSelectedFilterBy(searchableColumns[0] ?? "status");
-  }, [searchableColumns]);
+  const searchableSet = new Set<string>(searchableColumns);
+  const filterByOptions: DataTableFilterByOption[] = tableColumns
+    .filter((column) => column.id === "status" || searchableSet.has(column.id))
+    .map((column) => ({
+      value: column.id,
+      label: column.header,
+      customInputComponent:
+        column.id === "status" ? statusFilterInput : undefined,
+    }));
 
   const applySearch = () => {
-    const isStatusFilter = selectedFilterBy === "status";
+    const isStatusFilter = resolvedFilterBy === "status";
     const value = searchInput.trim();
     setFilters((prev) => ({
       ...prev,
       page: 1,
       search_by: isStatusFilter
         ? undefined
-        : (selectedFilterBy as TaxonomySearchBy),
+        : (resolvedFilterBy as TaxonomySearchBy),
       search_value: isStatusFilter ? undefined : value || undefined,
     }));
   };
@@ -161,12 +157,14 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
   const openCreate = () => {
     setFormMode("create");
     setSelectedRow(null);
+    setFormDialogKey((key) => key + 1);
     setFormOpen(true);
   };
 
   const openEdit = (row: TaxonomyEntity) => {
     setFormMode("edit");
     setSelectedRow(row);
+    setFormDialogKey((key) => key + 1);
     setFormOpen(true);
   };
 
@@ -215,7 +213,7 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
           actionsHeader={t("common.actions")}
           emptyMessage={t("common.empty")}
           filterByOptions={filterByOptions}
-          selectedFilterBy={selectedFilterBy}
+          selectedFilterBy={resolvedFilterBy}
           onFilterByChange={handleFilterByChange}
           filterByLabel={t("common.filterBy")}
           searchValue={searchInput}
@@ -283,6 +281,7 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
       </div>
 
       <TaxonomyFormDialog
+        key={formDialogKey}
         resourceKey={resourceKey}
         mode={formMode}
         open={formOpen}

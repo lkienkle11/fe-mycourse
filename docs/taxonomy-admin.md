@@ -77,6 +77,7 @@ Topics and outcomes support optional `image_file_id` (media file UUID). The form
 ## Slug (read-only preview; server authority)
 
 - UI preview uses `slugifyName()` / `generateSlug()` in `src/lib/utils/slug.ts` (trim, lowercase, remove Vietnamese accents, `đ/Đ -> d`, spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes).
+- On edit, slug preview falls back to API `slug` until the watched `name` field is non-empty (avoids empty preview when `useWatch` lags behind `defaultValues` after dialog remount).
 - Slug field is **read-only** on create and edit; users only type the name.
 - **Create/update API payloads omit `slug`** — BE derives it from `name` (and from each tree node `name`) via `utils.SlugifyName`.
 - Tree nodes: name is editable, slug preview is read-only; write payload omits `slug` on `TaxonomyTreeNode` (use `toTaxonomyTreeWritePayload()` in `src/lib/utils/taxonomy.ts`).
@@ -99,6 +100,12 @@ Taxonomy list screens now use the built-in `DataTable` toolbar instead of a page
 - When `FilterBy` is not `status`, the search input + search action are shown.
 - Status behavior is unchanged.
 - Text search sends `search_by` + `search_value` and resets page to `1`.
+
+## Create/edit dialog open
+
+- `TaxonomyListPage` keeps `formDialogKey` state; `openCreate` / `openEdit` increment it and render `<TaxonomyFormDialog key={formDialogKey} … />`.
+- Controlled `open` from the table does **not** invoke Radix `onOpenChange(true)`, so remount + mount-time init replaces `syncFormState` in `handleOpenChange`.
+- `TaxonomyFormDialog` builds `defaultValues` from `initialData` (`buildTaxonomyFormDefaultValues`, tree/description/image helpers). No `useEffect` form sync (react-compiler safe).
 
 ## Validation and API errors
 
