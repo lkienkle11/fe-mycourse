@@ -1,6 +1,6 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-06-11 (outline section/lesson DeltaEditor refactor + BE delta validation + full lint/biome/tsc/build/quality:deps + BE arch/dupl/layout/test/build gate)._
+_Last audited: 2026-06-11 (optimistic outline reorder UX + BE two-phase reorder helper + full lint/biome/tsc/build/quality:deps + BE arch/dupl/layout/build gate)._
 
 Checks for **circular imports** (Madge), **duplicate code** (jscpd), and **ESLint** under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs `npm run quality:deps`, **`npm run lint`**, and **`npm run test`** in the **`test`** job **before** `npm run build` (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 

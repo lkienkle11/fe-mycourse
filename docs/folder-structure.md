@@ -255,8 +255,9 @@ src/hooks/
 │   ├── use-auth-confirm-tab-sync.ts
 │   └── use-auth-logout-tab-sync.ts
 ├── course/
-│   ├── index.ts            # Barrel: use-course-editor-state
-│   └── use-course-editor-state.ts  # Course editor state, lease handling, translated toasts
+│   ├── index.ts            # Barrel: use-course-editor-state, use-course-outline-reorder
+│   ├── use-course-editor-state.ts  # Course editor state, lease handling, translated toasts
+│   └── use-course-outline-reorder.ts  # Optimistic outline reorder (SWR patch + reorder API)
 ├── events/
 │   ├── index.ts            # Barrel: useStreamEvent + per-channel hooks
 │   ├── use-stream-event.ts # subscribeStreamEvents + optional source/type filter

@@ -476,8 +476,24 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: React component
 - **Path**: `src/components/shared/sortable-list.tsx`
 - **Purpose**: Vertical drag-and-drop reorder via `@dnd-kit` (first DnD usage in the repo).
-- **Scope**: Taxonomy description editor, tree editor; any list with stable string `id`.
+- **Scope**: Course outline tab (sections/lessons/sub-lessons), taxonomy description editor, tree editor; any list with stable string `id`.
 - **Dependencies**: `@dnd-kit/core`, `@dnd-kit/sortable`.
+
+### Asset: course outline reorder helpers
+- **Name**: `assignSequentialOrderIndex`, `withOutlineSections`, `replaceSectionLessons`, `replaceLessonSubLessons`, `mergeReorderedLessons`, `mergeReorderedSubLessons`
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/course.ts`
+- **Purpose**: Patch `CourseDetail.outline` for optimistic drag reorder and merge reorder API responses without duplicating nested outline shape logic.
+- **Scope**: `useCourseOutlineReorder` hook; pairs with `reorderCourseSectionsService` / `reorderCourseLessonsService` / `reorderCourseSubLessonsService`.
+- **Dependencies**: `CourseDetail` / outline node types from `src/types/course.ts`.
+
+### Asset: useCourseOutlineReorder
+- **Name**: `useCourseOutlineReorder`
+- **Type**: React hook
+- **Path**: `src/hooks/course/use-course-outline-reorder.ts`
+- **Purpose**: Optimistic section/lesson/sub-lesson reorder for the course editor: immediate SWR cache update, ephemeral lease, reorder API, success toast + API merge, failure toast + snapshot rollback.
+- **Scope**: Composed by `useCourseEditorState`; wired from `InstructorCourseEditorPage` outline tab actions.
+- **Dependencies**: `course.ts` outline helpers, reorder API callers, `toastApiError`, lease acquire/release from `useCourseLeaseState`.
 
 ### Asset: DagreTreeDialog
 - **Name**: `DagreTreeDialog`, `DagreTreeDialogProps`, `DagreTreeDialogLabels`
