@@ -564,6 +564,23 @@ const messages = {
       rejectReason: "Please enter a rejection reason.",
       rejectReasonMax: "Rejection reason must be at most 2000 characters.",
       videoMediaRequired: "Please select a video file.",
+      submitBasicInfoIncomplete:
+        "Submit is blocked because required basic information is incomplete.",
+      submitOutlineNoSections:
+        "Submit is blocked because the outline must include at least one section.",
+      submitOutlineNoLessons:
+        "Submit is blocked because each section must include at least one lesson.",
+      submitOutlineNoItems:
+        "Submit is blocked because each lesson must include at least one item.",
+      submitInvalidSubLesson:
+        "Submit is blocked because one or more lesson items are invalid.",
+      submitCollaboratorRequired:
+        "Submit is blocked because at least one collaborator is required.",
+      quizPreviewNotAllowed: "Quiz lesson items cannot be marked as preview.",
+      quizCorrectAnswerRequired:
+        "Quiz must include at least one correct answer.",
+      textContentRequired:
+        "Text lesson item must contain at least one non-whitespace character.",
     },
     common: {
       actions: "Actions",

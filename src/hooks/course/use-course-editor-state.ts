@@ -29,6 +29,8 @@ import {
   rootOutlineStableId,
   selectedIdsToMap,
   toUpdateCourseBasicInfoPayload,
+  validateCourseSubmitReadiness,
+  validateSubLessonFormContent,
 } from "@/lib/utils/course";
 import { createEmptyDeltaString } from "@/lib/utils/course-delta";
 import { toastValidationError } from "@/lib/utils/validation-message";
@@ -36,7 +38,6 @@ import {
   courseBasicInfoSchema,
   courseCollaboratorSchema,
   courseLessonSchema,
-  courseQuizOptionSchema,
   courseSectionSchema,
   courseSubLessonSchema,
 } from "@/schema/course";
@@ -528,23 +529,18 @@ export function useCourseEditorState({
       toastValidationError(tValidation, parsed.error.issues, "subLessonTitle");
       return;
     }
-    if (subLessonForm.kind === "VIDEO" && !subLessonForm.video_file_id) {
-      toast.error(tValidation("videoMediaRequired"));
+    const contentIssueKey = validateSubLessonFormContent({
+      kind: subLessonForm.kind,
+      video_file_id: subLessonForm.video_file_id,
+      text_delta: subLessonForm.text_delta,
+      quiz_prompt: subLessonForm.quiz_prompt,
+      quiz_options: subLessonForm.quiz_options,
+    });
+    if (contentIssueKey) {
+      toast.error(
+        tValidation(contentIssueKey as Parameters<typeof tValidation>[0]),
+      );
       return;
-    }
-    if (subLessonForm.kind === "QUIZ") {
-      const parsedQuiz = courseQuizOptionSchema.safeParse({
-        prompt: subLessonForm.quiz_prompt,
-        options: subLessonForm.quiz_options,
-      });
-      if (!parsedQuiz.success) {
-        toastValidationError(
-          tValidation,
-          parsedQuiz.error.issues,
-          "quizPrompt",
-        );
-        return;
-      }
     }
     const isPreview =
       subLessonForm.kind === "QUIZ" ? false : subLessonForm.is_preview;
@@ -628,6 +624,15 @@ export function useCourseEditorState({
   };
 
   const handleSubmitReview = async () => {
+    if (!courseDetail) {
+      toast.error(tValidation("submitBasicInfoIncomplete"));
+      return;
+    }
+    const issues = validateCourseSubmitReadiness(courseDetail);
+    if (issues?.length) {
+      toastValidationError(tValidation, issues, "submitBasicInfoIncomplete");
+      return;
+    }
     try {
       await submitCourseReviewService(courseId);
       toast.success(t("submitted"));

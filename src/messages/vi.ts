@@ -562,6 +562,23 @@ const messages = {
       rejectReason: "Vui lòng nhập lý do từ chối.",
       rejectReasonMax: "Lý do từ chối tối đa 2000 ký tự.",
       videoMediaRequired: "Vui lòng chọn tệp video.",
+      submitBasicInfoIncomplete:
+        "Không thể gửi duyệt vì thông tin cơ bản bắt buộc chưa đầy đủ.",
+      submitOutlineNoSections:
+        "Không thể gửi duyệt vì đề cương phải có ít nhất một phiên học.",
+      submitOutlineNoLessons:
+        "Không thể gửi duyệt vì mỗi phiên học phải có ít nhất một bài học.",
+      submitOutlineNoItems:
+        "Không thể gửi duyệt vì mỗi bài học phải có ít nhất một nội dung.",
+      submitInvalidSubLesson:
+        "Không thể gửi duyệt vì có nội dung học không hợp lệ.",
+      submitCollaboratorRequired:
+        "Không thể gửi duyệt vì cần ít nhất một cộng tác viên.",
+      quizPreviewNotAllowed:
+        "Nội dung câu hỏi (Quiz) không thể được đánh dấu là xem trước.",
+      quizCorrectAnswerRequired: "Câu hỏi phải có ít nhất một đáp án đúng.",
+      textContentRequired:
+        "Nội dung văn bản phải có ít nhất một ký tự không phải khoảng trắng.",
     },
     common: {
       actions: "Thao tác",
