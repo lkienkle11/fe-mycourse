@@ -274,7 +274,7 @@ export type CourseBasicInfoForm = {
   expected_row_version: number;
 };
 
-export type CourseOutlineItemKind = "section" | "lesson";
+export type CourseOutlineItemKind = "section" | "lesson" | "item";
 
 export type CourseOutlineItemFormBase = {
   title: string;
