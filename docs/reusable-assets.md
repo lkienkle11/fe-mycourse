@@ -495,6 +495,14 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Composed by `useCourseEditorState`; wired from `InstructorCourseEditorPage` outline tab actions.
 - **Dependencies**: `course.ts` outline helpers, reorder API callers, `toastApiError`, lease acquire/release from `useCourseLeaseState`.
 
+### Asset: CourseOutlineRowActions
+- **Name**: `CourseOutlineRowActions`
+- **Type**: React component
+- **Path**: `src/components/features/course/course-editor-outline-row-actions.tsx`
+- **Purpose**: Shared outline row action menu for section, lesson, and sub-lesson (item) rows. `DropdownMenu` trigger uses `course.common.actions`; menu entries come from `OUTLINE_ROW_ACTIONS` keyed by `CourseOutlineItemKind` (`section` | `lesson` | `item`).
+- **Scope**: `course-editor-outline-tab.tsx` (`SectionOutlineCard` and nested lesson/item rows).
+- **Dependencies**: `DropdownMenu` / `DropdownMenuItem` (`variant="destructive"` for delete), `CourseOutlineItemKind` from `src/types/course.ts`, i18n `course.editor.outline.*`.
+
 ### Asset: DagreTreeDialog
 - **Name**: `DagreTreeDialog`, `DagreTreeDialogProps`, `DagreTreeDialogLabels`
 - **Type**: React component

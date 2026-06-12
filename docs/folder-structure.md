@@ -151,8 +151,8 @@ src/components/
 │                           #   UpcomingWebinarsSection, PromoSection, CourseCard
 ├── features/
 │   ├── course/             # CourseStatusBadge, CourseBasicInfoTab,
-│   │                       # CourseOutlineTab, CourseCollaboratorsTab, Course*Dialog helpers
-│   │                       # grouped tab prop objects (`state` / `data|taxonomyRows` / `actions`)
+│   │                       # CourseOutlineTab, CourseOutlineRowActions, CourseCollaboratorsTab,
+│   │                       # Course*Dialog helpers; grouped tab prop objects (`state` / `data|taxonomyRows` / `actions`)
 │   ├── taxonomy/           # TaxonomyFormDialog (mount init from initialData; persistedSlug slug preview), tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
 │   ├── instructor/         # InstructorProfileViewDialog, ConfirmAddInstructorDialog, InstructorApprovalActions,
 │   │                       # InstructorListPagination, instructor action/footer helpers,
