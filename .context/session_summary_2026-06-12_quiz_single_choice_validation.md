@@ -3,6 +3,13 @@
 Date: 2026-06-12
 Repos: `fe-mycourse`, `be-mycourse`
 
+## Hotfix — hooks runtime error (same day)
+
+- **Symptom:** switching sub-lesson kind in `CourseSubLessonDialog` → `Rendered fewer hooks than expected`.
+- **Cause:** `SubLessonKindFields` called `renderer(props)` as a plain function, merging child hooks into one component.
+- **Fix:** `return <Renderer {...props} />` so VIDEO/TEXT/QUIZ keep separate hook boundaries.
+- **A11y:** sr-only `DialogDescription` on `CourseOutlineItemDialog` / `CourseSubLessonDialog` (same pattern as `MediaCollectionDialog`).
+
 ## Compliance note (FE checklist)
 
 Initial pass missed items from `temporary-docs/tieu-chuan-check-be-fe/fe-mycourse.md` Phase 3:

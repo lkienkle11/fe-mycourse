@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -82,6 +83,9 @@ function CourseOutlineItemDialog({
       <DialogContent className="scrollbar-app max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t(titleKey)}</DialogTitle>
+          <DialogDescription className="sr-only">
+            {t(titleKey)}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-2">
@@ -426,8 +430,8 @@ const SUB_LESSON_KIND_FIELD_RENDERERS: Record<
 };
 
 function SubLessonKindFields(props: SubLessonKindFieldProps) {
-  const renderer = SUB_LESSON_KIND_FIELD_RENDERERS[props.form.kind];
-  return renderer(props);
+  const Renderer = SUB_LESSON_KIND_FIELD_RENDERERS[props.form.kind];
+  return <Renderer {...props} />;
 }
 
 export function CourseSubLessonDialog({
@@ -458,6 +462,12 @@ export function CourseSubLessonDialog({
               edit: t("itemEditTitle"),
             })}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {subLessonDialogTitle(subLessonDialog?.mode, {
+              create: t("itemCreateTitle"),
+              edit: t("itemEditTitle"),
+            })}
+          </DialogDescription>
         </DialogHeader>
         <div className="min-w-0 space-y-4 overflow-x-hidden">
           <div className="grid min-w-0 gap-4 lg:grid-cols-2">
