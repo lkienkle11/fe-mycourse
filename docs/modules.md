@@ -61,7 +61,7 @@ _Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me
 ## Course module
 
 - **Types**: `src/types/course.ts` — version status, outline nodes, collaborators, leases, learner progress, request payloads.
-- **API**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourses.ts`; routes under `API_PRIVATE_ROUTES.course`.
+- **API**: `src/api/callers/course/course.ts` (`deleteCourseSectionService` → `DELETE /api/v1/courses/:courseId/sections/:sectionId`, returns updated `CourseSection[]`), `src/api/hooks/course/useCourses.ts`; routes under `API_PRIVATE_ROUTES.course`.
 - **UI**:
   - `src/screen/instructor/courses/page.tsx` — editable course list + create/delete owner flow
   - `src/screen/instructor/courses/editor-page.tsx` — editor shell, status header, route-backed tab trigger list, and `CourseEditorTab` → `Component` panel mapping for active-tab rendering
