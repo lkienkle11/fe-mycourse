@@ -60,7 +60,6 @@ export function CourseOutlineRowActions({
   onEdit,
   onDelete,
 }: CourseOutlineRowActionsProps) {
-  const tCommon = useTranslations("course.common");
   const t = useTranslations("course.editor.outline");
 
   const handlers: Record<OutlineRowActionId, (() => void) | undefined> = {
@@ -72,8 +71,12 @@ export function CourseOutlineRowActions({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="outline" size="sm" className="gap-2">
-          <span>{tCommon("actions")}</span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-2 border-none md:border-none"
+        >
           <MoreVertical className="size-4" />
         </Button>
       </DropdownMenuTrigger>
