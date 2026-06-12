@@ -86,6 +86,10 @@ Course authoring / review reuses the same dashboard and API patterns:
 
 **Course editor outline** (`/instructor/courses/:id/outline`): section description and lesson summary use the shared `CourseOutlineItemDialog` with `DeltaEditor` (`allowMediaEmbed={false}` — text formatting only, no image/video/object embeds). Values are stored and returned as Quill Delta JSON strings (≥20 non-whitespace text); legacy plain-text rows still load and validate. Outline cards show a plain-text preview via `extractDeltaPreviewText`. Drag reorder (sections, lessons, lesson items) applies **optimistic UI** via `useCourseOutlineReorder`: order updates in SWR cache before the reorder API runs; success shows `course.editor.toast.sectionsReordered` / `lessonsReordered` / `itemsReordered` and merges the API response; failure shows `toastApiError` and restores the pre-drag snapshot.
 
+**Sub-lesson save**: before sending the payload, `saveSubLesson` calls `validateSubLessonFormContent` (VIDEO/TEXT/QUIZ content rules) and enforces `is_preview = false` for `QUIZ` sub-lessons regardless of form state.
+
+**Submit for review** (`handleSubmitReview`): calls `validateCourseSubmitReadiness` (from `src/lib/utils/course.ts`) before the API. Validation checks (in order): draft version present, basic info schema passes (`courseBasicInfoSchema`), ≥1 collaborator, ≥1 section, each section ≥1 lesson, each lesson ≥1 sub-lesson, and each sub-lesson content valid. Sub-lesson rules: VIDEO must have `media_file_id`, TEXT must have ≥1 non-whitespace character, QUIZ must not be `is_preview`, must have prompt, ≥1 option, and ≥1 correct answer. All failures surface as i18n keys in `courseEditor.validation.*`; see `src/messages/{en,vi}.ts`. Detailed flow in [`docs/logic-flow.md` §10](./logic-flow.md).
+
 Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalActions`.
 
 ## Validation and API errors

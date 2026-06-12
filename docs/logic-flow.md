@@ -1,6 +1,6 @@
 # Logic Flow
 
-_Last audited: 2026-06-08 (API error display flow + form result.code mapping)._
+_Last audited: 2026-06-12 (course editor submit validation, quiz preview enforcement)._
 
 
 Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifecycle, data fetching, and form submission patterns.
@@ -277,7 +277,64 @@ Components can subscribe to the global error store:
 
 ---
 
-## 10. Stream Event Ingest Flow
+## 10. Course Editor — Submit-for-Review Validation Flow
+
+**Source:** `src/lib/utils/course.ts`, `src/hooks/course/use-course-editor-state.ts`
+
+```
+Instructor clicks "Submit for Review"
+  ↓
+handleSubmitReview()  [use-course-editor-state.ts]
+  ↓
+validateCourseSubmitReadiness(courseDetail)  [src/lib/utils/course.ts]
+  ├─ draftVersion present?     NO  → ZodIssue(submitBasicInfoIncomplete)
+  ├─ courseBasicInfoSchema.safeParse(basicInfoState)  → fail? ZodIssue(submitBasicInfoIncomplete)
+  ├─ collaborators.length >= 1  NO → ZodIssue(submitCollaboratorRequired)
+  ├─ outline.length >= 1         NO → ZodIssue(submitOutlineNoSections)
+  ├─ each section.lessons >= 1   NO → ZodIssue(submitOutlineNoLessons)
+  ├─ each lesson.sub_lessons >= 1 NO → ZodIssue(submitOutlineNoItems)
+  └─ for each subLesson: validateSubLessonReadiness(subLesson)
+       ├─ VIDEO → media_file_id empty?     → "submitInvalidSubLesson"
+       ├─ TEXT  → countDeltaNonWhitespace < 1? → "textContentRequired"
+       └─ QUIZ  → is_preview == true?         → "quizPreviewNotAllowed"
+               → prompt empty or no options?  → "submitInvalidSubLesson"
+               → any option body empty?       → "submitInvalidSubLesson"
+               → no correct answer?           → "quizCorrectAnswerRequired"
+  ↓
+issues !== null?
+  → show toast/error using tValidation("courseEditor.validation.<key>")
+  → abort (no API call)
+  ↓
+issues === null?
+  → submitReviewService(courseId)  POST /api/v1/courses/:courseId/submit-review
+```
+
+### Sub-lesson content validation on save (`saveSubLesson`)
+
+Before calling the save API, `saveSubLesson` calls `validateSubLessonFormContent` (same rules as `validateSubLessonReadiness` but operates on raw form state). Additionally, `is_preview` is forced to `false` for `QUIZ` sub-lessons before the payload is sent:
+
+```ts
+const isPreview = subLessonForm.kind === "QUIZ" ? false : subLessonForm.is_preview;
+```
+
+### i18n keys (`courseEditor.validation.*`)
+
+| Key | Meaning |
+|-----|---------|
+| `videoMediaRequired` | VIDEO sub-lesson missing media file |
+| `textContentRequired` | TEXT sub-lesson empty content |
+| `quizPreviewNotAllowed` | QUIZ sub-lesson marked as preview (not allowed) |
+| `quizCorrectAnswerRequired` | QUIZ has no correct answer |
+| `submitInvalidSubLesson` | Sub-lesson invalid (catch-all) |
+| `submitBasicInfoIncomplete` | Draft basic info incomplete |
+| `submitCollaboratorRequired` | No collaborator on course |
+| `submitOutlineNoSections` | Outline has no sections |
+| `submitOutlineNoLessons` | A section has no lessons |
+| `submitOutlineNoItems` | A lesson has no sub-lessons |
+
+---
+
+## 11. Stream Event Ingest Flow
 
 ```
 EventsStreamProvider mounts (client)
