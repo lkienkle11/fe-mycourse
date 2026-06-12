@@ -495,6 +495,14 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Composed by `useCourseEditorState`; wired from `InstructorCourseEditorPage` outline tab actions.
 - **Dependencies**: `course.ts` outline helpers, reorder API callers, `toastApiError`, lease acquire/release from `useCourseLeaseState`.
 
+### Asset: CourseOutlineRowActions
+- **Name**: `CourseOutlineRowActions`
+- **Type**: React component
+- **Path**: `src/components/features/course/course-editor-outline-row-actions.tsx`
+- **Purpose**: Shared outline row action menu for section, lesson, and sub-lesson (item) rows. `DropdownMenu` trigger uses `course.common.actions`; menu entries come from `OUTLINE_ROW_ACTIONS` keyed by `CourseOutlineItemKind` (`section` | `lesson` | `item`).
+- **Scope**: `course-editor-outline-tab.tsx` (`SectionOutlineCard` and nested lesson/item rows).
+- **Dependencies**: `DropdownMenu` / `DropdownMenuItem` (`variant="destructive"` for delete), `CourseOutlineItemKind` from `src/types/course.ts`, i18n `course.editor.outline.*`.
+
 ### Asset: DagreTreeDialog
 - **Name**: `DagreTreeDialog`, `DagreTreeDialogProps`, `DagreTreeDialogLabels`
 - **Type**: React component
@@ -540,7 +548,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course.ts`
-- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, and `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE).
+- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE), `validateSubLessonFormContent` / `validateCourseSubmitReadiness` (QUIZ rules delegate to `courseQuizOptionSchema`), and quiz editor state helpers `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` for `SubLessonQuizFields`.
 - **Scope**: `use-course-editor-state`, `editor-page.tsx`.
 - **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`).
 

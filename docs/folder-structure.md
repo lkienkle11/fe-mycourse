@@ -151,8 +151,8 @@ src/components/
 │                           #   UpcomingWebinarsSection, PromoSection, CourseCard
 ├── features/
 │   ├── course/             # CourseStatusBadge, CourseBasicInfoTab,
-│   │                       # CourseOutlineTab, CourseCollaboratorsTab, Course*Dialog helpers
-│   │                       # grouped tab prop objects (`state` / `data|taxonomyRows` / `actions`)
+│   │                       # CourseOutlineTab, CourseOutlineRowActions, CourseCollaboratorsTab,
+│   │                       # Course*Dialog helpers; grouped tab prop objects (`state` / `data|taxonomyRows` / `actions`)
 │   ├── taxonomy/           # TaxonomyFormDialog (mount init from initialData; persistedSlug slug preview), tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
 │   ├── instructor/         # InstructorProfileViewDialog, ConfirmAddInstructorDialog, InstructorApprovalActions,
 │   │                       # InstructorListPagination, instructor action/footer helpers,
@@ -407,7 +407,7 @@ src/lib/
 │   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractAxiosApiError
 │   ├── validation-message.ts # resolveValidationMessage, toastValidationError, firstValidationMessageKey
 │   ├── course-delta.ts       # Quill Delta parse/stringify/text helpers + countDeltaNonWhitespace
-│   ├── course.ts             # createCourseBasicInfoState, createCourseSubLessonFormState, rootOutlineStableId, selectedIdsToMap
+│   ├── course.ts             # createCourseBasicInfoState, createCourseSubLessonFormState, validateSubLessonFormContent, validateCourseSubmitReadiness, applyQuizAllowMultipleChange, applyQuizOptionCorrectChange, rootOutlineStableId, selectedIdsToMap
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
 │   ├── media.ts            # isImageFilename, isExecutableExtension, validateMediaUploadBatch, isImageMedia, …
 │   ├── dagre-tree.ts       # treeToFlowElements, getLayoutedElements (React Flow + dagre)

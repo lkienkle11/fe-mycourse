@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-06-08 (no route changes; cross-ref validation/API error docs)._
+_Last audited: 2026-06-12 (no route changes; cross-ref quiz validation in course editor outline tab)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.

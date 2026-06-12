@@ -78,6 +78,7 @@ Added:
 - `src/components/features/instructor/instructor-course-editor-route.tsx`
 - `src/components/features/course/course-editor-basic-tab.tsx`
 - `src/components/features/course/course-editor-outline-tab.tsx`
+- `src/components/features/course/course-editor-outline-row-actions.tsx`
 - `src/components/features/course/course-editor-collaborators-tab.tsx`
 - `src/components/features/course/course-editor-dialogs.tsx`
 - `src/hooks/course/use-course-editor-state.ts`
