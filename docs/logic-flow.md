@@ -1,6 +1,6 @@
 # Logic Flow
 
-_Last audited: 2026-06-12 (course editor submit validation, quiz preview enforcement)._
+_Last audited: 2026-06-12 (quiz single-choice validation + editor UI, course editor submit validation, quiz preview enforcement)._
 
 
 Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifecycle, data fetching, and form submission patterns.
@@ -300,9 +300,10 @@ validateCourseSubmitReadiness(courseDetail)  [src/lib/utils/course.ts]
                → prompt empty or no options?  → "submitInvalidSubLesson"
                → any option body empty?       → "submitInvalidSubLesson"
                → no correct answer?           → "quizCorrectAnswerRequired"
+               → allow_multiple == false and >1 correct? → "quizSingleChoiceMultipleCorrect"
   ↓
 issues !== null?
-  → show toast/error using tValidation("courseEditor.validation.<key>")
+  → show toast/error using tValidation("course.validation.<key>")
   → abort (no API call)
   ↓
 issues === null?
@@ -311,13 +312,18 @@ issues === null?
 
 ### Sub-lesson content validation on save (`saveSubLesson`)
 
-Before calling the save API, `saveSubLesson` calls `validateSubLessonFormContent` (same rules as `validateSubLessonReadiness` but operates on raw form state). Additionally, `is_preview` is forced to `false` for `QUIZ` sub-lessons before the payload is sent:
+Before calling the save API, `saveSubLesson` calls `validateSubLessonFormContent` (same rules as `validateSubLessonReadiness` but operates on raw form state, including `allow_multiple`). QUIZ branch delegates to `courseQuizOptionSchema.safeParse` and maps Zod issues via `firstValidationMessageKey` → `course.validation.*`. Additionally, `is_preview` is forced to `false` for `QUIZ` sub-lessons before the payload is sent.
+
+Quiz editor UI (`SubLessonQuizFields` in `course-editor-dialogs.tsx`):
+
+- Single-choice (`allow_multiple = false`): checking one correct answer clears all others; unchecking only affects that option.
+- Switching from multiple-choice to single-choice sets the first option as the only correct answer.
 
 ```ts
 const isPreview = subLessonForm.kind === "QUIZ" ? false : subLessonForm.is_preview;
 ```
 
-### i18n keys (`courseEditor.validation.*`)
+### i18n keys (`course.validation.*`)
 
 | Key | Meaning |
 |-----|---------|
@@ -325,6 +331,7 @@ const isPreview = subLessonForm.kind === "QUIZ" ? false : subLessonForm.is_previ
 | `textContentRequired` | TEXT sub-lesson empty content |
 | `quizPreviewNotAllowed` | QUIZ sub-lesson marked as preview (not allowed) |
 | `quizCorrectAnswerRequired` | QUIZ has no correct answer |
+| `quizSingleChoiceMultipleCorrect` | Single-choice QUIZ has more than one correct answer |
 | `submitInvalidSubLesson` | Sub-lesson invalid (catch-all) |
 | `submitBasicInfoIncomplete` | Draft basic info incomplete |
 | `submitCollaboratorRequired` | No collaborator on course |

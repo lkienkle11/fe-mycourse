@@ -548,7 +548,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course.ts`
-- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, and `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE).
+- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE), `validateSubLessonFormContent` / `validateCourseSubmitReadiness` (QUIZ rules delegate to `courseQuizOptionSchema`), and quiz editor state helpers `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` for `SubLessonQuizFields`.
 - **Scope**: `use-course-editor-state`, `editor-page.tsx`.
 - **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`).
 

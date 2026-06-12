@@ -407,7 +407,7 @@ src/lib/
 │   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractAxiosApiError
 │   ├── validation-message.ts # resolveValidationMessage, toastValidationError, firstValidationMessageKey
 │   ├── course-delta.ts       # Quill Delta parse/stringify/text helpers + countDeltaNonWhitespace
-│   ├── course.ts             # createCourseBasicInfoState, createCourseSubLessonFormState, rootOutlineStableId, selectedIdsToMap
+│   ├── course.ts             # createCourseBasicInfoState, createCourseSubLessonFormState, validateSubLessonFormContent, validateCourseSubmitReadiness, applyQuizAllowMultipleChange, applyQuizOptionCorrectChange, rootOutlineStableId, selectedIdsToMap
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
 │   ├── media.ts            # isImageFilename, isExecutableExtension, validateMediaUploadBatch, isImageMedia, …
 │   ├── dagre-tree.ts       # treeToFlowElements, getLayoutedElements (React Flow + dagre)
