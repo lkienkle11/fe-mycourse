@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+import { CourseOutlineRowActions } from "@/components/features/course/course-editor-outline-row-actions";
 import { SortableList } from "@/components/shared/sortable-list";
 import { Button } from "@/components/ui/button";
 import {
@@ -169,27 +170,12 @@ function SectionOutlineCard({
                 tCommon("noSectionDescription")}
             </div>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={onAddLesson}
-            >
-              {t("addLesson")}
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={onEdit}>
-              {t("editSection")}
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              onClick={onDelete}
-            >
-              {t("deleteSection")}
-            </Button>
-          </div>
+          <CourseOutlineRowActions
+            kind="section"
+            onAdd={onAddLesson}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
         </div>
 
         {section.lessons.length > 0 ? (
@@ -212,32 +198,12 @@ function SectionOutlineCard({
                         tCommon("noLessonSummary")}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => onAddSubLesson(item.lesson)}
-                    >
-                      {t("addItem")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onEditLesson(item.lesson)}
-                    >
-                      {t("editLesson")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => onDeleteLesson(item.lesson)}
-                    >
-                      {t("deleteLesson")}
-                    </Button>
-                  </div>
+                  <CourseOutlineRowActions
+                    kind="lesson"
+                    onAdd={() => onAddSubLesson(item.lesson)}
+                    onEdit={() => onEditLesson(item.lesson)}
+                    onDelete={() => onDeleteLesson(item.lesson)}
+                  />
                 </div>
 
                 {item.lesson.sub_lessons.length > 0 ? (
@@ -268,26 +234,13 @@ function SectionOutlineCard({
                                 : ""}
                             </div>
                           </div>
-                          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                onEditSubLesson(item.lesson, entry.subLesson)
-                              }
-                            >
-                              {t("editItem")}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => onDeleteSubLesson(entry.subLesson)}
-                            >
-                              {t("deleteItem")}
-                            </Button>
-                          </div>
+                          <CourseOutlineRowActions
+                            kind="item"
+                            onEdit={() =>
+                              onEditSubLesson(item.lesson, entry.subLesson)
+                            }
+                            onDelete={() => onDeleteSubLesson(entry.subLesson)}
+                          />
                         </div>
                       </div>
                     )}

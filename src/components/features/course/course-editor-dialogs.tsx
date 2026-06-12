@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { MediaCollectionDialog } from "@/components/features/media";
 import { DeltaEditor } from "@/components/shared/delta-editor";
 import { RequiredLabel } from "@/components/shared/required-label";
@@ -22,6 +22,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useDeltaEditorMediaHandlers } from "@/hooks";
+import {
+  applyQuizAllowMultipleChange,
+  applyQuizOptionCorrectChange,
+} from "@/lib/utils/course";
 import { newV7 } from "@/lib/utils/uuid";
 import type {
   CourseBasicInfoForm,
@@ -187,6 +191,245 @@ type CourseSubLessonDialogProps = {
   onOpenVideoDialog: () => void;
 };
 
+type SubLessonKindFieldProps = {
+  form: CourseSubLessonFormState;
+  setForm: Dispatch<SetStateAction<CourseSubLessonFormState>>;
+  onOpenVideoDialog: () => void;
+  onObjectEmbedded: ReturnType<
+    typeof useDeltaEditorMediaHandlers
+  >["onObjectEmbedded"];
+  onDelete: ReturnType<typeof useDeltaEditorMediaHandlers>["onDelete"];
+};
+
+const SUB_LESSON_KINDS_WITH_PREVIEW: CourseSubLessonKind[] = ["VIDEO", "TEXT"];
+
+function subLessonDialogTitle(
+  mode: CourseSubLessonDialogState["mode"] | undefined,
+  labels: { create: string; edit: string },
+): string {
+  if (mode === "create") {
+    return labels.create;
+  }
+  return labels.edit;
+}
+
+function SubLessonCheckboxField({
+  checked,
+  onCheckedChange,
+  label,
+}: {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Checkbox
+        checked={checked}
+        onCheckedChange={(nextChecked) => onCheckedChange(nextChecked === true)}
+      />
+      <span className="text-sm">{label}</span>
+    </div>
+  );
+}
+
+function SubLessonVideoFields({
+  form,
+  setForm,
+  onOpenVideoDialog,
+}: SubLessonKindFieldProps) {
+  const tCommon = useTranslations("course.common");
+  const t = useTranslations("course.editor.dialogs");
+  const tBasic = useTranslations("course.editor.basicInfo");
+  const hasVideo = Boolean(form.video_file_id);
+
+  return (
+    <div className="min-w-0 space-y-2">
+      <RequiredLabel>{t("videoFileLabel")}</RequiredLabel>
+      <div className="min-w-0 rounded-md border p-3 text-sm">
+        {hasVideo ? (
+          <div className="min-w-0 space-y-1">
+            <div className="break-all font-medium">{form.video_file_id}</div>
+            <div className="break-all text-muted-foreground">
+              {form.video_url || tCommon("videoSelected")}
+            </div>
+          </div>
+        ) : (
+          <p className="text-muted-foreground">{tCommon("noVideoSelected")}</p>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" variant="secondary" onClick={onOpenVideoDialog}>
+          {tBasic("browseVideos")}
+        </Button>
+        {hasVideo ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              setForm((prev) => ({
+                ...prev,
+                video_file_id: "",
+                video_url: "",
+              }))
+            }
+          >
+            {tBasic("clear")}
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function SubLessonTextFields({
+  form,
+  setForm,
+  onObjectEmbedded,
+  onDelete,
+}: SubLessonKindFieldProps) {
+  return (
+    <DeltaEditor
+      className="min-w-0"
+      surfaceClassName="max-h-[320px]"
+      value={form.text_delta}
+      onObjectEmbedded={onObjectEmbedded}
+      onDelete={onDelete}
+      onChange={(value) => setForm((prev) => ({ ...prev, text_delta: value }))}
+    />
+  );
+}
+
+function SubLessonQuizFields({
+  form,
+  setForm,
+}: Pick<SubLessonKindFieldProps, "form" | "setForm">) {
+  const t = useTranslations("course.editor.dialogs");
+
+  return (
+    <div className="min-w-0 space-y-4">
+      <div className="space-y-2">
+        <RequiredLabel htmlFor="quiz-prompt">{t("promptLabel")}</RequiredLabel>
+        <Textarea
+          id="quiz-prompt"
+          rows={3}
+          className="min-w-0"
+          value={form.quiz_prompt}
+          onChange={(event) =>
+            setForm((prev) => ({ ...prev, quiz_prompt: event.target.value }))
+          }
+        />
+      </div>
+      <SubLessonCheckboxField
+        checked={form.allow_multiple}
+        onCheckedChange={(checked) =>
+          setForm((prev) => ({
+            ...prev,
+            ...applyQuizAllowMultipleChange(checked, prev.quiz_options),
+          }))
+        }
+        label={t("allowMultiple")}
+      />
+
+      <div className="min-w-0 space-y-3">
+        {form.quiz_options.map((option, index) => (
+          <div
+            key={option.option_key}
+            className="min-w-0 rounded-md border p-3"
+          >
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <RequiredLabel>
+                {t("optionLabel", { index: String(index + 1) })}
+              </RequiredLabel>
+              {form.quiz_options.length > 1 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      quiz_options: prev.quiz_options.filter(
+                        (item) => item.option_key !== option.option_key,
+                      ),
+                    }))
+                  }
+                >
+                  {t("removeOption")}
+                </Button>
+              ) : null}
+            </div>
+            <div className="space-y-3">
+              <Input
+                className="min-w-0"
+                value={option.body}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    quiz_options: prev.quiz_options.map((item) =>
+                      item.option_key === option.option_key
+                        ? { ...item, body: event.target.value }
+                        : item,
+                    ),
+                  }))
+                }
+              />
+              <SubLessonCheckboxField
+                checked={option.is_correct}
+                onCheckedChange={(checked) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    quiz_options: applyQuizOptionCorrectChange(
+                      prev.allow_multiple,
+                      prev.quiz_options,
+                      option.option_key,
+                      checked,
+                    ),
+                  }))
+                }
+                label={t("correctAnswer")}
+              />
+            </div>
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() =>
+            setForm((prev) => ({
+              ...prev,
+              quiz_options: [
+                ...prev.quiz_options,
+                {
+                  option_key: newV7(),
+                  body: "",
+                  is_correct: false,
+                },
+              ],
+            }))
+          }
+        >
+          {t("addOption")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+const SUB_LESSON_KIND_FIELD_RENDERERS: Record<
+  CourseSubLessonKind,
+  (props: SubLessonKindFieldProps) => ReactNode
+> = {
+  VIDEO: SubLessonVideoFields,
+  TEXT: SubLessonTextFields,
+  QUIZ: SubLessonQuizFields,
+};
+
+function SubLessonKindFields(props: SubLessonKindFieldProps) {
+  const renderer = SUB_LESSON_KIND_FIELD_RENDERERS[props.form.kind];
+  return renderer(props);
+}
+
 export function CourseSubLessonDialog({
   subLessonDialog,
   subLessonForm,
@@ -197,29 +440,34 @@ export function CourseSubLessonDialog({
 }: CourseSubLessonDialogProps) {
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.editor.dialogs");
-  const tBasic = useTranslations("course.editor.basicInfo");
   const { onObjectEmbedded, onDelete } = useDeltaEditorMediaHandlers();
+  const showsPreview = SUB_LESSON_KINDS_WITH_PREVIEW.includes(
+    subLessonForm.kind,
+  );
+
   return (
     <Dialog
       open={Boolean(subLessonDialog)}
       onOpenChange={(open) => !open && onClose()}
     >
-      <DialogContent className="scrollbar-app max-h-[90vh] max-w-3xl overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="scrollbar-app max-h-[90vh] max-w-3xl overflow-x-hidden overflow-y-auto">
+        <DialogHeader className="min-w-0">
           <DialogTitle>
-            {subLessonDialog?.mode === "create"
-              ? t("itemCreateTitle")
-              : t("itemEditTitle")}
+            {subLessonDialogTitle(subLessonDialog?.mode, {
+              create: t("itemCreateTitle"),
+              edit: t("itemEditTitle"),
+            })}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="space-y-2">
+        <div className="min-w-0 space-y-4 overflow-x-hidden">
+          <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+            <div className="min-w-0 space-y-2">
               <RequiredLabel htmlFor="sublesson-title">
                 {t("titleLabel")}
               </RequiredLabel>
               <Input
                 id="sublesson-title"
+                className="min-w-0"
                 value={subLessonForm.title}
                 onChange={(event) =>
                   setSubLessonForm((prev) => ({
@@ -229,7 +477,7 @@ export function CourseSubLessonDialog({
                 }
               />
             </div>
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <RequiredLabel>{t("lessonItemTypeLabel")}</RequiredLabel>
               <Select
                 value={subLessonForm.kind}
@@ -241,7 +489,7 @@ export function CourseSubLessonDialog({
                   }))
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="min-w-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -259,192 +507,26 @@ export function CourseSubLessonDialog({
             </div>
           </div>
 
-          {subLessonForm.kind === "VIDEO" || subLessonForm.kind === "TEXT" ? (
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={subLessonForm.is_preview}
-                onCheckedChange={(checked) =>
-                  setSubLessonForm((prev) => ({
-                    ...prev,
-                    is_preview: checked === true,
-                  }))
-                }
-              />
-              <span className="text-sm">{t("previewCheckbox")}</span>
-            </div>
-          ) : null}
-
-          {subLessonForm.kind === "VIDEO" ? (
-            <div className="space-y-2">
-              <RequiredLabel>{t("videoFileLabel")}</RequiredLabel>
-              <div className="rounded-md border p-3 text-sm">
-                {subLessonForm.video_file_id ? (
-                  <div className="space-y-1">
-                    <div className="font-medium">
-                      {subLessonForm.video_file_id}
-                    </div>
-                    <div className="truncate text-muted-foreground">
-                      {subLessonForm.video_url || tCommon("videoSelected")}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">
-                    {tCommon("noVideoSelected")}
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={onOpenVideoDialog}
-                >
-                  {tBasic("browseVideos")}
-                </Button>
-                {subLessonForm.video_file_id ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      setSubLessonForm((prev) => ({
-                        ...prev,
-                        video_file_id: "",
-                        video_url: "",
-                      }))
-                    }
-                  >
-                    {tBasic("clear")}
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
-          {subLessonForm.kind === "TEXT" ? (
-            <DeltaEditor
-              value={subLessonForm.text_delta}
-              onObjectEmbedded={onObjectEmbedded}
-              onDelete={onDelete}
-              onChange={(value) =>
-                setSubLessonForm((prev) => ({ ...prev, text_delta: value }))
+          {showsPreview ? (
+            <SubLessonCheckboxField
+              checked={subLessonForm.is_preview}
+              onCheckedChange={(checked) =>
+                setSubLessonForm((prev) => ({
+                  ...prev,
+                  is_preview: checked,
+                }))
               }
+              label={t("previewCheckbox")}
             />
           ) : null}
 
-          {subLessonForm.kind === "QUIZ" ? (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <RequiredLabel htmlFor="quiz-prompt">
-                  {t("promptLabel")}
-                </RequiredLabel>
-                <Textarea
-                  id="quiz-prompt"
-                  rows={3}
-                  value={subLessonForm.quiz_prompt}
-                  onChange={(event) =>
-                    setSubLessonForm((prev) => ({
-                      ...prev,
-                      quiz_prompt: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={subLessonForm.allow_multiple}
-                  onCheckedChange={(checked) =>
-                    setSubLessonForm((prev) => ({
-                      ...prev,
-                      allow_multiple: checked === true,
-                    }))
-                  }
-                />
-                <span className="text-sm">{t("allowMultiple")}</span>
-              </div>
-
-              <div className="space-y-3">
-                {subLessonForm.quiz_options.map((option, index) => (
-                  <div
-                    key={option.option_key}
-                    className="rounded-md border p-3"
-                  >
-                    <div className="mb-2 flex items-center justify-between">
-                      <RequiredLabel>
-                        {t("optionLabel", { index: String(index + 1) })}
-                      </RequiredLabel>
-                      {subLessonForm.quiz_options.length > 1 ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            setSubLessonForm((prev) => ({
-                              ...prev,
-                              quiz_options: prev.quiz_options.filter(
-                                (item) => item.option_key !== option.option_key,
-                              ),
-                            }))
-                          }
-                        >
-                          {t("removeOption")}
-                        </Button>
-                      ) : null}
-                    </div>
-                    <div className="space-y-3">
-                      <Input
-                        value={option.body}
-                        onChange={(event) =>
-                          setSubLessonForm((prev) => ({
-                            ...prev,
-                            quiz_options: prev.quiz_options.map((item) =>
-                              item.option_key === option.option_key
-                                ? { ...item, body: event.target.value }
-                                : item,
-                            ),
-                          }))
-                        }
-                      />
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={option.is_correct}
-                          onCheckedChange={(checked) =>
-                            setSubLessonForm((prev) => ({
-                              ...prev,
-                              quiz_options: prev.quiz_options.map((item) =>
-                                item.option_key === option.option_key
-                                  ? { ...item, is_correct: checked === true }
-                                  : item,
-                              ),
-                            }))
-                          }
-                        />
-                        <span className="text-sm">{t("correctAnswer")}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() =>
-                    setSubLessonForm((prev) => ({
-                      ...prev,
-                      quiz_options: [
-                        ...prev.quiz_options,
-                        {
-                          option_key: newV7(),
-                          body: "",
-                          is_correct: false,
-                        },
-                      ],
-                    }))
-                  }
-                >
-                  {t("addOption")}
-                </Button>
-              </div>
-            </div>
-          ) : null}
+          <SubLessonKindFields
+            form={subLessonForm}
+            setForm={setSubLessonForm}
+            onOpenVideoDialog={onOpenVideoDialog}
+            onObjectEmbedded={onObjectEmbedded}
+            onDelete={onDelete}
+          />
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>

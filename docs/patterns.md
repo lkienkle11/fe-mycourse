@@ -297,7 +297,7 @@ Schemas live under `src/schema/<domain>/` (barrel `@/schema`). Each module uses 
 | `media.validation` | `tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected` |
 | `taxonomy.form.validation` | `name`, `nameMax`, `shortDescription`, `shortDescriptionMax`, `descriptionMaxLines`, `descriptionLineMax` |
 | `instructor.validation` | `email`, `rejectionReason`, `rejectionReasonMax`, `topicId`, `skillId`, `ticketSubject`, `ticketMessage` |
-| `course.validation` | `title`, `titleMax`, `shortDescriptionMax`, `sectionTitle`, `lessonTitle`, `subLessonTitle`, `subLessonKind`, `quizPrompt`, `quizOptionBody`, `quizOptionsMin`, `collaboratorUserId`, `rejectReason`, `rejectReasonMax`, `videoMediaRequired` |
+| `course.validation` | `title`, `titleMax`, `shortDescriptionMax`, `sectionTitle`, `lessonTitle`, `subLessonTitle`, `subLessonKind`, `quizPrompt`, `quizOptionBody`, `quizOptionsMin`, `quizCorrectAnswerRequired`, `quizSingleChoiceMultipleCorrect`, `quizPreviewNotAllowed`, `videoMediaRequired`, `textContentRequired`, `submitInvalidSubLesson`, `submitBasicInfoIncomplete`, `submitCollaboratorRequired`, `submitOutlineNoSections`, `submitOutlineNoLessons`, `submitOutlineNoItems`, `collaboratorUserId`, `rejectReason`, `rejectReasonMax` |
 
 Taxonomy forms resolve Zod keys via `useTranslations("taxonomy.form")` + schema key `validation.*` (same parent-namespace pattern as auth).
 

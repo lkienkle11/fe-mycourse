@@ -1,5 +1,11 @@
-import { createEmptyDeltaString } from "@/lib/utils/course-delta";
+import type { ZodIssue } from "zod";
+import {
+  countDeltaNonWhitespace,
+  createEmptyDeltaString,
+} from "@/lib/utils/course-delta";
 import { newV7 } from "@/lib/utils/uuid";
+import { firstValidationMessageKey } from "@/lib/utils/validation-message";
+import { courseBasicInfoSchema, courseQuizOptionSchema } from "@/schema/course";
 import type {
   CourseBasicInfoForm,
   CourseDetail,
@@ -8,9 +14,24 @@ import type {
   CourseSection,
   CourseSubLesson,
   CourseSubLessonFormState,
+  CourseSubLessonKind,
   CourseVersion,
   UpdateCourseBasicInfoPayload,
+  UpsertCourseQuizOptionPayload,
 } from "@/types/course";
+
+export type CourseValidationMessageKey =
+  | "videoMediaRequired"
+  | "textContentRequired"
+  | "submitInvalidSubLesson"
+  | "quizCorrectAnswerRequired"
+  | "quizSingleChoiceMultipleCorrect"
+  | "quizPreviewNotAllowed"
+  | "submitBasicInfoIncomplete"
+  | "submitCollaboratorRequired"
+  | "submitOutlineNoSections"
+  | "submitOutlineNoLessons"
+  | "submitOutlineNoItems";
 
 export const courseEditorTabs = [
   "info",
@@ -167,4 +188,183 @@ export function mergeReorderedSubLessons(
       lesson.id === lessonId ? { ...lesson, sub_lessons: subLessons } : lesson,
     ),
   }));
+}
+
+function validateQuizContent(input: {
+  allow_multiple: boolean;
+  prompt: string;
+  options: { body: string; is_correct: boolean }[];
+}): CourseValidationMessageKey | null {
+  const parsed = courseQuizOptionSchema.safeParse(input);
+  if (parsed.success) {
+    return null;
+  }
+  return firstValidationMessageKey(
+    parsed.error.issues,
+    "submitInvalidSubLesson",
+  ) as CourseValidationMessageKey;
+}
+
+export function applyQuizAllowMultipleChange(
+  allowMultiple: boolean,
+  quizOptions: UpsertCourseQuizOptionPayload[],
+): Pick<CourseSubLessonFormState, "allow_multiple" | "quiz_options"> {
+  if (allowMultiple) {
+    return { allow_multiple: true, quiz_options: quizOptions };
+  }
+  return {
+    allow_multiple: false,
+    quiz_options: quizOptions.map((item, index) => ({
+      ...item,
+      is_correct: index === 0,
+    })),
+  };
+}
+
+export function applyQuizOptionCorrectChange(
+  allowMultiple: boolean,
+  quizOptions: UpsertCourseQuizOptionPayload[],
+  optionKey: string,
+  checked: boolean,
+): UpsertCourseQuizOptionPayload[] {
+  return quizOptions.map((item) => {
+    if (item.option_key !== optionKey) {
+      return allowMultiple ? item : { ...item, is_correct: false };
+    }
+    return { ...item, is_correct: checked };
+  });
+}
+
+function validateSubLessonReadiness(
+  subLesson: CourseSubLesson,
+): CourseValidationMessageKey | null {
+  if (subLesson.kind === "VIDEO") {
+    if (!subLesson.video?.media_file_id?.trim()) {
+      return "submitInvalidSubLesson";
+    }
+    return null;
+  }
+
+  if (subLesson.kind === "TEXT") {
+    if (countDeltaNonWhitespace(subLesson.text?.content_delta ?? "") < 1) {
+      return "textContentRequired";
+    }
+    return null;
+  }
+
+  if (subLesson.kind === "QUIZ") {
+    if (subLesson.is_preview) {
+      return "quizPreviewNotAllowed";
+    }
+    return validateQuizContent({
+      allow_multiple: subLesson.quiz?.allow_multiple ?? false,
+      prompt: subLesson.quiz?.prompt ?? "",
+      options: subLesson.quiz?.options ?? [],
+    });
+  }
+
+  return "submitInvalidSubLesson";
+}
+
+export function validateSubLessonFormContent(input: {
+  kind: CourseSubLessonKind;
+  video_file_id?: string;
+  text_delta?: string;
+  allow_multiple?: boolean;
+  quiz_prompt?: string;
+  quiz_options?: { body: string; is_correct: boolean }[];
+}): CourseValidationMessageKey | null {
+  if (input.kind === "VIDEO") {
+    return input.video_file_id?.trim() ? null : "videoMediaRequired";
+  }
+
+  if (input.kind === "TEXT") {
+    return countDeltaNonWhitespace(input.text_delta ?? "") >= 1
+      ? null
+      : "textContentRequired";
+  }
+
+  if (input.kind === "QUIZ") {
+    return validateQuizContent({
+      allow_multiple: input.allow_multiple ?? false,
+      prompt: input.quiz_prompt ?? "",
+      options: input.quiz_options ?? [],
+    });
+  }
+
+  return "submitInvalidSubLesson";
+}
+
+export function validateCourseSubmitReadiness(
+  detail: CourseDetail,
+): ZodIssue[] | null {
+  const draftVersion = detail.draft_version;
+  if (!draftVersion) {
+    return [
+      { code: "custom", path: ["draft"], message: "submitBasicInfoIncomplete" },
+    ];
+  }
+
+  const basicInfo = courseBasicInfoSchema.safeParse(
+    createCourseBasicInfoState(draftVersion),
+  );
+  if (!basicInfo.success) {
+    return basicInfo.error.issues.map((issue) => ({
+      ...issue,
+      message: "submitBasicInfoIncomplete",
+    }));
+  }
+
+  if (detail.collaborators.length < 1) {
+    return [
+      {
+        code: "custom",
+        path: ["collaborators"],
+        message: "submitCollaboratorRequired",
+      },
+    ];
+  }
+
+  if (detail.outline.length < 1) {
+    return [
+      { code: "custom", path: ["outline"], message: "submitOutlineNoSections" },
+    ];
+  }
+
+  for (const section of detail.outline) {
+    if (section.lessons.length < 1) {
+      return [
+        {
+          code: "custom",
+          path: ["outline"],
+          message: "submitOutlineNoLessons",
+        },
+      ];
+    }
+    for (const lesson of section.lessons) {
+      if (lesson.sub_lessons.length < 1) {
+        return [
+          {
+            code: "custom",
+            path: ["outline"],
+            message: "submitOutlineNoItems",
+          },
+        ];
+      }
+      for (const subLesson of lesson.sub_lessons) {
+        const issueKey = validateSubLessonReadiness(subLesson);
+        if (issueKey) {
+          return [
+            {
+              code: "custom",
+              path: ["outline"],
+              message: issueKey,
+            },
+          ];
+        }
+      }
+    }
+  }
+
+  return null;
 }
