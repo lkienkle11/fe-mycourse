@@ -579,6 +579,8 @@ const messages = {
       quizPreviewNotAllowed: "Quiz lesson items cannot be marked as preview.",
       quizCorrectAnswerRequired:
         "Quiz must include at least one correct answer.",
+      quizSingleChoiceMultipleCorrect:
+        "Single-choice quiz must have exactly one correct answer.",
       textContentRequired:
         "Text lesson item must contain at least one non-whitespace character.",
     },

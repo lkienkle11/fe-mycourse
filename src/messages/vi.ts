@@ -577,6 +577,8 @@ const messages = {
       quizPreviewNotAllowed:
         "Nội dung câu hỏi (Quiz) không thể được đánh dấu là xem trước.",
       quizCorrectAnswerRequired: "Câu hỏi phải có ít nhất một đáp án đúng.",
+      quizSingleChoiceMultipleCorrect:
+        "Câu hỏi một lựa chọn chỉ được có đúng một đáp án đúng.",
       textContentRequired:
         "Nội dung văn bản phải có ít nhất một ký tự không phải khoảng trắng.",
     },

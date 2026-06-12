@@ -22,6 +22,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useDeltaEditorMediaHandlers } from "@/hooks";
+import {
+  applyQuizAllowMultipleChange,
+  applyQuizOptionCorrectChange,
+} from "@/lib/utils/course";
 import { newV7 } from "@/lib/utils/uuid";
 import type {
   CourseBasicInfoForm,
@@ -319,7 +323,10 @@ function SubLessonQuizFields({
       <SubLessonCheckboxField
         checked={form.allow_multiple}
         onCheckedChange={(checked) =>
-          setForm((prev) => ({ ...prev, allow_multiple: checked }))
+          setForm((prev) => ({
+            ...prev,
+            ...applyQuizAllowMultipleChange(checked, prev.quiz_options),
+          }))
         }
         label={t("allowMultiple")}
       />
@@ -372,10 +379,11 @@ function SubLessonQuizFields({
                 onCheckedChange={(checked) =>
                   setForm((prev) => ({
                     ...prev,
-                    quiz_options: prev.quiz_options.map((item) =>
-                      item.option_key === option.option_key
-                        ? { ...item, is_correct: checked }
-                        : item,
+                    quiz_options: applyQuizOptionCorrectChange(
+                      prev.allow_multiple,
+                      prev.quiz_options,
+                      option.option_key,
+                      checked,
                     ),
                   }))
                 }

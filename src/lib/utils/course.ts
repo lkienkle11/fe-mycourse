@@ -4,7 +4,8 @@ import {
   createEmptyDeltaString,
 } from "@/lib/utils/course-delta";
 import { newV7 } from "@/lib/utils/uuid";
-import { courseBasicInfoSchema } from "@/schema/course";
+import { firstValidationMessageKey } from "@/lib/utils/validation-message";
+import { courseBasicInfoSchema, courseQuizOptionSchema } from "@/schema/course";
 import type {
   CourseBasicInfoForm,
   CourseDetail,
@@ -16,6 +17,7 @@ import type {
   CourseSubLessonKind,
   CourseVersion,
   UpdateCourseBasicInfoPayload,
+  UpsertCourseQuizOptionPayload,
 } from "@/types/course";
 
 export type CourseValidationMessageKey =
@@ -23,6 +25,7 @@ export type CourseValidationMessageKey =
   | "textContentRequired"
   | "submitInvalidSubLesson"
   | "quizCorrectAnswerRequired"
+  | "quizSingleChoiceMultipleCorrect"
   | "quizPreviewNotAllowed"
   | "submitBasicInfoIncomplete"
   | "submitCollaboratorRequired"
@@ -187,6 +190,51 @@ export function mergeReorderedSubLessons(
   }));
 }
 
+function validateQuizContent(input: {
+  allow_multiple: boolean;
+  prompt: string;
+  options: { body: string; is_correct: boolean }[];
+}): CourseValidationMessageKey | null {
+  const parsed = courseQuizOptionSchema.safeParse(input);
+  if (parsed.success) {
+    return null;
+  }
+  return firstValidationMessageKey(
+    parsed.error.issues,
+    "submitInvalidSubLesson",
+  ) as CourseValidationMessageKey;
+}
+
+export function applyQuizAllowMultipleChange(
+  allowMultiple: boolean,
+  quizOptions: UpsertCourseQuizOptionPayload[],
+): Pick<CourseSubLessonFormState, "allow_multiple" | "quiz_options"> {
+  if (allowMultiple) {
+    return { allow_multiple: true, quiz_options: quizOptions };
+  }
+  return {
+    allow_multiple: false,
+    quiz_options: quizOptions.map((item, index) => ({
+      ...item,
+      is_correct: index === 0,
+    })),
+  };
+}
+
+export function applyQuizOptionCorrectChange(
+  allowMultiple: boolean,
+  quizOptions: UpsertCourseQuizOptionPayload[],
+  optionKey: string,
+  checked: boolean,
+): UpsertCourseQuizOptionPayload[] {
+  return quizOptions.map((item) => {
+    if (item.option_key !== optionKey) {
+      return allowMultiple ? item : { ...item, is_correct: false };
+    }
+    return { ...item, is_correct: checked };
+  });
+}
+
 function validateSubLessonReadiness(
   subLesson: CourseSubLesson,
 ): CourseValidationMessageKey | null {
@@ -208,24 +256,11 @@ function validateSubLessonReadiness(
     if (subLesson.is_preview) {
       return "quizPreviewNotAllowed";
     }
-    const prompt = subLesson.quiz?.prompt?.trim() ?? "";
-    const options = subLesson.quiz?.options ?? [];
-    if (!prompt || options.length < 1) {
-      return "submitInvalidSubLesson";
-    }
-    let hasCorrect = false;
-    for (const option of options) {
-      if (!option.body.trim()) {
-        return "submitInvalidSubLesson";
-      }
-      if (option.is_correct) {
-        hasCorrect = true;
-      }
-    }
-    if (!hasCorrect) {
-      return "quizCorrectAnswerRequired";
-    }
-    return null;
+    return validateQuizContent({
+      allow_multiple: subLesson.quiz?.allow_multiple ?? false,
+      prompt: subLesson.quiz?.prompt ?? "",
+      options: subLesson.quiz?.options ?? [],
+    });
   }
 
   return "submitInvalidSubLesson";
@@ -235,6 +270,7 @@ export function validateSubLessonFormContent(input: {
   kind: CourseSubLessonKind;
   video_file_id?: string;
   text_delta?: string;
+  allow_multiple?: boolean;
   quiz_prompt?: string;
   quiz_options?: { body: string; is_correct: boolean }[];
 }): CourseValidationMessageKey | null {
@@ -249,21 +285,11 @@ export function validateSubLessonFormContent(input: {
   }
 
   if (input.kind === "QUIZ") {
-    const prompt = input.quiz_prompt?.trim() ?? "";
-    const options = input.quiz_options ?? [];
-    if (!prompt || options.length < 1) {
-      return "submitInvalidSubLesson";
-    }
-    let hasCorrect = false;
-    for (const option of options) {
-      if (!option.body.trim()) {
-        return "submitInvalidSubLesson";
-      }
-      if (option.is_correct) {
-        hasCorrect = true;
-      }
-    }
-    return hasCorrect ? null : "quizCorrectAnswerRequired";
+    return validateQuizContent({
+      allow_multiple: input.allow_multiple ?? false,
+      prompt: input.quiz_prompt ?? "",
+      options: input.quiz_options ?? [],
+    });
   }
 
   return "submitInvalidSubLesson";

@@ -79,22 +79,43 @@ export const courseSubLessonSchema = z.object({
   }),
 });
 
-export const courseQuizOptionSchema = z.object({
-  prompt: z
-    .string({ message: "validation.quizPrompt" })
+const quizAnswerOptionField = z.object({
+  body: z
+    .string({ message: "validation.quizOptionBody" })
     .trim()
-    .min(1, { message: "validation.quizPrompt" }),
-  options: z
-    .array(
-      z.object({
-        body: z
-          .string({ message: "validation.quizOptionBody" })
-          .trim()
-          .min(1, { message: "validation.quizOptionBody" }),
-      }),
-    )
-    .min(1, { message: "validation.quizOptionsMin" }),
+    .min(1, { message: "validation.quizOptionBody" }),
+  is_correct: z.boolean(),
 });
+
+export const courseQuizOptionSchema = z
+  .object({
+    allow_multiple: z.boolean(),
+    prompt: z
+      .string({ message: "validation.quizPrompt" })
+      .trim()
+      .min(1, { message: "validation.quizPrompt" }),
+    options: z
+      .array(quizAnswerOptionField)
+      .min(1, { message: "validation.quizOptionsMin" }),
+  })
+  .superRefine((value, ctx) => {
+    const correctCount = value.options.filter(
+      (option) => option.is_correct,
+    ).length;
+    if (correctCount === 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "validation.quizCorrectAnswerRequired",
+      });
+      return;
+    }
+    if (!value.allow_multiple && correctCount > 1) {
+      ctx.addIssue({
+        code: "custom",
+        message: "validation.quizSingleChoiceMultipleCorrect",
+      });
+    }
+  });
 
 export const courseCollaboratorSchema = z.object({
   user_id: z
@@ -116,5 +137,6 @@ export type CourseBasicInfoValues = z.infer<typeof courseBasicInfoSchema>;
 export type CourseSectionValues = z.infer<typeof courseSectionSchema>;
 export type CourseLessonValues = z.infer<typeof courseLessonSchema>;
 export type CourseSubLessonValues = z.infer<typeof courseSubLessonSchema>;
+export type CourseQuizContentValues = z.infer<typeof courseQuizOptionSchema>;
 export type CourseCollaboratorValues = z.infer<typeof courseCollaboratorSchema>;
 export type CourseRejectReasonValues = z.infer<typeof courseRejectReasonSchema>;

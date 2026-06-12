@@ -533,6 +533,7 @@ export function useCourseEditorState({
       kind: subLessonForm.kind,
       video_file_id: subLessonForm.video_file_id,
       text_delta: subLessonForm.text_delta,
+      allow_multiple: subLessonForm.allow_multiple,
       quiz_prompt: subLessonForm.quiz_prompt,
       quiz_options: subLessonForm.quiz_options,
     });
