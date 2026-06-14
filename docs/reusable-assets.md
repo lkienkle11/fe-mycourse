@@ -600,14 +600,29 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `src/actions/auth/auth.ts`, any Server Action that sets auth cookies.
 - **Dependencies**: none.
 
+### Asset: buildAuthCookieOptions
+- **Name**: `buildAuthCookieOptions(input: BuildHttpOnlyCookieOptionsInput)`
+- **Type**: Utility function
+- **Path**: `src/lib/utils/cookie.ts`
+- **Purpose**: Returns HttpOnly cookie options for auth session cookies (`access_token`, `refresh_token`, `session_id`). Used by `setAuthSessionCookies`.
+- **Scope**: `src/lib/utils/auth-session.ts`, Server Actions that set auth cookies.
+- **Dependencies**: none.
+
 ### Asset: buildCookieOptions
 - **Name**: `buildCookieOptions(input: BuildCookieOptionsInput)`
 - **Type**: Utility function
 - **Path**: `src/lib/utils/cookie.ts`
-- **Purpose**: Returns a consistent cookie options object for `next/headers` `cookies().set()`. Non-HttpOnly by default so client JS can read the token and attach it to the Authorization header.
-- **Scope**: `src/actions/auth/auth.ts`, any Server Action that sets auth cookies.
+- **Purpose**: Returns cookie options for **non-auth** UI cookies. Default `httpOnly: false`. Auth cookies must use `buildAuthCookieOptions`.
+- **Scope**: General Server Actions / Route Handlers for UI state cookies.
 - **Dependencies**: none.
-- **Note**: `buildHttpOnlyCookieOptions` is deprecated — use `buildCookieOptions` instead.
+
+### Asset: syncAuthSessionCookiesAction
+- **Name**: `syncAuthSessionCookiesAction(tokens: AuthSessionTokens): Promise<void>`
+- **Type**: Server Action
+- **Path**: `src/actions/auth/sync-auth-session.ts`
+- **Purpose**: Rewrites HttpOnly auth cookies after client-side silent token refresh (Axios interceptor cannot set HttpOnly cookies from JS).
+- **Scope**: `src/api/instance.ts` refresh path.
+- **Dependencies**: `setAuthSessionCookies` from `@/lib/utils/auth-session`.
 
 ### Asset: pending-tab-auth-sync / useAuthConfirmTabSync
 - **Path**: `src/lib/auth/pending-tab-auth-sync.ts`, `src/hooks/auth/use-auth-confirm-tab-sync.ts`
@@ -621,7 +636,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Writes `access_token`, `refresh_token`, and `session_id` cookies after login or email confirm. Uses `next/headers` `cookies()`.
 - **Scope**: `src/actions/auth/auth.ts` (`loginAction`, `confirmAction`) only.
 - **Import**: `import { setAuthSessionCookies } from "@/lib/utils/auth-session";`
-- **Dependencies**: `server-only`, `next/headers`, `buildCookieOptions`, `getCookieDomain` from `./cookie`.
+- **Dependencies**: `server-only`, `next/headers`, `buildAuthCookieOptions`, `getCookieDomain` from `./cookie`.
 
 ### Asset: getCookieValue / setCookieValue
 - **Name**: `getCookieValue(name): Promise<string | null>`, `setCookieValue(name, value, options?): Promise<void>`
@@ -826,7 +841,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `loginAction(payload: LoginPayload): Promise<AuthActionResult>`
 - **Type**: Next.js Server Action (`"use server"`)
 - **Path**: `src/actions/auth/auth.ts`
-- **Purpose**: Handles login end-to-end on the server — calls `loginService`, sets `access_token`, `refresh_token`, `session_id` cookies for the browser, and returns `AuthActionResult`. Cookies are non-HttpOnly so client JS can read them for `Authorization` header attachment.
+- **Purpose**: Handles login end-to-end on the server — calls `loginService`, sets `access_token`, `refresh_token`, `session_id` HttpOnly cookies for the browser, and returns `AuthActionResult`.
 - **Scope**: Login form's `onSubmit` handler in `login-content.tsx`. UI maps `result.code` via `translateApiErrorCode` — never `result.message`.
 - **Dependencies**: `loginService`, `buildCookieOptions`, `getCookieDomain`, `next/headers cookies()`.
 

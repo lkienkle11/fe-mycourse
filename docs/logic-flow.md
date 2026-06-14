@@ -31,9 +31,9 @@ loginService(payload)   [src/api/callers/auth/auth.ts]
 Server Action reads response:
   - data.code === ApiErrorCode.Success?   [ApiErrorCode from src/constants/api-error-code.ts]
     YES → set 3 cookies on browser via next/headers cookies().set():
-            access_token   (non-HttpOnly, so client can attach to Authorization header)
-            refresh_token  (non-HttpOnly, maxAge=30d if rememberMe)
-            session_id     (non-HttpOnly, same maxAge as refresh_token)
+            access_token   (HttpOnly — browser sends via withCredentials; BE reads cookie)
+            refresh_token  (HttpOnly, maxAge=30d if rememberMe)
+            session_id     (HttpOnly, same maxAge as refresh_token)
           → return { success: true, message, code }
     NO  → return { success: false, message, code }
   ↓

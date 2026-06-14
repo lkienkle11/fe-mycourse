@@ -144,9 +144,9 @@ LoginContent (client)
 ```
 
 - **No API endpoint is exposed in the browser network tab** — the call goes through a Next.js Server Action (`"use server"`).
-- **Tokens are set as non-HttpOnly cookies** so that client-side JS can read them and attach them to outgoing requests as `Authorization` / `X-Refresh-Token` / `X-Session-Id` headers.
-- The Server Action reads `access_token`, `refresh_token`, and `session_id` from the **JSON response body** (all three are returned by the BE) and sets them as `SameSite=Lax` non-HttpOnly cookies via `next/headers`.
-- **`buildCookieOptions`** (from `src/lib/utils/cookie.ts`, imported via `@/lib/utils`) is used to build cookie options with `httpOnly: false`.
+- **Tokens are set as HttpOnly cookies** via Server Actions (`buildAuthCookieOptions`). Client-side JS cannot read them; the browser sends cookies with `withCredentials: true` and the backend reads session from cookies.
+- The Server Action reads `access_token`, `refresh_token`, and `session_id` from the **JSON response body** (all three are returned by the BE) and sets them as `SameSite=Lax` **HttpOnly** cookies via `next/headers`.
+- **`buildAuthCookieOptions`** (from `src/lib/utils/cookie.ts`) is used for auth cookies. **`buildCookieOptions`** remains for non-auth UI cookies only (`httpOnly: false` default).
 
 ### Files Added / Modified
 
@@ -155,7 +155,7 @@ LoginContent (client)
 | `.env` | `NEXT_PUBLIC_API_URL=http://localhost:8080` |
 | `src/schema/auth/auth.ts` | Zod schemas: `loginSchema`, `signupSchema` + inferred types |
 | `src/api/callers/auth/auth.ts` | `loginService(payload)` — wraps `apiPost` |
-| `src/actions/auth/auth.ts` | `loginAction(payload)` Server Action — reads tokens from JSON body, sets non-HttpOnly cookies |
+| `src/actions/auth/auth.ts` | `loginAction(payload)` Server Action — reads tokens from JSON body, sets HttpOnly cookies |
 | `src/lib/utils/*.ts` | `cn`, `url`, `react`, `user`, `cookie` in barrel `@/lib/utils`; `auth-session.ts` is server-only (import `@/lib/utils/auth-session` in actions, not from barrel) |
 | `src/components/…/auth-form-handler.ts` | `handleAuthSubmit(type, payload)` — shared by LoginContent & SignupContent |
 | `src/components/…/login-content.tsx` | react-hook-form + zodResolver + loginAction |
