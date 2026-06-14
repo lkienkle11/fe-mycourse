@@ -99,19 +99,19 @@ await setAuthSessionCookies({
 
 **Step 4 — Cookie strategy**
 
-`buildCookieOptions` (from `src/lib/utils/cookie.ts`, via `@/lib/utils`) produces **non-HttpOnly**, `SameSite=Lax` cookies:
+`buildAuthCookieOptions` (from `src/lib/utils/cookie.ts`) produces **HttpOnly**, `SameSite=Lax` auth cookies via Server Actions:
 
 | Attribute | Value | Reason |
 |-----------|-------|--------|
-| `httpOnly` | `false` | Client-side Axios interceptor must read these via `js-cookie` / `getCookieValue()` to attach `Authorization: Bearer` headers |
+| `httpOnly` | `true` | JS cannot read tokens — reduces XSS token theft |
 | `sameSite` | `lax` | Prevents CSRF while allowing top-level navigation redirects |
 | `secure` | `true` (production) | Forces HTTPS-only transmission |
 | `domain` | parent domain (e.g. `yourdomain.net`) | Allows cookies to be sent to `api.yourdomain.net` when FE and API are on separate subdomains. Controlled by `AUTH_COOKIE_DOMAIN` env var. |
 | `maxAge` | — (`access_token`), 30 days (refresh/session if `remember_me=true`) | Session-scoped by default; persisted if user checks "Remember me" |
 
-> **Why not HttpOnly?** The Axios interceptor (`src/api/instance.ts`) runs on **both** client and server. On the client, it reads cookies via `js-cookie` and sets `Authorization: Bearer <token>`. HttpOnly cookies are invisible to JavaScript — using them would break client-side authenticated requests.
+**Client API calls:** `createApiInstance` uses `withCredentials: true`. The browser sends HttpOnly cookies; the Go backend reads `access_token` from the cookie when no `Authorization` header is present. **Server-side** Next.js still reads HttpOnly cookies via `next/headers` and attaches `Authorization: Bearer …`.
 
-> **Known follow-up risk:** This review pass intentionally kept that auth-cookie architecture unchanged to avoid a cross-repo auth-contract rewrite. The remaining JS-readable cookie risk should be addressed in a coordinated FE+BE redesign.
+**After silent refresh (client):** `syncAuthSessionCookiesAction` (`src/actions/auth/sync-auth-session.ts`) rewrites HttpOnly cookies from the refresh JSON response.
 
 **Step 5 — SWR revalidation**
 
@@ -166,13 +166,12 @@ GET /{locale}/confirm-email?token=...
 GET /{locale}/logout
   → LogoutContent (client, once)
     → logoutAction()                     ["use server"]
-      → logoutService                    POST /api/v1/auth/logout (X-Refresh-Token + X-Session-Id)
+      → logoutService                    POST /api/v1/auth/logout (headers or HttpOnly cookies)
       → clearAuthSessionCookies
-    → clearAuthCookiesClient()
     → mutateMe() + broadcast logout + router.replace("/")
 ```
 
-**Other tabs:** `useAuthLogoutTabSync` listens for `broadcast:logout`, clears client cookies, calls `mutateMe()`, then `window.location.reload()`.
+**Other tabs:** `useAuthLogoutTabSync` listens for `broadcast:logout`, calls `mutateMe()`, then `window.location.reload()`. HttpOnly cookies are cleared by the tab that ran `logoutAction` (domain-wide Set-Cookie delete).
 
 ---
 

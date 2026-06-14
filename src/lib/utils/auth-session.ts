@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
-import { buildCookieOptions, getCookieDomain } from "./cookie";
+import { buildAuthCookieOptions, getCookieDomain } from "./cookie";
 
 /** MaxAge (seconds) cho refresh_token / session_id khi remember_me = true (30 ngày). */
 export const REMEMBER_ME_MAX_AGE = 30 * 24 * 60 * 60;
@@ -36,7 +36,7 @@ export async function setAuthSessionCookies({
     cookieStore.set(
       name,
       value,
-      buildCookieOptions({
+      buildAuthCookieOptions({
         sameSite,
         isProduction,
         domain,
@@ -62,7 +62,7 @@ export async function clearAuthSessionCookies(): Promise<void> {
   const cookieStore = await cookies();
 
   const remove = (name: string) => {
-    const opts = buildCookieOptions({
+    const opts = buildAuthCookieOptions({
       sameSite,
       isProduction,
       domain,

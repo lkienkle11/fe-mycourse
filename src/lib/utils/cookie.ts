@@ -30,7 +30,6 @@ export function getCookieDomain(rawDomain?: string): string | undefined {
 
 /**
  * Build HttpOnly cookie options dùng chung cho Server Actions.
- * @deprecated Dùng buildCookieOptions với httpOnly: false cho auth cookies mới.
  */
 export function buildHttpOnlyCookieOptions(
   input: BuildHttpOnlyCookieOptionsInput,
@@ -47,9 +46,15 @@ export function buildHttpOnlyCookieOptions(
 }
 
 /**
- * Build cookie options cho Server Actions.
- * httpOnly mặc định là false để client-side JS có thể đọc token từ cookie
- * và đính vào Authorization header.
+ * Build HttpOnly cookie options for auth session cookies (access/refresh/session).
+ */
+export function buildAuthCookieOptions(input: BuildHttpOnlyCookieOptionsInput) {
+  return buildHttpOnlyCookieOptions(input);
+}
+
+/**
+ * Build cookie options cho Server Actions (non-auth UI cookies).
+ * Auth cookies phải dùng {@link buildAuthCookieOptions} — luôn HttpOnly.
  */
 export function buildCookieOptions(input: BuildCookieOptionsInput) {
   const { sameSite, isProduction, httpOnly = false, maxAge, domain } = input;
@@ -99,19 +104,11 @@ const AUTH_COOKIE_NAMES = [
 ] as const;
 
 /**
- * Xóa auth cookies phía client (tab hiện tại) — mirror clearAuthSessionCookies.
+ * Xóa auth cookies phía client — no-op khi cookies là HttpOnly (logout qua Server Action).
+ * @deprecated HttpOnly auth cookies không thể xóa bằng JS; dùng clearAuthSessionCookies.
  */
 export function clearAuthCookiesClient(): void {
-  if (isServer()) return;
-  const isProduction = process.env.NODE_ENV === "production";
-  const domain = getCookieDomain(process.env.AUTH_COOKIE_DOMAIN);
-  for (const name of AUTH_COOKIE_NAMES) {
-    Cookies.remove(name, {
-      path: "/",
-      ...(domain ? { domain } : {}),
-      ...(isProduction ? { secure: true } : {}),
-    });
-  }
+  // HttpOnly cookies are cleared server-side via logoutAction / clearAuthSessionCookies.
 }
 
 export async function setCookieValue(
@@ -119,6 +116,9 @@ export async function setCookieValue(
   value: string,
   options?: { maxAge?: number },
 ): Promise<void> {
+  if ((AUTH_COOKIE_NAMES as readonly string[]).includes(name) && !isServer()) {
+    return;
+  }
   if (!isServer()) {
     Cookies.set(name, value, {
       path: "/",

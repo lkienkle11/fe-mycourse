@@ -4,10 +4,9 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from "axios";
-import Cookies from "js-cookie";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { API_PUBLIC_ROUTES } from "@/constants/api-route";
-import { getCookieValue, isServer, setCookieValue } from "@/lib/utils";
+import { getCookieValue, isServer } from "@/lib/utils";
 import { useApiError } from "@/store/api-error-store";
 import type { ApiResponse } from "@/types/api";
 import type { RefreshTokenResponse } from "@/types/auth";
@@ -78,20 +77,36 @@ function requestSentNonEmptyBearerToken(
   return Boolean(m?.[1]);
 }
 
-async function getRefreshSessionPair(): Promise<{
-  refreshToken: string;
-  sessionId: string;
-} | null> {
-  if (isServer()) {
-    const refreshToken = await getCookieValue("refresh_token");
-    const sessionId = await getCookieValue("session_id");
-    if (!refreshToken || !sessionId) return null;
-    return { refreshToken, sessionId };
+type RefreshSessionPair = {
+  refreshToken?: string;
+  sessionId?: string;
+};
+
+/**
+ * Server: reads HttpOnly refresh/session cookies via next/headers.
+ * Client: returns `{}` — browser sends HttpOnly cookies via withCredentials.
+ */
+async function getRefreshSessionPair(): Promise<RefreshSessionPair | null> {
+  if (!isServer()) {
+    return {};
   }
-  const refreshToken = Cookies.get("refresh_token");
-  const sessionId = Cookies.get("session_id");
+  const refreshToken = await getCookieValue("refresh_token");
+  const sessionId = await getCookieValue("session_id");
   if (!refreshToken || !sessionId) return null;
   return { refreshToken, sessionId };
+}
+
+async function persistRefreshedAuthSession(
+  tokens: RefreshTokenResponse,
+): Promise<void> {
+  const { syncAuthSessionCookiesAction } = await import(
+    "@/actions/auth/sync-auth-session"
+  );
+  await syncAuthSessionCookiesAction({
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
+    session_id: tokens.session_id,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -99,19 +114,22 @@ async function getRefreshSessionPair(): Promise<{
 // ---------------------------------------------------------------------------
 
 async function doTokenRefresh(
-  refreshToken: string,
-  sessionId: string,
+  pair: RefreshSessionPair,
 ): Promise<RefreshTokenResponse | null> {
   try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (pair.refreshToken && pair.sessionId) {
+      headers["X-Refresh-Token"] = pair.refreshToken;
+      headers["X-Session-Id"] = pair.sessionId;
+    }
     const { data: envelope } = await rawPost<
       ApiResponse<RefreshTokenResponse>,
       null
     >(resolvedBaseURL + API_PUBLIC_ROUTES.auth.refresh, null, {
-      headers: {
-        "Content-Type": "application/json",
-        "X-Refresh-Token": refreshToken,
-        "X-Session-Id": sessionId,
-      },
+      headers,
+      withCredentials: true,
       timeout: DEFAULT_TIMEOUT_MS,
     });
     const payload = envelope?.data;
@@ -153,22 +171,13 @@ function reportError(error: AxiosError): void {
 /**
  * Factory that creates a fully-configured Axios instance.
  *
- * Request interceptor (runs on both client and server):
- *   - Client: reads access_token via js-cookie → `Authorization: Bearer …`
- *   - Server: reads access_token via next/headers → `Authorization: Bearer …`
+ * Request interceptor:
+ *   - Server: reads HttpOnly access_token via next/headers → Authorization header
+ *     (Next.js server does not auto-forward browser cookies to the API).
+ *   - Client: relies on withCredentials — BE reads access_token HttpOnly cookie.
  *
- * Response interceptor — silent token refresh:
- *   - When the server sends `X-Token-Expired: true` (access JWT expired), or
- *   - On HTTP 401 when no `Authorization: Bearer …` was sent but `refresh_token`
- *     and `session_id` cookies exist (e.g. user cleared `access_token` only).
- *     The API still returns 401 without `X-Token-Expired` in that case — see BE
- *     `middleware/auth_jwt.go` (`missing bearer token` vs `token expired`).
- *   - Client: mutex prevents a stampede when many requests expire simultaneously.
- *     Queued requests wait for the single in-flight refresh and share the result.
- *   - Server: no module-level mutex (each request is isolated per user).
- *     Reads/writes cookies via next/headers (write is best-effort — works inside
- *     Server Actions and Route Handlers, silently skipped in pure RSC contexts).
- *   - On second failure (after retry) the error is surfaced and the promise rejects.
+ * Response interceptor — silent token refresh on 401/403 + X-Token-Expired or
+ * missing bearer when refresh/session cookies exist.
  */
 export function createApiInstance(
   config?: CreateInstanceConfig,
@@ -185,12 +194,14 @@ export function createApiInstance(
     },
   });
 
-  // ---- Request interceptor: attach Bearer token ----
+  // ---- Request interceptor: attach Bearer token (server-side only) ----
   instance.interceptors.request.use(
     async (cfg: InternalAxiosRequestConfig) => {
-      const accessToken = await getCookieValue("access_token");
-      if (accessToken) {
-        cfg.headers.set("Authorization", `Bearer ${accessToken}`);
+      if (isServer()) {
+        const accessToken = await getCookieValue("access_token");
+        if (accessToken) {
+          cfg.headers.set("Authorization", `Bearer ${accessToken}`);
+        }
       }
       return cfg;
     },
@@ -219,7 +230,7 @@ export function createApiInstance(
 
       if (shouldAttemptSilentRefresh) {
         const pair = await getRefreshSessionPair();
-        if (!pair) {
+        if (pair === null) {
           reportError(error);
           return Promise.reject(error);
         }
@@ -228,21 +239,13 @@ export function createApiInstance(
 
         // ---- Server-side path (no shared mutex) ----
         if (isServer()) {
-          const tokens = await doTokenRefresh(
-            pair.refreshToken,
-            pair.sessionId,
-          );
+          const tokens = await doTokenRefresh(pair);
           if (!tokens) {
             reportError(error);
             return Promise.reject(error);
           }
 
-          await setCookieValue("access_token", tokens.access_token, {
-            maxAge: 15 * 60,
-          });
-          await setCookieValue("refresh_token", tokens.refresh_token);
-          await setCookieValue("session_id", tokens.session_id);
-
+          await persistRefreshedAuthSession(tokens);
           cfg.headers.set("Authorization", `Bearer ${tokens.access_token}`);
           return instance(cfg);
         }
@@ -263,30 +266,14 @@ export function createApiInstance(
 
         isRefreshing = true;
         try {
-          const tokens = await doTokenRefresh(
-            pair.refreshToken,
-            pair.sessionId,
-          );
+          const tokens = await doTokenRefresh(pair);
           if (!tokens) {
             flushRefreshQueue(null);
             reportError(error);
             return Promise.reject(error);
           }
 
-          Cookies.set("access_token", tokens.access_token, {
-            path: "/",
-            sameSite: "lax",
-            expires: 15 / 1440, // 15 minutes in days
-          });
-          Cookies.set("refresh_token", tokens.refresh_token, {
-            path: "/",
-            sameSite: "lax",
-          });
-          Cookies.set("session_id", tokens.session_id, {
-            path: "/",
-            sameSite: "lax",
-          });
-
+          await persistRefreshedAuthSession(tokens);
           flushRefreshQueue(tokens.access_token);
 
           cfg.headers.set("Authorization", `Bearer ${tokens.access_token}`);

@@ -295,11 +295,13 @@ Design-system primitives and presentational components:
 
 Login and signup calls are proxied through Next.js Server Actions (`"use server"`). The browser's network panel never sees the Go API endpoint or the raw token exchange. This also lets the server relay `Set-Cookie` headers back to the browser reliably.
 
-### 2. Non-HttpOnly Cookies — Client-Readable Tokens
+### 2. HttpOnly Auth Cookies — Cookie-Based Session
 
-Auth tokens (`access_token`, `refresh_token`, `session_id`) are stored as **non-HttpOnly**, `SameSite=Lax` cookies so the client-side Axios interceptor can read them and attach them as HTTP headers on every request (`Authorization: Bearer …`, `X-Refresh-Token`, `X-Session-Id`). `buildCookieOptions` enforces `secure: true` in production.
+Auth tokens (`access_token`, `refresh_token`, `session_id`) are stored as **HttpOnly**, `SameSite=Lax` cookies. Client-side JavaScript cannot read them (XSS blast radius reduced). The browser sends cookies on API requests via `withCredentials: true`; the Go backend reads the JWT from the `access_token` cookie when no `Authorization` header is present. Server-side Next.js code still reads HttpOnly cookies via `next/headers` and attaches `Authorization: Bearer …` when proxying to the API.
 
-This remains a **known follow-up risk** after the 2026-06-07 frontend remediation pass: the project intentionally kept the current FE/BE auth contract and deferred any HttpOnly redesign to a coordinated cross-repo change.
+`buildAuthCookieOptions` (auth cookies) enforces `httpOnly: true` and `secure: true` in production. After silent refresh on the client, `syncAuthSessionCookiesAction` (`src/actions/auth/sync-auth-session.ts`) rewrites HttpOnly cookies via Server Action.
+
+**Follow-up (not in this pass):** stop returning raw tokens in JSON body (BE-03), enable CSRF middleware (BE-04).
 
 ### 3. Isomorphic Cookie Layer
 
