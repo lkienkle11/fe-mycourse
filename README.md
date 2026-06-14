@@ -13,6 +13,8 @@ npm run dev
 
 Open the URL Next.js prints (default [http://localhost:3000](http://localhost:3000)). The root route redirects into the default locale (`vi`); localized paths look like `/vi` or `/en`.
 
+**Docker (optional):** `./scripts/docker/compose-up.sh local` — **Windows:** `scripts\docker\compose-up.cmd local` — see [`docs/docker.md`](docs/docker.md). CI still deploys via PM2 on the VPS.
+
 | Script | Purpose |
 |--------|---------|
 | `npm run dev` | Development server |
@@ -54,6 +56,7 @@ The `docs/` folder is the **primary and authoritative documentation source** for
 | [`docs/reusable-assets.md`](docs/reusable-assets.md) | All reusable utilities, hooks, types, schemas, stores, constants, API callers, and Server Actions |
 | [`docs/delivery.md`](docs/delivery.md) | **Realtime channels** — BroadcastChannel, WebSocket, SSE, NDJSON gRPC; envelope model, env vars, links to per-channel docs |
 | [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — Nginx, Certbot, PM2, env vars (`NEXT_PUBLIC_API_URL`, `AUTH_COOKIE_DOMAIN`, stream URLs), go-live checklist, rollback, troubleshooting, CI/CD |
+| [`docs/docker.md`](docs/docker.md) | Docker Compose alternative (local/VPS manual; PM2/CI unchanged) |
 
 After large refactors, run **`npx gitnexus analyze --force`** in this repo so the local graph (`.gitnexus/`, ignored by git) and the generated **`CLAUDE.md` / `AGENTS.md`** header stats stay aligned with the code; use **`npx gitnexus query -r fe-mycourse "…"`** / **`npx gitnexus context -r fe-mycourse SymbolName`** when updating `docs/*.md`.
 

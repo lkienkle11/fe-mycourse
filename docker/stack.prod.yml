@@ -1,0 +1,22 @@
+# Swarm stack demo — prod. DO NOT use for CI/tests.
+version: "3.8"
+
+services:
+  web:
+    image: mycourse-fe:prod
+    env_file:
+      - ../.env.prod
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+    ports:
+      - "3002:3002"
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        order: stop-first

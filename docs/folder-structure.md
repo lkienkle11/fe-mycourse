@@ -25,6 +25,10 @@ fe-mycourse/
 ├── postcss.config.mjs      # PostCSS configuration (@tailwindcss/postcss)
 ├── package.json            # Project dependencies and npm scripts
 ├── ecosystem.config.cjs    # PM2 apps: mycourse-web-dev / staging / prod
+├── Dockerfile              # Multi-stage Node 22 image (see docs/docker.md)
+├── docker/                 # compose.*.yml + stack.*.yml
+├── scripts/docker/         # compose-up/down, build, health (*.sh, *.ps1, *.cmd for Windows 10/11)
+├── .dockerignore
 ├── .github/workflows/      # CI: enforce-main-from-dev.yml, deploy-dev.yml (test → build → deploy)
 ├── .jscpd.json             # jscpd config (npm run dupl); ignores src/components/ui/** (shadcn upstream)
 ├── .jscpd-report/          # jscpd JSON reports (gitignored)
