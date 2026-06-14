@@ -77,7 +77,7 @@ Shared dispatcher called by both `LoginContent` and `SignupContent`:
 
 ```ts
 handleAuthSubmit("login", loginValues)   // → loginAction
-handleAuthSubmit("signup", signupValues, locale) // → registerAction
+handleAuthSubmit("signup", signupValues, locale) // → registerAction({ locale })
 ```
 
 **Step 3 — Server Action (`loginAction`)**

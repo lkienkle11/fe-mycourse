@@ -22,7 +22,7 @@ Frontend API layer lives in `src/api/` and is used by `src/actions/` and client 
 
 ## Auth routes used
 - `POST /api/v1/auth/login`
-- `POST /api/v1/auth/register` — register / resend confirmation (`registerAction`, `registerService`)
+- `POST /api/v1/auth/register` — register / resend confirmation (`registerAction`, `registerService`); body includes `locale` (`en`|`vi`) from current UI locale
 - `POST /api/v1/auth/confirm` — confirm email and issue tokens (`confirmAction`, `confirmService`)
 - `POST /api/v1/auth/refresh`
 - `POST /api/v1/auth/logout`
