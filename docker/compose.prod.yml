@@ -1,0 +1,21 @@
+# Docker Compose — prod (host port 3002)
+name: mycourse-fe-prod
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+        NEXT_PUBLIC_STREAM_SSE_URL: ${NEXT_PUBLIC_STREAM_SSE_URL:-}
+        NEXT_PUBLIC_STREAM_WS_URL: ${NEXT_PUBLIC_STREAM_WS_URL:-}
+        NEXT_PUBLIC_STREAM_GRPC_BASE_URL: ${NEXT_PUBLIC_STREAM_GRPC_BASE_URL:-}
+    image: mycourse-fe:prod
+    env_file:
+      - ../.env.prod
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+    ports:
+      - "3002:3002"

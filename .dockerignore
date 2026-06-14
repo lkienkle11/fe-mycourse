@@ -1,0 +1,14 @@
+.git
+.gitignore
+.github
+.context
+.cursor
+.gitnexus
+.claude
+node_modules
+.next
+.env
+.env.*
+*.md
+coverage
+.turbo

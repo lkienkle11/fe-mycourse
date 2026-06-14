@@ -1,0 +1,22 @@
+# Docker Compose — local (host port 3000)
+# Copy: cp .env.local.example .env.local
+name: mycourse-fe-local
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+        NEXT_PUBLIC_STREAM_SSE_URL: ${NEXT_PUBLIC_STREAM_SSE_URL:-}
+        NEXT_PUBLIC_STREAM_WS_URL: ${NEXT_PUBLIC_STREAM_WS_URL:-}
+        NEXT_PUBLIC_STREAM_GRPC_BASE_URL: ${NEXT_PUBLIC_STREAM_GRPC_BASE_URL:-}
+    image: mycourse-fe:local
+    env_file:
+      - ../.env.local
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3000:3000"
