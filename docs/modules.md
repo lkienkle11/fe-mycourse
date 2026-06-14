@@ -68,7 +68,7 @@ _Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me
   - `src/screen/common/course/course-review-page.tsx` — shared admin/sysadmin review queue
   - `src/components/features/course/course-status-badge.tsx`
   - `src/components/shared/delta-editor.tsx` — shared WYSIWYG `DeltaEditor` + read-only `DeltaViewer` (Delta JSON; font picker; inline image/video via toolbar, paste, or drag-and-drop; embed × remove; `onObjectEmbedded` / `onDelete`)
-  - `src/lib/quill/` — Quill blots, toolbar, paste/drop, embed-remove helpers + `delta-editor.css`
+  - `src/lib/quill/` — Quill blots, toolbar, paste/drop, embed-remove helpers + `delta-editor.css`; **`ensureQuillLoaded()`** dynamic-imports Quill on the client (SSR-safe)
   - `src/hooks/quill/use-delta-editor-media-handlers.ts` — shared upload/delete callbacks wired into course editor `DeltaEditor` instances
   - `src/lib/utils/course-delta.ts` — shared Delta parse/stringify/text/embed-diff helpers for validation and editor state
   - `src/lib/utils/course.ts` — course editor tab registry, form state factories, payload mapping, outline stable-id helpers, and optimistic outline reorder patch/merge helpers (`assignSequentialOrderIndex`, `replaceSectionLessons`, `mergeReorderedLessons`, …)

@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-06-08 (code-based API errors + shared validation schemas)._
+_Last audited: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -66,6 +66,16 @@ import { Header, Footer } from "@/components/common";
 // ❌ Wrong
 import { Header } from "@/components/common/header/header";
 ```
+
+### Client-only libraries (Quill)
+
+Libraries that touch `document` at import time (e.g. `quill`) **must not** use top-level `import Quill from "quill"`. Pattern used in this repo:
+
+1. `import type Quill from "quill"` for TypeScript refs only.
+2. `await ensureQuillLoaded()` from `@/lib/quill` inside `useEffect` before `new Quill(...)`.
+3. Helpers in `delta-editor-quill.ts` call `getQuill()` after `ensureQuillLoaded()` has resolved.
+
+This keeps `@/components/shared` barrel exports (including `DeltaEditor`) safe when imported from other client components during SSR module evaluation.
 
 ---
 

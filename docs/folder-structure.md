@@ -399,9 +399,9 @@ src/lib/
 │   ├── home.ts             # navigateToHome(router) helper for header/dashboard brand touchpoints
 │   └── routes.ts           # route builders + shared href constants (public/private/resource)
 ├── quill/
-│   ├── index.ts            # Barrel: DeltaEditor Quill blots, toolbar, paste/drop handlers
-│   ├── delta-editor-quill.ts
-│   └── delta-editor.css    # Quill font picker + embed remove styles (imported by delta-editor-quill.ts)
+│   ├── index.ts            # Barrel: ensureQuillLoaded, Quill blots, toolbar, paste/drop handlers
+│   ├── delta-editor-quill.ts  # Client-only Quill runtime (dynamic import; no top-level quill import)
+│   └── delta-editor.css    # Quill font picker + embed remove styles (loaded by ensureQuillLoaded)
 ├── utils/                  # Shared helper functions — import as @/lib/utils
 │   ├── index.ts            # Barrel: client-safe utils only (cn, url, cookie, …)
 │   ├── cn.ts               # cn() — clsx + tailwind-merge class combiner
