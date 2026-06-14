@@ -849,7 +849,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `registerAction`, `confirmAction`, `setAuthSessionCookies`
 - **Type**: Next.js Server Action (`"use server"`)
 - **Path**: `src/actions/auth/auth.ts`
-- **Purpose**: Register (201, no cookies) and confirm (tokens + cookies via `setAuthSessionCookies` in `@/lib/utils/auth-session`).
+- **Purpose**: Register (201, no cookies) and confirm (tokens + cookies via `setAuthSessionCookies` in `@/lib/utils/auth-session`). Register payload sends `locale` from `useLocale()` so BE confirmation email matches UI language.
 - **Scope**: `signup-content.tsx`, `confirm-email-content.tsx`, `login-content.tsx` (resend).
 - **Dependencies**: none (yet).
 
