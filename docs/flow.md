@@ -293,9 +293,10 @@ The `session_id` does not change across rotations. Both `access_token` and `refr
 
 | Environment | Cookie update method |
 |-------------|---------------------|
-| Client (browser) | `js-cookie` / `Cookies.set(...)` |
-| Server (Server Action / Route Handler) | `next/headers` / `cookies().set(...)` |
-| Server (pure RSC) | Silently skipped — `setCookieValue` swallows the error |
+| Client (browser) | BE `Set-Cookie` on `AUTH_COOKIE_DOMAIN` (no FE Server Action — avoids duplicate cookies) |
+| Server (SSR / Server Action) | `syncAuthSessionCookiesAction` → `setAuthSessionCookies` via `next/headers` |
+
+BE and FE must use the **same** `AUTH_COOKIE_DOMAIN` (e.g. `yourdomain.net`) on hosted multi-subdomain setups.
 
 ---
 

@@ -99,6 +99,11 @@ async function getRefreshSessionPair(): Promise<RefreshSessionPair | null> {
 async function persistRefreshedAuthSession(
   tokens: RefreshTokenResponse,
 ): Promise<void> {
+  // Client: BE Set-Cookie (AUTH_COOKIE_DOMAIN) already updates browser cookies.
+  // Server: BE Set-Cookie stays on the Next.js server — relay tokens to the browser.
+  if (!isServer()) {
+    return;
+  }
   const { syncAuthSessionCookiesAction } = await import(
     "@/actions/auth/sync-auth-session"
   );

@@ -19,7 +19,7 @@ export interface BuildCookieOptionsInput {
 }
 
 /**
- * Domain cha cho cookie (vd. `mycoursesdev.xyz`) khi FE và API là hai subdomain.
+ * Domain cha cho cookie (vd. `yourdomain.net`) khi FE và API là hai subdomain.
  * Localhost: trả về undefined để không set `domain` trên cookie.
  */
 export function getCookieDomain(rawDomain?: string): string | undefined {
