@@ -783,6 +783,21 @@ sudo nginx -t                  # valid config after certbot edits?
 | Global error store | `src/store/api-error-store.ts` | `useApiError` (Zustand, max 20 entries) |
 | Translation files | `src/messages/en.ts` / `vi.ts` | English and Vietnamese copy; loaded by `loadMessages` |
 | PM2 (dev/staging/prod) | `ecosystem.config.cjs` (repo root) | App names `mycourse-web-dev` / `mycourse-web-staging` / `mycourse-web-prod`; CI reloads **dev** only |
+| Docker (optional) | `Dockerfile`, `docker/compose.*.yml`, `scripts/docker/*` | Manual container deploy — see **[Appendix J](#appendix-j--docker-alternative-optional)** and [`docs/docker.md`](docker.md) |
+
+---
+
+## Appendix J — Docker alternative (optional)
+
+The primary production path remains **GitHub Actions → `npm ci` + `npm run build` on VPS + PM2** (Appendix G). For local or manual container deploy:
+
+```bash
+cp .env.local.example .env.local
+./scripts/docker/compose-up.sh local
+./scripts/docker/health-check.sh local
+```
+
+Full reference: **[`docs/docker.md`](docker.md)** — `NEXT_PUBLIC_*` build-args, port matrix, Swarm demo (not for CI).
 
 ---
 
