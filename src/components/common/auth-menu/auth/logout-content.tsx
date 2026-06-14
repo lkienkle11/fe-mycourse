@@ -8,7 +8,6 @@ import { useSendBroadcastOutbound } from "@/hooks/events/broadcast/use-send-broa
 import { useRouter } from "@/i18n/navigation";
 import { homeHref } from "@/lib/navigation/routes";
 import { translateApiErrorCode } from "@/lib/utils/api-error";
-import { clearAuthCookiesClient } from "@/lib/utils/cookie";
 
 type LogoutStatus = "loading" | "error" | "success";
 
@@ -28,7 +27,6 @@ export function LogoutContent() {
 
     void (async () => {
       const result = await logoutAction();
-      clearAuthCookiesClient();
       if (result.success) {
         setStatus("success");
         await mutateMe();

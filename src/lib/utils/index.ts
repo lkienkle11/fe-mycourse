@@ -11,6 +11,7 @@ export type {
   CookieSameSite,
 } from "./cookie";
 export {
+  buildAuthCookieOptions,
   buildCookieOptions,
   buildHttpOnlyCookieOptions,
   getCookieDomain,
