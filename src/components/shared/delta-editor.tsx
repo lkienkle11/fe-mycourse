@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import Quill from "quill";
+import type Quill from "quill";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { MediaCollectionDialog } from "@/components/features/media";
@@ -15,6 +15,7 @@ import {
   buildEditorFormats,
   buildToolbarContainer,
   type DeltaEditorMediaPickerMode,
+  ensureQuillLoaded,
   normalizeDeltaForEditor,
   registerMediaEmbed,
   registerQuillFormats,
@@ -246,87 +247,100 @@ export function DeltaEditor({
   }, [embedMediaFilesAt]);
 
   useEffect(() => {
-    setQuillMediaEmbedsDeletable(true);
     setQuillMediaEmbedRemoveLabel(removeEmbedLabel);
-    registerQuillFormats();
+  }, [removeEmbedLabel]);
 
+  useEffect(() => {
     const host = editorHostRef.current;
-    if (!host || quillRef.current) {
-      return;
-    }
-
-    const container = document.createElement("div");
-    host.appendChild(container);
-
-    const quill = new Quill(container, {
-      theme: "snow",
-      formats: editorFormats,
-      placeholder: editorPlaceholderRef.current,
-      modules: {
-        toolbar: toolbarContainer,
-      },
-    });
-
-    if (allowMediaEmbedRef.current) {
-      bindQuillMediaHandlers(quill, (mode) => openMediaPickerRef.current(mode));
-    }
-
+    let cancelled = false;
     let unbindPasteDrop: (() => void) | undefined;
     let unbindEmbedRemove: (() => void) | undefined;
-    if (allowMediaEmbedRef.current) {
-      unbindPasteDrop = bindQuillMediaPasteAndDrop(quill, {
-        isEnabled: () =>
-          allowMediaEmbedRef.current &&
-          !disabledRef.current &&
-          !isUploadingMediaRef.current,
-        onDragStateChange: setIsDraggingMedia,
-        onMediaFiles: (files, insertIndex) => {
-          void embedMediaFilesAtRef.current(files, insertIndex);
-        },
-      });
-      unbindEmbedRemove = bindQuillMediaEmbedRemove(quill);
-    }
 
-    const initialDelta = normalizeDeltaForEditor(
-      initialValueRef.current,
-      allowMediaEmbedRef.current,
-    );
-    quill.setContents(toQuillContents(initialDelta));
-    previousEmbedsRef.current = extractMediaEmbedsFromDelta(initialDelta);
-    quill.enable(!initialDisabledRef.current);
-
-    quill.on("text-change", () => {
-      const nextDelta = { ops: quill.getContents().ops as never[] };
-      const nextEmbeds = extractMediaEmbedsFromDelta(nextDelta);
-      const removedEmbeds = diffRemovedMediaEmbeds(
-        previousEmbedsRef.current,
-        nextEmbeds,
-      );
-      previousEmbedsRef.current = nextEmbeds;
-
-      for (const embed of removedEmbeds) {
-        const ref = resolveMediaEmbedRef(embed, mediaRegistryRef.current);
-        mediaRegistryRef.current.delete(embed.url);
-        void onDeleteRef.current?.(ref);
+    void (async () => {
+      const Quill = await ensureQuillLoaded();
+      if (cancelled || !host || quillRef.current) {
+        return;
       }
 
-      skipExternalSyncRef.current = true;
-      const normalized = allowMediaEmbedRef.current
-        ? nextDelta
-        : stripMediaEmbedsFromDelta(nextDelta);
-      onChangeRef.current(stringifyDelta(normalized));
-    });
+      setQuillMediaEmbedsDeletable(true);
+      registerQuillFormats();
 
-    quillRef.current = quill;
+      const container = document.createElement("div");
+      host.appendChild(container);
+
+      const quill = new Quill(container, {
+        theme: "snow",
+        formats: editorFormats,
+        placeholder: editorPlaceholderRef.current,
+        modules: {
+          toolbar: toolbarContainer,
+        },
+      });
+
+      if (allowMediaEmbedRef.current) {
+        bindQuillMediaHandlers(quill, (mode) =>
+          openMediaPickerRef.current(mode),
+        );
+      }
+
+      if (allowMediaEmbedRef.current) {
+        unbindPasteDrop = bindQuillMediaPasteAndDrop(quill, {
+          isEnabled: () =>
+            allowMediaEmbedRef.current &&
+            !disabledRef.current &&
+            !isUploadingMediaRef.current,
+          onDragStateChange: setIsDraggingMedia,
+          onMediaFiles: (files, insertIndex) => {
+            void embedMediaFilesAtRef.current(files, insertIndex);
+          },
+        });
+        unbindEmbedRemove = bindQuillMediaEmbedRemove(quill);
+      }
+
+      const initialDelta = normalizeDeltaForEditor(
+        initialValueRef.current,
+        allowMediaEmbedRef.current,
+      );
+      quill.setContents(toQuillContents(initialDelta));
+      previousEmbedsRef.current = extractMediaEmbedsFromDelta(initialDelta);
+      quill.enable(!initialDisabledRef.current);
+
+      quill.on("text-change", () => {
+        const nextDelta = { ops: quill.getContents().ops as never[] };
+        const nextEmbeds = extractMediaEmbedsFromDelta(nextDelta);
+        const removedEmbeds = diffRemovedMediaEmbeds(
+          previousEmbedsRef.current,
+          nextEmbeds,
+        );
+        previousEmbedsRef.current = nextEmbeds;
+
+        for (const embed of removedEmbeds) {
+          const ref = resolveMediaEmbedRef(embed, mediaRegistryRef.current);
+          mediaRegistryRef.current.delete(embed.url);
+          void onDeleteRef.current?.(ref);
+        }
+
+        skipExternalSyncRef.current = true;
+        const normalized = allowMediaEmbedRef.current
+          ? nextDelta
+          : stripMediaEmbedsFromDelta(nextDelta);
+        onChangeRef.current(stringifyDelta(normalized));
+      });
+
+      quillRef.current = quill;
+    })();
 
     return () => {
+      cancelled = true;
       unbindPasteDrop?.();
       unbindEmbedRemove?.();
       setQuillMediaEmbedsDeletable(false);
       quillRef.current = null;
-      host.innerHTML = "";
+      if (host) {
+        host.innerHTML = "";
+      }
     };
-  }, [editorFormats, removeEmbedLabel, toolbarContainer]);
+  }, [editorFormats, toolbarContainer]);
 
   useEffect(() => {
     if (skipExternalSyncRef.current) {
@@ -440,33 +454,41 @@ export function DeltaViewer({ value, className }: DeltaViewerProps) {
   const viewerFormats = useMemo(() => buildEditorFormats(true), []);
 
   useEffect(() => {
-    setQuillMediaEmbedsDeletable(false);
-    registerQuillFormats();
-
     const host = editorHostRef.current;
-    if (!host || quillRef.current) {
-      return;
-    }
+    let cancelled = false;
 
-    const container = document.createElement("div");
-    host.appendChild(container);
+    void (async () => {
+      const Quill = await ensureQuillLoaded();
+      if (cancelled || !host || quillRef.current) {
+        return;
+      }
 
-    const quill = new Quill(container, {
-      theme: "snow",
-      formats: viewerFormats,
-      readOnly: true,
-      modules: {
-        toolbar: false,
-      },
-    });
+      setQuillMediaEmbedsDeletable(false);
+      registerQuillFormats();
 
-    quill.setContents(toQuillContents(parseDelta(initialValueRef.current)));
-    quill.enable(false);
-    quillRef.current = quill;
+      const container = document.createElement("div");
+      host.appendChild(container);
+
+      const quill = new Quill(container, {
+        theme: "snow",
+        formats: viewerFormats,
+        readOnly: true,
+        modules: {
+          toolbar: false,
+        },
+      });
+
+      quill.setContents(toQuillContents(parseDelta(initialValueRef.current)));
+      quill.enable(false);
+      quillRef.current = quill;
+    })();
 
     return () => {
+      cancelled = true;
       quillRef.current = null;
-      host.innerHTML = "";
+      if (host) {
+        host.innerHTML = "";
+      }
     };
   }, [viewerFormats]);
 
