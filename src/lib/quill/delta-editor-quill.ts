@@ -1,7 +1,5 @@
-import "quill/dist/quill.snow.css";
+import type Quill from "quill";
 import type { DeltaStatic } from "quill";
-import Quill from "quill";
-import "./delta-editor.css";
 import type { DeltaMediaEmbed, DeltaShape } from "@/lib/utils/course-delta";
 import {
   coerceToDelta,
@@ -60,6 +58,39 @@ const MEDIA_EMBED_REMOVE_CLASS = "ql-media-embed-remove";
 let quillFormatsRegistered = false;
 let quillMediaEmbedsDeletable = false;
 let quillMediaEmbedRemoveLabel = "Remove media";
+let quillLoadPromise: Promise<typeof Quill> | null = null;
+let QuillRuntime: typeof Quill | null = null;
+
+/** Client-only: loads Quill + styles once before editor init (avoids SSR `document` errors). */
+export async function ensureQuillLoaded(): Promise<typeof Quill> {
+  if (typeof window === "undefined") {
+    throw new Error("Quill can only be loaded in the browser");
+  }
+
+  if (QuillRuntime) {
+    return QuillRuntime;
+  }
+
+  if (!quillLoadPromise) {
+    quillLoadPromise = (async () => {
+      await import("quill/dist/quill.snow.css");
+      await import("./delta-editor.css");
+      const mod = await import("quill");
+      QuillRuntime = mod.default;
+      return QuillRuntime;
+    })();
+  }
+
+  return quillLoadPromise;
+}
+
+function getQuill(): typeof Quill {
+  if (!QuillRuntime) {
+    throw new Error("Call ensureQuillLoaded() before using Quill helpers");
+  }
+
+  return QuillRuntime;
+}
 
 type BlockEmbedClass = {
   new (): HTMLElement;
@@ -207,12 +238,17 @@ export function buildToolbarContainer(allowMediaEmbed: boolean) {
 
 /** Shared Quill embed formats (HTML5 video + styled inline images). */
 export function registerQuillFormats(): void {
-  if (quillFormatsRegistered || typeof window === "undefined") {
+  if (
+    quillFormatsRegistered ||
+    typeof window === "undefined" ||
+    !QuillRuntime
+  ) {
     return;
   }
 
   quillFormatsRegistered = true;
 
+  const Quill = getQuill();
   const Font = Quill.import("formats/font") as { whitelist: string[] };
   Font.whitelist = [...QUILL_FONT_WHITELIST];
   Quill.register(Font, true);
@@ -279,7 +315,7 @@ export function bindQuillMediaHandlers(
 
 /** Block Quill from embedding pasted HTML images/videos (base64 or external URLs). */
 function blockQuillClipboardMediaEmbed(quill: Quill): void {
-  const Delta = Quill.import("delta") as typeof import("quill").Delta;
+  const Delta = getQuill().import("delta") as typeof import("quill").Delta;
 
   quill.clipboard.addMatcher("IMG", () => new Delta());
   quill.clipboard.addMatcher("VIDEO", () => new Delta());
@@ -387,7 +423,7 @@ export function bindQuillMediaEmbedRemove(quill: Quill): () => void {
       return;
     }
 
-    const blot = Quill.find(embed);
+    const blot = getQuill().find(embed);
     if (!blot) {
       return;
     }

@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-06-08 (validation + code-based API error i18n across 5 modules)._
+_Last audited: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -526,15 +526,15 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Word-like WYSIWYG editing and read-only rendering for Quill Delta JSON. Toolbar includes font family (Roboto, Gilroy, Geist Mono, serif, monospace), text formatting, and inline image/video via toolbar + `MediaCollectionDialog`, paste (Ctrl+V), or drag-and-drop. Embeds show an **×** remove control; removal (button or Backspace/Delete) calls `onDelete`. Paste/drop does **not** call upload APIs inside the shared component — parent supplies `onObjectEmbedded`. Default surface `max-h-[500px]` (overridable); content scrolls inside `.ql-container` (`scrollbar-app`).
 - **Props**: `allowMediaEmbed` (default `true`) — when `false`, hides image/video toolbar actions, blocks paste/drop media, strips embed ops from saved Delta (text formatting only), and uses short i18n placeholder (`placeholderTextOnly`: “Write content here.” / “Viết nội dung tại đây.”) instead of the media paste/drop hint. `surfaceClassName` — Quill bordered surface (default `max-h-[500px]` via `DELTA_EDITOR_DEFAULT_MAX_HEIGHT_CLASS`; override e.g. `max-h-[600px]`). `DeltaViewer` uses `className` on the same surface. `onObjectEmbedded(file, kind) => Promise<MediaFile | null>` — parent uploads and returns the file (required for paste/drop). `onDelete(embed: DeltaMediaEmbedRef)` — parent deletes the backing media file (e.g. `deleteMediaFile(object_key)`).
 - **Scope**: Course basic info (`about_course`), section `description` / lesson `summary` (text-only via `allowMediaEmbed={false}`), TEXT sub-lessons (`text_delta`), and any future Delta-backed rich text.
-- **Dependencies**: `quill` (+ snow CSS via `@/lib/quill`), `course-delta.ts`, `media.ts` (`classifyMediaEmbedFile`, `DeltaMediaEmbedRef`, paste/drop helpers), `MediaCollectionDialog`. Upload/delete wiring: `useDeltaEditorMediaHandlers` in `src/hooks/quill/`.
+- **Dependencies**: `quill` (loaded via `ensureQuillLoaded()` in `@/lib/quill`), `course-delta.ts`, `media.ts` (`classifyMediaEmbedFile`, `DeltaMediaEmbedRef`, paste/drop helpers), `MediaCollectionDialog`. Upload/delete wiring: `useDeltaEditorMediaHandlers` in `src/hooks/quill/`. Safe to re-export from `src/components/shared/index.ts` — Quill is not evaluated at module load time.
 
 ### Asset: Quill editor helpers
-- **Name**: `registerQuillFormats`, `QUILL_FONT_WHITELIST`, `bindQuillMediaPasteAndDrop`, `bindQuillMediaEmbedRemove`, …
+- **Name**: `ensureQuillLoaded`, `registerQuillFormats`, `QUILL_FONT_WHITELIST`, `bindQuillMediaPasteAndDrop`, `bindQuillMediaEmbedRemove`, …
 - **Type**: Quill setup utilities (no React)
 - **Path**: `src/lib/quill/delta-editor-quill.ts`, `delta-editor.css` (barrel: `src/lib/quill/index.ts`)
-- **Purpose**: Custom image/video blots, toolbar config, paste/drop interception, embed × remove click handler, media embed registry helpers; side-effect imports Quill snow + project Quill CSS.
+- **Purpose**: Custom image/video blots, toolbar config, paste/drop interception, embed × remove click handler, media embed registry helpers. **`ensureQuillLoaded()`** dynamically imports Quill + snow/project CSS on the client only (avoids SSR `document is not defined` when `@/components/shared` barrel pulls in `delta-editor.tsx`). Call it before `new Quill(...)` or any helper that touches the Quill runtime.
 - **Scope**: `DeltaEditor`, `DeltaViewer`.
-- **Dependencies**: `quill`, `course-delta.ts`, `media.ts`.
+- **Dependencies**: `quill` (dynamic import), `course-delta.ts`, `media.ts`.
 
 ### Asset: useDeltaEditorMediaHandlers
 - **Name**: `useDeltaEditorMediaHandlers`
