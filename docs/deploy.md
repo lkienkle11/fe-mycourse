@@ -386,7 +386,7 @@ curl -sS -o /dev/null -w "%{http_code}\n" https://yourdomain.net/en
 2. Click the locale switcher — should navigate to `/en` (or vice versa).
 3. Open the login modal, enter credentials — should set cookies and show `UserMenu` (avatar).
 4. Hard-refresh — `UserMenu` should still be visible (SWR refetches `GET /api/v1/me`).
-5. Open DevTools → Application → Cookies — verify `access_token`, `refresh_token`, `session_id` are present with `SameSite=Lax`, `Domain=.yourdomain.net`, and are **not** `HttpOnly`.
+5. Open DevTools → Application → Cookies — verify `access_token`, `refresh_token`, `session_id` are present with `SameSite=Lax`, `Domain=.yourdomain.net`, and **`HttpOnly` checked**.
 
 ---
 
