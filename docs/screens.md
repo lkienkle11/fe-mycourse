@@ -263,7 +263,7 @@ Header
       │     └── AuthSocialLogin [stub]
       ├── LoginContent → handleAuthSubmit("login") → loginAction → mutateMe()
       │     └── !success → translateApiErrorCode(tErrors, result.code) — never result.message
-      └── SignupContent → handleAuthSubmit("signup", …, locale) → registerAction
+      └── SignupContent → handleAuthSubmit("signup", …, locale) → registerAction({ locale })
             └── !success → translateApiErrorCode(tErrors, result.code); 4010 rate-limit shows countdown
 ```
 
