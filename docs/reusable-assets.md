@@ -487,6 +487,14 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `useCourseOutlineReorder` hook; pairs with `reorderCourseSectionsService` / `reorderCourseLessonsService` / `reorderCourseSubLessonsService`.
 - **Dependencies**: `CourseDetail` / outline node types from `src/types/course.ts`.
 
+### Asset: duration helpers
+- **Name**: `formatDurationMs`, `parseDurationPartsToMs`, `splitMsToDurationParts`, `isDurationWithinMaxMs`
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/duration.ts`
+- **Purpose**: Convert curriculum `estimated_duration_ms` between API milliseconds and locale-aware display (`1h25m30s` / `1g25p30g`) or H/M/S form fields. Unit suffixes come from i18n `course.common.durationUnitHours|Minutes|Seconds` via `buildDurationUnits(tCommon)` — not hardcoded in the util.
+- **Scope**: Course editor outline labels, TEXT/QUIZ sub-lesson dialog duration inputs, VIDEO read-only hint from selected media.
+- **Dependencies**: `useTranslations("course.common")`; exported from `src/lib/utils/index.ts`.
+
 ### Asset: useCourseOutlineReorder
 - **Name**: `useCourseOutlineReorder`
 - **Type**: React hook
@@ -556,10 +564,10 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: course editor utils
 
 - **Type**: Utility functions
-- **Path**: `src/lib/utils/course.ts`
-- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE), `validateSubLessonFormContent` / `validateCourseSubmitReadiness` (QUIZ rules delegate to `courseQuizOptionSchema`), and quiz editor state helpers `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` for `SubLessonQuizFields`.
-- **Scope**: `use-course-editor-state`, `editor-page.tsx`.
-- **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`).
+- **Path**: `src/lib/utils/course.ts`, `src/lib/utils/duration.ts`
+- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories (including H/M/S duration parts for TEXT/QUIZ), `buildSubLessonEstimatedDurationPayload` / `validateSubLessonDurationForm`, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE), `validateSubLessonFormContent` / `validateCourseSubmitReadiness` (QUIZ rules delegate to `courseQuizOptionSchema`), quiz editor state helpers `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` for `SubLessonQuizFields`, and `formatDurationMs` / `parseDurationPartsToMs` / `splitMsToDurationParts` for outline labels.
+- **Scope**: `use-course-editor-state`, `editor-page.tsx`, `course-editor-outline-tab.tsx`, `course-editor-dialogs.tsx`.
+- **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`); `duration.ts` for display/payload conversion.
 
 ### Asset: dagre-tree utils
 - **Name**: `DagreTreeRoot`, `treeToFlowElements`, `getLayoutedElements`
