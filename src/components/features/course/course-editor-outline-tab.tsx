@@ -11,6 +11,11 @@ import {
 } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
 import { extractDeltaPreviewText } from "@/lib/utils/course-delta";
+import {
+  buildDurationUnits,
+  type DurationUnits,
+  formatDurationMs,
+} from "@/lib/utils/duration";
 import type {
   CourseLesson,
   CourseSection,
@@ -61,6 +66,7 @@ export function CourseOutlineTab({
 }: CourseOutlineTabProps) {
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.editor.outline");
+  const durationUnits = buildDurationUnits(tCommon);
   return (
     <TabsContent value="outline" className="space-y-4">
       <Card>
@@ -98,6 +104,7 @@ export function CourseOutlineTab({
               }
               renderItem={(item) => (
                 <SectionOutlineCard
+                  durationUnits={durationUnits}
                   tCommon={tCommon}
                   t={t}
                   section={item.section}
@@ -127,7 +134,22 @@ export function CourseOutlineTab({
   );
 }
 
+function OutlineDurationLabel({
+  ms,
+  units,
+}: {
+  ms?: number;
+  units: DurationUnits;
+}) {
+  const label = formatDurationMs(ms ?? 0, units);
+  if (!label) {
+    return null;
+  }
+  return <div className="text-sm text-muted-foreground">{label}</div>;
+}
+
 function SectionOutlineCard({
+  durationUnits,
   tCommon,
   t,
   section,
@@ -142,6 +164,7 @@ function SectionOutlineCard({
   onDeleteSubLesson,
   onReorderSubLessons,
 }: {
+  durationUnits: DurationUnits;
   tCommon: ReturnType<typeof useTranslations>;
   t: ReturnType<typeof useTranslations>;
   section: CourseSection;
@@ -169,6 +192,10 @@ function SectionOutlineCard({
               {extractDeltaPreviewText(section.description) ||
                 tCommon("noSectionDescription")}
             </div>
+            <OutlineDurationLabel
+              ms={section.estimated_duration_ms}
+              units={durationUnits}
+            />
           </div>
           <CourseOutlineRowActions
             kind="section"
@@ -197,6 +224,10 @@ function SectionOutlineCard({
                       {extractDeltaPreviewText(item.lesson.summary) ||
                         tCommon("noLessonSummary")}
                     </div>
+                    <OutlineDurationLabel
+                      ms={item.lesson.estimated_duration_ms}
+                      units={durationUnits}
+                    />
                   </div>
                   <CourseOutlineRowActions
                     kind="lesson"
@@ -233,6 +264,10 @@ function SectionOutlineCard({
                                 ? ` · ${tCommon("preview")}`
                                 : ""}
                             </div>
+                            <OutlineDurationLabel
+                              ms={entry.subLesson.estimated_duration_ms}
+                              units={durationUnits}
+                            />
                           </div>
                           <CourseOutlineRowActions
                             kind="item"

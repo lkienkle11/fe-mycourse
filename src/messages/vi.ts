@@ -555,6 +555,7 @@ const messages = {
         "Tóm tắt bài học cần ít nhất 20 ký tự (không tính khoảng trắng).",
       subLessonTitle: "Vui lòng nhập tiêu đề mục bài học.",
       subLessonKind: "Vui lòng chọn loại mục bài học.",
+      subLessonDurationInvalid: "Thời lượng ước tính phải từ 0 đến 999 giờ.",
       quizPrompt: "Vui lòng nhập câu hỏi trắc nghiệm.",
       quizOptionBody: "Vui lòng nhập nội dung cho mỗi lựa chọn trắc nghiệm.",
       quizOptionsMin: "Cần ít nhất một lựa chọn trắc nghiệm.",
@@ -617,6 +618,9 @@ const messages = {
       noLessonSummary: "Chưa có tóm tắt cho bài học.",
       noLessonItems: "Chưa có nội dung bài học nào.",
       noLessons: "Chưa có bài học nào.",
+      durationUnitHours: "g",
+      durationUnitMinutes: "p",
+      durationUnitSeconds: "s",
     },
     list: {
       title: "Khóa học của tôi",
@@ -786,6 +790,10 @@ const messages = {
         removeOption: "Xóa",
         correctAnswer: "Đáp án đúng",
         addOption: "Thêm lựa chọn",
+        estimatedDurationLabel: "Thời lượng ước tính",
+        durationHours: "Giờ",
+        durationMinutes: "Phút",
+        durationSeconds: "Giây",
       },
       deltaEditor: {
         lessonTextLabel: "Nội dung bài học",

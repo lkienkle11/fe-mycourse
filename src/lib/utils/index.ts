@@ -19,10 +19,12 @@ export {
   setCookieValue,
 } from "./cookie";
 export {
+  buildSubLessonEstimatedDurationPayload,
   createCourseBasicInfoState,
   createCourseSubLessonFormState,
   rootOutlineStableId,
   selectedIdsToMap,
+  validateSubLessonDurationForm,
 } from "./course";
 export type { DeltaMediaEmbed, DeltaOp, DeltaShape } from "./course-delta";
 export {
@@ -39,6 +41,15 @@ export {
 } from "./course-delta";
 export { filterDashboardItems } from "./dashboard";
 export { formatUnixDateTime } from "./date";
+export type { DurationUnits } from "./duration";
+export {
+  buildDurationUnits,
+  formatDurationMs,
+  isDurationWithinMaxMs,
+  MAX_DURATION_MS,
+  parseDurationPartsToMs,
+  splitMsToDurationParts,
+} from "./duration";
 export { formatBytes } from "./format-bytes";
 export { apiListQueryToRecord } from "./list-query";
 export type { DeltaMediaEmbedRef, MediaEmbedKind } from "./media";

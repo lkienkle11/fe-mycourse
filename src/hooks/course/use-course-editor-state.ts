@@ -24,12 +24,14 @@ import {
 import { useCourseOutlineReorder } from "@/hooks/course/use-course-outline-reorder";
 import { toastApiError } from "@/lib/utils/api-error";
 import {
+  buildSubLessonEstimatedDurationPayload,
   createCourseBasicInfoState,
   createCourseSubLessonFormState,
   rootOutlineStableId,
   selectedIdsToMap,
   toUpdateCourseBasicInfoPayload,
   validateCourseSubmitReadiness,
+  validateSubLessonDurationForm,
   validateSubLessonFormContent,
 } from "@/lib/utils/course";
 import { createEmptyDeltaString } from "@/lib/utils/course-delta";
@@ -543,6 +545,12 @@ export function useCourseEditorState({
       );
       return;
     }
+    if (!validateSubLessonDurationForm(subLessonForm)) {
+      toast.error(tValidation("subLessonDurationInvalid"));
+      return;
+    }
+    const estimatedDurationMs =
+      buildSubLessonEstimatedDurationPayload(subLessonForm);
     const isPreview =
       subLessonForm.kind === "QUIZ" ? false : subLessonForm.is_preview;
     const payload = {
@@ -551,6 +559,9 @@ export function useCourseEditorState({
       title: subLessonForm.title,
       kind: subLessonForm.kind,
       is_preview: isPreview,
+      ...(estimatedDurationMs !== undefined
+        ? { estimated_duration_ms: estimatedDurationMs }
+        : {}),
       video:
         subLessonForm.kind === "VIDEO" && subLessonForm.video_file_id
           ? {

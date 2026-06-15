@@ -312,7 +312,14 @@ issues === null?
 
 ### Sub-lesson content validation on save (`saveSubLesson`)
 
-Before calling the save API, `saveSubLesson` calls `validateSubLessonFormContent` (same rules as `validateSubLessonReadiness` but operates on raw form state, including `allow_multiple`). QUIZ branch delegates to `courseQuizOptionSchema.safeParse` and maps Zod issues via `firstValidationMessageKey` → `course.validation.*`. Additionally, `is_preview` is forced to `false` for `QUIZ` sub-lessons before the payload is sent.
+Before calling the save API, `saveSubLesson` calls `validateSubLessonFormContent` (same rules as `validateSubLessonReadiness` but operates on raw form state, including `allow_multiple`). QUIZ branch delegates to `courseQuizOptionSchema.safeParse` and maps Zod issues via `firstValidationMessageKey` → `course.validation.*`. Then `validateSubLessonDurationForm` checks TEXT/QUIZ H/M/S fields (`0`–`999h` in ms via `buildSubLessonEstimatedDurationPayload`); failure toasts `course.validation.subLessonDurationInvalid`. Additionally, `is_preview` is forced to `false` for `QUIZ` sub-lessons before the payload is sent.
+
+Payload duration (TEXT/QUIZ only):
+
+```ts
+const estimatedDurationMs = buildSubLessonEstimatedDurationPayload(subLessonForm);
+// omitted for VIDEO — BE resolves from media_files.duration on read
+```
 
 Quiz editor UI (`SubLessonQuizFields` in `course-editor-dialogs.tsx`):
 
@@ -332,6 +339,7 @@ const isPreview = subLessonForm.kind === "QUIZ" ? false : subLessonForm.is_previ
 | `quizPreviewNotAllowed` | QUIZ sub-lesson marked as preview (not allowed) |
 | `quizCorrectAnswerRequired` | QUIZ has no correct answer |
 | `quizSingleChoiceMultipleCorrect` | Single-choice QUIZ has more than one correct answer |
+| `subLessonDurationInvalid` | TEXT/QUIZ estimated duration outside `0`–`999h` |
 | `submitInvalidSubLesson` | Sub-lesson invalid (catch-all) |
 | `submitBasicInfoIncomplete` | Draft basic info incomplete |
 | `submitCollaboratorRequired` | No collaborator on course |
