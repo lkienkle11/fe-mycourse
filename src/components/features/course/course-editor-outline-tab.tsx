@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 import { CourseOutlineRowActions } from "@/components/features/course/course-editor-outline-row-actions";
+import { SubLessonKindLabel } from "@/components/features/course/sub-lesson-kind-label";
 import { SortableList } from "@/components/shared/sortable-list";
 import { Button } from "@/components/ui/button";
 import {
@@ -257,13 +258,10 @@ function SectionOutlineCard({
                             <div className="font-medium">
                               {entry.subLesson.title}
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {tCommon(`subLessonKind.${entry.subLesson.kind}`)}
-                              {entry.subLesson.is_preview &&
-                              entry.subLesson.kind !== "QUIZ"
-                                ? ` · ${tCommon("preview")}`
-                                : ""}
-                            </div>
+                            <SubLessonKindLabel
+                              kind={entry.subLesson.kind}
+                              showPreview={entry.subLesson.is_preview}
+                            />
                             <OutlineDurationLabel
                               ms={entry.subLesson.estimated_duration_ms}
                               units={durationUnits}
