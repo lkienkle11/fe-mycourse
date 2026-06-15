@@ -475,7 +475,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `SortableList`, `SortableListItem`
 - **Type**: React component
 - **Path**: `src/components/shared/sortable-list.tsx`
-- **Purpose**: Vertical drag-and-drop reorder via `@dnd-kit` (first DnD usage in the repo).
+- **Purpose**: Vertical drag-and-drop reorder via `@dnd-kit` (first DnD usage in the repo). Sensors: `MouseSensor` (8px activation distance), `TouchSensor` (200ms hold + 5px tolerance) for mobile touch; drag handle uses `touch-none` and a 44×44px hit target below `sm` (`size-11`, desktop keeps compact icon).
 - **Scope**: Course outline tab (sections/lessons/sub-lessons), taxonomy description editor, tree editor; any list with stable string `id`.
 - **Dependencies**: `@dnd-kit/core`, `@dnd-kit/sortable`.
 

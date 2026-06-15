@@ -164,7 +164,7 @@ src/components/
 │   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
-│                           #   DeltaEditor, DeltaEditorLinkDialog, DeltaViewer, SortableList,
+│                           #   DeltaEditor, DeltaEditorLinkDialog, DeltaViewer, SortableList (TouchSensor mobile),
 │                           #   SortableTreeEditor,
 │                           #   SearchBar (stub), ImageFileField
 ├── providers/

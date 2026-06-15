@@ -199,7 +199,7 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | `FieldError` | `field-error.tsx` | Inline validation message below a control; pair with `resolveValidationMessage`. |
 | `ConfirmDeleteDialog` | `confirm-delete-dialog.tsx` | Alert dialog for soft-delete confirm; copy from `taxonomy.delete` namespace. |
 | `DataTable` | `data-table.tsx` | Generic sortable admin table (`columns`, `rows`, `sort`, `renderActions`) with optional built-in filter toolbar (`FilterBy`, search, per-option custom input via `DataTableFilterByOption.customInputComponent`). First used by taxonomy lists. |
-| `SortableList` | `sortable-list.tsx` | Vertical `@dnd-kit` reorder list; items need string `id`. |
+| `SortableList` | `sortable-list.tsx` | Vertical `@dnd-kit` reorder list; items need string `id`. Mobile: `TouchSensor` (200ms hold) + 44px drag handle (`touch-none`); desktop: `MouseSensor` (8px distance). |
 | `SortableTreeEditor` | `sortable-tree-editor.tsx` | Nested sortable tree (name + read-only slug); used by taxonomy topics/skills form editor. |
 | `DagreTreeDialog` | `dagre-tree-dialog.tsx` | Dagre layout popup (`@xyflow/react` + `dagre`); `nodesDraggable` prop (default `true`); node labels **name only**; vertical/horizontal toggle; CSS in this file. Taxonomy passes `nodesDraggable={false}`. |
 | `SearchBar` | `search-bar.tsx` | Global search input (UI stub). `visibility`: `"header"` (default, hidden below `md`) or `"sidebar"` (full-width flex for mobile sheet). |
