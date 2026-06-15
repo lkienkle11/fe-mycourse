@@ -41,6 +41,8 @@ import type {
   SlugStatusTaxonomy,
 } from "@/types/taxonomy";
 
+const ABOUT_COURSE_MEDIA_EMBED_KINDS = ["image", "document"] as const;
+
 type CourseBasicInfoTabProps = {
   editable: boolean;
   state: {
@@ -187,6 +189,9 @@ export function CourseBasicInfoTab({
                     label={t("aboutLabel")}
                     required
                     disabled={!editable}
+                    mediaEmbedKinds={ABOUT_COURSE_MEDIA_EMBED_KINDS}
+                    allowLink
+                    placeholder={tCourse("editor.deltaEditor.aboutPlaceholder")}
                     onObjectEmbedded={onObjectEmbedded}
                     onDelete={onDelete}
                     onChange={(value) => {

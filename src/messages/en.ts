@@ -794,12 +794,31 @@ const messages = {
         placeholder:
           "Write content here. Use the toolbar, paste (Ctrl+V), or drag and drop images/videos to embed media.",
         placeholderTextOnly: "Write content here.",
+        aboutPlaceholder:
+          "Describe the course. Use the toolbar for formatting, links, images, and documents — paste or drag and drop files to embed.",
         dropHint: "Drop an image or video here",
+        dropHintImageDocument: "Drop an image or document here",
         uploading: "Uploading media…",
         uploadNoPermission: "You do not have permission to upload media.",
         unsupportedFile: "Only images or videos are supported (not documents).",
+        unsupportedFileImageDocument:
+          "Only images or documents are supported (not videos).",
         removeEmbed: "Remove media",
         embedHandlerMissing: "Media upload is not configured for this editor.",
+        linkNotOnFile: "Links can only be added to selected text or images.",
+        linkNoSelection: "Select text or an image before adding a link.",
+        editImageLink: "Edit link",
+        linkColorLabel: "Link text color",
+        linkColorNoSelection: "Select linked text before changing link color.",
+        linkDialog: {
+          title: "Insert link",
+          urlLabel: "URL",
+          urlPlaceholder: "https://example.com",
+          apply: "Apply",
+          remove: "Remove link",
+          cancel: "Cancel",
+          invalidUrl: "Enter a valid http or https URL.",
+        },
       },
       toast: {
         lockExpired: "The edit lock expired. Please reopen the editor action.",

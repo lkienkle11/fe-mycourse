@@ -116,3 +116,179 @@
   color: hsl(var(--destructive-foreground));
   border-color: hsl(var(--destructive));
 }
+
+.ql-editor .ql-image-link-edit {
+  position: absolute;
+  top: 0.25rem;
+  right: calc(0.25rem + 2.5rem + 0.375rem);
+  z-index: 2;
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background) / 0.92);
+  color: var(--base-primary);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.ql-editor
+  .ql-media-embed.ql-image:not(:has(a.ql-image-link)):not([data-media-link])
+  .ql-image-link-edit {
+  display: none;
+}
+
+.ql-editor .ql-media-embed.ql-image:hover .ql-image-link-edit,
+.ql-editor .ql-image-link-edit:focus-visible {
+  opacity: 1;
+}
+
+.ql-editor .ql-image-link-edit:hover {
+  background: color-mix(in oklab, var(--base-primary) 12%, transparent);
+  border-color: var(--base-primary);
+}
+
+.ql-editor .ql-image-resize-handle {
+  position: absolute;
+  z-index: 2;
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid var(--base-primary);
+  border-radius: 2px;
+  background: hsl(var(--background) / 0.95);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.ql-editor .ql-image-resize-handle[data-corner="nw"] {
+  top: 0.25rem;
+  left: 0.25rem;
+  cursor: nwse-resize;
+}
+
+.ql-editor .ql-image-resize-handle[data-corner="ne"] {
+  top: 0.25rem;
+  right: 0.25rem;
+  cursor: nesw-resize;
+}
+
+.ql-editor .ql-image-resize-handle[data-corner="sw"] {
+  bottom: 0.25rem;
+  left: 0.25rem;
+  cursor: nesw-resize;
+}
+
+.ql-editor .ql-image-resize-handle[data-corner="se"] {
+  right: 0.25rem;
+  bottom: 0.25rem;
+  cursor: nwse-resize;
+}
+
+.ql-editor .ql-media-embed.ql-image:hover .ql-image-resize-handle,
+.ql-editor .ql-media-embed.ql-image:focus-within .ql-image-resize-handle {
+  opacity: 1;
+}
+
+.ql-editor .ql-image img {
+  display: block;
+  height: auto;
+}
+
+/* Hyperlinks on selected text and image embeds (not document file cards). */
+.ql-snow .ql-editor a.delta-editor-hyperlink[href]:not(.ql-document-link) {
+  color: var(--base-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ql-snow
+  .ql-editor
+  a.delta-editor-hyperlink[href]:not(.ql-document-link):hover {
+  color: color-mix(in oklab, var(--base-primary) 85%, transparent);
+}
+
+.ql-snow
+  .ql-editor
+  a.delta-editor-hyperlink[href]:not(.ql-document-link)
+  span[style*="color"] {
+  text-decoration: inherit;
+}
+
+.ql-snow
+  .ql-editor
+  a.delta-editor-hyperlink[href]:not(.ql-document-link):hover
+  span[style*="color"] {
+  filter: brightness(0.92);
+}
+
+/* Link color picker (chain + color bar) immediately right of the link button. */
+.ql-snow .ql-toolbar span.ql-linkColor.ql-picker.ql-color-picker {
+  width: 32px;
+  min-width: 32px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-inline: 2px;
+}
+
+.ql-snow
+  .ql-toolbar
+  span.ql-linkColor.ql-picker.ql-color-picker
+  .ql-picker-label {
+  padding: 2px 4px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+}
+
+.ql-snow
+  .ql-toolbar
+  span.ql-linkColor.ql-picker.ql-color-picker
+  .ql-picker-label:hover {
+  background: hsl(var(--accent));
+}
+
+.ql-snow
+  .ql-toolbar
+  span.ql-linkColor.ql-picker.ql-color-picker
+  .ql-picker-options {
+  width: 152px;
+}
+
+.ql-snow
+  .ql-toolbar
+  span.ql-linkColor.ql-picker.ql-color-picker
+  .ql-picker-item {
+  border: 1px solid transparent;
+  float: left;
+  height: 16px;
+  margin: 2px;
+  padding: 0;
+  width: 16px;
+}
+
+/* Custom document toolbar button (Quill has no built-in document icon). */
+.ql-snow .ql-toolbar button.ql-document::before {
+  content: "DOC";
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ql-snow .ql-toolbar button.ql-document {
+  width: auto;
+  min-width: 1.75rem;
+  padding-inline: 0.25rem;
+}
+
+.ql-editor .ql-document .ql-document-link {
+  color: hsl(var(--foreground));
+  text-decoration: none;
+}
+
+.ql-editor .ql-document .ql-document-link:hover {
+  color: var(--base-primary);
+  text-decoration: underline;
+}
