@@ -164,7 +164,7 @@ src/components/
 │   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
-│                           #   DeltaEditor, DeltaViewer, SortableList,
+│                           #   DeltaEditor, DeltaEditorLinkDialog, DeltaViewer, SortableList,
 │                           #   SortableTreeEditor,
 │                           #   SearchBar (stub), ImageFileField
 ├── providers/
@@ -399,9 +399,13 @@ src/lib/
 │   ├── home.ts             # navigateToHome(router) helper for header/dashboard brand touchpoints
 │   └── routes.ts           # route builders + shared href constants (public/private/resource)
 ├── quill/
-│   ├── index.ts            # Barrel: ensureQuillLoaded, Quill blots, toolbar, paste/drop handlers
-│   ├── delta-editor-quill.ts  # Client-only Quill runtime (dynamic import; no top-level quill import)
-│   └── delta-editor.css    # Quill font picker + embed remove styles (loaded by ensureQuillLoaded)
+│   ├── index.ts            # Barrel: ensureQuillLoaded, Quill blots, toolbar, paste/drop, link helpers
+│   ├── delta-editor-quill.ts  # Client-only Quill runtime (image/video/document blots, link-edit overlay, config-driven toolbar)
+│   ├── delta-editor-image-resize.ts  # Image embed 4-corner drag-resize handles
+│   ├── delta-editor-link-color.ts  # Hyperlink text color format + toolbar picker (linkColor)
+│   ├── delta-editor-link-quill.ts  # Link toolbar (text + image embed) + image link-edit + Snow tooltip
+│   ├── delta-editor-link-utils.ts  # normalizeEmbedLink (http/https)
+│   └── delta-editor.css    # Quill font picker, embed remove, image link-edit button, 4-corner resize handles, hyperlink styles
 ├── utils/                  # Shared helper functions — import as @/lib/utils
 │   ├── index.ts            # Barrel: client-safe utils only (cn, url, cookie, …)
 │   ├── cn.ts               # cn() — clsx + tailwind-merge class combiner

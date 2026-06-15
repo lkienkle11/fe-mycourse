@@ -1,6 +1,10 @@
 import type { MediaEmbedKind } from "./media";
 
-export type DeltaInsert = string | { image: string } | { video: string };
+export type DeltaInsert =
+  | string
+  | { image: string }
+  | { video: string }
+  | { document: string };
 
 export type DeltaMediaEmbed = {
   kind: MediaEmbedKind;
@@ -68,12 +72,12 @@ export function extractPlainText(delta: DeltaShape): string {
 }
 
 function isMediaEmbedOp(op: DeltaOp): op is DeltaOp & {
-  insert: { image: string } | { video: string };
+  insert: { image: string } | { video: string } | { document: string };
 } {
   return (
     typeof op.insert === "object" &&
     op.insert != null &&
-    ("image" in op.insert || "video" in op.insert)
+    ("image" in op.insert || "video" in op.insert || "document" in op.insert)
   );
 }
 
@@ -84,7 +88,10 @@ function mediaEmbedFromOp(op: DeltaOp): DeltaMediaEmbed | null {
   if ("image" in op.insert) {
     return { kind: "image", url: op.insert.image };
   }
-  return { kind: "video", url: op.insert.video };
+  if ("video" in op.insert) {
+    return { kind: "video", url: op.insert.video };
+  }
+  return { kind: "document", url: op.insert.document };
 }
 
 /** Lists image/video embeds in Delta op order. */
@@ -120,9 +127,25 @@ export function diffRemovedMediaEmbeds(
   return removed;
 }
 
-/** Remove image/video embed ops (text inserts only). */
+/** Remove image/video/document embed ops (text inserts only). */
 export function stripMediaEmbedsFromDelta(delta: DeltaShape): DeltaShape {
   const ops = delta.ops.filter((op) => !isMediaEmbedOp(op));
+  return ops.length > 0 ? { ops } : createEmptyDelta();
+}
+
+/** Keep only embed ops whose kind is in `allowedKinds`. */
+export function filterDeltaMediaEmbeds(
+  delta: DeltaShape,
+  allowedKinds: readonly MediaEmbedKind[],
+): DeltaShape {
+  const allowed = new Set(allowedKinds);
+  const ops = delta.ops.filter((op) => {
+    const embed = mediaEmbedFromOp(op);
+    if (!embed) {
+      return true;
+    }
+    return allowed.has(embed.kind);
+  });
   return ops.length > 0 ? { ops } : createEmptyDelta();
 }
 
