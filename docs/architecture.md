@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-06-08 (api-error resolver, expanded schema/, Me API callers)._
+_Last audited: 2026-06-15 (@phosphor-icons/react added)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -29,7 +29,7 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Stream libraries | `reconnecting-websocket`, `@microsoft/fetch-event-source` | 4.x / 2.x | Transports in `src/events/` |
 | Toasts | Sonner | 2.x | Mounted in root layout, `position: "top-right"` |
 | Cookies (client) | js-cookie | 3.x | Read/write in browser context; `next/headers` used server-side |
-| Icons | lucide-react | 1.x | |
+| Icons | lucide-react, react-icons, @phosphor-icons/react | 1.x / 5.6.0 / 2.1.10 | Lucide = default; react-icons = brands/FA/MD; Phosphor = ~9k icons + weight variants |
 | Type checker | TypeScript | 5.x | Strict mode |
 | Linter / formatter | ESLint 9 + Biome 2 | — | Two toolchains: ESLint for Next rules, Biome for formatting |
 | Commit lint | commitlint | 20.x | Conventional Commits via `lint:commit` script |

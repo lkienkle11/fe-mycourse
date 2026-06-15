@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-06-08 (Zod schemas per module + `errors.codes` i18n)._
+_Last audited: 2026-06-15 (@phosphor-icons/react 2.1.10 pinned)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -136,7 +136,9 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 
 | Package | Version | Role |
 |---------|---------|------|
-| `lucide-react` | ^1.7.0 | SVG icon set — tree-shakeable, used throughout components |
+| `lucide-react` | ^1.7.0 | Primary SVG icon set — tree-shakeable, used throughout shadcn/ui and feature components |
+| `react-icons` | 5.6.0 | Secondary icon set (Font Awesome, Material Design, etc.) — import per sub-package for tree-shaking, e.g. `react-icons/fa`, `react-icons/md` |
+| `@phosphor-icons/react` | 2.1.10 | Tertiary icon set — ~9k icons, 6 weights (thin → duotone); tree-shakeable named imports, e.g. `House`, `HouseBold`, `HouseFill` |
 | `sonner` | ^2.0.7 | Toast notifications — `<Toaster />` in **`src/app/layout.tsx`** (root), not `AppProviders` |
 
 ---
@@ -179,7 +181,7 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 3. **Validation**: Always use Zod schemas with `zodResolver` from `@hookform/resolvers`. Validation error messages must use i18n keys, not hardcoded strings.
 4. **Styling**: All styles must go through Tailwind utilities. Use `cn()` for conditional merging. Use `class-variance-authority` for component variants.
 5. **Radix primitives**: Always use the wrappers in `src/components/ui/` — do not import Radix primitives directly into feature components.
-6. **Icons**: Always import icons from `lucide-react`. Do not add other icon libraries.
+6. **Icons**: Default to `lucide-react` for shadcn/ui and new UI work. Use `react-icons` for brand logos and legacy FA/MD glyphs (sub-path imports only). Use `@phosphor-icons/react` when you need extra glyphs or weight variants (bold, fill, duotone) — import only the icons you use. Do not add a fourth icon library.
 7. **Toasts**: Use `sonner` (`toast.success`, `toast.error`, etc.) for user-facing notifications.
 8. **Stream events**: Subscribe with `hooks/events/*`; send WS via `postSocketOutbound`, broadcast via `postBroadcastOutbound`. Do not add a second WebSocket/SSE library without updating [`delivery.md`](./delivery.md).
 9. **Quality gates**: Run `npm run quality:deps`, `npm run lint`, and `npm run test` (or individual scripts) before large refactors. CI on **`dev`** enforces the same in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.
