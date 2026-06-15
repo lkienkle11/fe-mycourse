@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-06-12 (no route changes; cross-ref quiz validation in course editor outline tab)._
+_Last audited: 2026-06-15 (INFO tab DeltaEditor image embed link + drag resize; Snow tooltip Edit/Remove multi-block same-href; no new routes)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
@@ -117,7 +117,7 @@ src/app/[locale]/
 | `/vi/admin` | `[locale]/admin/page.tsx` | `AdminDashboardPage` | ✅ Shell + placeholder |
 | `/vi/instructor` | `[locale]/instructor/page.tsx` | `InstructorDashboardPage` | ✅ Shell + placeholder |
 | `/vi/instructor/courses` | `[locale]/instructor/courses/page.tsx` | `InstructorCoursesPage` | ✅ Implemented |
-| `/vi/instructor/courses/{courseId}/info` | `[locale]/instructor/courses/[courseId]/info/page.tsx` | `InstructorCourseEditorPage` (`tab="info"`) | ✅ Implemented |
+| `/vi/instructor/courses/{courseId}/info` | `[locale]/instructor/courses/[courseId]/info/page.tsx` | `InstructorCourseEditorPage` (`tab="info"`) — basic info incl. `about_course` WYSIWYG; Snow tooltip **Edit**/**Remove** update full same-URL link runs across block gaps | ✅ Implemented |
 | `/vi/instructor/courses/{courseId}/outline` | `[locale]/instructor/courses/[courseId]/outline/page.tsx` | `InstructorCourseEditorPage` (`tab="outline"`) | ✅ Implemented |
 | `/vi/instructor/courses/{courseId}/collaborators` | `[locale]/instructor/courses/[courseId]/collaborators/page.tsx` | `InstructorCourseEditorPage` (`tab="collaborators"`) | ✅ Implemented |
 | `/vi/instructor/courses/{courseId}/pricing` | `[locale]/instructor/courses/[courseId]/pricing/page.tsx` | `InstructorCourseEditorPage` (`tab="pricing"`) | ✅ Implemented |
