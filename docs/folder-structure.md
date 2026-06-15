@@ -164,7 +164,7 @@ src/components/
 │   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
-│                           #   DeltaEditor, DeltaEditorLinkDialog, DeltaViewer, SortableList,
+│                           #   DeltaEditor, DeltaEditorLinkDialog, DeltaViewer, SortableList (TouchSensor mobile),
 │                           #   SortableTreeEditor,
 │                           #   SearchBar (stub), ImageFileField
 ├── providers/
@@ -373,8 +373,8 @@ src/constants/
 │   ├── instructor-items.ts
 │   ├── instructor-icons.ts # INSTRUCTOR_MENU_ICONS — Lucide icons for instructor nav nodes
 │   └── taxonomy-icons.ts   # TAXONOMY_MENU_ICONS — Lucide icons for taxonomy nav nodes
-├── instructor/
-│   └── resources.ts        # INSTRUCTOR_GROUP_READ_PERMISSIONS (data only)
+├── course/
+│   └── sub-lesson-kind-icons.ts  # SUB_LESSON_KIND_ICONS — Lucide icons for VIDEO/TEXT/QUIZ outline labels
 ├── taxonomy/
 │   └── resources.ts        # TAXONOMY_RESOURCES, TAXONOMY_RESOURCE_KEYS, TAXONOMY_GROUP_READ_PERMISSIONS (data only)
 ├── media/

@@ -5,7 +5,8 @@ import {
   DndContext,
   type DragEndEvent,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -57,7 +58,7 @@ function SortableRow({ id, dragLabel, children, className }: SortableRowProps) {
     >
       <button
         type="button"
-        className="mt-1 cursor-grab text-muted-foreground active:cursor-grabbing"
+        className="-m-2 mt-1 flex size-11 shrink-0 touch-none cursor-grab items-center justify-center text-muted-foreground active:cursor-grabbing sm:m-0 sm:mt-1 sm:size-auto"
         aria-label={dragLabel}
         {...attributes}
         {...listeners}
@@ -86,7 +87,17 @@ export function SortableList<T extends SortableListItem>({
   className,
 }: SortableListProps<T>) {
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
