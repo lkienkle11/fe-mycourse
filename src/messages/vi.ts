@@ -792,13 +792,33 @@ const messages = {
         placeholder:
           "Viết nội dung tại đây. Dùng thanh công cụ, dán (Ctrl+V) hoặc kéo thả ảnh/video để chèn tài nguyên.",
         placeholderTextOnly: "Viết nội dung tại đây.",
+        aboutPlaceholder:
+          "Mô tả khóa học. Dùng thanh công cụ để định dạng, chèn liên kết, ảnh và tài liệu — dán hoặc kéo thả file để chèn.",
         dropHint: "Thả ảnh hoặc video vào đây",
+        dropHintImageDocument: "Thả ảnh hoặc tài liệu vào đây",
         uploading: "Đang tải tài nguyên lên…",
         uploadNoPermission: "Bạn không có quyền tải tài nguyên lên.",
         unsupportedFile: "Chỉ hỗ trợ ảnh hoặc video (không phải tài liệu).",
+        unsupportedFileImageDocument:
+          "Chỉ hỗ trợ ảnh hoặc tài liệu (không phải video).",
         removeEmbed: "Xóa tài nguyên",
         embedHandlerMissing:
           "Chưa cấu hình tải tài nguyên cho trình soạn thảo này.",
+        linkNotOnFile: "Liên kết chỉ thêm được trên văn bản đã chọn hoặc ảnh.",
+        linkNoSelection: "Hãy chọn văn bản hoặc ảnh trước khi thêm liên kết.",
+        editImageLink: "Chỉnh sửa liên kết",
+        linkColorLabel: "Màu chữ liên kết",
+        linkColorNoSelection:
+          "Hãy chọn đoạn văn đã gắn liên kết trước khi đổi màu.",
+        linkDialog: {
+          title: "Chèn liên kết",
+          urlLabel: "URL",
+          urlPlaceholder: "https://example.com",
+          apply: "Áp dụng",
+          remove: "Xóa liên kết",
+          cancel: "Hủy",
+          invalidUrl: "Nhập URL hợp lệ (http hoặc https).",
+        },
       },
       toast: {
         lockExpired:

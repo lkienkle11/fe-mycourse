@@ -5,21 +5,35 @@ import type Quill from "quill";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { MediaCollectionDialog } from "@/components/features/media";
+import {
+  DeltaEditorLinkDialog,
+  type DeltaEditorLinkDialogLabels,
+} from "@/components/shared/delta-editor-link-dialog";
 import { RequiredLabel } from "@/components/shared/required-label";
 import { Label } from "@/components/ui/label";
 import {
   annotateEmbedAtIndex,
+  applyQuillLinkEdit,
+  bindQuillImageLinkEdit,
+  bindQuillImageResize,
+  bindQuillLinkColorHandler,
+  bindQuillLinkHandler,
   bindQuillMediaEmbedRemove,
   bindQuillMediaHandlers,
   bindQuillMediaPasteAndDrop,
   buildEditorFormats,
   buildToolbarContainer,
+  DELTA_VIEWER_QUILL_CONFIG,
   type DeltaEditorMediaPickerMode,
   ensureQuillLoaded,
   normalizeDeltaForEditor,
+  type QuillLinkEditRequest,
   registerMediaEmbed,
   registerQuillFormats,
+  resolveDeltaEditorQuillConfig,
   resolveMediaEmbedRef,
+  setQuillImageLinkEditable,
+  setQuillImageLinkEditLabel,
   setQuillMediaEmbedRemoveLabel,
   setQuillMediaEmbedsDeletable,
   toQuillContents,
@@ -28,22 +42,32 @@ import { cn } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
 import {
   type DeltaMediaEmbed,
+  type DeltaShape,
   diffRemovedMediaEmbeds,
   extractMediaEmbedsFromDelta,
+  filterDeltaMediaEmbeds,
   parseDelta,
   stringifyDelta,
   stripMediaEmbedsFromDelta,
 } from "@/lib/utils/course-delta";
-import type { DeltaMediaEmbedRef, MediaEmbedKind } from "@/lib/utils/media";
-import { classifyMediaEmbedFile } from "@/lib/utils/media";
+import {
+  classifyMediaEmbedFile,
+  DEFAULT_MEDIA_EMBED_KINDS,
+  type DeltaMediaEmbedRef,
+  type MediaEmbedKind,
+} from "@/lib/utils/media";
 import type { MediaFile, MediaTab } from "@/types/media";
 
 export type DeltaEditorProps = {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-  /** When false, toolbar hides image/video and embed ops are stripped from output. Default true. */
+  /** When false, toolbar hides media actions and embed ops are stripped from output. Default true. */
   allowMediaEmbed?: boolean;
+  /** Subset of embed kinds in toolbar / paste-drop. Default image + video. */
+  mediaEmbedKinds?: readonly MediaEmbedKind[];
+  /** Link toolbar for selected text and image embeds. Default false. */
+  allowLink?: boolean;
   label?: string;
   required?: boolean;
   placeholder?: string;
@@ -56,7 +80,7 @@ export type DeltaEditorProps = {
     file: File,
     kind: MediaEmbedKind,
   ) => Promise<MediaFile | null | undefined>;
-  /** Image/video removed from the editor (X button or Backspace/Delete). */
+  /** Image/video/document removed from the editor (X button or Backspace/Delete). */
   onDelete?: (embed: DeltaMediaEmbedRef) => void | Promise<void>;
 };
 
@@ -81,11 +105,30 @@ const quillSurfaceClassName = cn(
   "[&_.ql-editor_.ql-video]:block",
 );
 
+type MediaHintKeys = {
+  dropHint: "dropHint" | "dropHintImageDocument";
+  unsupportedFile: "unsupportedFile" | "unsupportedFileImageDocument";
+};
+
+function resolveMediaHintKeys(kinds: readonly MediaEmbedKind[]): MediaHintKeys {
+  const hasVideo = kinds.includes("video");
+  const hasDocument = kinds.includes("document");
+  if (hasDocument && !hasVideo) {
+    return {
+      dropHint: "dropHintImageDocument",
+      unsupportedFile: "unsupportedFileImageDocument",
+    };
+  }
+  return { dropHint: "dropHint", unsupportedFile: "unsupportedFile" };
+}
+
 export function DeltaEditor({
   value,
   onChange,
   disabled = false,
   allowMediaEmbed = true,
+  mediaEmbedKinds = DEFAULT_MEDIA_EMBED_KINDS,
+  allowLink = false,
   label,
   required = false,
   placeholder,
@@ -101,28 +144,52 @@ export function DeltaEditor({
   const onChangeRef = useRef(onChange);
   const onObjectEmbeddedRef = useRef(onObjectEmbedded);
   const onDeleteRef = useRef(onDelete);
-  const allowMediaEmbedRef = useRef(allowMediaEmbed);
+  const quillConfigRef = useRef(
+    resolveDeltaEditorQuillConfig({
+      allowMediaEmbed,
+      mediaEmbedKinds,
+      allowLink,
+    }),
+  );
   const disabledRef = useRef(disabled);
   const skipExternalSyncRef = useRef(false);
   const insertIndexRef = useRef<number | null>(null);
-  const initialValueRef = useRef(value);
+  const valueRef = useRef(value);
   const initialDisabledRef = useRef(disabled);
   const mediaRegistryRef = useRef(new Map<string, DeltaMediaEmbedRef>());
   const previousEmbedsRef = useRef<DeltaMediaEmbed[]>([]);
+  const pendingLinkEditRef = useRef<QuillLinkEditRequest | null>(null);
+  const tRef = useRef(t);
   const [mediaDialogOpen, setMediaDialogOpen] = useState(false);
   const [mediaPickerMode, setMediaPickerMode] =
     useState<DeltaEditorMediaPickerMode>("image");
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkInitialUrl, setLinkInitialUrl] = useState("");
   const [isDraggingMedia, setIsDraggingMedia] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const isUploadingMediaRef = useRef(false);
 
+  const quillConfig = useMemo(
+    () =>
+      resolveDeltaEditorQuillConfig({
+        allowMediaEmbed,
+        mediaEmbedKinds,
+        allowLink,
+      }),
+    [allowMediaEmbed, mediaEmbedKinds, allowLink],
+  );
+
   const editorFormats = useMemo(
-    () => buildEditorFormats(allowMediaEmbed),
-    [allowMediaEmbed],
+    () => buildEditorFormats(quillConfig),
+    [quillConfig],
   );
   const toolbarContainer = useMemo(
-    () => buildToolbarContainer(allowMediaEmbed),
-    [allowMediaEmbed],
+    () => buildToolbarContainer(quillConfig),
+    [quillConfig],
+  );
+  const mediaHintKeys = useMemo(
+    () => resolveMediaHintKeys(mediaEmbedKinds),
+    [mediaEmbedKinds],
   );
 
   const textLabel = label ?? t("lessonTextLabel");
@@ -131,6 +198,31 @@ export function DeltaEditor({
     (allowMediaEmbed ? t("placeholder") : t("placeholderTextOnly"));
   const editorPlaceholderRef = useRef(editorPlaceholder);
   const removeEmbedLabel = t("removeEmbed");
+  const editImageLinkLabel = t("editImageLink");
+
+  const linkDialogLabels = useMemo<DeltaEditorLinkDialogLabels>(
+    () => ({
+      title: t("linkDialog.title"),
+      urlLabel: t("linkDialog.urlLabel"),
+      urlPlaceholder: t("linkDialog.urlPlaceholder"),
+      apply: t("linkDialog.apply"),
+      remove: t("linkDialog.remove"),
+      cancel: t("linkDialog.cancel"),
+    }),
+    [t],
+  );
+
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  useEffect(() => {
+    quillConfigRef.current = quillConfig;
+  }, [quillConfig]);
+
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
 
   useEffect(() => {
     editorPlaceholderRef.current = editorPlaceholder;
@@ -150,10 +242,6 @@ export function DeltaEditor({
   }, [onDelete]);
 
   useEffect(() => {
-    allowMediaEmbedRef.current = allowMediaEmbed;
-  }, [allowMediaEmbed]);
-
-  useEffect(() => {
     disabledRef.current = disabled;
   }, [disabled]);
 
@@ -162,7 +250,8 @@ export function DeltaEditor({
   }, [isUploadingMedia]);
 
   const openMediaPicker = useCallback((mode: DeltaEditorMediaPickerMode) => {
-    if (!allowMediaEmbedRef.current) {
+    const config = quillConfigRef.current;
+    if (!config.allowMediaEmbed || !config.mediaEmbedKinds.includes(mode)) {
       return;
     }
 
@@ -183,8 +272,9 @@ export function DeltaEditor({
 
   const embedMediaFilesAt = useCallback(
     async (rawFiles: File[], insertIndex: number) => {
+      const config = quillConfigRef.current;
       if (
-        !allowMediaEmbedRef.current ||
+        !config.allowMediaEmbed ||
         disabledRef.current ||
         isUploadingMediaRef.current
       ) {
@@ -193,7 +283,7 @@ export function DeltaEditor({
 
       const onEmbedded = onObjectEmbeddedRef.current;
       if (!onEmbedded) {
-        toast.error(t("embedHandlerMissing"));
+        toast.error(tRef.current("embedHandlerMissing"));
         return;
       }
 
@@ -202,14 +292,18 @@ export function DeltaEditor({
         return;
       }
 
+      const hintKeys = resolveMediaHintKeys(config.mediaEmbedKinds);
       const entries = rawFiles.flatMap((file) => {
         const mode = classifyMediaEmbedFile(file);
-        return mode ? [{ file, mode }] : [];
+        if (!mode || !config.mediaEmbedKinds.includes(mode)) {
+          return [];
+        }
+        return [{ file, mode }];
       });
 
       if (!entries.length) {
         if (rawFiles.length > 0) {
-          toast.error(t("unsupportedFile"));
+          toast.error(tRef.current(hintKeys.unsupportedFile));
         }
         return;
       }
@@ -238,7 +332,7 @@ export function DeltaEditor({
         setIsUploadingMedia(false);
       }
     },
-    [t, tErrors],
+    [tErrors],
   );
   const embedMediaFilesAtRef = useRef(embedMediaFilesAt);
 
@@ -251,10 +345,39 @@ export function DeltaEditor({
   }, [removeEmbedLabel]);
 
   useEffect(() => {
+    setQuillImageLinkEditLabel(editImageLinkLabel);
+  }, [editImageLinkLabel]);
+
+  const applyPendingLink = useCallback((rawUrl: string) => {
+    const quill = quillRef.current;
+    const request = pendingLinkEditRef.current;
+    if (!quill || !request) {
+      return;
+    }
+
+    const ok = applyQuillLinkEdit(quill, request, rawUrl);
+    if (!ok) {
+      toast.error(tRef.current("linkDialog.invalidUrl"));
+      return;
+    }
+
+    pendingLinkEditRef.current = null;
+    setLinkDialogOpen(false);
+  }, []);
+
+  const removePendingLink = useCallback(() => {
+    applyPendingLink("");
+  }, [applyPendingLink]);
+
+  useEffect(() => {
     const host = editorHostRef.current;
     let cancelled = false;
     let unbindPasteDrop: (() => void) | undefined;
     let unbindEmbedRemove: (() => void) | undefined;
+    let unbindImageResize: (() => void) | undefined;
+    let unbindImageLinkEdit: (() => void) | undefined;
+    let unbindLinkColor: (() => void) | undefined;
+    let unbindLink: (() => void) | undefined;
 
     void (async () => {
       const Quill = await ensureQuillLoaded();
@@ -268,6 +391,9 @@ export function DeltaEditor({
       const container = document.createElement("div");
       host.appendChild(container);
 
+      const initConfig = quillConfigRef.current;
+      setQuillImageLinkEditable(initConfig.allowLink);
+
       const quill = new Quill(container, {
         theme: "snow",
         formats: editorFormats,
@@ -277,36 +403,71 @@ export function DeltaEditor({
         },
       });
 
-      if (allowMediaEmbedRef.current) {
-        bindQuillMediaHandlers(quill, (mode) =>
-          openMediaPickerRef.current(mode),
+      if (initConfig.allowMediaEmbed) {
+        bindQuillMediaHandlers(
+          quill,
+          (mode) => openMediaPickerRef.current(mode),
+          initConfig.mediaEmbedKinds,
         );
-      }
-
-      if (allowMediaEmbedRef.current) {
         unbindPasteDrop = bindQuillMediaPasteAndDrop(quill, {
           isEnabled: () =>
-            allowMediaEmbedRef.current &&
+            quillConfigRef.current.allowMediaEmbed &&
             !disabledRef.current &&
             !isUploadingMediaRef.current,
+          allowedKinds: initConfig.mediaEmbedKinds,
           onDragStateChange: setIsDraggingMedia,
           onMediaFiles: (files, insertIndex) => {
             void embedMediaFilesAtRef.current(files, insertIndex);
           },
         });
         unbindEmbedRemove = bindQuillMediaEmbedRemove(quill);
+        if (initConfig.mediaEmbedKinds.includes("image")) {
+          unbindImageResize = bindQuillImageResize(quill);
+        }
+      }
+
+      if (initConfig.allowLink) {
+        unbindLink = bindQuillLinkHandler(quill, {
+          onRequestLinkEdit: (request) => {
+            pendingLinkEditRef.current = request;
+            setLinkInitialUrl(request.currentUrl);
+            setLinkDialogOpen(true);
+          },
+          onLinkNotOnFile: () => {
+            toast.error(tRef.current("linkNotOnFile"));
+          },
+          onLinkNoSelection: () => {
+            toast.error(tRef.current("linkNoSelection"));
+          },
+        });
+        if (initConfig.mediaEmbedKinds.includes("image")) {
+          unbindImageLinkEdit = bindQuillImageLinkEdit(quill, (request) => {
+            pendingLinkEditRef.current = request;
+            setLinkInitialUrl(request.currentUrl);
+            setLinkDialogOpen(true);
+          });
+        }
+        unbindLinkColor = bindQuillLinkColorHandler(
+          quill,
+          () => {
+            toast.error(tRef.current("linkColorNoSelection"));
+          },
+          tRef.current("linkColorLabel"),
+        );
       }
 
       const initialDelta = normalizeDeltaForEditor(
-        initialValueRef.current,
-        allowMediaEmbedRef.current,
+        valueRef.current,
+        initConfig,
       );
       quill.setContents(toQuillContents(initialDelta));
       previousEmbedsRef.current = extractMediaEmbedsFromDelta(initialDelta);
       quill.enable(!initialDisabledRef.current);
 
       quill.on("text-change", () => {
-        const nextDelta = { ops: quill.getContents().ops as never[] };
+        const nextDelta: DeltaShape = {
+          ops: quill.getContents().ops as DeltaShape["ops"],
+        };
         const nextEmbeds = extractMediaEmbedsFromDelta(nextDelta);
         const removedEmbeds = diffRemovedMediaEmbeds(
           previousEmbedsRef.current,
@@ -321,9 +482,16 @@ export function DeltaEditor({
         }
 
         skipExternalSyncRef.current = true;
-        const normalized = allowMediaEmbedRef.current
-          ? nextDelta
-          : stripMediaEmbedsFromDelta(nextDelta);
+        const config = quillConfigRef.current;
+        let normalized = nextDelta;
+        if (!config.allowMediaEmbed) {
+          normalized = stripMediaEmbedsFromDelta(nextDelta);
+        } else if (config.mediaEmbedKinds.length > 0) {
+          normalized = filterDeltaMediaEmbeds(
+            nextDelta,
+            config.mediaEmbedKinds,
+          );
+        }
         onChangeRef.current(stringifyDelta(normalized));
       });
 
@@ -334,8 +502,14 @@ export function DeltaEditor({
       cancelled = true;
       unbindPasteDrop?.();
       unbindEmbedRemove?.();
+      unbindImageResize?.();
+      unbindImageLinkEdit?.();
+      unbindLinkColor?.();
+      unbindLink?.();
       setQuillMediaEmbedsDeletable(false);
+      setQuillImageLinkEditable(false);
       quillRef.current = null;
+      pendingLinkEditRef.current = null;
       if (host) {
         host.innerHTML = "";
       }
@@ -353,13 +527,13 @@ export function DeltaEditor({
       return;
     }
 
-    const parsed = normalizeDeltaForEditor(value, allowMediaEmbed);
+    const parsed = normalizeDeltaForEditor(value, quillConfig);
     const current = quill.getContents();
     if (JSON.stringify(current.ops) !== JSON.stringify(parsed.ops)) {
       quill.setContents(toQuillContents(parsed), "silent");
       previousEmbedsRef.current = extractMediaEmbedsFromDelta(parsed);
     }
-  }, [allowMediaEmbed, value]);
+  }, [quillConfig, value]);
 
   useEffect(() => {
     quillRef.current?.enable(!disabled);
@@ -367,7 +541,8 @@ export function DeltaEditor({
 
   const insertMediaEmbed = useCallback(
     (file: MediaFile, mode: DeltaEditorMediaPickerMode) => {
-      if (!allowMediaEmbedRef.current) {
+      const config = quillConfigRef.current;
+      if (!config.allowMediaEmbed || !config.mediaEmbedKinds.includes(mode)) {
         return;
       }
 
@@ -389,14 +564,18 @@ export function DeltaEditor({
 
   const handleMediaSelect = useCallback(
     (file: MediaFile, type: MediaTab) => {
-      if (!allowMediaEmbed || type !== mediaPickerMode) {
+      if (
+        !quillConfig.allowMediaEmbed ||
+        type !== mediaPickerMode ||
+        !quillConfig.mediaEmbedKinds.includes(mediaPickerMode)
+      ) {
         return;
       }
 
       insertMediaEmbed(file, mediaPickerMode);
       setMediaDialogOpen(false);
     },
-    [allowMediaEmbed, insertMediaEmbed, mediaPickerMode],
+    [insertMediaEmbed, mediaPickerMode, quillConfig],
   );
 
   return (
@@ -421,7 +600,7 @@ export function DeltaEditor({
         {isDraggingMedia ? (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md border-2 border-dashed border-primary bg-muted/60">
             <p className="text-sm font-medium text-foreground">
-              {t("dropHint")}
+              {t(mediaHintKeys.dropHint)}
             </p>
           </div>
         ) : null}
@@ -432,7 +611,7 @@ export function DeltaEditor({
         ) : null}
       </div>
 
-      {allowMediaEmbed ? (
+      {allowMediaEmbed && quillConfig.mediaEmbedKinds.length > 0 ? (
         <MediaCollectionDialog
           open={mediaDialogOpen}
           onOpenChange={setMediaDialogOpen}
@@ -440,6 +619,22 @@ export function DeltaEditor({
           visibleTabs={[mediaPickerMode]}
           selectionMode="single"
           onSelect={handleMediaSelect}
+        />
+      ) : null}
+
+      {allowLink ? (
+        <DeltaEditorLinkDialog
+          open={linkDialogOpen}
+          onOpenChange={(open) => {
+            setLinkDialogOpen(open);
+            if (!open) {
+              pendingLinkEditRef.current = null;
+            }
+          }}
+          initialUrl={linkInitialUrl}
+          labels={linkDialogLabels}
+          onApply={applyPendingLink}
+          onRemove={removePendingLink}
         />
       ) : null}
     </div>
@@ -451,7 +646,10 @@ export function DeltaViewer({ value, className }: DeltaViewerProps) {
   const editorHostRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill | null>(null);
   const initialValueRef = useRef(value);
-  const viewerFormats = useMemo(() => buildEditorFormats(true), []);
+  const viewerFormats = useMemo(
+    () => buildEditorFormats(DELTA_VIEWER_QUILL_CONFIG),
+    [],
+  );
 
   useEffect(() => {
     const host = editorHostRef.current;

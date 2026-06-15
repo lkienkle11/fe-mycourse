@@ -127,7 +127,13 @@ export function validateMediaUploadBatch(
   return null;
 }
 
-export type MediaEmbedKind = "image" | "video";
+export type MediaEmbedKind = "image" | "video" | "document";
+
+/** Default embed kinds for TEXT sub-lessons (image + video). */
+export const DEFAULT_MEDIA_EMBED_KINDS: readonly MediaEmbedKind[] = [
+  "image",
+  "video",
+];
 
 /** Media embed removed from DeltaEditor — enough to call `deleteMediaFile(object_key)`. */
 export type DeltaMediaEmbedRef = Pick<
@@ -137,7 +143,12 @@ export type DeltaMediaEmbedRef = Pick<
   kind: MediaEmbedKind;
 };
 
-/** Maps a local file to an editor embed kind (image/video), or null if unsupported. */
+export function isDocumentFilename(filename: string): boolean {
+  const lower = filename.toLowerCase();
+  return MEDIA_DOCUMENT_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+/** Maps a local file to an editor embed kind (image/video/document), or null if unsupported. */
 export function classifyMediaEmbedFile(file: File): MediaEmbedKind | null {
   const mime = file.type.toLowerCase();
   if (mime.startsWith("image/")) return "image";
@@ -150,6 +161,16 @@ export function classifyMediaEmbedFile(file: File): MediaEmbedKind | null {
   if (MEDIA_VIDEO_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
     return "video";
   }
+  if (MEDIA_DOCUMENT_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
+    return "document";
+  }
+  if (
+    mime.startsWith("application/") ||
+    mime.startsWith("text/") ||
+    mime === "application/pdf"
+  ) {
+    return "document";
+  }
   return null;
 }
 
@@ -157,15 +178,18 @@ function mediaEmbedFileKey(file: File): string {
   return `${file.name}:${file.size}:${file.lastModified}`;
 }
 
-/** Collects unique image/video files from a paste or drop DataTransfer. */
+/** Collects unique embeddable files from a paste or drop DataTransfer. */
 export function getMediaEmbedFilesFromDataTransfer(
   dataTransfer: DataTransfer,
+  allowedKinds?: readonly MediaEmbedKind[],
 ): File[] {
   const seen = new Set<string>();
   const files: File[] = [];
 
   const push = (file: File | null) => {
-    if (!file || !classifyMediaEmbedFile(file)) return;
+    const kind = file ? classifyMediaEmbedFile(file) : null;
+    if (!file || !kind) return;
+    if (allowedKinds && !allowedKinds.includes(kind)) return;
     const key = mediaEmbedFileKey(file);
     if (seen.has(key)) return;
     seen.add(key);
@@ -186,6 +210,9 @@ export function getMediaEmbedFilesFromDataTransfer(
 
 export function hasMediaEmbedFilesInDataTransfer(
   dataTransfer: DataTransfer,
+  allowedKinds?: readonly MediaEmbedKind[],
 ): boolean {
-  return getMediaEmbedFilesFromDataTransfer(dataTransfer).length > 0;
+  return (
+    getMediaEmbedFilesFromDataTransfer(dataTransfer, allowedKinds).length > 0
+  );
 }
