@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-06-15 (INFO tab DeltaEditor image embed link + drag resize; Snow tooltip Edit/Remove multi-block same-href; no new routes)._
+_Last audited: 2026-06-15 (OUTLINE tab mobile drag reorder fix in shared `SortableList`; no new routes)._
 
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.

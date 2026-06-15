@@ -475,7 +475,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `SortableList`, `SortableListItem`
 - **Type**: React component
 - **Path**: `src/components/shared/sortable-list.tsx`
-- **Purpose**: Vertical drag-and-drop reorder via `@dnd-kit` (first DnD usage in the repo).
+- **Purpose**: Vertical drag-and-drop reorder via `@dnd-kit` (first DnD usage in the repo). Sensors: `MouseSensor` (8px activation distance), `TouchSensor` (200ms hold + 5px tolerance) for mobile touch; drag handle uses `touch-none` and a 44×44px hit target below `sm` (`size-11`, desktop keeps compact icon).
 - **Scope**: Course outline tab (sections/lessons/sub-lessons), taxonomy description editor, tree editor; any list with stable string `id`.
 - **Dependencies**: `@dnd-kit/core`, `@dnd-kit/sortable`.
 
@@ -510,6 +510,22 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Shared outline row action menu for section, lesson, and sub-lesson (item) rows. `DropdownMenu` trigger uses `course.common.actions`; menu entries come from `OUTLINE_ROW_ACTIONS` keyed by `CourseOutlineItemKind` (`section` | `lesson` | `item`).
 - **Scope**: `course-editor-outline-tab.tsx` (`SectionOutlineCard` and nested lesson/item rows).
 - **Dependencies**: `DropdownMenu` / `DropdownMenuItem` (`variant="destructive"` for delete), `CourseOutlineItemKind` from `src/types/course.ts`, i18n `course.editor.outline.*`.
+
+### Asset: SubLessonKindLabel
+- **Name**: `SubLessonKindLabel`
+- **Type**: React component
+- **Path**: `src/components/features/course/sub-lesson-kind-label.tsx`
+- **Purpose**: Renders sub-lesson content kind with Lucide icon + i18n label (`course.common.subLessonKind.*`) and optional preview suffix.
+- **Scope**: `course-editor-outline-tab.tsx` sub-lesson rows in `SectionOutlineCard`.
+- **Dependencies**: `SUB_LESSON_KIND_ICONS` from `src/constants/course/sub-lesson-kind-icons.ts`, `CourseSubLessonKind` from `src/types/course.ts`.
+
+### Asset: SUB_LESSON_KIND_ICONS
+- **Name**: `SUB_LESSON_KIND_ICONS`
+- **Type**: Constant map (`CourseSubLessonKind` → `LucideIcon`)
+- **Path**: `src/constants/course/sub-lesson-kind-icons.ts`
+- **Purpose**: `VIDEO` → `Video`, `TEXT` → `FileText`, `QUIZ` → `ListChecks` for outline type labels.
+- **Scope**: `SubLessonKindLabel`; reuse if lesson-item type pickers need matching glyphs later.
+- **Dependencies**: `lucide-react`, `CourseSubLessonKind`.
 
 ### Asset: DagreTreeDialog
 - **Name**: `DagreTreeDialog`, `DagreTreeDialogProps`, `DagreTreeDialogLabels`
