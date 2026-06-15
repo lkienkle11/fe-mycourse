@@ -27,6 +27,7 @@ import {
   applyQuizAllowMultipleChange,
   applyQuizOptionCorrectChange,
 } from "@/lib/utils/course";
+import { buildDurationUnits, formatDurationMs } from "@/lib/utils/duration";
 import { newV7 } from "@/lib/utils/uuid";
 import type {
   CourseBasicInfoForm,
@@ -237,6 +238,83 @@ function SubLessonCheckboxField({
   );
 }
 
+function SubLessonDurationFields({
+  form,
+  setForm,
+}: Pick<SubLessonKindFieldProps, "form" | "setForm">) {
+  const t = useTranslations("course.editor.dialogs");
+
+  return (
+    <div className="space-y-2">
+      <RequiredLabel>{t("estimatedDurationLabel")}</RequiredLabel>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="space-y-1">
+          <label
+            className="text-xs text-muted-foreground"
+            htmlFor="duration-hours"
+          >
+            {t("durationHours")}
+          </label>
+          <Input
+            id="duration-hours"
+            type="number"
+            min={0}
+            value={form.duration_hours}
+            onChange={(event) =>
+              setForm((prev) => ({
+                ...prev,
+                duration_hours: Math.max(0, Number(event.target.value) || 0),
+              }))
+            }
+          />
+        </div>
+        <div className="space-y-1">
+          <label
+            className="text-xs text-muted-foreground"
+            htmlFor="duration-minutes"
+          >
+            {t("durationMinutes")}
+          </label>
+          <Input
+            id="duration-minutes"
+            type="number"
+            min={0}
+            max={59}
+            value={form.duration_minutes}
+            onChange={(event) =>
+              setForm((prev) => ({
+                ...prev,
+                duration_minutes: Math.max(0, Number(event.target.value) || 0),
+              }))
+            }
+          />
+        </div>
+        <div className="space-y-1">
+          <label
+            className="text-xs text-muted-foreground"
+            htmlFor="duration-seconds"
+          >
+            {t("durationSeconds")}
+          </label>
+          <Input
+            id="duration-seconds"
+            type="number"
+            min={0}
+            max={59}
+            value={form.duration_seconds}
+            onChange={(event) =>
+              setForm((prev) => ({
+                ...prev,
+                duration_seconds: Math.max(0, Number(event.target.value) || 0),
+              }))
+            }
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SubLessonVideoFields({
   form,
   setForm,
@@ -246,6 +324,12 @@ function SubLessonVideoFields({
   const t = useTranslations("course.editor.dialogs");
   const tBasic = useTranslations("course.editor.basicInfo");
   const hasVideo = Boolean(form.video_file_id);
+  const previewDurationMs =
+    form.video_duration_seconds > 0 ? form.video_duration_seconds * 1000 : 0;
+  const durationLabel = formatDurationMs(
+    previewDurationMs,
+    buildDurationUnits(tCommon),
+  );
 
   return (
     <div className="min-w-0 space-y-2">
@@ -257,6 +341,11 @@ function SubLessonVideoFields({
             <div className="break-all text-muted-foreground">
               {form.video_url || tCommon("videoSelected")}
             </div>
+            {durationLabel ? (
+              <div className="text-muted-foreground">
+                {t("estimatedDurationLabel")}: {durationLabel}
+              </div>
+            ) : null}
           </div>
         ) : (
           <p className="text-muted-foreground">{tCommon("noVideoSelected")}</p>
@@ -275,6 +364,7 @@ function SubLessonVideoFields({
                 ...prev,
                 video_file_id: "",
                 video_url: "",
+                video_duration_seconds: 0,
               }))
             }
           >
@@ -293,14 +383,19 @@ function SubLessonTextFields({
   onDelete,
 }: SubLessonKindFieldProps) {
   return (
-    <DeltaEditor
-      className="min-w-0"
-      surfaceClassName="max-h-[320px]"
-      value={form.text_delta}
-      onObjectEmbedded={onObjectEmbedded}
-      onDelete={onDelete}
-      onChange={(value) => setForm((prev) => ({ ...prev, text_delta: value }))}
-    />
+    <div className="min-w-0 space-y-4">
+      <SubLessonDurationFields form={form} setForm={setForm} />
+      <DeltaEditor
+        className="min-w-0"
+        surfaceClassName="max-h-[320px]"
+        value={form.text_delta}
+        onObjectEmbedded={onObjectEmbedded}
+        onDelete={onDelete}
+        onChange={(value) =>
+          setForm((prev) => ({ ...prev, text_delta: value }))
+        }
+      />
+    </div>
   );
 }
 
@@ -312,6 +407,7 @@ function SubLessonQuizFields({
 
   return (
     <div className="min-w-0 space-y-4">
+      <SubLessonDurationFields form={form} setForm={setForm} />
       <div className="space-y-2">
         <RequiredLabel htmlFor="quiz-prompt">{t("promptLabel")}</RequiredLabel>
         <Textarea
@@ -622,6 +718,7 @@ export function CourseMediaDialogs({
             ...prev,
             video_file_id: file.id ?? "",
             video_url: file.url,
+            video_duration_seconds: file.duration ?? 0,
           }))
         }
       />

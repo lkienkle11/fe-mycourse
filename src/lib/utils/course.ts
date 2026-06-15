@@ -3,6 +3,11 @@ import {
   countDeltaNonWhitespace,
   createEmptyDeltaString,
 } from "@/lib/utils/course-delta";
+import {
+  isDurationWithinMaxMs,
+  parseDurationPartsToMs,
+  splitMsToDurationParts,
+} from "@/lib/utils/duration";
 import { newV7 } from "@/lib/utils/uuid";
 import { firstValidationMessageKey } from "@/lib/utils/validation-message";
 import { courseBasicInfoSchema, courseQuizOptionSchema } from "@/schema/course";
@@ -94,14 +99,24 @@ export function createCourseSubLessonFormState(
   lessonId = "",
   subLesson?: CourseSubLesson,
 ): CourseSubLessonFormState {
+  const durationParts = splitMsToDurationParts(
+    subLesson?.estimated_duration_ms ?? 0,
+  );
   return {
     lesson_id: lessonId,
     title: subLesson?.title ?? "",
     kind: subLesson?.kind ?? "VIDEO",
     is_preview: subLesson?.is_preview ?? false,
     expected_row_version: subLesson?.row_version ?? 0,
+    duration_hours: durationParts.hours,
+    duration_minutes: durationParts.minutes,
+    duration_seconds: durationParts.seconds,
     video_file_id: subLesson?.video?.media_file_id ?? "",
     video_url: subLesson?.video?.media_url ?? "",
+    video_duration_seconds:
+      subLesson?.kind === "VIDEO" && subLesson.estimated_duration_ms
+        ? Math.floor(subLesson.estimated_duration_ms / 1000)
+        : 0,
     text_delta: subLesson?.text?.content_delta ?? createEmptyDeltaString(),
     quiz_prompt: subLesson?.quiz?.prompt ?? "",
     allow_multiple: subLesson?.quiz?.allow_multiple ?? false,
@@ -111,6 +126,30 @@ export function createCourseSubLessonFormState(
       is_correct: option.is_correct,
     })) ?? [createEmptyQuizOption()],
   };
+}
+
+/** Returns ms for TEXT/QUIZ payloads; undefined means omit (VIDEO). */
+export function buildSubLessonEstimatedDurationPayload(
+  form: CourseSubLessonFormState,
+): number | undefined {
+  if (form.kind === "VIDEO") {
+    return undefined;
+  }
+  return parseDurationPartsToMs(
+    form.duration_hours,
+    form.duration_minutes,
+    form.duration_seconds,
+  );
+}
+
+export function validateSubLessonDurationForm(
+  form: CourseSubLessonFormState,
+): boolean {
+  if (form.kind === "VIDEO") {
+    return true;
+  }
+  const ms = buildSubLessonEstimatedDurationPayload(form);
+  return ms !== undefined && isDurationWithinMaxMs(ms);
 }
 
 export function selectedIdsToMap(ids: string[]) {

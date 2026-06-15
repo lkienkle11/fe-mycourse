@@ -108,6 +108,7 @@ export type CourseSubLesson = {
   is_preview: boolean;
   order_index: number;
   row_version: number;
+  estimated_duration_ms?: number;
   video?: CourseVideoContent;
   text?: CourseTextContent;
   quiz?: CourseQuizContent;
@@ -120,6 +121,7 @@ export type CourseLesson = {
   summary: string;
   order_index: number;
   row_version: number;
+  estimated_duration_ms?: number;
   sub_lessons: CourseSubLesson[];
 };
 
@@ -130,6 +132,7 @@ export type CourseSection = {
   description: string;
   order_index: number;
   row_version: number;
+  estimated_duration_ms?: number;
   lessons: CourseLesson[];
 };
 
@@ -222,6 +225,7 @@ export type UpsertCourseSubLessonPayload = {
   title: string;
   kind: CourseSubLessonKind;
   is_preview: boolean;
+  estimated_duration_ms?: number;
   video?: CourseVideoContent;
   text?: CourseTextContent;
   quiz?: {
@@ -296,8 +300,12 @@ export type CourseSubLessonFormState = {
   kind: CourseSubLessonKind;
   is_preview: boolean;
   expected_row_version: number;
+  duration_hours: number;
+  duration_minutes: number;
+  duration_seconds: number;
   video_file_id: string;
   video_url: string;
+  video_duration_seconds: number;
   text_delta: string;
   quiz_prompt: string;
   allow_multiple: boolean;
