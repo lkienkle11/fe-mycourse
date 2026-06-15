@@ -557,6 +557,8 @@ const messages = {
         "Lesson summary must contain at least 20 non-whitespace characters.",
       subLessonTitle: "Please enter a lesson item title.",
       subLessonKind: "Please select a lesson item type.",
+      subLessonDurationInvalid:
+        "Estimated duration must be between 0 and 999 hours.",
       quizPrompt: "Please enter a quiz prompt.",
       quizOptionBody: "Please enter text for each quiz option.",
       quizOptionsMin: "Add at least one quiz option.",
@@ -619,6 +621,9 @@ const messages = {
       noLessonSummary: "No lesson summary.",
       noLessonItems: "No lesson items yet.",
       noLessons: "No lessons yet.",
+      durationUnitHours: "h",
+      durationUnitMinutes: "m",
+      durationUnitSeconds: "s",
     },
     list: {
       title: "My Courses",
@@ -788,6 +793,10 @@ const messages = {
         removeOption: "Remove",
         correctAnswer: "Correct answer",
         addOption: "Add option",
+        estimatedDurationLabel: "Estimated duration",
+        durationHours: "Hours",
+        durationMinutes: "Minutes",
+        durationSeconds: "Seconds",
       },
       deltaEditor: {
         lessonTextLabel: "Lesson text",
