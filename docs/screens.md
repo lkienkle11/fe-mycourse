@@ -223,11 +223,20 @@ DashboardLayout (authorized)
 │     │     SidebarContent — DashboardSidebar or loading skeletons
 │     │     DashboardSidebarLocaleFooter — LocaleSwitcher fullWidth + onNavigate close (lg:hidden)
 │     │     SidebarFooter (md+) — SidebarTrigger (collapse)
-│     └── SidebarInset → main (px-2 py-4) → role page
+│     └── SidebarInset
+│           └── main (px-2 py-4)
+│                 ├── DashboardPageHeader
+│                 └── role page content
 └── LoginSignupPopup (when authorized)
 
 Unauthorized: HeaderDashboard + trailing locale (lg+) + DashboardUnauthorized (no sidebar)
 ```
+
+The visible dashboard page heading is now **layout-owned**, not page-owned:
+
+- Static route metadata is stored in `src/constants/dashboard/page-header.ts` and resolved by `src/lib/navigation/dashboard-page-header.ts`. Breadcrumbs reuse sidebar nav links from the role `*DASHBOARD_ITEMS` tree.
+- Dynamic client routes register runtime overrides through `useRegisterDashboardPageHeader` (`@/hooks/dashboard`).
+- Pages that previously rendered top-level dashboard `<h1>` blocks now render only their feature content; pages with top-row CTAs pass those controls into the shared header action slot.
 
 | Breakpoint | Locale control |
 |------------|----------------|

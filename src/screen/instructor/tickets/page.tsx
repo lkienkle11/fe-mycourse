@@ -28,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PERMISSIONS } from "@/constants/permissions";
+import { useRegisterDashboardPageHeader } from "@/hooks/dashboard";
 import { toastApiError } from "@/lib/utils/api-error";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import { instructorTicketSchema } from "@/schema/instructor";
@@ -55,6 +56,20 @@ export function InstructorTicketsPage() {
   const [messageBody, setMessageBody] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const headerActions = useMemo(
+    () => (
+      <Button type="button" onClick={() => setCreateOpen(true)}>
+        {t("create")}
+      </Button>
+    ),
+    [t],
+  );
+  const headerOverride = useMemo(
+    () => ({
+      actions: headerActions,
+    }),
+    [headerActions],
+  );
 
   const { rows, pageInfo, isLoading, mutate } =
     useInstructorTicketsList(filters);
@@ -141,15 +156,10 @@ export function InstructorTicketsPage() {
     }
   };
 
+  useRegisterDashboardPageHeader(headerOverride);
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">{t("myTitle")}</h1>
-        <Button type="button" onClick={() => setCreateOpen(true)}>
-          {t("create")}
-        </Button>
-      </div>
-
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{tc("loading")}</p>
       ) : (

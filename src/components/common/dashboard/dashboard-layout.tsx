@@ -24,11 +24,14 @@ import {
   useGetMe,
   useSatisfiesPermissions,
 } from "@/hooks/auth";
-import { Link } from "@/i18n/navigation";
+import { useDashboardPageHeaderOverride } from "@/hooks/dashboard";
+import { Link, usePathname } from "@/i18n/navigation";
+import { resolveDashboardPageHeaderMetadata } from "@/lib/navigation/dashboard-page-header";
 import { homeHref } from "@/lib/navigation/home";
 import { cn } from "@/lib/utils";
 import type { DashboardLayoutProps } from "@/types/dashboard";
 
+import { DashboardPageHeader } from "./dashboard-page-header";
 import { DashboardSidebar } from "./dashboard-sidebar";
 import { DashboardUnauthorized } from "./dashboard-unauthorized";
 
@@ -117,6 +120,42 @@ function DashboardSidebarMobileHeader() {
         <X className="size-5" aria-hidden />
       </Button>
     </SidebarHeader>
+  );
+}
+
+function DashboardShellContent({
+  children,
+  items,
+  isLoading,
+}: Pick<DashboardLayoutProps, "children" | "items"> & {
+  isLoading: boolean;
+}) {
+  const pathname = usePathname();
+  const t = useTranslations();
+  const override = useDashboardPageHeaderOverride();
+  const staticHeader = resolveDashboardPageHeaderMetadata(
+    pathname,
+    items,
+    (key) => t(key as never),
+  );
+  const header = {
+    breadcrumbs: override?.breadcrumbs ?? staticHeader?.breadcrumbs ?? [],
+    title: override?.title ?? staticHeader?.title,
+    description: override?.description ?? staticHeader?.description,
+    actions: override?.actions,
+  };
+
+  return (
+    <main className="flex flex-1 flex-col gap-5 px-2 py-4">
+      {isLoading ? (
+        <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+      ) : (
+        <>
+          <DashboardPageHeader {...header} />
+          {children}
+        </>
+      )}
+    </main>
   );
 }
 
@@ -214,13 +253,9 @@ export function DashboardLayout({
               </SidebarFooter>
             </Sidebar>
             <SidebarInset>
-              <main className="flex flex-1 flex-col px-2 py-4">
-                {isLoading ? (
-                  <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
-                ) : (
-                  children
-                )}
-              </main>
+              <DashboardShellContent items={items} isLoading={isLoading}>
+                {children}
+              </DashboardShellContent>
             </SidebarInset>
           </div>
         </SidebarProvider>

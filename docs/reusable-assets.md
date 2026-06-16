@@ -264,12 +264,12 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Hooks, menu filtering, server/client guards, admin tooling.
 - **Dependencies**: `PERMISSIONS`, `PERMISSION_IDS`, permission types, `UserMenuGroup` from `src/types/user-menu.ts`.
 
-### Asset: Dashboard types (`DashboardItem`, `DashboardLayoutProps`)
-- **Name**: `DashboardItem`, `DashboardCustomStyles`, `DashboardLayoutProps`
+### Asset: Dashboard types
+- **Name**: `DashboardItem`, `DashboardCustomStyles`, `DashboardLayoutProps`, `DashboardRole`, `DashboardPageHeaderProps`, `DashboardPageHeaderOverride`, `DashboardHeaderRouteEntry`, `DashboardHeaderStaticMetadata`
 - **Type**: TypeScript types
 - **Path**: `src/types/dashboard/index.ts` (barrel: `@/types`)
-- **Purpose**: Recursive dashboard nav config with `PermissionRequirement`, Lucide icons, optional nested `children`, and layout callback props.
-- **Scope**: `DashboardLayout`, role menu constants, permission filtering.
+- **Purpose**: Shared dashboard type surface for nav config, layout props, role identifiers, breadcrumb/header props, and static dashboard header route metadata records.
+- **Scope**: `DashboardLayout`, role menu constants, header resolver/constants, permission filtering.
 - **Dependencies**: `PermissionRequirement`, `lucide-react`.
 
 ### Asset: `filterDashboardItems`
@@ -287,6 +287,22 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Memoized `filterDashboardItems(usePermissionSet(), items)`.
 - **Scope**: `DashboardLayout` and any client dashboard nav.
 - **Dependencies**: `usePermissionSet`, `filterDashboardItems`.
+
+### Asset: `resolveDashboardPageHeaderMetadata`
+- **Name**: `resolveDashboardPageHeaderMetadata`
+- **Type**: Pure function
+- **Path**: `src/lib/navigation/dashboard-page-header.ts`
+- **Purpose**: Maps the current dashboard pathname to the shared breadcrumb/title/description model. Breadcrumb labels and links are auto-derived from the role nav tree (`*DASHBOARD_ITEMS`) by walking item `href` ancestry; static route constants only supply title/description and regex-route anchors.
+- **Scope**: `DashboardLayout` only.
+- **Dependencies**: `DASHBOARD_PAGE_HEADER_ROUTES`, `DASHBOARD_ROLE_ROOT`, `DashboardItem`, existing dashboard nav config labels.
+
+### Asset: Dashboard page-header route metadata
+- **Name**: `DASHBOARD_ROLE_ROOT`, `DASHBOARD_PAGE_HEADER_ROUTES`
+- **Type**: Constants
+- **Path**: `src/constants/dashboard/page-header.ts`
+- **Purpose**: Holds the role-root labels/hrefs and the static route-to-title/description registry. Breadcrumb trails are derived from existing sidebar nav items (`ADMIN_DASHBOARD_ITEMS`, `INSTRUCTOR_DASHBOARD_ITEMS`, `SYSADMIN_DASHBOARD_ITEMS`) via href lookup — no duplicated breadcrumb item ids.
+- **Scope**: Shared dashboard shell only.
+- **Dependencies**: dashboard route href constants from `src/lib/navigation/routes.ts`, shared dashboard header metadata types from `src/types/dashboard/index.ts`.
 
 ### Asset: `INSTRUCTOR_MENU_ICONS`
 - **Name**: `INSTRUCTOR_MENU_ICONS`
@@ -324,9 +340,17 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `DashboardLayout`, `RoleDashboardLayout`, `DashboardSidebar`, `HeaderDashboard`, `DashboardUnauthorized`
 - **Type**: Client components
 - **Path**: `src/components/common/dashboard/`, `src/components/common/header/header-dashboard.tsx`
-- **Purpose**: Role dashboard chrome: `DashboardLayout` owns the shell; `RoleDashboardLayout` centralizes admin/sysadmin role config (items + shell permission) and forwards into `DashboardLayout`. `DashboardLayout` still provides `SidebarProvider` + fixed sidebar under `HeaderDashboard` (`h-16`); `collapsible="icon"` (collapsed = root icons + tooltips); mobile nav via `Sheet` with `DashboardSidebarMobileHeader` / `DashboardSidebarLocaleFooter`. Locale: `DashboardHeaderLocale` (`LocaleSwitcher` + `useCodeLabelLanguage`, `lg+`) and drawer footer (`fullWidth`, below `lg`) — same pattern as `header.tsx` / `header-mobile-sidebar.tsx`. `HeaderDashboard` exposes `leading` / `trailing` slots only (no built-in locale). Layout permission gate + unauthorized fallback.
+- **Purpose**: Role dashboard chrome: `DashboardLayout` owns the shell; `RoleDashboardLayout` centralizes admin/sysadmin role config (items + shell permission) and forwards into `DashboardLayout`. `DashboardLayout` still provides `SidebarProvider` + fixed sidebar under `HeaderDashboard` (`h-16`); `collapsible="icon"` (collapsed = root icons + tooltips); mobile nav via `Sheet` with `DashboardSidebarMobileHeader` / `DashboardSidebarLocaleFooter`. Locale: `DashboardHeaderLocale` (`LocaleSwitcher` + `useCodeLabelLanguage`, `lg+`) and drawer footer (`fullWidth`, below `lg`) — same pattern as `header.tsx` / `header-mobile-sidebar.tsx`. `HeaderDashboard` exposes `leading` / `trailing` slots only (no built-in locale). The shell now renders one shared dashboard page header (breadcrumb → title → description → actions) above all dashboard pages. Layout permission gate + unauthorized fallback.
 - **Scope**: `/admin`, `/instructor`, `/sysadmin` routes.
 - **Dependencies**: shadcn `Sidebar*` (includes `TooltipProvider`), `LocaleSwitcher`, RBAC hooks, `LoginSignupPopup`.
+
+### Asset: Dashboard page-header state
+- **Name**: `DashboardPageHeader`, `useDashboardPageHeaderOverride`, `useRegisterDashboardPageHeader`, `useDashboardPageHeaderStore`
+- **Type**: Client component + Zustand store + hooks
+- **Path**: `src/components/common/dashboard/dashboard-page-header.tsx`, `src/store/dashboard/dashboard-page-header-store.ts`, `src/hooks/dashboard/*`
+- **Purpose**: Lets the dashboard shell render a shared header for every role page while still allowing client pages to register runtime overrides for dynamic breadcrumbs, titles, descriptions, and action buttons.
+- **Scope**: Dashboard pages with runtime header state, especially instructor course editor tabs and list pages with top-row CTAs.
+- **Dependencies**: existing `Breadcrumb` primitive, `@/i18n/navigation`, Zustand (`useDashboardPageHeaderStore`), shared dashboard header prop types in `src/types/dashboard/index.ts`.
 
 ### Asset: LocaleSwitcher
 - **Name**: `LocaleSwitcher`
