@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { ComponentProps, ComponentType } from "react";
+import { type ComponentProps, type ComponentType, useMemo } from "react";
 import { toast } from "sonner";
 import {
   deleteCourseLessonService,
@@ -33,10 +33,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCourseEditorState } from "@/hooks/course";
+import { useRegisterDashboardPageHeader } from "@/hooks/dashboard";
 import { Link } from "@/i18n/navigation";
 import {
   instructorCourseEditorTabHref,
   instructorCoursesHref,
+  instructorRootHref,
 } from "@/lib/navigation/routes";
 import { courseEditorTabs } from "@/lib/utils/course";
 import type { CourseEditorTab } from "@/types/course";
@@ -73,6 +75,7 @@ export function InstructorCourseEditorPage({
   courseId: string;
   tab: CourseEditorTab;
 }) {
+  const tDashboard = useTranslations("dashboard");
   const tCommon = useTranslations("course.common");
   const tEditor = useTranslations("course.editor");
   const tToast = useTranslations("course.editor.toast");
@@ -149,6 +152,91 @@ export function InstructorCourseEditorPage({
   const { rows: skillRows } = useTaxonomyList("skills", basicInfoFilters);
   const { rows: outcomeRows } = useTaxonomyList("outcomes", basicInfoFilters);
   const { rows: rosterRows } = useInstructorRosterList(rosterFilters);
+  const courseTitleLabel = isLoading
+    ? tCommon("loadingCourse")
+    : (activeVersion?.title ?? tCommon("notLoaded"));
+  const headerActions = useMemo(() => {
+    if (!editableVersion && liveVersion) {
+      return (
+        <Button
+          type="button"
+          disabled={isPreparingDraft}
+          onClick={() => void handlePrepareDraft()}
+        >
+          {isPreparingDraft
+            ? tEditor("actions.preparingDraft")
+            : tEditor("actions.prepareDraft")}
+        </Button>
+      );
+    }
+
+    if (editableVersion?.status === "DRAFT") {
+      return (
+        <Button type="button" onClick={() => void handleSubmitReview()}>
+          {tEditor("actions.submitForReview")}
+        </Button>
+      );
+    }
+
+    if (editableVersion?.status === "REJECTED") {
+      return (
+        <Button type="button" onClick={() => void handleReopenDraft()}>
+          {tEditor("actions.reopenDraft")}
+        </Button>
+      );
+    }
+
+    return null;
+  }, [
+    editableVersion,
+    handlePrepareDraft,
+    handleReopenDraft,
+    handleSubmitReview,
+    isPreparingDraft,
+    liveVersion,
+    tEditor,
+  ]);
+  const headerOverride = useMemo(
+    () => ({
+      breadcrumbs: [
+        {
+          key: "instructor-root",
+          label: tDashboard("instructor.title"),
+          href: instructorRootHref,
+        },
+        {
+          key: "instructor-courses",
+          label: tDashboard("instructor.menu.courses"),
+          href: instructorCoursesHref,
+        },
+        {
+          key: "course-title",
+          label: courseTitleLabel,
+          href: instructorCourseEditorTabHref(courseId, "info"),
+        },
+        {
+          key: `course-tab-${tab}`,
+          label: tEditor(`tabs.${tab}`),
+        },
+      ],
+      title: courseTitleLabel,
+      description:
+        !isLoading && activeVersion ? tEditor("learnerNotice") : undefined,
+      actions: headerActions,
+    }),
+    [
+      activeVersion,
+      courseTitleLabel,
+      courseId,
+      headerActions,
+      isLoading,
+      tab,
+      tDashboard,
+      tEditor,
+    ],
+  );
+
+  useRegisterDashboardPageHeader(headerOverride);
 
   if (isLoading) {
     return (
@@ -157,10 +245,6 @@ export function InstructorCourseEditorPage({
           <Skeleton className="h-8 w-24" />
           <Skeleton className="h-6 w-20" />
           <Skeleton className="h-6 w-24" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-80 max-w-full" />
-          <Skeleton className="h-4 w-72 max-w-full" />
         </div>
         <Skeleton className="h-10 w-full" />
         <div className="grid gap-3">
@@ -300,61 +384,26 @@ export function InstructorCourseEditorPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button asChild type="button" variant="outline" size="sm">
-              <Link href={instructorCoursesHref}>{tCommon("back")}</Link>
-            </Button>
-            <CourseStatusBadge status={activeVersion.status} />
-            <Badge variant="outline">
-              {tCommon("versionBadge", {
-                version: String(activeVersion.version_no),
-              })}
-            </Badge>
-            <Badge variant="outline">
-              {tCommon(`collaboratorRole.${data.collaborator_role}`)}
-            </Badge>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">{activeVersion.title}</h1>
-            <p className="text-sm text-muted-foreground">
-              {tEditor("learnerNotice")}
-            </p>
-          </div>
-          {editableVersion?.status === "REJECTED" &&
-          editableVersion.rejection_reason ? (
-            <p className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
-              {tEditor("rejectionReason", {
-                reason: editableVersion.rejection_reason,
-              })}
-            </p>
-          ) : null}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <CourseStatusBadge status={activeVersion.status} />
+          <Badge variant="outline">
+            {tCommon("versionBadge", {
+              version: String(activeVersion.version_no),
+            })}
+          </Badge>
+          <Badge variant="outline">
+            {tCommon(`collaboratorRole.${data.collaborator_role}`)}
+          </Badge>
         </div>
-
-        <div className="flex flex-wrap gap-2 xl:justify-end">
-          {!editableVersion && liveVersion ? (
-            <Button
-              type="button"
-              disabled={isPreparingDraft}
-              onClick={() => void handlePrepareDraft()}
-            >
-              {isPreparingDraft
-                ? tEditor("actions.preparingDraft")
-                : tEditor("actions.prepareDraft")}
-            </Button>
-          ) : null}
-          {editableVersion?.status === "DRAFT" ? (
-            <Button type="button" onClick={() => void handleSubmitReview()}>
-              {tEditor("actions.submitForReview")}
-            </Button>
-          ) : null}
-          {editableVersion?.status === "REJECTED" ? (
-            <Button type="button" onClick={() => void handleReopenDraft()}>
-              {tEditor("actions.reopenDraft")}
-            </Button>
-          ) : null}
-        </div>
+        {editableVersion?.status === "REJECTED" &&
+        editableVersion.rejection_reason ? (
+          <p className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+            {tEditor("rejectionReason", {
+              reason: editableVersion.rejection_reason,
+            })}
+          </p>
+        ) : null}
       </div>
 
       <Tabs value={tab}>

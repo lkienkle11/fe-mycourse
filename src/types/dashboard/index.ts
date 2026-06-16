@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import type { PermissionRequirement } from "@/types/permissions";
 
 /** Sidebar / menu item styling overrides passed into `DashboardLayout`. */
@@ -50,4 +51,60 @@ export type DashboardLayoutProps = {
   onBlur?: (item: DashboardItem) => void;
   onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   onKeyUp?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
+};
+
+export type DashboardRole = "admin" | "instructor" | "sysadmin";
+
+export type DashboardPageHeaderBreadcrumbItem = {
+  key?: string;
+  label: ReactNode;
+  href?: string;
+};
+
+export type DashboardPageHeaderProps = {
+  breadcrumbs?: DashboardPageHeaderBreadcrumbItem[];
+  title?: ReactNode;
+  description?: ReactNode;
+  actions?: ReactNode;
+};
+
+export type DashboardPageHeaderOverride = Partial<DashboardPageHeaderProps>;
+
+export type DashboardBreadcrumbRef =
+  | {
+      kind: "role-root";
+      role: DashboardRole;
+    }
+  | {
+      kind: "item";
+      itemId: string;
+      href?: string;
+    };
+
+export type DashboardHeaderRouteEntry = {
+  match: string | RegExp;
+  titleKey?: string;
+  descriptionKey?: string;
+  /**
+   * Optional explicit breadcrumb refs for routes that cannot be derived from
+   * the nav tree alone. Most routes rely on auto-derivation via `match` href.
+   */
+  breadcrumbs?: DashboardBreadcrumbRef[];
+  /**
+   * When `match` is a RegExp, use this href to locate the nav ancestry in the
+   * role sidebar tree (`*DASHBOARD_ITEMS`).
+   */
+  breadcrumbHref?: string;
+};
+
+export type DashboardHeaderStaticMetadata = {
+  title?: string;
+  description?: string;
+  breadcrumbs: DashboardPageHeaderBreadcrumbItem[];
+};
+
+export type DashboardRoleRoot = {
+  href: string;
+  titleKey: string;
+  descriptionKey: string;
 };

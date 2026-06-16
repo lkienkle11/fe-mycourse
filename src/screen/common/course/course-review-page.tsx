@@ -26,7 +26,12 @@ import { toastValidationError } from "@/lib/utils/validation-message";
 import { courseRejectReasonSchema } from "@/schema/course";
 import type { CourseListItem } from "@/types/course";
 
-export function CourseReviewPage({ scope }: { scope: "admin" | "sysadmin" }) {
+export function CourseReviewPage({
+  scope: _scope,
+}: {
+  scope: "admin" | "sysadmin";
+}) {
+  void _scope;
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.review");
   const tValidation = useTranslations("course.validation");
@@ -104,13 +109,6 @@ export function CourseReviewPage({ scope }: { scope: "admin" | "sysadmin" }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold">
-          {scope === "admin" ? t("title.admin") : t("title.sysadmin")}
-        </h1>
-        <p className="text-sm text-muted-foreground">{t("description")}</p>
-      </div>
-
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("loading")}</p>
       ) : (
