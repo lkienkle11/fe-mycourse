@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { deleteTaxonomyService } from "@/api/callers/taxonomy";
 import { useTaxonomyList } from "@/api/hooks/taxonomy/useTaxonomy";
@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useRegisterDashboardPageHeader } from "@/hooks/dashboard";
 import { toastApiError } from "@/lib/utils/api-error";
 import {
   getTaxonomyResourceConfig,
@@ -73,10 +74,13 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
   const page = pageInfo?.page ?? filters.page ?? 1;
   const totalPages = pageInfo?.total_pages ?? 1;
 
+  const createPermission = config.permissions.create as PermissionName;
+  const updatePermission = config.permissions.update as PermissionName;
+  const deletePermission = config.permissions.delete as PermissionName;
   const permissions = {
-    create: [config.permissions.create as PermissionName],
-    update: [config.permissions.update as PermissionName],
-    delete: [config.permissions.delete as PermissionName],
+    create: [createPermission],
+    update: [updatePermission],
+    delete: [deletePermission],
   };
 
   const tableColumns = buildTaxonomyTableColumns(
@@ -154,19 +158,20 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
     setSearchInput("");
   };
 
-  const openCreate = () => {
-    setFormMode("create");
-    setSelectedRow(null);
-    setFormDialogKey((key) => key + 1);
-    setFormOpen(true);
-  };
-
   const openEdit = (row: TaxonomyEntity) => {
     setFormMode("edit");
     setSelectedRow(row);
     setFormDialogKey((key) => key + 1);
     setFormOpen(true);
   };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: React state setters are stable.
+  const openCreate = useCallback(() => {
+    setFormMode("create");
+    setSelectedRow(null);
+    setFormDialogKey((key) => key + 1);
+    setFormOpen(true);
+  }, [setFormDialogKey, setFormMode, setFormOpen, setSelectedRow]);
 
   const openDelete = (row: TaxonomyEntity) => {
     setDeleteTarget(row);
@@ -188,20 +193,27 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
       setIsDeleting(false);
     }
   };
+  const headerActions = useMemo(
+    () => (
+      <PermissionGate permissions={[createPermission]}>
+        <Button type="button" onClick={openCreate}>
+          {t("common.add")}
+        </Button>
+      </PermissionGate>
+    ),
+    [createPermission, openCreate, t],
+  );
+  const headerOverride = useMemo(
+    () => ({
+      actions: headerActions,
+    }),
+    [headerActions],
+  );
+
+  useRegisterDashboardPageHeader(headerOverride);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">
-          {t(`resources.${resourceKey}.title`)}
-        </h1>
-        <PermissionGate permissions={permissions.create}>
-          <Button type="button" onClick={openCreate}>
-            {t("common.add")}
-          </Button>
-        </PermissionGate>
-      </div>
-
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
       ) : (

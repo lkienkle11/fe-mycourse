@@ -128,12 +128,14 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
-| `DashboardLayout` | `dashboard-layout.tsx` | Client | Core dashboard shell: `SidebarProvider` + `HeaderDashboard` (`leading` burger `md:hidden`, `trailing` `DashboardHeaderLocale` on `lg+`) + left `Sidebar` (`!top-16`, `h-[calc(100svh-4rem)]`) + `SidebarInset` / `main`. Filters `items` via `useFilteredDashboardItems`; gate via `permissions` / `isAuthorized`; loading uses `SidebarMenuSkeleton`. |
+| `DashboardLayout` | `dashboard-layout.tsx` | Client | Core dashboard shell: `SidebarProvider` + `HeaderDashboard` (`leading` burger `md:hidden`, `trailing` `DashboardHeaderLocale` on `lg+`) + left `Sidebar` (`!top-16`, `h-[calc(100svh-4rem)]`) + `SidebarInset` / `main`. Filters `items` via `useFilteredDashboardItems`; gate via `permissions` / `isAuthorized`; loading uses `SidebarMenuSkeleton`. The shell now owns the route-driven dashboard page header (breadcrumb → title → description → actions) by combining `usePathname()`, `resolveDashboardPageHeaderMetadata`, and page-level override state. |
+| `DashboardPageHeader` | `dashboard-page-header.tsx` | Client | Shared dashboard header renderer: breadcrumb trail using the existing `Breadcrumb` primitive, visible page title, optional description, and optional right-side action slot. On mobile, one shared breadcrumb layout measures overflow and collapses middle items to `BreadcrumbEllipsis` while keeping the first and last crumbs visible; wraps only as a last resort. Shared prop and breadcrumb types live in `src/types/dashboard/index.ts`. |
+| `useRegisterDashboardPageHeader` / `useDashboardPageHeaderOverride` | `hooks/dashboard/*` + `store/dashboard/dashboard-page-header-store.ts` | Zustand store + hooks | Runtime override channel for dashboard pages. Static routes rely on layout metadata; client pages with dynamic state (for example instructor course editor or pages that expose header actions) register overrides via `useRegisterDashboardPageHeader`. `DashboardLayout` reads the active override through `useDashboardPageHeaderOverride`. No React Context — follows the same provider-free Zustand pattern as language/auth stores. |
 | `RoleDashboardLayout` | `role-dashboard-layout.tsx` | Client | Shared admin/sysadmin wrapper that maps `dashboardRole` to the correct sidebar items + shell permissions, then renders `DashboardLayout`. |
 | `DashboardSidebar` | `dashboard-sidebar.tsx` | Client | Recursive nav tree (pattern from `BrowseSidebarMenu`). Renders each item's Lucide `icon` from `DashboardItem` config (taxonomy uses `TAXONOMY_MENU_ICONS` — see `docs/taxonomy-admin.md`). **Collapsed:** root icons only (no child subtrees). **Expanded:** full `Collapsible` + `SidebarMenuSub*`. Active route via `usePathname`. |
 | `DashboardUnauthorized` | `dashboard-unauthorized.tsx` | Client | Compact access-denied message when layout permissions fail. |
 
-**`dashboard/index.ts` barrel:** `DashboardLayout`, `RoleDashboardLayout`, `DashboardSidebar`, `DashboardUnauthorized`.
+**`dashboard/index.ts` barrel:** `DashboardLayout`, `DashboardPageHeader`, `RoleDashboardLayout`, `DashboardSidebar`, `DashboardUnauthorized`.
 
 ### Footer
 

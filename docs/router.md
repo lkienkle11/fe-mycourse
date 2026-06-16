@@ -169,9 +169,17 @@ Root layout            (src/app/layout.tsx)
 | `src/app/layout.tsx` | Global fonts (Roboto, Gilroy, GeistMono as CSS vars), `<Toaster>` (Sonner) |
 | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider`, `AppProviders` (`SWRConfig`, `EventsStreamProvider`, `MeSwrSync`, `LanguageLocaleSync`, auth tab sync) |
 | `src/app/[locale]/(web)/layout.tsx` | `Header`, `<main>` content area, `Footer` |
-| `src/app/[locale]/admin/layout.tsx` | `RoleDashboardLayout` → `DashboardLayout` (`ADMIN_DASHBOARD_ITEMS`, `admin:modify` gate) |
-| `src/app/[locale]/instructor/layout.tsx` | `DashboardLayout` (`INSTRUCTOR_DASHBOARD_ITEMS`, `instructor:modify` OR `course_instructor:read` gate) |
-| `src/app/[locale]/sysadmin/layout.tsx` | `RoleDashboardLayout` → `DashboardLayout` (`SYSADMIN_DASHBOARD_ITEMS`, `sysadmin:modify` gate) |
+| `src/app/[locale]/admin/layout.tsx` | `RoleDashboardLayout` → `DashboardLayout` (`ADMIN_DASHBOARD_ITEMS`, `admin:modify` gate) + shared dashboard page header |
+| `src/app/[locale]/instructor/layout.tsx` | `DashboardLayout` (`INSTRUCTOR_DASHBOARD_ITEMS`, `instructor:modify` OR `course_instructor:read` gate) + shared dashboard page header |
+| `src/app/[locale]/sysadmin/layout.tsx` | `RoleDashboardLayout` → `DashboardLayout` (`SYSADMIN_DASHBOARD_ITEMS`, `sysadmin:modify` gate) + shared dashboard page header |
+
+Dashboard routes now share one page-header system in the shell:
+
+- Static title/description metadata lives in `src/constants/dashboard/page-header.ts`.
+- Breadcrumb labels/links are auto-derived from the role sidebar nav tree (`*DASHBOARD_ITEMS`) by matching route hrefs.
+- `DashboardLayout` resolves that metadata from the current pathname and the role nav tree.
+- The resolver logic itself lives in `src/lib/navigation/dashboard-page-header.ts`.
+- Client pages can override breadcrumb/title/description/actions through `useRegisterDashboardPageHeader` (`@/hooks/dashboard`) when the header depends on runtime data (for example instructor course editor tabs).
 
 ---
 

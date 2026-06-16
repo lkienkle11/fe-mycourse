@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useRegisterDashboardPageHeader } from "@/hooks/dashboard";
 import { useRouter } from "@/i18n/navigation";
 import {
   instructorCourseEditorHref,
@@ -43,6 +44,22 @@ export function InstructorCoursesPage() {
   const derivedSlug = slugifyName(title);
   const [deleteTarget, setDeleteTarget] = useState<CourseListItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const headerActions = useMemo(
+    () => (
+      <Button type="button" onClick={() => setCreateOpen(true)}>
+        {t("newCourse")}
+      </Button>
+    ),
+    [t],
+  );
+  const headerOverride = useMemo(
+    () => ({
+      actions: headerActions,
+    }),
+    [headerActions],
+  );
+
+  useRegisterDashboardPageHeader(headerOverride);
 
   const columns = useMemo<DataTableColumn<CourseListItem>[]>(
     () => [
@@ -117,16 +134,6 @@ export function InstructorCoursesPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("description")}</p>
-        </div>
-        <Button type="button" onClick={() => setCreateOpen(true)}>
-          {t("newCourse")}
-        </Button>
-      </div>
-
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("loading")}</p>
       ) : (

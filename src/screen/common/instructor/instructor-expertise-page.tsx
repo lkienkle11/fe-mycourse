@@ -183,9 +183,6 @@ export function InstructorExpertisePage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">{t("title")}</h1>
-      <p className="text-sm text-muted-foreground">{t("description")}</p>
-
       <div className="flex max-w-md flex-col gap-2">
         <span className="text-sm font-medium">{t("selectInstructor")}</span>
         <Select

@@ -21,6 +21,7 @@ import type { DataTableColumn } from "@/components/shared/data-table";
 import { PermissionGate } from "@/components/shared/permission-gate";
 import { Button } from "@/components/ui/button";
 import { PERMISSIONS } from "@/constants/permissions";
+import { useRegisterDashboardPageHeader } from "@/hooks/dashboard";
 import { pickCharacter } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
 import type {
@@ -49,6 +50,22 @@ export function InstructorRosterPage() {
     useState<InstructorProfile | null>(null);
   const [profileTitle, setProfileTitle] = useState("");
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const headerActions = useMemo(
+    () => (
+      <PermissionGate permissions={[PERMISSIONS.InstructorRosterCreate]}>
+        <Button type="button" onClick={() => setAddOpen(true)}>
+          {t("addButton")}
+        </Button>
+      </PermissionGate>
+    ),
+    [t],
+  );
+  const headerOverride = useMemo(
+    () => ({
+      actions: headerActions,
+    }),
+    [headerActions],
+  );
 
   const { rows, pageInfo, isLoading, mutate } =
     useInstructorRosterList(filters);
@@ -162,17 +179,10 @@ export function InstructorRosterPage() {
     }
   };
 
+  useRegisterDashboardPageHeader(headerOverride);
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <PermissionGate permissions={[PERMISSIONS.InstructorRosterCreate]}>
-          <Button type="button" onClick={() => setAddOpen(true)}>
-            {t("addButton")}
-          </Button>
-        </PermissionGate>
-      </div>
-
       <InstructorTableSection
         isLoading={isLoading}
         loadingLabel={tc("loading")}

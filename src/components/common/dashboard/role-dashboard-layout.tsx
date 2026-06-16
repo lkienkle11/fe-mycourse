@@ -7,10 +7,17 @@ import {
   SYSADMIN_DASHBOARD_ITEMS,
 } from "@/constants/dashboard";
 import { PERMISSIONS } from "@/constants/permissions";
+import type { DashboardLayoutProps, DashboardRole } from "@/types/dashboard";
 
-type DashboardRole = "admin" | "sysadmin";
+type RoleDashboardLayoutRole = Exclude<DashboardRole, "instructor">;
 
-const DASHBOARD_ROLE_CONFIG = {
+const DASHBOARD_ROLE_CONFIG: Record<
+  RoleDashboardLayoutRole,
+  {
+    items: DashboardLayoutProps["items"];
+    permissions: NonNullable<DashboardLayoutProps["permissions"]>;
+  }
+> = {
   admin: {
     items: ADMIN_DASHBOARD_ITEMS,
     permissions: [PERMISSIONS.AdminModify],
@@ -25,7 +32,7 @@ export function RoleDashboardLayout({
   dashboardRole,
   children,
 }: {
-  dashboardRole: DashboardRole;
+  dashboardRole: RoleDashboardLayoutRole;
   children: ReactNode;
 }) {
   const config = DASHBOARD_ROLE_CONFIG[dashboardRole];
