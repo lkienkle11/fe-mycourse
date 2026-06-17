@@ -77,6 +77,7 @@ PowerShell:
 
 ## Dockerfile (aligned with CI)
 
+- **Quality gates:** CI runs **`npm run test-all`** before build; locally run **`npm run check-all`** before shipping. The Docker image only runs the **production build** step (same as CI **`build`** / VPS deploy).
 - **Deps:** `node:22-bookworm-slim`, `npm ci`
 - **Build:** `npm run build` with build-args:
   - `NEXT_PUBLIC_API_URL` (required)
@@ -128,5 +129,5 @@ docker compose -f docker/compose.dev.yml up -d
 ## Related docs
 
 - [`docs/deploy.md`](deploy.md) — PM2 + GitHub Actions runbook
-- [`docs/quality.md`](quality.md) — lint/build gates
+- [`docs/quality.md`](quality.md) — `test-all`, `check-all`, lint/build gates
 - [`README.md`](../README.md) — getting started

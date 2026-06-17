@@ -530,6 +530,6 @@ docs/
 ├── router.md               # Routing structure and navigation conventions
 ├── patterns.md             # Coding patterns and conventions
 ├── dependencies.md         # Key libraries and their roles
-├── quality.md              # ESLint, Biome, Madge / jscpd; CI test job (quality:deps + lint + test)
+├── quality.md              # ESLint, Biome, Madge / jscpd; `test-all` (CI) and `check-all` (local)
 └── reusable-assets.md      # Reusable utilities, types, hooks, and constants
 ```

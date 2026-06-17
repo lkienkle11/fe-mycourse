@@ -33,9 +33,9 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Type checker | TypeScript | 5.x | Strict mode |
 | Linter / formatter | ESLint 9 + Biome 2 | — | Two toolchains: ESLint for Next rules, Biome for formatting |
 | Commit lint | commitlint | 20.x | Conventional Commits via `lint:commit` script |
-| Dependency graph | madge | 8.x | `npm run cycles` — circular static imports in `src/`; CI via `quality:deps` |
-| Clone detection | jscpd | 4.x | `npm run dupl` — `.jscpd.json` (excludes `src/components/ui/**`); CI via `quality:deps` |
-| ESLint (CI) | eslint + eslint-config-next | 9 / 16.2.1 | `npm run lint` in CI `test` job; `src/constants/**` data-only rules — [`quality.md`](./quality.md) |
+| Dependency graph | madge | 8.x | `npm run cycles` — circular static imports in `src/`; CI via `test-all` → `quality:deps` |
+| Clone detection | jscpd | 4.x | `npm run dupl` — `.jscpd.json` (excludes `src/components/ui/**`); CI via `test-all` → `quality:deps` |
+| ESLint + Biome (CI) | eslint + @biomejs/biome | 9 / 2.x | `npm run test-all` in CI `test` job; `src/constants/**` data-only rules — [`quality.md`](./quality.md) |
 
 ### Fonts
 
@@ -451,7 +451,7 @@ Lint (`eslint`, `biome`), `npx tsc --noEmit`, and `npm run build` are the primar
 - `npm run dupl` — jscpd clone detection against `src/` (skips shadcn `src/components/ui/**`; see [`quality.md`](./quality.md)).
 - `npm run quality:deps` — both in sequence.
 
-On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs `npm run quality:deps`, **`npm run lint`**, and **`npm run test`** in the **`test`** job before **`build`** (same pattern as backend `test` → `build` in `be-mycourse`).
+On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs **`npm run test-all`** in the **`test`** job, then **`npm run build`** in **`build`** (same pattern as backend `test` → `build` in `be-mycourse`). Locally, use **`npm run check-all`** for the full pre-PR gate.
 
 ---
 
