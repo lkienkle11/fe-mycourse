@@ -56,6 +56,8 @@ export type TaxonomySearchBy = "name" | "slug" | "short_description";
 export type TaxonomyListFilters = ApiListQueryParams & {
   search_by?: TaxonomySearchBy;
   search_value?: string;
+  /** When false, skips media_files hydration on list endpoints. */
+  include_images?: boolean;
 };
 
 export type SlugStatusTaxonomy = {

@@ -148,7 +148,8 @@ export function InstructorCourseEditorPage({
     editableVersion,
     mutateDetail: mutate,
   });
-  const basicInfoFilters = tab === "info" ? { page: 1, per_page: 100 } : null;
+  const basicInfoFilters =
+    tab === "info" ? { page: 1, per_page: 100, include_images: false } : null;
   const rosterFilters =
     tab === "collaborators" ? { page: 1, per_page: 100 } : null;
   const { rows: levelRows } = useTaxonomyList("levels", basicInfoFilters);
@@ -243,7 +244,7 @@ export function InstructorCourseEditorPage({
 
   useRegisterDashboardPageHeader(headerOverride);
 
-  if (isLoading) {
+  if (!data && isLoading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">

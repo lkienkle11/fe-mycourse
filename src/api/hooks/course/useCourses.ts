@@ -25,10 +25,17 @@ export function useEditableCourses() {
   );
 }
 
-export function useCourseDetail(courseId: string | null) {
+export function useCourseDetail(
+  courseId: string | null,
+  options?: { includeOutline?: boolean },
+) {
+  const includeOutline = options?.includeOutline ?? true;
   return useApiDetailQuery<CourseDetail>(
-    courseId ? getCourseDetailKey(courseId) : null,
-    () => getCourseDetailService(courseId as string),
+    courseId ? getCourseDetailKey(courseId, { includeOutline }) : null,
+    () =>
+      getCourseDetailService(courseId as string, {
+        includeOutline,
+      }),
     { revalidateOnFocus: true },
   );
 }
