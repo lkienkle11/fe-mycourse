@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "npm run clean:next && npm run dev",
+    "clean:next": "rm -rf .next",
     "build": "next build",
     "start": "next start",
     "test": "node -e \"console.log('No frontend test suite is configured yet.')\"",

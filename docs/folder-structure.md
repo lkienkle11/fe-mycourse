@@ -15,7 +15,7 @@ fe-mycourse/
 ├── public/                 # Static assets served as-is (images, icons, favicons)
 ├── docs/                   # Project documentation (this folder)
 ├── node_modules/           # npm dependencies (not committed)
-├── next.config.ts          # Next.js configuration (next-intl plugin, env)
+├── next.config.ts          # Next.js + next-intl plugin; Turbopack dev tuning (see docs/architecture.md#development-server)
 ├── components.json         # shadcn/ui configuration
 ├── biome.json              # Biome linter/formatter configuration
 ├── eslint.config.mjs       # ESLint: Next.js + src/constants/** + src/types/** rules (see docs/quality.md)
@@ -470,7 +470,7 @@ src/i18n/
 
 ```
 src/lib/i18n/
-├── load-messages.ts        # loadMessages, preloadAllMessages — dynamic import en.ts / vi.ts
+├── load-messages.ts        # loadMessages, preloadAllMessages (memoized) — dynamic import en.ts / vi.ts
 └── index.ts                # Barrel export
 ```
 
