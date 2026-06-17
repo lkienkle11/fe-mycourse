@@ -1,5 +1,7 @@
 import type Quill from "quill";
 
+import { resolveImageEmbedIndexFromNode } from "./delta-editor-image-embed-index";
+
 const MEDIA_EMBED_WRAPPER_CLASS = "ql-media-embed";
 export const IMAGE_RESIZE_HANDLE_CLASS = "ql-image-resize-handle";
 
@@ -20,47 +22,6 @@ export function appendImageResizeHandles(node: HTMLElement): void {
   for (const corner of ["nw", "ne", "sw", "se"] as const) {
     node.appendChild(createImageResizeHandle(corner));
   }
-}
-
-function resolveImageEmbedIndexFromNode(
-  quill: Quill,
-  wrapper: HTMLElement,
-): number | null {
-  const ctor = quill.constructor as {
-    find?: (target: Node, bubble?: boolean) => unknown;
-  };
-  if (typeof ctor.find === "function") {
-    const blot = ctor.find(wrapper, false);
-    if (blot) {
-      return quill.getIndex(blot as never);
-    }
-  }
-
-  const img = wrapper.querySelector("img");
-  const src = img?.getAttribute("src") ?? wrapper.dataset.mediaUrl;
-  if (!src) {
-    return null;
-  }
-
-  const contents = quill.getContents();
-  let index = 0;
-  for (const op of contents.ops ?? []) {
-    const insert = op.insert;
-    if (insert && typeof insert === "object" && "image" in insert) {
-      if (insert.image === src) {
-        return index;
-      }
-      index += 1;
-      continue;
-    }
-    if (typeof insert === "string") {
-      index += insert.length;
-      continue;
-    }
-    index += 1;
-  }
-
-  return null;
 }
 
 export function bindQuillImageResize(quill: Quill): () => void {
