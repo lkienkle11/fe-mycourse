@@ -232,7 +232,7 @@ Callers in `src/api/callers/course/course.ts`:
 
 | Service | Method | Path |
 |---------|--------|------|
-| `listAdminCoursesService` | GET | `/api/v1/course-admin/courses?approval=` |
+| `listAdminCoursesService` | GET | `/api/v1/course-admin/courses` |
 | `listTrashedCoursesService` | GET | `/api/v1/course-admin/courses/trash` |
 | `trashCourseService` | POST | `/api/v1/course-admin/courses/:courseId/trash` |
 | `restoreTrashedCourseService` | POST | `/api/v1/course-admin/courses/:courseId/restore` |
