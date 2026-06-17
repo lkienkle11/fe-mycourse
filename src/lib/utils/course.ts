@@ -407,3 +407,11 @@ export function validateCourseSubmitReadiness(
 
   return null;
 }
+
+/** Matches BE `courseEligibleForTrash`: published + current version not rejected. */
+export function canMoveCourseToTrash(row: {
+  has_published: boolean;
+  review_status: string;
+}): boolean {
+  return row.has_published && row.review_status !== "REJECTED";
+}

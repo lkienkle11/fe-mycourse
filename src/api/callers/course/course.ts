@@ -538,3 +538,67 @@ export async function getCourseProgressService(
   }
   return data.data;
 }
+
+export type AdminCourseApprovalFilter = "all" | "approved";
+
+export function getAdminCoursesKey(
+  approval: AdminCourseApprovalFilter = "all",
+): string {
+  return `${routes.adminCourses}?approval=${approval}`;
+}
+
+export function getTrashedCoursesKey(): string {
+  return routes.adminCoursesTrash;
+}
+
+export async function listAdminCoursesService(
+  approval: AdminCourseApprovalFilter = "all",
+): Promise<CourseListItem[]> {
+  const url =
+    approval === "approved"
+      ? `${routes.adminCourses}?approval=approved`
+      : routes.adminCourses;
+  const { data } = await apiFetch<ApiResponse<CourseListItem[]>>(url);
+  return data.data ?? [];
+}
+
+export async function listTrashedCoursesService(): Promise<CourseListItem[]> {
+  const { data } = await apiFetch<ApiResponse<CourseListItem[]>>(
+    routes.adminCoursesTrash,
+  );
+  return data.data ?? [];
+}
+
+export async function restoreTrashedCourseService(
+  courseId: string,
+): Promise<void> {
+  const url = requireUrl(
+    buildQueryParams(routes.adminCourseRestore, undefined, {
+      courseId: String(courseId),
+    }),
+    "Invalid restore URL",
+  );
+  await apiPost(url, {});
+}
+
+export async function trashCourseService(courseId: string): Promise<void> {
+  const url = requireUrl(
+    buildQueryParams(routes.adminCourseTrash, undefined, {
+      courseId: String(courseId),
+    }),
+    "Invalid trash URL",
+  );
+  await apiPost(url, {});
+}
+
+export async function permanentDeleteTrashedCourseService(
+  courseId: string,
+): Promise<void> {
+  const url = requireUrl(
+    buildQueryParams(routes.adminCoursePermanentDelete, undefined, {
+      courseId: String(courseId),
+    }),
+    "Invalid permanent delete URL",
+  );
+  await apiDelete(url);
+}

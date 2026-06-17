@@ -284,6 +284,14 @@ const messages = {
         tags: "Tags",
       },
     },
+    course: {
+      menu: {
+        group: "Courses",
+        all: "All courses",
+        reviewing: "Reviewing",
+        trash: "Trash",
+      },
+    },
   },
   media: {
     validation: {
@@ -667,8 +675,10 @@ const messages = {
       columns: {
         course: "Course",
         owner: "Owner",
+        version: "Version",
         status: "Status",
       },
+      previewButton: "Preview",
       loading: "Loading review queue...",
       empty: "No courses are waiting for review.",
       approve: "Approve",
@@ -683,6 +693,73 @@ const messages = {
         rejected: "Course rejected.",
         approveError: "Could not approve course.",
         rejectError: "Could not reject course.",
+      },
+      preview: {
+        title: "Course preview",
+        placeholder: "This page is under development.",
+      },
+    },
+    menu: {
+      group: "Courses",
+      all: "All courses",
+      reviewing: "Reviewing",
+      trash: "Trash",
+    },
+    adminAll: {
+      title: "All courses",
+      description:
+        "Browse every course in the database. Filter to approved courses that are not in trash.",
+      loading: "Loading courses...",
+      empty: "No courses found.",
+      columns: {
+        course: "Course",
+        owner: "Owner",
+        version: "Version",
+        status: "Status",
+      },
+      filter: {
+        label: "Filter",
+        all: "All courses",
+        approved: "Approved only",
+      },
+      actions: {
+        menu: "Actions",
+        moveToTrash: "Move to trash",
+      },
+      confirmTrash: {
+        title: "Move course to trash?",
+        description:
+          "“{title}” will be hidden from learners and editors until restored from trash. This action can be undone.",
+      },
+      toast: {
+        movedToTrash: "Course moved to trash.",
+      },
+    },
+    trash: {
+      title: "Trash",
+      description:
+        "Approved courses moved to trash. They cannot be edited or learned until restored or permanently deleted.",
+      loading: "Loading trash...",
+      empty: "No courses in trash.",
+      columns: {
+        course: "Course",
+        owner: "Owner",
+        version: "Version",
+        status: "Status",
+      },
+      actions: {
+        menu: "Actions",
+        restore: "Restore",
+        permanentDelete: "Delete permanently",
+      },
+      confirmDelete: {
+        title: "Delete course permanently?",
+        description:
+          "“{title}” will be removed forever. This cannot be undone.",
+      },
+      toast: {
+        restored: "Course restored.",
+        deleted: "Course permanently deleted.",
       },
     },
     editor: {

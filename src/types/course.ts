@@ -22,6 +22,7 @@ export type Course = {
   slug: string;
   current_published_version_id?: string;
   current_draft_version_id?: string;
+  trashed_at?: number;
   created_at: number;
   updated_at: number;
 };
@@ -29,6 +30,7 @@ export type Course = {
 export type CourseListItem = Course & {
   title: string;
   review_status: CourseVersionStatus | "";
+  version_id?: string;
   version_no: number;
   collaborator_role: CourseCollaboratorRole;
   has_published: boolean;

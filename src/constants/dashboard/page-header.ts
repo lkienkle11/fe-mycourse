@@ -1,5 +1,7 @@
 import {
-  adminCoursesHref,
+  adminCoursesAllHref,
+  adminCoursesReviewingHref,
+  adminCoursesTrashHref,
   adminInstructorsApprovalsHref,
   adminInstructorsExpertiseHref,
   adminInstructorsProfilesHref,
@@ -14,7 +16,9 @@ import {
   instructorCoursesHref,
   instructorRootHref,
   instructorTicketsHref,
-  sysadminCoursesHref,
+  sysadminCoursesAllHref,
+  sysadminCoursesReviewingHref,
+  sysadminCoursesTrashHref,
   sysadminInstructorsApprovalsHref,
   sysadminInstructorsExpertiseHref,
   sysadminInstructorsProfilesHref,
@@ -89,14 +93,39 @@ export const DASHBOARD_PAGE_HEADER_ROUTES: DashboardHeaderRouteEntry[] = [
     titleKey: "instructor.tickets.myTitle",
   },
   {
-    match: adminCoursesHref,
+    match: adminCoursesAllHref,
+    titleKey: "course.adminAll.title",
+    descriptionKey: "course.adminAll.description",
+  },
+  {
+    match: adminCoursesReviewingHref,
     titleKey: "course.review.title.admin",
     descriptionKey: "course.review.description",
   },
   {
-    match: sysadminCoursesHref,
+    match: adminCoursesTrashHref,
+    titleKey: "course.trash.title",
+    descriptionKey: "course.trash.description",
+  },
+  {
+    match: sysadminCoursesAllHref,
+    titleKey: "course.adminAll.title",
+    descriptionKey: "course.adminAll.description",
+  },
+  {
+    match: sysadminCoursesReviewingHref,
     titleKey: "course.review.title.sysadmin",
     descriptionKey: "course.review.description",
+  },
+  {
+    match: sysadminCoursesTrashHref,
+    titleKey: "course.trash.title",
+    descriptionKey: "course.trash.description",
+  },
+  {
+    match: /^\/sysadmin\/courses\/reviewing\/[^/]+\/preview$/,
+    titleKey: "course.review.preview.title",
+    breadcrumbHref: sysadminCoursesReviewingHref,
   },
   {
     match: adminTaxonomyLevelsHref,

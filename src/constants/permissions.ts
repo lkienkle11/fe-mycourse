@@ -74,4 +74,15 @@ export const PERMISSIONS = {
   InstructorExpertiseDelete: "instructor_expertise:delete",
   // Instructor ticket
   InstructorTicketClose: "instructor_ticket:close",
+  // Course review (admin/sysadmin queue)
+  CourseReviewRead: "course_review:read",
+  CourseReviewApprove: "course_review:approve",
+  CourseReviewReject: "course_review:reject",
+  // Course catalog (admin list + trash action)
+  CourseCatalogRead: "course_catalog:read",
+  CourseCatalogTrash: "course_catalog:trash",
+  // Course trash bin
+  CourseTrashRead: "course_trash:read",
+  CourseTrashRestore: "course_trash:restore",
+  CourseTrashDelete: "course_trash:delete",
 } as const;
