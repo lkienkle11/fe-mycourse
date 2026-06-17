@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-06-15 (@phosphor-icons/react added)._
+_Last audited: 2026-06-17 (`server-only`, `knip` pinned in `package.json` / `package-lock.json`)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -29,12 +29,14 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Stream libraries | `reconnecting-websocket`, `@microsoft/fetch-event-source` | 4.x / 2.x | Transports in `src/events/` |
 | Toasts | Sonner | 2.x | Mounted in root layout, `position: "top-right"` |
 | Cookies (client) | js-cookie | 3.x | Read/write in browser context; `next/headers` used server-side |
+| Server boundary | server-only | 0.0.1 | `import "server-only"` in `auth-session.ts` — excluded from `@/lib/utils` barrel |
 | Icons | lucide-react, react-icons, @phosphor-icons/react | 1.x / 5.6.0 / 2.1.10 | Lucide = default; react-icons = brands/FA/MD; Phosphor = ~9k icons + weight variants |
 | Type checker | TypeScript | 5.x | Strict mode |
-| Linter / formatter | ESLint 9 + Biome 2 | — | Two toolchains: ESLint for Next rules, Biome for formatting |
+| Linter / formatter | ESLint 9 + Biome 2 | — | ESLint for Next rules; Biome check in CI; `fix:biome` / `format:biome` local only |
 | Commit lint | commitlint | 20.x | Conventional Commits via `lint:commit` script |
 | Dependency graph | madge | 8.x | `npm run cycles` — circular static imports in `src/`; CI via `test-all` → `quality:deps` |
 | Clone detection | jscpd | 4.x | `npm run dupl` — `.jscpd.json` (excludes `src/components/ui/**`); CI via `test-all` → `quality:deps` |
+| Dead-code detection | knip | 6.17.1 | `npm run deadcode` — [`knip.json`](../knip.json): unused types (`src/types/**`) + unused component/screen files; CI via `test-all` |
 | ESLint + Biome (CI) | eslint + @biomejs/biome | 9 / 2.x | `npm run test-all` in CI `test` job; `src/constants/**` data-only rules — [`quality.md`](./quality.md) |
 
 ### Fonts
@@ -128,8 +130,6 @@ fe/
 │   │   ├── shared/                 # Cross-feature components (SearchBar, …)
 │   │   ├── providers/
 │   │   │   └── app-providers.tsx   # SWRConfig, EventsStreamProvider, MeSwrSync, LanguageLocaleSync, auth tab sync
-│   │   └── demo/
-│   │       └── register-form.tsx   # Demo/sandbox form (not wired to a route)
 │   │
 │   ├── actions/
 │   │   └── auth/auth.ts            # "use server": loginAction, registerAction, confirmAction, logoutAction (+ deprecated signupAction alias)
@@ -445,11 +445,13 @@ The cache integration in `apiFetch` is currently commented out (`// TODO: re-ena
 
 ## Quality gates
 
-Lint (`eslint`, `biome`), `npx tsc --noEmit`, and `npm run build` are the primary local checks (baseline **2026-05-27** — all pass; Biome: one shadcn `sidebar.tsx` cookie warning only). Import-cycle and duplication gates (see [`docs/quality.md`](./quality.md)):
+Lint (`eslint`, `biome`), `npx tsc --noEmit`, and `npm run build` are the primary local checks (baseline **2026-06-17** — see [`quality.md`](./quality.md)). Import-cycle, duplication, and dead-code gates:
 
+- `npm run deadcode` — Knip ([`knip.json`](../knip.json)): unused types in `src/types/**`; unused modules in `src/components/**` / `src/screen/**` (not functions/constants/deps). **PASS** (0 findings).
+- `npm run fix:biome` — safe Biome auto-fix locally (`biome check --write`; unsafe e.g. unused imports need `--unsafe`).
 - `npm run cycles` — Madge circular import detection (uses `tsconfig` path aliases).
 - `npm run dupl` — jscpd clone detection against `src/` (skips shadcn `src/components/ui/**`; see [`quality.md`](./quality.md)).
-- `npm run quality:deps` — both in sequence.
+- `npm run quality:deps` — Madge + jscpd in sequence.
 
 On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs **`npm run test-all`** in the **`test`** job, then **`npm run build`** in **`build`** (same pattern as backend **`make test-all`** → **`build`** in `be-mycourse`). Locally, use **`npm run check-all`** (FE) or **`make check-all`** (BE) for the full pre-PR gate.
 

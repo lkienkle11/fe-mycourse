@@ -31,6 +31,7 @@ fe-mycourse/
 ├── .dockerignore
 ├── .github/workflows/      # CI: enforce-main-from-dev.yml, deploy-dev.yml (test → build → deploy)
 ├── .jscpd.json             # jscpd config (npm run dupl); ignores src/components/ui/** (shadcn upstream)
+├── knip.json               # Knip: full import graph; ignoreFiles for barrels; types + component files gate
 ├── .jscpd-report/          # jscpd JSON reports (gitignored)
 └── README.md               # Project overview and quick-start guide
 ```
@@ -173,8 +174,6 @@ src/components/
 │                           # + MeSwrSync (useSyncMeFromAuth)
 │                           # + LanguageLocaleSync (useSyncLanguageFromLocale)
 │                           # + AuthConfirmTabSync / AuthLogoutTabSync + children
-└── demo/
-    └── register-form.tsx   # Sandbox/demo form — not wired to any route
 ```
 
 ### `src/actions/` — Next.js Server Actions
@@ -530,6 +529,6 @@ docs/
 ├── router.md               # Routing structure and navigation conventions
 ├── patterns.md             # Coding patterns and conventions
 ├── dependencies.md         # Key libraries and their roles
-├── quality.md              # ESLint, Biome, Madge / jscpd; `test-all` (CI) and `check-all` (local)
+├── quality.md              # ESLint, Biome, Knip / Madge / jscpd; `test-all` (CI) and `check-all` (local)
 └── reusable-assets.md      # Reusable utilities, types, hooks, and constants
 ```
