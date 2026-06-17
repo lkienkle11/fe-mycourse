@@ -87,6 +87,6 @@
     "madge": "8.0.0",
     "shadcn": "4.2.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "5.9.3"
   }
 }
