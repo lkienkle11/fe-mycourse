@@ -695,7 +695,7 @@ jobs:
 - **`npm prune --omit=dev` on deploy** — removes devDependencies from `node_modules` after build so the VPS keeps only runtime packages (ESLint, Madge, jscpd, TypeScript, etc. are not needed at runtime).
 - **`NEXT_PUBLIC_*` on the server** — must be present when **`npm run build`** runs on the VPS (e.g. `.env.production.local`, `.env.local`, or env injected before build). Changing them without rebuilding leaves a stale client bundle.
 - **`AUTH_COOKIE_DOMAIN`** — runtime / server-side for cookies; keep on the server, not required in GitHub Actions for this workflow.
-- **Backend CI** — **`test` → `build` → `deploy`**, branch **`master`**, **`rsync`** binary to `DEPLOY_PATH_DEV/bin/` — see [backend Appendix C](../../be-mycourse/docs/deploy.md#appendix-c--cicd-with-github-actions).
+- **Backend CI** — **`test` → `build` → `deploy`**, branch **`master`**, **`make test-all`** in **`test`**, **`rsync`** binary to `DEPLOY_PATH_DEV/bin/` — see [backend Appendix C](../../be-mycourse/docs/deploy.md#appendix-c--cicd-with-github-actions).
 - **Frontend quality in CI** — [`docs/quality.md`](./quality.md) (`test-all`, `check-all`, `cycles`, `dupl`, `quality:deps`, `lint`, `biome`).
 
 ---
