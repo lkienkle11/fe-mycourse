@@ -3,10 +3,10 @@
  * be/pkg/response/response.go and error codes in be/pkg/errcode/codes.go.
  */
 
-import type { ApiErrorCode } from "@/constants/api-error-code";
+// import type { ApiErrorCode } from "@/constants/api-error-code";
 
-export type ApiErrorCodeValue =
-  (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
+// export type ApiErrorCodeValue =
+//   (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
 
 // ---------------------------------------------------------------------------
 // Response envelopes
@@ -111,11 +111,11 @@ export type ApiPaginatedResponse<T = unknown> = ApiResponse<
  * }
  * ```
  */
-export interface ApiHealthResponse {
-  code: number;
-  message: string;
-  status: string;
-}
+// export interface ApiHealthResponse {
+//   code: number;
+//   message: string;
+//   status: string;
+// }
 
 // ---------------------------------------------------------------------------
 // Low-level result wrapper
