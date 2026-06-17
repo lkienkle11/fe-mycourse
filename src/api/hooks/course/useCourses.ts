@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  type AdminCourseApprovalFilter,
   getAdminCoursesKey,
   getCourseDetailKey,
   getCourseDetailService,
@@ -58,10 +57,10 @@ export function useLearningCourse(courseId: string | null) {
   );
 }
 
-export function useAdminCourses(approval: AdminCourseApprovalFilter = "all") {
+export function useAdminCourses() {
   return useApiRowsQuery<CourseListItem>(
-    getAdminCoursesKey(approval),
-    () => listAdminCoursesService(approval),
+    getAdminCoursesKey(),
+    listAdminCoursesService,
     { revalidateOnFocus: true },
   );
 }

@@ -539,26 +539,18 @@ export async function getCourseProgressService(
   return data.data;
 }
 
-export type AdminCourseApprovalFilter = "all" | "approved";
-
-export function getAdminCoursesKey(
-  approval: AdminCourseApprovalFilter = "all",
-): string {
-  return `${routes.adminCourses}?approval=${approval}`;
+export function getAdminCoursesKey(): string {
+  return routes.adminCourses;
 }
 
 export function getTrashedCoursesKey(): string {
   return routes.adminCoursesTrash;
 }
 
-export async function listAdminCoursesService(
-  approval: AdminCourseApprovalFilter = "all",
-): Promise<CourseListItem[]> {
-  const url =
-    approval === "approved"
-      ? `${routes.adminCourses}?approval=approved`
-      : routes.adminCourses;
-  const { data } = await apiFetch<ApiResponse<CourseListItem[]>>(url);
+export async function listAdminCoursesService(): Promise<CourseListItem[]> {
+  const { data } = await apiFetch<ApiResponse<CourseListItem[]>>(
+    routes.adminCourses,
+  );
   return data.data ?? [];
 }
 

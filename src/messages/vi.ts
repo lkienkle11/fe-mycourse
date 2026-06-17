@@ -705,19 +705,13 @@ const messages = {
     adminAll: {
       title: "Tất cả khóa học",
       description:
-        "Liệt kê toàn bộ khóa học trong cơ sở dữ liệu. Lọc theo khóa học đã phê duyệt và không nằm trong thùng rác.",
+        "Các khóa học đã phê duyệt và đang phát hành, không nằm trong thùng rác. Cột phiên bản là bản publish hiện tại.",
       loading: "Đang tải khóa học...",
-      empty: "Không tìm thấy khóa học nào.",
+      empty: "Không có khóa học đã phê duyệt.",
       columns: {
         course: "Khóa học",
         owner: "Chủ sở hữu",
-        version: "Phiên bản",
-        status: "Trạng thái",
-      },
-      filter: {
-        label: "Bộ lọc",
-        all: "Tất cả khóa học",
-        approved: "Chỉ khóa đã phê duyệt",
+        version: "Phiên bản publish",
       },
       actions: {
         menu: "Thao tác",

@@ -708,19 +708,13 @@ const messages = {
     adminAll: {
       title: "All courses",
       description:
-        "Browse every course in the database. Filter to approved courses that are not in trash.",
+        "Approved published courses that are not in trash. Version shown is the live published version.",
       loading: "Loading courses...",
-      empty: "No courses found.",
+      empty: "No approved courses found.",
       columns: {
         course: "Course",
         owner: "Owner",
-        version: "Version",
-        status: "Status",
-      },
-      filter: {
-        label: "Filter",
-        all: "All courses",
-        approved: "Approved only",
+        version: "Published version",
       },
       actions: {
         menu: "Actions",

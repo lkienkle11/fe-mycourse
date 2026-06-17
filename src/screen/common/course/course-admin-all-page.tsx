@@ -4,7 +4,6 @@ import { MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { AdminCourseApprovalFilter } from "@/api/callers/course";
 import { trashCourseService } from "@/api/callers/course";
 import { useAdminCourses } from "@/api/hooks/course";
 import { buildCourseAdminListColumns } from "@/components/features/course/course-admin-list-columns";
@@ -25,9 +24,7 @@ import type { CourseListItem } from "@/types/course";
 export function CourseAdminAllPage() {
   const t = useTranslations("course.adminAll");
   const tErrors = useTranslations("errors.codes");
-  const [approvalFilter, setApprovalFilter] =
-    useState<AdminCourseApprovalFilter>("all");
-  const { rows, isLoading, mutate } = useAdminCourses(approvalFilter);
+  const { rows, isLoading, mutate } = useAdminCourses();
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const [trashTarget, setTrashTarget] = useState<CourseListItem | null>(null);
 
@@ -37,7 +34,6 @@ export function CourseAdminAllPage() {
         course: t("columns.course"),
         owner: t("columns.owner"),
         version: t("columns.version"),
-        status: t("columns.status"),
       }),
     [t],
   );
@@ -69,15 +65,6 @@ export function CourseAdminAllPage() {
           rows={rows}
           actionsHeader={t("actions.menu")}
           emptyMessage={t("empty")}
-          filterByLabel={t("filter.label")}
-          filterByOptions={[
-            { value: "all", label: t("filter.all") },
-            { value: "approved", label: t("filter.approved") },
-          ]}
-          selectedFilterBy={approvalFilter}
-          onFilterByChange={(value) =>
-            setApprovalFilter(value as AdminCourseApprovalFilter)
-          }
           renderActions={(row) => {
             if (!canMoveCourseToTrash(row)) {
               return null;

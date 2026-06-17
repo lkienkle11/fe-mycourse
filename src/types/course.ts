@@ -38,6 +38,7 @@ export type CourseListItem = Course & {
   thumbnail_file_id?: string;
   thumbnail_url?: string;
   preview_video_file_id?: string;
+  draft_review_status?: CourseVersionStatus | "";
 };
 
 export type CourseVersion = {

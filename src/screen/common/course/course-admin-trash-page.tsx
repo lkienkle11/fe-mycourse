@@ -36,7 +36,6 @@ export function CourseAdminTrashPage() {
         course: t("columns.course"),
         owner: t("columns.owner"),
         version: t("columns.version"),
-        status: t("columns.status"),
       }),
     [t],
   );

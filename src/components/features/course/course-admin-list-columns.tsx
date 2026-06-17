@@ -6,21 +6,19 @@ export type CourseAdminListColumnLabels = {
   course: string;
   owner: string;
   version: string;
-  status: string;
+  status?: string;
 };
 
 type BuildCourseAdminListColumnsOptions = {
-  /** When true, render "—" if review_status is empty (all/trash lists). */
-  showStatusDashWhenEmpty?: boolean;
+  /** When true, include review status column (review queue only). */
+  includeStatus?: boolean;
 };
 
 export function buildCourseAdminListColumns(
   labels: CourseAdminListColumnLabels,
   options?: BuildCourseAdminListColumnsOptions,
 ): DataTableColumn<CourseListItem>[] {
-  const showStatusDashWhenEmpty = options?.showStatusDashWhenEmpty ?? true;
-
-  return [
+  const columns: DataTableColumn<CourseListItem>[] = [
     {
       id: "title",
       header: labels.course,
@@ -41,15 +39,20 @@ export function buildCourseAdminListColumns(
       header: labels.version,
       cell: (row) => row.version_no || "—",
     },
-    {
+  ];
+
+  if (options?.includeStatus && labels.status) {
+    columns.push({
       id: "status",
       header: labels.status,
       cell: (row) => {
         if (!row.review_status) {
-          return showStatusDashWhenEmpty ? "—" : null;
+          return "—";
         }
         return <CourseStatusBadge status={row.review_status} />;
       },
-    },
-  ];
+    });
+  }
+
+  return columns;
 }

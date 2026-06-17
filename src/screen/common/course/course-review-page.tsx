@@ -52,7 +52,7 @@ export function CourseReviewPage({
           version: t("columns.version"),
           status: t("columns.status"),
         },
-        { showStatusDashWhenEmpty: false },
+        { includeStatus: true },
       ),
     [t],
   );
