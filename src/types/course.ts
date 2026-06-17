@@ -144,6 +144,7 @@ export type CourseDetail = {
   collaborator_role: CourseCollaboratorRole;
   live_version?: CourseVersion;
   draft_version?: CourseVersion;
+  last_rejection_reason?: string;
   collaborators: CourseCollaborator[];
   outline: CourseSection[];
 };

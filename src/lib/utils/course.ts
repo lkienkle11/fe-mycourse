@@ -211,9 +211,63 @@ export function mergeReorderedLessons(
   sectionId: string,
   lessons: CourseLesson[],
 ): CourseSection[] {
-  return outline.map((section) =>
-    section.id === sectionId ? { ...section, lessons } : section,
+  return outline.map((section) => {
+    if (section.id !== sectionId) {
+      return section;
+    }
+    const existingByStableId = new Map(
+      section.lessons.map((lesson) => [lesson.stable_id, lesson]),
+    );
+    const mergedLessons = lessons.map((apiLesson) => {
+      const existing = existingByStableId.get(apiLesson.stable_id);
+      if (!existing) {
+        return apiLesson;
+      }
+      const apiHasItems = (apiLesson.sub_lessons?.length ?? 0) > 0;
+      return {
+        ...existing,
+        order_index: apiLesson.order_index,
+        row_version: apiLesson.row_version,
+        estimated_duration_ms:
+          apiLesson.estimated_duration_ms ?? existing.estimated_duration_ms,
+        ...(apiHasItems ? { sub_lessons: apiLesson.sub_lessons } : {}),
+      };
+    });
+    return { ...section, lessons: mergedLessons };
+  });
+}
+
+export function mergeReorderedSections(
+  outline: CourseSection[],
+  apiSections: CourseSection[],
+): CourseSection[] {
+  const existingByStableId = new Map(
+    outline.map((section) => [section.stable_id, section]),
   );
+  return apiSections.map((apiSection) => {
+    const existing = existingByStableId.get(apiSection.stable_id);
+    if (!existing) {
+      return apiSection;
+    }
+    const apiHasLessons = (apiSection.lessons?.length ?? 0) > 0;
+    const lessons = apiHasLessons
+      ? mergeReorderedLessons(
+          [{ ...existing, lessons: existing.lessons }],
+          existing.id,
+          apiSection.lessons,
+        )[0].lessons
+      : existing.lessons;
+    return {
+      ...existing,
+      order_index: apiSection.order_index,
+      row_version: apiSection.row_version,
+      title: apiSection.title,
+      description: apiSection.description,
+      estimated_duration_ms:
+        apiSection.estimated_duration_ms ?? existing.estimated_duration_ms,
+      lessons,
+    };
+  });
 }
 
 export function mergeReorderedSubLessons(

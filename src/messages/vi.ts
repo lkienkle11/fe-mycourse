@@ -600,6 +600,7 @@ const messages = {
       back: "Quay lại",
       noVersionYet: "Chưa có phiên bản",
       versionBadge: "Phiên bản {version}",
+      publishedVersionBadge: "Đã duyệt v{version}",
       status: {
         DRAFT: "Bản nháp",
         IN_REVIEW: "Đang duyệt",

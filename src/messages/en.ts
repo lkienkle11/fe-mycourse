@@ -603,6 +603,7 @@ const messages = {
       back: "Back",
       noVersionYet: "No version yet",
       versionBadge: "Version {version}",
+      publishedVersionBadge: "Published v{version}",
       status: {
         DRAFT: "Draft",
         IN_REVIEW: "In review",

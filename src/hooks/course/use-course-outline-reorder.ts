@@ -11,6 +11,7 @@ import { type ApiErrorCodeKey, toastApiError } from "@/lib/utils/api-error";
 import {
   assignSequentialOrderIndex,
   mergeReorderedLessons,
+  mergeReorderedSections,
   mergeReorderedSubLessons,
   replaceLessonSubLessons,
   replaceSectionLessons,
@@ -103,7 +104,10 @@ export function useCourseOutlineReorder({
           ordered_stable_ids: sections.map((section) => section.stable_id),
         }),
       mergeSuccess: (detail, apiSections) =>
-        withOutlineSections(detail, apiSections),
+        withOutlineSections(
+          detail,
+          mergeReorderedSections(detail.outline, apiSections),
+        ),
       successMessage: tSuccess("sectionsReordered"),
     });
   };
