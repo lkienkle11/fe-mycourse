@@ -1,0 +1,74 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "project": [
+    "src/**/*.{ts,tsx,js,jsx}",
+    "!src/components/ui/**"
+  ],
+  "ignoreFiles": [
+    "src/**/index.ts"
+  ],
+  "include": ["types", "nsTypes", "files"],
+  "exclude": [
+    "exports",
+    "dependencies",
+    "devDependencies",
+    "unlisted",
+    "unresolved",
+    "binaries",
+    "duplicates",
+    "enumMembers",
+    "namespaceMembers",
+    "catalog",
+    "optionalPeerDependencies",
+    "nsExports"
+  ],
+  "ignoreIssues": {
+    "src/actions/**": ["types", "nsTypes", "files"],
+    "src/api/**": ["types", "nsTypes", "files"],
+    "src/app/**": ["types", "nsTypes", "files"],
+    "src/config/**": ["types", "nsTypes", "files"],
+    "src/constants/**": ["types", "nsTypes", "files"],
+    "src/events/**": ["types", "nsTypes", "files"],
+    "src/hooks/**": ["types", "nsTypes", "files"],
+    "src/i18n/**": ["types", "nsTypes", "files"],
+    "src/lib/**": ["types", "nsTypes", "files"],
+    "src/messages/**": ["types", "nsTypes", "files"],
+    "src/schema/**": ["types", "nsTypes", "files"],
+    "src/store/**": ["types", "nsTypes", "files"],
+    "src/types/**": ["files"],
+    "src/components/**": ["types", "nsTypes"],
+    "src/screen/**": ["types", "nsTypes"]
+  },
+  "ignoreDependencies": [
+    "@dnd-kit/accessibility",
+    "@dnd-kit/modifiers",
+    "@nosferatu500/react-sortable-tree",
+    "@phosphor-icons/react",
+    "@radix-ui/react-avatar",
+    "@radix-ui/react-checkbox",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-separator",
+    "@radix-ui/react-slot",
+    "class-variance-authority",
+    "cmdk",
+    "date-fns",
+    "embla-carousel-react",
+    "input-otp",
+    "radix-ui",
+    "react-day-picker",
+    "react-dnd",
+    "react-dnd-html5-backend",
+    "react-icons",
+    "react-resizable-panels",
+    "recharts",
+    "shadcn",
+    "tailwindcss",
+    "tw-animate-css",
+    "vaul"
+  ],
+  "ignoreExportsUsedInFile": {
+    "interface": true,
+    "type": true
+  }
+}
