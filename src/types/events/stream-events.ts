@@ -1,7 +1,7 @@
-import type { BroadcastOutboundEvent, BroadcastStreamEvent } from "./broadcast";
-import type { GrpcOutboundEvent, GrpcStreamEvent } from "./gRPC";
-import type { WebSocketOutboundEvent, WebSocketStreamEvent } from "./socket";
-import type { SseOutboundEvent, SseStreamEvent } from "./sse";
+import type { BroadcastStreamEvent } from "./broadcast";
+import type { GrpcStreamEvent } from "./gRPC";
+import type { WebSocketStreamEvent } from "./socket";
+import type { SseStreamEvent } from "./sse";
 
 /** Mọi event đã chuẩn hoá khi vào app. */
 export type StreamEvent =
@@ -10,9 +10,9 @@ export type StreamEvent =
   | WebSocketStreamEvent
   | GrpcStreamEvent;
 
-/** Gói gửi đi (mọi kênh). Metadata không chứa `code`. */
-export type StreamOutboundEvent =
-  | BroadcastOutboundEvent
-  | SseOutboundEvent
-  | WebSocketOutboundEvent
-  | GrpcOutboundEvent;
+// /** Gói gửi đi (mọi kênh). Metadata không chứa `code`. */
+// export type StreamOutboundEvent =
+//   | BroadcastOutboundEvent
+//   | SseOutboundEvent
+//   | WebSocketOutboundEvent
+//   | GrpcOutboundEvent;

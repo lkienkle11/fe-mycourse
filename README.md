@@ -20,15 +20,16 @@ Open the URL Next.js prints (default [http://localhost:3000](http://localhost:30
 | `npm run dev` | Development server |
 | `npm run build` / `npm run start` | Production build / server |
 | `npm run lint` | ESLint (part of `test-all` / `check-all`) |
-| `npm run biome` / `npm run lint:biome` / `npm run format:biome` | Biome check alias / check / format (`biome` in CI via `test-all`; `format:biome` local only) |
+| `npm run biome` / `npm run lint:biome` / `npm run fix:biome` / `npm run format:biome` | Biome check alias / check / safe auto-fix (`check --write`) / format-only (`format:biome` local; `fix:biome` not in CI) |
 | `npm run cycles` | Circular import check (Madge on `src/`) — run before large refactors |
 | `npm run cycles:json` | Same as `cycles`, JSON output |
 | `npm run dupl` | Duplicate code check (jscpd; excludes shadcn `src/components/ui/**`) |
+| `npm run deadcode` | Dead-code check (Knip; [`knip.json`](knip.json) — unused types in `src/types/**` + unused files in `src/components/**` / `src/screen/**`) |
 | `npm run quality:deps` | `cycles` then `dupl` (part of `test-all` / `check-all`) |
-| `npm run test-all` | `lint` → `biome` → `test` → `quality:deps` — **CI `test` job on `dev`** |
+| `npm run test-all` | `lint` → `biome` → `test` → `deadcode` → `quality:deps` — **CI `test` job on `dev`** |
 | `npm run check-all` | `test-all` + `build` — recommended **pre-PR local gate** |
 
-**Pre-PR local gate:** `npm run check-all` (optionally add `npx tsc --noEmit` and `npm run format:biome` before it) — details in [`docs/quality.md`](docs/quality.md).
+**Pre-PR local gate:** `npm run check-all` (optionally `npm run fix:biome` or `npm run format:biome`, then `npx tsc --noEmit` before it) — details in [`docs/quality.md`](docs/quality.md).
 
 ## Documentation Convention (Mandatory)
 
@@ -54,7 +55,7 @@ The `docs/` folder is the **primary and authoritative documentation source** for
 | [`docs/patterns.md`](docs/patterns.md) | Coding conventions — naming, styling (`cn()`), state management rules, form patterns, i18n, TypeScript patterns |
 | [`docs/logic-flow.md`](docs/logic-flow.md) | Execution flows — login, token refresh, Me fetch, form submission, auth modal state, permission checks, i18n, API error capture |
 | [`docs/dependencies.md`](docs/dependencies.md) | All runtime and dev dependencies — versions, roles, and usage rules |
-| [`docs/quality.md`](docs/quality.md) | ESLint, Biome, Madge / jscpd gates; `test-all` (CI) and `check-all` (local pre-PR) |
+| [`docs/quality.md`](docs/quality.md) | ESLint, Biome, Knip / Madge / jscpd gates; `test-all` (CI) and `check-all` (local pre-PR) |
 | [`docs/reusable-assets.md`](docs/reusable-assets.md) | All reusable utilities, hooks, types, schemas, stores, constants, API callers, and Server Actions |
 | [`docs/delivery.md`](docs/delivery.md) | **Realtime channels** — BroadcastChannel, WebSocket, SSE, NDJSON gRPC; envelope model, env vars, links to per-channel docs |
 | [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — Nginx, Certbot, PM2, env vars (`NEXT_PUBLIC_API_URL`, `AUTH_COOKIE_DOMAIN`, stream URLs), go-live checklist, rollback, troubleshooting, CI/CD |
@@ -70,7 +71,7 @@ Enforcement is **remote-only** (GitHub Actions): any pull request **into `main`*
 
 ### CI deploy (`dev`)
 
-Pushing to the **`dev`** branch runs [`.github/workflows/deploy-dev.yml`](.github/workflows/deploy-dev.yml): **`test`** (`npm run test-all`: lint, biome, test, quality:deps) → **`build`** (`npm run build`) on GitHub Actions, then **`deploy`** SSH to the VPS (`DEPLOY_PATH_DEV`), `git pull`, clean **`node_modules`**, **`npm ci` + `npm run build` + `npm prune --omit=dev`**, and **`pm2 reload mycourse-web-dev`**. Required secrets: `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_USER`, `DEPLOY_PATH_DEV`. Details and operational notes are in [`docs/deploy.md` Appendix G](docs/deploy.md#appendix-g--cicd-github-actions).
+Pushing to the **`dev`** branch runs [`.github/workflows/deploy-dev.yml`](.github/workflows/deploy-dev.yml): **`test`** (`npm run test-all`: lint, biome, test, deadcode, quality:deps) → **`build`** (`npm run build`) on GitHub Actions, then **`deploy`** SSH to the VPS (`DEPLOY_PATH_DEV`), `git pull`, clean **`node_modules`**, **`npm ci` + `npm run build` + `npm prune --omit=dev`**, and **`pm2 reload mycourse-web-dev`**. Required secrets: `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_USER`, `DEPLOY_PATH_DEV`. Details and operational notes are in [`docs/deploy.md` Appendix G](docs/deploy.md#appendix-g--cicd-github-actions).
 
 ## Environment Variables
 

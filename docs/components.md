@@ -245,11 +245,7 @@ Null-render sync components in `app-providers.tsx`: `MeSwrSync` (SWR `useAuth` â
 
 ## `demo/` â€” Sandbox Components
 
-`src/components/demo/`
-
-| Component | File | Description |
-|-----------|------|-------------|
-| `RegisterForm` | `register-form.tsx` | Sandbox/demo registration form. Not wired to any route. Do not ship to production. |
+_Removed (2026-06-17): `src/components/demo/` was deleted after Knip flagged unused demo code. Do not re-add sandbox components without wiring a route or explicit `knip.json` exemption._
 
 ---
 

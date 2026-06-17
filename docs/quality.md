@@ -1,8 +1,8 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-06-17 (`test-all` / `check-all` scripts; CI `test` job uses `test-all`)._
+_Last audited: 2026-06-17 (`deadcode`/Knip in `test-all` / `check-all`; CI `test` job uses `test-all`)._
 
-Checks for **circular imports** (Madge), **duplicate code** (jscpd), **ESLint**, and **Biome** under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs **`npm run test-all`** in the **`test`** job (`lint` → `biome` → `test` → `quality:deps`), then **`npm run build`** in a separate **`build`** job (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
+Checks for **dead code** (Knip), **circular imports** (Madge), **duplicate code** (jscpd), **ESLint**, and **Biome** under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs **`npm run test-all`** in the **`test`** job (`lint` → `biome` → `test` → `deadcode` → `quality:deps`), then **`npm run build`** in a separate **`build`** job (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 
 > **Not the backend:** `be-mycourse` uses `make check-architecture` / `make check-dupl` (Go). This repo uses **npm scripts** below.
 
@@ -15,8 +15,10 @@ Checks for **circular imports** (Madge), **duplicate code** (jscpd), **ESLint**,
 | Before opening a PR (full gate) | `npm run check-all` |
 | Same checks as CI `test` job (no build) | `npm run test-all` |
 | Before a large refactor or PR touching many modules | `npm run quality:deps` |
+| After adding/removing exports, barrels, or dependencies | `npm run deadcode` |
 | After changing import paths or barrel `index.ts` files | `npm run cycles` |
 | After copying UI blocks or API helpers | `npm run dupl` |
+| Biome safe auto-fix before check | `npm run fix:biome` |
 | Machine-readable cycle report | `npm run cycles:json` |
 
 ---
@@ -27,18 +29,70 @@ Checks for **circular imports** (Madge), **duplicate code** (jscpd), **ESLint**,
 |--------|---------|---------|
 | `lint` | `eslint` | ESLint (Next.js `core-web-vitals` + `typescript`; project rules in [`eslint.config.mjs`](../eslint.config.mjs)) |
 | `biome` | `npm run lint:biome` | Alias for Biome check (same behavior as `lint:biome`) |
-| `lint:biome` | `biome check .` | Biome format/lint (included in `test-all` / `check-all`; CI via `test-all`) |
+| `lint:biome` | `biome check .` | Biome check (included in `test-all` / `check-all`; CI via `test-all`) |
+| `fix:biome` | `biome check --write .` | Apply **safe** Biome fixes locally (not in CI); unsafe fixes (e.g. remove unused imports) need `biome check --write --unsafe .` |
+| `format:biome` | `biome format --write .` | Format only (local; not in `test-all`) |
 | `test` | `node -e "console.log('No frontend test suite is configured yet.')"` | Placeholder command so CI/local verification can run a stable `npm run test` step while no dedicated FE suite exists yet |
 | `cycles` | `madge --circular … src` | Detect circular **static** import chains under `src/` |
 | `cycles:json` | Same + `--json` | JSON output for tooling |
 | `dupl` | `jscpd src --config .jscpd.json` | Duplicate code detection (excludes paths in `ignore`; see below) |
+| `deadcode` | `knip` | Dead-code gate — unused types in `src/types/**` + unused component/screen files only ([`knip.json`](../knip.json)) |
 | `quality:deps` | `npm run cycles && npm run dupl` | Run both Madge + jscpd gates in sequence |
-| `test-all` | `lint` → `biome` → `test` → `quality:deps` | **CI `test` job** on push to `dev` |
+| `test-all` | `lint` → `biome` → `test` → `deadcode` → `quality:deps` | **CI `test` job** on push to `dev` |
 | `check-all` | `test-all` → `build` | Recommended **pre-PR local gate** (full compile included) |
 
 Madge reads path aliases from `tsconfig.json` (`@/*` → `./src/*`) via `--ts-config ./tsconfig.json`.
 
 Configuration: [`.jscpd.json`](../.jscpd.json). Reports are written to `.jscpd-report/` (gitignored).
+
+---
+
+## Knip (`deadcode`)
+
+[Knip](https://knip.dev/) builds a **module/dependency graph** for the Next.js app. In this repo it is tuned to report only:
+
+- unused exported **types** under `src/types/**`
+- unused **component/screen files** under `src/components/**` and `src/screen/**`
+
+It does **not** gate unused functions, constants, variables, dependencies, or duplicate exports.
+
+Run standalone: **`npm run deadcode`** (alias: `npx knip`). Included in **`test-all`** / **`check-all`** and CI **`test`** job on push to **`dev`**.
+
+Configuration: [`knip.json`](../knip.json). The built-in **Next.js plugin** (enabled via `"next"` in `dependencies`) supplies App Router entry patterns (`src/app/**/{page,layout,route,…}.tsx`, `src/proxy.ts`, `next.config.ts`, …).
+
+### Scope (`knip.json`)
+
+| Option | Value | Purpose |
+|--------|-------|---------|
+| `project` | `src/**/*.{ts,tsx,js,jsx}` + `!src/components/ui/**` | Full source graph under `src/` (barrels **stay in graph**) |
+| `ignoreFiles` | `src/**/index.ts` | Barrel `index.ts` not reported as unused **files** — still analyzed for imports |
+| `include` | `types`, `nsTypes`, `files` | **Only** unused exported types and unused component/screen **files** |
+| `exclude` | `exports`, `dependencies`, `files` (elsewhere), … | No unused-function/constant/export, dependency, or duplicate-export gates |
+| `ignoreIssues` | Per-folder map | Restrict **types** to `src/types/**`; restrict **files** to `src/components/**` + `src/screen/**` |
+| `ignoreDependencies` | Radix/CVA/cmdk/… + `shadcn`, `tailwindcss` | Packages used only from excluded `src/components/ui/**` or root tooling |
+| `ignoreExportsUsedInFile` | `interface`, `type` | Types used only inside the same file (e.g. `ApiPageInfo` in `ApiPaginatedData`) are not flagged |
+
+**Critical:** Do **not** use `!src/**/index.ts` in `project` — that removes barrels from the graph and breaks chains like `AuthActions` → `@/types` → `store/auth`. Use **`ignoreFiles`** instead so barrels stay traceable but are not flagged as unused files.
+
+**What Knip reports (this repo):**
+
+| Category | Where checked | Meaning |
+|----------|---------------|---------|
+| Unused **types** | `src/types/**` only | Exported `type` / `interface` with no importers |
+| Unused **component files** | `src/components/**`, `src/screen/**` | `.tsx` modules not reachable from App Router entries |
+
+**Not reported:** unused functions, constants, variables, API callers, `dependencies` / `devDependencies`, duplicate exports.
+
+Debug import chains: `npx knip --trace-export <SymbolName>`.
+
+### Baseline (2026-06-17 — `ignoreFiles` graph + backlog cleared)
+
+| Category | Count |
+|----------|------:|
+| Unused files (components/screens) | 0 |
+| Unused exported types (`src/types/**`) | 0 |
+
+`npm run deadcode` — **PASS**. Verify traces when tuning config: `npx knip --trace-export AuthActions` → `store/auth` importer.
 
 ---
 
@@ -48,6 +102,7 @@ Configuration: [`.jscpd.json`](../.jscpd.json). Reports are written to `.jscpd-r
 |------|--------|----------------|
 | **madge** (`cycles`) | No circular dependencies | At least one cycle (prints chain, e.g. `a.ts > b.ts > a.ts`) |
 | **jscpd** (`dupl`) | Duplication **below** `threshold` (80% of analyzed lines) | Duplication at or above threshold |
+| **knip** (`deadcode`) | No unused types (`src/types/**`) or unused component/screen files | At least one finding (see Knip section above) |
 
 jscpd may still **print** clone pairs on success (informational). Failures list clones that exceed the global threshold.
 
@@ -147,16 +202,18 @@ Feature components (tabs, dialogs, pagination blocks, …) belong in `src/compon
 
 | Command | Result | Notes |
 |---------|--------|-------|
-| `npm run format:biome` | **Pass** | Biome format |
+| `npm run fix:biome` | **Pass** | Safe Biome auto-fix (`biome check --write`); local only |
+| `npm run format:biome` | **Pass** | Biome format only |
 | `npm run biome` | **Pass** | Alias to `lint:biome` |
 | `npm run lint:biome` | **Pass** | No warnings after Biome override update for `src/components/ui/**` (`noDocumentCookie` set to `off`) |
 | `npm run lint` | **Pass** | ESLint; `src/constants/**` data-only; `src/types/**` type-only |
 | `npm run test` | **Pass** | Placeholder script; no dedicated frontend test suite is configured yet |
 | `npx tsc --noEmit` | **Pass** | Strict TypeScript |
 | `npm run quality:deps` | **Pass** | Madge + jscpd (see below) |
+| `npm run deadcode` | **Pass** | Knip — 0 unused types / component files (see [Knip section](#knip-deadcode)) |
 | `npm run build` | **Pass** | `next build` (Next.js 16.2.1) |
 
-Recommended before PR: **`npm run check-all`** (or the table above; optionally add `npx tsc --noEmit` and `npm run format:biome` first).
+Recommended before PR: **`npm run check-all`** (optionally `npm run fix:biome` or `npm run format:biome`, then `npx tsc --noEmit` first).
 
 ### `quality:deps` only
 
@@ -181,10 +238,10 @@ _Re-run on 2026-06-08 after validation + code-based API error i18n across Auth/M
 
 | Stage | Job | What runs |
 |-------|-----|-----------|
-| **CI (`dev` deploy)** | `test` | `npm ci`, **`npm run test-all`** (`lint` → `biome` → `test` → `quality:deps`) |
+| **CI (`dev` deploy)** | `test` | `npm ci`, **`npm run test-all`** (`lint` → `biome` → `test` → `deadcode` → `quality:deps`) |
 | **CI (`dev` deploy)** | `build` | `npm ci`, `npm run build` (after `test` passes) |
 | **CI (`dev` deploy)** | `deploy` | SSH → VPS `npm ci` + `npm run build` + `npm prune --omit=dev` + PM2 reload (quality checks are **not** re-run on the server) |
-| **Recommended local** | — | **`npm run check-all`** (= `test-all` + `build`); optionally `format:biome` and `npx tsc --noEmit` first |
+| **Recommended local** | — | **`npm run check-all`** (= `test-all` + `build`); optionally `fix:biome` / `format:biome` and `npx tsc --noEmit` first |
 
 Do **not** use backend `make check-dupl` or `make check-architecture` in this frontend repo — use the npm scripts above instead.
 
@@ -194,6 +251,7 @@ Do **not** use backend `make check-dupl` or `make check-architecture` in this fr
 
 | Doc | Contents |
 |-----|----------|
-| [`dependencies.md`](./dependencies.md) | `madge`, `jscpd` devDependencies |
+| [`dependencies.md`](./dependencies.md) | `knip.json`, `knip`, `madge`, `jscpd` devDependencies |
+| [`folder-structure.md`](./folder-structure.md) | `knip.json` at repo root |
 | [`folder-structure.md`](./folder-structure.md) | `.jscpd.json`, `.jscpd-report/` |
 | [`architecture.md`](./architecture.md) | Stack row for dependency / clone tools |
