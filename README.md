@@ -8,16 +8,32 @@ Next.js **16.2** (App Router) client for **MyCourse**: React **19**, **Tailwind 
 
 ```bash
 npm install
-npm run dev
+npm run dev          # normal dev (Turbopack; see Dev performance below if CPU/RAM is high)
+npm run dev:clean    # wipe .next then start dev (use after cache bloat)
+npm run clean:next   # delete .next only
 ```
 
 Open the URL Next.js prints (default [http://localhost:3000](http://localhost:3000)). The root route redirects into the default locale (`vi`); localized paths look like `/vi` or `/en`.
+
+### Dev performance (CPU / RAM)
+
+Next.js 16 dev uses **Turbopack** (`next dev`). If the machine feels slow:
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Very high CPU/RAM, disk full | Unbounded `.next/dev/cache/turbopack` (multi-GB) | `npm run dev:clean` or `npm run clean:next` then `npm run dev` |
+| Dev server watches sibling repos | Multi-root workspace / monorepo parent | `next.config.ts` sets `turbopack.root` to this app directory |
+| Slow locale validation every request | Dev-only `preloadAllMessages()` | Cached once per process in `src/lib/i18n/load-messages.ts` |
+
+Project defaults in `next.config.ts`: **4 GB** Turbopack memory cap, **filesystem dev cache off** (trade-off: slightly slower cold start, no runaway disk), **`logging.browserToTerminal: false`** (less terminal overhead). Details: [`docs/architecture.md`](docs/architecture.md#development-server).
 
 **Docker (optional):** `./scripts/docker/compose-up.sh local` — **Windows:** `scripts\docker\compose-up.cmd local` — see [`docs/docker.md`](docs/docker.md). CI still deploys via PM2 on the VPS.
 
 | Script | Purpose |
 |--------|---------|
-| `npm run dev` | Development server |
+| `npm run dev` | Development server (Next.js 16 Turbopack) |
+| `npm run dev:clean` | Delete `.next` then start dev — use when cache is bloated |
+| `npm run clean:next` | Delete `.next` build/dev cache only |
 | `npm run build` / `npm run start` | Production build / server |
 | `npm run lint` | ESLint (part of `test-all` / `check-all`) |
 | `npm run biome` / `npm run lint:biome` / `npm run fix:biome` / `npm run format:biome` | Biome check alias / check / safe auto-fix (`check --write`) / format-only (`format:biome` local; `fix:biome` not in CI) |

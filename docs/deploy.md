@@ -772,7 +772,7 @@ sudo nginx -t                  # valid config after certbot edits?
 
 | Area | Path | Notes |
 |------|------|-------|
-| Next.js config + i18n plugin | `next.config.ts` | `createNextIntlPlugin("./src/i18n/request.ts")` |
+| Next.js config + i18n plugin | `next.config.ts` | next-intl plugin; `turbopack.root`, dev memory/cache/logging — see `docs/architecture.md#development-server` |
 | Middleware (locale routing) | `src/proxy.ts` | See Appendix C |
 | Root layout | `src/app/layout.tsx` | Fonts (Roboto, Gilroy, GeistMono), Toaster |
 | Locale layout | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider` + `AppProviders` (SWR) |

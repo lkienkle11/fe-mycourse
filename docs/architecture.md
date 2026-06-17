@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-06-17 (`server-only`, `knip` pinned in `package.json` / `package-lock.json`)._
+_Last audited: 2026-06-17 (Turbopack dev tuning, `clean:next` / `dev:clean` scripts)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -200,7 +200,7 @@ fe/
 │   │   └── navigation.ts          # next-intl navigation helpers (Link, redirect, …)
 │   │
 │   ├── lib/i18n/
-│   │   ├── load-messages.ts        # loadMessages / preloadAllMessages
+│   │   ├── load-messages.ts        # loadMessages / preloadAllMessages (memoized per process)
 │   │   └── index.ts
 │   │
 │   ├── messages/
@@ -358,15 +358,37 @@ All Go API endpoints return a standard `{ code, message, data }` envelope (mirro
 | File | Role |
 |------|------|
 | `src/i18n/routing.ts` | `defineRouting` — locales `["en","vi"]`, `defaultLocale: "vi"`, `localePrefix: "always"` |
-| `src/i18n/request.ts` | `getRequestConfig` — `loadMessages(locale)`; dev preloads all locales |
+| `src/i18n/request.ts` | `getRequestConfig` — `loadMessages(locale)`; dev calls `preloadAllMessages()` once per process |
 | `src/i18n/navigation.ts` | Typed `Link`, `redirect`, `useRouter`, `usePathname` from `next-intl/navigation` |
-| `src/lib/i18n/load-messages.ts` | Locale loaders map → `@/messages/en` / `@/messages/vi` |
+| `src/lib/i18n/load-messages.ts` | `loadMessages`, `preloadAllMessages` (memoized) — dynamic import `@/messages/en` / `@/messages/vi` |
 | `src/messages/en.ts` | English copy (`commonFooter`, `home`, `auth`, `homepage`, …) |
 | `src/messages/vi.ts` | Vietnamese copy (default locale); `satisfies Messages` |
 | `src/types/i18n.d.ts` | `AppConfig.Messages` augmentation for typed `useTranslations` keys |
-| `next.config.ts` | `createNextIntlPlugin("./src/i18n/request.ts")` wraps the Next config |
+| `next.config.ts` | next-intl plugin + Turbopack dev tuning (see [Development server](#development-server)) |
 
 Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i18n keys** (e.g. `"validation.email"`). `AuthEmailField`, `AuthPasswordField`, and `AuthFullNameField` in `auth-form-fields.tsx` resolve keys via `useTranslations("auth")` only when `error.message` is set (never `t(undefined)`).
+
+---
+
+## Development server
+
+`npm run dev` runs **Next.js 16 Turbopack** (default bundler for dev). Configuration lives in [`next.config.ts`](../next.config.ts):
+
+| Setting | Value | Why |
+|---------|-------|-----|
+| `turbopack.root` | App directory (`import.meta.url` dirname) | Prevents Turbopack from tracing sibling repos in a multi-root workspace |
+| `experimental.turbopackMemoryLimit` | 4 GiB | Caps RAM during long dev sessions |
+| `experimental.turbopackFileSystemCacheForDev` | `false` | Avoids unbounded `.next/dev/cache/turbopack` growth (multi-GB disk + heavy I/O) |
+| `logging.browserToTerminal` | `false` | Stops forwarding browser console to the terminal (less dev-server overhead) |
+
+**Maintenance scripts** ([`package.json`](../package.json)):
+
+| Script | Purpose |
+|--------|---------|
+| `npm run clean:next` | `rm -rf .next` — drop dev/build cache |
+| `npm run dev:clean` | `clean:next` then `next dev` — use when CPU/RAM spikes after long sessions |
+
+Trade-off with filesystem cache disabled: **slightly slower cold compile** after restart, but stable CPU/RAM/disk on developer machines.
 
 ---
 
