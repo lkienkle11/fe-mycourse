@@ -15,7 +15,9 @@
     "cycles": "madge --circular --extensions ts,tsx,js,jsx --ts-config ./tsconfig.json src",
     "cycles:json": "madge --circular --extensions ts,tsx,js,jsx --ts-config ./tsconfig.json src --json",
     "dupl": "jscpd src --config .jscpd.json",
-    "quality:deps": "npm run cycles && npm run dupl"
+    "quality:deps": "npm run cycles && npm run dupl",
+    "check-all": "npm run lint && npm run biome && npm run test && npm run quality:deps && npm run build",
+    "test-all": "npm run lint && npm run biome && npm run test && npm run quality:deps"
   },
   "dependencies": {
     "@dnd-kit/accessibility": "3.1.1",

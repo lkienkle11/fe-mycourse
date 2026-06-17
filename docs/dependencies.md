@@ -155,14 +155,14 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 | `@types/dagre` | 0.7.54 | Type definitions for `dagre` |
 | `tailwindcss` | ^4 | Dev CSS build (PostCSS pipeline) |
 | `@tailwindcss/postcss` | ^4 | Tailwind PostCSS plugin for v4 |
-| `eslint` | ^9 | Linter (`npm run lint`; CI `test` job on `dev`) |
+| `eslint` | ^9 | Linter (`npm run lint`; CI via `test-all` on `dev`) |
 | `eslint-config-next` | 16.2.1 | ESLint rules for Next.js; extended in [`eslint.config.mjs`](../eslint.config.mjs) (`src/constants/**` data-only, `src/types/**` type-only) |
-| `@biomejs/biome` | ^2.4.9 | Fast formatter + linter (`npm run biome` alias, `npm run lint:biome`, `npm run format:biome`) |
+| `@biomejs/biome` | ^2.4.9 | Fast formatter + linter (`npm run biome` alias, `npm run lint:biome`, `npm run format:biome`; CI via `test-all`) |
 | `@commitlint/cli` | ^20.5.0 | Commit message linting |
 | `@commitlint/config-conventional` | ^20.5.0 | Conventional Commits ruleset |
 | `shadcn` | 4.2.0 | CLI tool for adding shadcn/ui components to `src/components/ui/` |
-| `madge` | ^8.0.0 | Circular dependency analysis — `npm run cycles` / `cycles:json`; CI via `quality:deps` |
-| `jscpd` | ^4.2.4 | Clone detection — `npm run dupl` (`.jscpd.json`, excludes shadcn `src/components/ui/**`); CI via `quality:deps` |
+| `madge` | ^8.0.0 | Circular dependency analysis — `npm run cycles` / `cycles:json`; CI via `test-all` → `quality:deps` |
+| `jscpd` | ^4.2.4 | Clone detection — `npm run dupl` (`.jscpd.json`, excludes shadcn `src/components/ui/**`); CI via `test-all` → `quality:deps` |
 
 ---
 
@@ -184,4 +184,4 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 6. **Icons**: Default to `lucide-react` for shadcn/ui and new UI work. Use `react-icons` for brand logos and legacy FA/MD glyphs (sub-path imports only). Use `@phosphor-icons/react` when you need extra glyphs or weight variants (bold, fill, duotone) — import only the icons you use. Do not add a fourth icon library.
 7. **Toasts**: Use `sonner` (`toast.success`, `toast.error`, etc.) for user-facing notifications.
 8. **Stream events**: Subscribe with `hooks/events/*`; send WS via `postSocketOutbound`, broadcast via `postBroadcastOutbound`. Do not add a second WebSocket/SSE library without updating [`delivery.md`](./delivery.md).
-9. **Quality gates**: Run `npm run quality:deps`, `npm run lint`, and `npm run test` (or individual scripts) before large refactors. CI on **`dev`** enforces the same in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.
+9. **Quality gates**: Run **`npm run check-all`** before PRs (or **`npm run test-all`** to match CI without build). CI on **`dev`** enforces `test-all` in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.
