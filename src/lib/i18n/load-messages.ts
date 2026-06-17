@@ -21,14 +21,24 @@ export async function loadMessages(
   return (await load()).default;
 }
 
-/** Validate all locales load (dev/build guard). */
+let preloadedMessages: Record<Locale, AbstractIntlMessages> | null = null;
+
+/** Validate all locales load (dev/build guard). Cached after first call in a process. */
 export async function preloadAllMessages(): Promise<
   Record<Locale, AbstractIntlMessages>
 > {
+  if (preloadedMessages) {
+    return preloadedMessages;
+  }
+
   const entries = await Promise.all(
     routing.locales.map(
       async (locale) => [locale, await loadMessages(locale)] as const,
     ),
   );
-  return Object.fromEntries(entries) as Record<Locale, AbstractIntlMessages>;
+  preloadedMessages = Object.fromEntries(entries) as Record<
+    Locale,
+    AbstractIntlMessages
+  >;
+  return preloadedMessages;
 }
