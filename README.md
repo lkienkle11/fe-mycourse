@@ -68,7 +68,7 @@ Enforcement is **remote-only** (GitHub Actions): any pull request **into `main`*
 
 ### CI deploy (`dev`)
 
-Pushing to the **`dev`** branch runs [`.github/workflows/deploy-dev.yml`](.github/workflows/deploy-dev.yml): **`test`** (`npm run quality:deps`, then `npm run lint`) → **`build`** (`npm run build`) on GitHub Actions, then **`deploy`** SSH to the VPS (`DEPLOY_PATH_DEV`), `git pull`, clean **`node_modules`**, **`npm ci` + `npm run build`**, and **`pm2 reload mycourse-web-dev`**. Required secrets: `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_USER`, `DEPLOY_PATH_DEV`. Details and operational notes are in [`docs/deploy.md` Appendix G](docs/deploy.md#appendix-g--cicd-github-actions).
+Pushing to the **`dev`** branch runs [`.github/workflows/deploy-dev.yml`](.github/workflows/deploy-dev.yml): **`test`** (`npm run quality:deps`, then `npm run lint`) → **`build`** (`npm run build`) on GitHub Actions, then **`deploy`** SSH to the VPS (`DEPLOY_PATH_DEV`), `git pull`, clean **`node_modules`**, **`npm ci` + `npm run build` + `npm prune --omit=dev`**, and **`pm2 reload mycourse-web-dev`**. Required secrets: `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_USER`, `DEPLOY_PATH_DEV`. Details and operational notes are in [`docs/deploy.md` Appendix G](docs/deploy.md#appendix-g--cicd-github-actions).
 
 ## Environment Variables
 

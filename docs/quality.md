@@ -179,7 +179,7 @@ _Re-run on 2026-06-08 after validation + code-based API error i18n across Auth/M
 |-------|-----|-----------|
 | **CI (`dev` deploy)** | `test` | `npm ci`, `npm run quality:deps` (`cycles` + `dupl`), **`npm run lint`**, **`npm run test`** |
 | **CI (`dev` deploy)** | `build` | `npm ci`, `npm run build` (after `test` passes) |
-| **CI (`dev` deploy)** | `deploy` | SSH → VPS `npm ci` + `npm run build` + PM2 reload (quality checks are **not** re-run on the server) |
+| **CI (`dev` deploy)** | `deploy` | SSH → VPS `npm ci` + `npm run build` + `npm prune --omit=dev` + PM2 reload (quality checks are **not** re-run on the server) |
 | **Recommended local** | — | `biome` (or `lint:biome`), `lint`, `tsc --noEmit`, `quality:deps`, `build` (see **Full local gate** above) |
 
 Do **not** use backend `make check-dupl` or `make check-architecture` in this frontend repo — use the npm scripts above instead.

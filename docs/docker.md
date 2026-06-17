@@ -81,6 +81,7 @@ PowerShell:
 - **Build:** `npm run build` with build-args:
   - `NEXT_PUBLIC_API_URL` (required)
   - `NEXT_PUBLIC_STREAM_SSE_URL`, `NEXT_PUBLIC_STREAM_WS_URL`, `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` (optional)
+- **Prune:** `npm prune --omit=dev` after build — drops devDependencies from `node_modules` before the runner stage (same as VPS deploy in [`docs/deploy.md`](deploy.md))
 - **Run:** copy `.next`, `node_modules`, `public`, `package.json`; `npm run start`
 - **No** `output: 'standalone'` — same constraint as [`docs/deploy.md`](deploy.md)
 
