@@ -226,6 +226,22 @@ export function useCourses() {
 - Place the fetcher function in `src/api/callers/<domain>/<domain>.ts`.
 - Place the hook in `src/api/hooks/<domain>/use<Domain>.ts`.
 
+### Course-admin (sysadmin catalog + trash)
+
+Callers in `src/api/callers/course/course.ts`:
+
+| Service | Method | Path |
+|---------|--------|------|
+| `listAdminCoursesService` | GET | `/api/v1/course-admin/courses?approval=` |
+| `listTrashedCoursesService` | GET | `/api/v1/course-admin/courses/trash` |
+| `trashCourseService` | POST | `/api/v1/course-admin/courses/:courseId/trash` |
+| `restoreTrashedCourseService` | POST | `/api/v1/course-admin/courses/:courseId/restore` |
+| `permanentDeleteTrashedCourseService` | DELETE | `/api/v1/course-admin/courses/:courseId/permanent` |
+
+Hooks in `src/api/hooks/course/useCourses.ts`: `useAdminCourses`, `useTrashedCourses`. After trash/restore/delete, call `mutate` on the relevant SWR keys.
+
+Eligibility helper: `canMoveCourseToTrash` in `src/lib/utils/course.ts` (mirrors BE trash rules for UI).
+
 ---
 
 ## Error Handling

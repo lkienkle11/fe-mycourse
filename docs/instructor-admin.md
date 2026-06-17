@@ -16,7 +16,9 @@ Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `
 | My tickets | — | — | `/instructor/tickets` |
 | My courses | — | — | `/instructor/courses` |
 | Course editor | — | — | `/instructor/courses/{courseId}/{info\|outline\|collaborators\|pricing\|certificate}` |
-| Course reviews | `/admin/courses` | `/sysadmin/courses` | — |
+| Course reviews | `/admin/courses/reviewing` | `/sysadmin/courses/reviewing` | — |
+| Review preview | — | `/sysadmin/courses/reviewing/{courseId}/preview` | — |
+| Course catalog (all / trash) | `/admin/courses/all`, `/admin/courses/trash` | `/sysadmin/courses/all`, `/sysadmin/courses/trash` | — |
 
 Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages). Course review queues are implemented for admin/sysadmin; instructor course authoring is implemented under the instructor dashboard.
 

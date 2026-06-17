@@ -179,7 +179,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Dynamic FE route templates with `:param` placeholders for resource/detail pages.
 - **Current Entries**:
   - `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` (`/instructor/courses/:courseId/info`)
-  - `PRIVATE_RESOURCE_ROUTES.instructor.courseEditorTab` (`/instructor/courses/:courseId/:tab`)
+  - `PRIVATE_RESOURCE_ROUTES.sysadmin.courseReviewPreview` (`/sysadmin/courses/reviewing/:courseId/preview`)
 - **Scope**: Navigation helpers and screens that need parameterized routes.
 - **Dependencies**: none.
 
@@ -192,7 +192,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`, `buildQueryParams`.
 
 ### Asset: pre-built navigation hrefs (`homeHref`, `logoutHref`, `adminCoursesHref`, ...)
-- **Name**: `homeHref`, `forgotPasswordHref`, `logoutHref`, `adminRootHref`, `instructorCoursesHref`, `sysadminCoursesHref`, `accountMyCoursesHref`, ...
+- **Name**: `homeHref`, `forgotPasswordHref`, `logoutHref`, `adminRootHref`, `instructorCoursesHref`, `sysadminCoursesAllHref`, `sysadminCoursesReviewingHref`, `sysadminCoursesTrashHref`, `sysadminCourseReviewPreviewHref`, `accountMyCoursesHref`, ...
 - **Type**: Constant strings
 - **Path**: `src/lib/navigation/routes.ts`
 - **Purpose**: Shared route outputs generated from route builders to avoid duplicated conversion in call sites.
@@ -510,6 +510,30 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Patch `CourseDetail.outline` for optimistic drag reorder and merge reorder API responses without duplicating nested outline shape logic.
 - **Scope**: `useCourseOutlineReorder` hook; pairs with `reorderCourseSectionsService` / `reorderCourseLessonsService` / `reorderCourseSubLessonsService`.
 - **Dependencies**: `CourseDetail` / outline node types from `src/types/course.ts`.
+
+### Asset: canMoveCourseToTrash
+- **Name**: `canMoveCourseToTrash`
+- **Type**: Utility function
+- **Path**: `src/lib/utils/course.ts`
+- **Purpose**: Returns whether a course list item is eligible for sysadmin trash (`has_published` and draft not `REJECTED`).
+- **Scope**: `course-admin-all-page` row actions.
+- **Dependencies**: `CourseListItem` from `src/types/course.ts`.
+
+### Asset: buildCourseAdminListColumns
+- **Name**: `buildCourseAdminListColumns`
+- **Type**: Factory function → `DataTable` column defs
+- **Path**: `src/components/features/course/course-admin-list-columns.tsx`
+- **Purpose**: Shared columns (title, owner, review status, version id, actions slot) for All Courses and Trash pages.
+- **Scope**: `course-admin-all-page`, `course-admin-trash-page`.
+- **Dependencies**: `DataTable` column types, i18n `course.*`.
+
+### Asset: course-admin API services + hooks
+- **Name**: `listAdminCoursesService`, `listTrashedCoursesService`, `trashCourseService`, `restoreTrashedCourseService`, `permanentDeleteTrashedCourseService`, `useAdminCourses`, `useTrashedCourses`
+- **Type**: API callers + SWR hooks
+- **Path**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourses.ts`
+- **Purpose**: Sysadmin course catalog, trash list, and trash lifecycle mutations.
+- **Scope**: `course-admin-all-page`, `course-admin-trash-page`.
+- **Dependencies**: `apiFetch`, `admin:modify` permission on BE.
 
 ### Asset: duration helpers
 - **Name**: `formatDurationMs`, `parseDurationPartsToMs`, `splitMsToDurationParts`, `isDurationWithinMaxMs`

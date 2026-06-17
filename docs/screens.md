@@ -37,11 +37,18 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/instructor/courses/{courseId}/pricing` | Active | `InstructorCourseEditorPage` — route-backed pricing placeholder |
 | `/{locale}/instructor/courses/{courseId}/certificate` | Active | `InstructorCourseEditorPage` — route-backed certificate placeholder |
 | `/{locale}/instructor/tickets` | Active | `InstructorTicketsPage` — create ticket, thread, close (P58) |
-| `/{locale}/admin/courses` | Active | `CourseReviewPage` — admin draft review queue |
+| `/{locale}/admin/courses` | Active | Redirect → `/admin/courses/all` |
+| `/{locale}/admin/courses/all` | Active | `CourseAdminAllPage` — all courses + filter + move to trash |
+| `/{locale}/admin/courses/reviewing` | Active | `CourseReviewPage` (`scope="admin"`) — pending review queue |
+| `/{locale}/admin/courses/trash` | Active | `CourseAdminTrashPage` — restore / permanent delete |
 | `/{locale}/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | Active | Shared `Instructor*Page` screens imported directly from app routes |
 | `/{locale}/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}` | Active | Same shared screens |
 | `/{locale}/sysadmin` | Active | Sysadmin dashboard shell (`SysadminDashboardPage` placeholder) |
-| `/{locale}/sysadmin/courses` | Active | `CourseReviewPage` — sysadmin draft review queue |
+| `/{locale}/sysadmin/courses` | Active | Redirect → `/sysadmin/courses/all` |
+| `/{locale}/sysadmin/courses/all` | Active | `CourseAdminAllPage` — all courses + filter + move to trash |
+| `/{locale}/sysadmin/courses/reviewing` | Active | `CourseReviewPage` (`scope="sysadmin"`) — pending review queue |
+| `/{locale}/sysadmin/courses/reviewing/{courseId}/preview` | Active | `CourseReviewPreviewPage` — placeholder |
+| `/{locale}/sysadmin/courses/trash` | Active | `CourseAdminTrashPage` — restore / permanent delete |
 | `/{locale}/admin/taxonomy/{resource}` | Active | Shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags); create/edit increments `formDialogKey` and passes `key={formDialogKey}` to `TaxonomyFormDialog` so edit hydrates from list row `initialData` |
 | `/{locale}/sysadmin/taxonomy/{resource}` | Active | Same shared `TaxonomyListPage` (sysadmin menu + permissions) |
 | `/{locale}/*` (unknown path) | Active | Custom 404 — `NotFoundPage` via `not-found.tsx` chain |

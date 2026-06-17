@@ -15,7 +15,7 @@ _Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me
 - `Taxonomy`: `src/types/taxonomy`, `src/constants/taxonomy`, `src/api/callers/taxonomy`, `src/components/features/taxonomy`, `src/screen/common/taxonomy`, app routes under `admin/taxonomy/*` and `sysadmin/taxonomy/*`
 - `Media`: `src/types/media`, `src/constants/media`, `src/api/callers/media`, `src/components/features/media` (collection popup; no dedicated route page yet)
 - `Instructor`: `src/types/instructor.ts`, `src/constants/instructor`, `src/api/callers/instructor`, `src/api/hooks/instructor`, `src/components/features/instructor`, `src/screen/common/instructor`, `src/screen/instructor/tickets`, app routes under `admin/instructors/*`, `sysadmin/instructors/*`, `instructor/tickets`
-- `Course`: `src/types/course.ts`, `src/api/callers/course`, `src/api/hooks/course`, `src/components/features/course`, `src/screen/instructor/courses`, `src/screen/common/course`, app routes under `instructor/courses/*`, `admin/courses`, `sysadmin/courses`
+- `Course`: `src/types/course.ts`, `src/api/callers/course`, `src/api/hooks/course`, `src/components/features/course`, `src/screen/instructor/courses`, `src/screen/common/course`, app routes under `instructor/courses/*`, `admin/courses/{all,reviewing,trash}`, `sysadmin/courses/{all,reviewing,trash,reviewing/[courseId]/preview}`
 
 ## Responsibilities
 - `Ui` renders pages/sections and calls hooks/actions.
