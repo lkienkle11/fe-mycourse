@@ -1,4 +1,4 @@
-# Multi-stage Next.js 22 — mirrors CI: npm ci + npm run build + npm run start
+# Multi-stage Next.js 22 — mirrors CI: npm ci + npm run build + npm prune --omit=dev + npm run start
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -21,6 +21,7 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
     NEXT_PUBLIC_STREAM_GRPC_BASE_URL=${NEXT_PUBLIC_STREAM_GRPC_BASE_URL}
 
 RUN npm run build
+RUN npm prune --omit=dev
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app

@@ -200,6 +200,9 @@ npm ci
 
 # Production build — NEXT_PUBLIC_* variables are read from env/file here
 npm run build
+
+# Drop devDependencies from node_modules (smaller disk footprint on VPS)
+npm prune --omit=dev
 ```
 
 Smoke-test the build locally on the server (optional):
@@ -398,6 +401,7 @@ Frontend
   [ ] AUTH_COOKIE_DOMAIN is set to the parent domain (e.g. yourdomain.net).
   [ ] src/proxy.ts exists and locale routing is enforced.
   [ ] npm run build completed without errors.
+  [ ] npm prune --omit=dev completed (production node_modules only).
   [ ] PM2 mycourse-web is running and autorestart is enabled.
   [ ] pm2 save was run; PM2 startup unit was installed (pm2 startup systemd).
 
@@ -498,6 +502,7 @@ cd fe && npm ci
 
 # 3. Re-build (NEXT_PUBLIC_* must be present in env or .env.production.local)
 npm run build
+npm prune --omit=dev
 
 # 4. Reload PM2 with zero downtime (graceful reload, not restart)
 pm2 reload mycourse-web
@@ -527,6 +532,7 @@ cd fe && npm ci
 
 # 3. Rebuild from the previous state
 npm run build
+npm prune --omit=dev
 
 # 4. Reload PM2
 pm2 reload mycourse-web
@@ -588,7 +594,7 @@ File: **`.github/workflows/enforce-main-from-dev.yml`**. Trigger: **pull request
 
 File: **`.github/workflows/deploy-dev.yml`**. Trigger: **push to `dev`**. Concurrency: `fe-deploy-${{ github.ref }}` with **`cancel-in-progress: true`**.
 
-This workflow differs from the backend: there is **no artifact rsync** — the **`deploy`** job SSHs into the VPS, syncs git, does a **clean `node_modules`**, runs **`npm ci` + `npm run build` on the server**, then **`pm2 reload mycourse-web-dev`** (or starts `ecosystem.config.cjs --only mycourse-web-dev`). Like the backend, CI uses **`test` → `build` → `deploy`**: **`test`** runs `npm run quality:deps` (Madge + jscpd), **`npm run lint`**, then **`npm run test`**; **`build`** runs `npm ci` + `npm run build` on the runner so a broken mainline fails before SSH. Production bundles on the VPS come from the **server** build (ensure `NEXT_PUBLIC_API_URL` and related vars exist in the server env file referenced by PM2, e.g. `env_file` in `ecosystem.config.cjs`). Quality checks are **not** re-run on the VPS.
+This workflow differs from the backend: there is **no artifact rsync** — the **`deploy`** job SSHs into the VPS, syncs git, does a **clean `node_modules`**, runs **`npm ci` + `npm run build` + `npm prune --omit=dev` on the server**, then **`pm2 reload mycourse-web-dev`** (or starts `ecosystem.config.cjs --only mycourse-web-dev`). Like the backend, CI uses **`test` → `build` → `deploy`**: **`test`** runs `npm run quality:deps` (Madge + jscpd), **`npm run lint`**, then **`npm run test`**; **`build`** runs `npm ci` + `npm run build` on the runner so a broken mainline fails before SSH. Production bundles on the VPS come from the **server** build (ensure `NEXT_PUBLIC_API_URL` and related vars exist in the server env file referenced by PM2, e.g. `env_file` in `ecosystem.config.cjs`). Quality checks are **not** re-run on the VPS.
 
 ### Required GitHub Secrets (frontend)
 
@@ -605,7 +611,7 @@ This workflow differs from the backend: there is **no artifact rsync** — the *
 |-----|----------------|
 | `test` | Checkout, Node 22 (`cache: npm`), `npm ci` + **`npm run quality:deps`** + **`npm run lint`** + **`npm run test`** — fails on cycles, jscpd threshold, or ESLint errors |
 | `build` | After `test`: `npm ci` + `npm run build` — fails if the app does not compile |
-| `deploy` | After `build`: SSH → `cd $DEPLOY_PATH_DEV` → `git stash -u`, `git checkout dev`, `git pull`, **`rm -rf node_modules`**, `npm ci`, `npm run build`, PM2 reload/start **`mycourse-web-dev`** |
+| `deploy` | After `build`: SSH → `cd $DEPLOY_PATH_DEV` → `git stash -u`, `git checkout dev`, `git pull`, **`rm -rf node_modules`**, `npm ci`, `npm run build`, **`npm prune --omit=dev`**, PM2 reload/start **`mycourse-web-dev`** |
 
 ### Workflow (matches repo)
 
@@ -680,6 +686,7 @@ jobs:
             rm -rf node_modules && \
             npm ci && \
             npm run build && \
+            npm prune --omit=dev && \
             (pm2 reload mycourse-web-dev || pm2 start ecosystem.config.cjs --only mycourse-web-dev)"
 ```
 
@@ -687,6 +694,7 @@ jobs:
 
 - **`DEPLOY_PATH_DEV`** — same naming convention as the backend workflow secret (`be/.github/workflows/deploy-dev.yml`); values differ per service (BE vs FE paths).
 - **Clean `node_modules` on deploy** — guarantees lockfile-aligned installs after each pull (matches the workflow as of 2026).
+- **`npm prune --omit=dev` on deploy** — removes devDependencies from `node_modules` after build so the VPS keeps only runtime packages (ESLint, Madge, jscpd, TypeScript, etc. are not needed at runtime).
 - **`NEXT_PUBLIC_*` on the server** — must be present when **`npm run build`** runs on the VPS (e.g. `.env.production.local`, `.env.local`, or env injected before build). Changing them without rebuilding leaves a stale client bundle.
 - **`AUTH_COOKIE_DOMAIN`** — runtime / server-side for cookies; keep on the server, not required in GitHub Actions for this workflow.
 - **Backend CI** — **`test` → `build` → `deploy`**, branch **`master`**, **`rsync`** binary to `DEPLOY_PATH_DEV/bin/` — see [backend Appendix C](../../be-mycourse/docs/deploy.md#appendix-c--cicd-with-github-actions).
@@ -724,7 +732,7 @@ The middleware file is not registered. See [Appendix C](#appendix-c--middleware-
 ls /opt/mycourse/fe/src/proxy.ts   # must exist
 # If missing:
 # no rename required for this project setup
-npm run build && pm2 reload mycourse-web
+npm run build && npm prune --omit=dev && pm2 reload mycourse-web
 ```
 
 ### Login works but cookies are not sent to the API
@@ -735,7 +743,7 @@ Check `AUTH_COOKIE_DOMAIN`. If FE is at `yourdomain.net` and API is at `api.your
 # In .env.production.local or PM2 env:
 AUTH_COOKIE_DOMAIN=yourdomain.net
 # Then rebuild + reload
-npm run build && pm2 reload mycourse-web
+npm run build && npm prune --omit=dev && pm2 reload mycourse-web
 ```
 
 ### Auth tokens expire and the app does not recover
@@ -748,6 +756,7 @@ This variable is **baked in at build time**. Changing it in PM2 `env` does not u
 
 ```bash
 NEXT_PUBLIC_API_URL=https://api.yourdomain.net npm run build
+npm prune --omit=dev
 pm2 reload mycourse-web
 ```
 
@@ -789,7 +798,7 @@ sudo nginx -t                  # valid config after certbot edits?
 
 ## Appendix J — Docker alternative (optional)
 
-The primary production path remains **GitHub Actions → `npm ci` + `npm run build` on VPS + PM2** (Appendix G). For local or manual container deploy:
+The primary production path remains **GitHub Actions → `npm ci` + `npm run build` + `npm prune --omit=dev` on VPS + PM2** (Appendix G). For local or manual container deploy:
 
 ```bash
 cp .env.local.example .env.local
