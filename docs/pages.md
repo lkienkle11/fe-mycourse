@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-06-15 (OUTLINE tab mobile drag reorder via `SortableList` TouchSensor; DeltaEditor image embed link + drag resize)._
+_Last audited: 2026-06-17 (course version badges, `last_rejection_reason`, reorder nested merge). Prior: OUTLINE tab mobile drag reorder via `SortableList` TouchSensor; DeltaEditor image embed link + drag resize._
 
 ## Current pages
 

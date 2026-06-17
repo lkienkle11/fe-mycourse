@@ -1,6 +1,6 @@
 # Logic Flow
 
-_Last audited: 2026-06-12 (quiz single-choice validation + editor UI, course editor submit validation, quiz preview enforcement)._
+_Last audited: 2026-06-17 (course version numbering §12, reject-fork draft, reorder nested merge). Prior: quiz single-choice validation + editor UI, course editor submit validation._
 
 
 Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifecycle, data fetching, and form submission patterns.
@@ -390,3 +390,35 @@ Allowed inbound types by source (see `src/events/core/normalize-inbound.ts`):
 | `sse` | `notification`, `hello`, `pong` |
 | `websocket` | `notification`, `hello`, `ping`, `pong` |
 | `gRPC` | `notification`, `hello` |
+
+---
+
+## 12. Course version numbering (editor)
+
+```
+Instructor opens /instructor/courses/:courseId/*
+  ↓
+useCourseDetail → CourseDetail { live_version?, draft_version?, last_rejection_reason? }
+  ↓
+editable = draft_version?.status === "DRAFT"
+  ↓
+Header badges:
+  - versionBadge → draft_version.version_no (or live when no draft)
+  - publishedVersionBadge → live_version.version_no when both draft and live exist
+  ↓
+Submit for review (DRAFT only):
+  POST /api/v1/courses/:courseId/submit-review
+  → same version_no; status IN_REVIEW; tabs read-only until decision
+  ↓
+Admin reject:
+  POST /api/v1/course-reviews/:courseId/reject
+  → submitted row REJECTED (history); new DRAFT at max(version_no)+1
+  → FE shows last_rejection_reason on new draft; editable again
+  ↓
+Admin approve:
+  POST /api/v1/course-reviews/:courseId/approve
+  → submitted row becomes live_version; draft pointer cleared
+  → Prepare draft → next version max+1 cloned from published
+```
+
+Legacy data: if `current_draft_version_id` still points to `REJECTED`, **Reopen draft** calls `POST …/reopen-draft` to fork `max+1` (same as reject fork).

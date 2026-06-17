@@ -1,6 +1,6 @@
 # Course Collaboration Handoff
 
-_Last updated: 2026-06-05 (course i18n pass + hook relocation + validation follow-up)._
+_Last updated: 2026-06-17 (version numbering: reject forks `max+1` draft, `last_rejection_reason`, edit badge + `publishedVersionBadge`; reorder nested merge). Prior: 2026-06-05 course i18n pass._
 
 ## Purpose
 
@@ -64,7 +64,8 @@ Implemented API integration for:
 - section / lesson / sub-lesson CRUD
 - section / lesson / sub-lesson reorder
 - lease acquire / heartbeat / release
-- review submit / reopen / approve / reject
+- review submit / reopen (legacy fork) / approve / reject
+- `CourseDetail.last_rejection_reason` after reject-fork
 - learner course list / detail / enroll / progress callers
 
 ### Instructor screens and routes

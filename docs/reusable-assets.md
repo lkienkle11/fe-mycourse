@@ -504,10 +504,10 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `@dnd-kit/core`, `@dnd-kit/sortable`.
 
 ### Asset: course outline reorder helpers
-- **Name**: `assignSequentialOrderIndex`, `withOutlineSections`, `replaceSectionLessons`, `replaceLessonSubLessons`, `mergeReorderedLessons`, `mergeReorderedSubLessons`
+- **Name**: `assignSequentialOrderIndex`, `withOutlineSections`, `replaceSectionLessons`, `replaceLessonSubLessons`, `mergeReorderedLessons`, `mergeReorderedSections`, `mergeReorderedSubLessons`
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course.ts`
-- **Purpose**: Patch `CourseDetail.outline` for optimistic drag reorder and merge reorder API responses without duplicating nested outline shape logic.
+- **Purpose**: Patch `CourseDetail.outline` for optimistic drag reorder and merge reorder API responses without duplicating nested outline shape logic. `mergeReorderedLessons` / `mergeReorderedSections` keep existing nested `sub_lessons` / `lessons` when the API returns reorder metadata without full trees.
 - **Scope**: `useCourseOutlineReorder` hook; pairs with `reorderCourseSectionsService` / `reorderCourseLessonsService` / `reorderCourseSubLessonsService`.
 - **Dependencies**: `CourseDetail` / outline node types from `src/types/course.ts`.
 
