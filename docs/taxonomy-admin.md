@@ -114,6 +114,8 @@ Taxonomy list screens now use the built-in `DataTable` toolbar instead of a page
 - **Client checks**: Zod via `zodResolver` before submit; tree/description editors remain separate state (validated on submit through parent schema).
 - **API failures**: list delete and form create/update catch → `toastApiError(useTranslations("errors.codes"), error)` — never `taxonomy.common.errorGeneric` for API responses.
 
+**List query (BE):** `page`, `per_page`, `sort_by`, `sort_desc`, `status`, `search_by`, `search_value`, optional `include_images` (default `true`; `false` skips image URL hydration on topics/outcomes — used by course editor info tab via `useTaxonomyList`, not admin CRUD screens).
+
 ## Sample data
 
 Create rows via the admin UI or BE `curl` examples in `be-mycourse/docs/curl_api.md` §12.

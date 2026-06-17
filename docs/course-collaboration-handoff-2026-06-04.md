@@ -90,8 +90,8 @@ Implemented:
 - create course dialog
 - owner-only delete action
 - tabbed course editor
-- basic metadata editing
-- outline CRUD and reordering
+- basic metadata editing (info tab; taxonomy pickers with `include_images: false`)
+- outline CRUD and reordering (same `useCourseDetail` SWR cache — no refetch on tab switch)
 - collaborator management
 - English and Vietnamese translations for course list, editor tabs, dialogs, status badges, review queue, and course menu labels
 

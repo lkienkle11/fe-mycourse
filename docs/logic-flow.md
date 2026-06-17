@@ -398,7 +398,11 @@ Allowed inbound types by source (see `src/events/core/normalize-inbound.ts`):
 ```
 Instructor opens /instructor/courses/:courseId/*
   ↓
-useCourseDetail → CourseDetail { live_version?, draft_version?, last_rejection_reason? }
+useCourseDetail(courseId)
+  → GET /api/v1/courses/:id (full detail, once per courseId — SWR cache across editor tabs)
+  → CourseDetail { live_version?, draft_version?, last_rejection_reason? }
+  ↓
+Info tab: useTaxonomyList ×5 with include_images=false (parallel, SWR dedupe 5m)
   ↓
 editable = draft_version?.status === "DRAFT"
   ↓

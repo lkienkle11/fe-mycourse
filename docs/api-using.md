@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-06-08 (code-based API errors + `/api/v1/me` callers)._
+_Last audited: 2026-06-17 (course detail `include_outline` + taxonomy `include_images` query params)._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -298,7 +298,23 @@ const filters: ApiListQueryParams = {
 const url = buildQueryParams("/api/v1/taxonomy/levels", apiListQueryToRecord(filters));
 ```
 
-Domain modules may alias or extend this shape. Taxonomy extends it with `search_by` + `search_value`.
+Domain modules may alias or extend this shape. Taxonomy extends it with `search_by` + `search_value` and optional `include_images` (pass `false` to skip image URL hydration on list — used by course editor info tab pickers).
+
+---
+
+## Course detail (instructor)
+
+Callers: `src/api/callers/course/course.ts`, hook `useCourseDetail` in `src/api/hooks/course/useCourses.ts`.
+
+```ts
+// Course editor — one fetch per courseId, SWR cache shared across tabs
+const { data } = useCourseDetail(courseId);
+
+// Optional lighter payload for non-editor callers only
+const { data } = useCourseDetail(courseId, { includeOutline: false });
+```
+
+`getCourseDetailKey` appends `include_outline=false` when `includeOutline === false`. **Editor must not** vary this by tab — route-backed tabs (`/info`, `/outline`, …) remount the page; a stable key avoids refetch + skeleton on tab switch.
 
 ---
 
@@ -317,6 +333,9 @@ const { rows, pageInfo, mutate } = useTaxonomyList("levels", {
   status: "ACTIVE",
 });
 
+// Course editor info tab pickers (no image hydration)
+useTaxonomyList("topics", { page: 1, per_page: 100, include_images: false });
+
 // One-off service call
 await createTaxonomyService("tags", {
   name: "React",
@@ -324,7 +343,7 @@ await createTaxonomyService("tags", {
 });
 ```
 
-Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource tables live in `src/constants/taxonomy/resources.ts` (`TAXONOMY_RESOURCES`, `TAXONOMY_RESOURCE_KEYS`); lookup helpers are `getTaxonomyResourceConfig()` / `getTaxonomySearchableColumns()` in `src/lib/utils/taxonomy.ts`. Types (`TaxonomyResourceConfig`, `TaxonomyListColumn`, …) are in `src/types/taxonomy/`. List callers reuse `apiListQueryToRecord()` and append taxonomy typed-search fields (`search_by`, `search_value`) in caller scope. UI entry points: `src/screen/common/taxonomy/taxonomy-list-page.tsx` via role wrappers in `src/screen/{admin,sysadmin}/taxonomy/*/page.tsx`.
+Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource tables live in `src/constants/taxonomy/resources.ts` (`TAXONOMY_RESOURCES`, `TAXONOMY_RESOURCE_KEYS`); lookup helpers are `getTaxonomyResourceConfig()` / `getTaxonomySearchableColumns()` in `src/lib/utils/taxonomy.ts`. Types (`TaxonomyResourceConfig`, `TaxonomyListColumn`, `TaxonomyListFilters.include_images`, …) are in `src/types/taxonomy/`. List callers reuse `apiListQueryToRecord()` and append taxonomy typed-search fields (`search_by`, `search_value`, `include_images`) in caller scope. UI entry points: `src/screen/common/taxonomy/taxonomy-list-page.tsx` via role wrappers in `src/screen/{admin,sysadmin}/taxonomy/*/page.tsx`; course editor info tab via `editor-page.tsx`.
 
 See also `docs/taxonomy-admin.md`, `docs/instructor-admin.md`.
 

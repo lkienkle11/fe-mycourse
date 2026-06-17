@@ -527,6 +527,14 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `course-admin-all-page`, `course-admin-trash-page`.
 - **Dependencies**: `DataTable` column types, i18n `course.*`.
 
+### Asset: instructor course detail hook
+- **Name**: `getCourseDetailKey`, `getCourseDetailService`, `useCourseDetail`
+- **Type**: API callers + SWR hook
+- **Path**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourses.ts`
+- **Purpose**: Load `CourseDetail`; optional `{ includeOutline?: boolean }` appends `include_outline=false` for lighter info/collaborators tab loads (BE skips outline queries).
+- **Scope**: `editor-page.tsx` uses `useCourseDetail(courseId)` (default full detail). Optional `{ includeOutline: false }` for non-editor callers only.
+- **Dependencies**: `useApiDetailQuery`, `API_PRIVATE_ROUTES.course`.
+
 ### Asset: course-admin API services + hooks
 - **Name**: `listAdminCoursesService`, `listTrashedCoursesService`, `trashCourseService`, `restoreTrashedCourseService`, `permanentDeleteTrashedCourseService`, `useAdminCourses`, `useTrashedCourses`
 - **Type**: API callers + SWR hooks

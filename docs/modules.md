@@ -1,6 +1,6 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me/Media/Taxonomy/Instructor/Course)._
+_Last audited: 2026-06-17 (course read-path performance: `include_outline`, `include_images`, browser-verified info tab)._
 
 
 ## Module map
@@ -61,10 +61,10 @@ _Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me
 ## Course module
 
 - **Types**: `src/types/course.ts` — version status, `CourseDetail.last_rejection_reason`, outline nodes (`estimated_duration_ms` on section/lesson/sub-lesson), collaborators, leases, learner progress, request payloads (`UpsertCourseSubLessonPayload.estimated_duration_ms` optional for TEXT/QUIZ).
-- **API**: `src/api/callers/course/course.ts` (`deleteCourseSectionService` → `DELETE /api/v1/courses/:courseId/sections/:sectionId`, returns updated `CourseSection[]`), `src/api/hooks/course/useCourses.ts`; routes under `API_PRIVATE_ROUTES.course`.
+- **API**: `src/api/callers/course/course.ts` (`getCourseDetailKey` / `getCourseDetailService` accept `{ includeOutline?: boolean }` → query `include_outline=false` when omitted on info/collaborators tabs; `deleteCourseSectionService` → `DELETE /api/v1/courses/:courseId/sections/:sectionId`, returns updated `CourseSection[]`), `src/api/hooks/course/useCourses.ts` (`useCourseDetail(courseId, { includeOutline })`); routes under `API_PRIVATE_ROUTES.course`.
 - **UI**:
   - `src/screen/instructor/courses/page.tsx` — editable course list + create/delete owner flow
-  - `src/screen/instructor/courses/editor-page.tsx` — editor shell, status header (edit `version_no` badge + optional `publishedVersionBadge` when both draft and live exist), route-backed tab panels; `editable` only when `draft_version.status === "DRAFT"`; shows `last_rejection_reason` after reject-fork
+  - `src/screen/instructor/courses/editor-page.tsx` — editor shell, status header (edit `version_no` badge + optional `publishedVersionBadge` when both draft and live exist), route-backed tab panels; `useCourseDetail(courseId)` single SWR cache (tab switch = no refetch); taxonomy lists on **info** tab only (`include_images: false`); `editable` only when `draft_version.status === "DRAFT"`; shows `last_rejection_reason` after reject-fork
   - `src/screen/common/course/course-review-page.tsx` — shared admin/sysadmin review queue
   - `src/components/features/course/course-status-badge.tsx`
   - `src/components/shared/delta-editor.tsx` — shared WYSIWYG `DeltaEditor` + read-only `DeltaViewer` (Delta JSON; font picker; inline image/video via toolbar, paste, or drag-and-drop; embed × remove; `onObjectEmbedded` / `onDelete`)
@@ -84,7 +84,7 @@ _Last audited: 2026-06-08 (validation + code-based API error i18n across Auth/Me
 - **Reuse points**:
   - `SortableList` for section / lesson / sub-lesson ordering (mobile: `TouchSensor` + 44px grip handle)
   - `MediaCollectionDialog` + `ImageFileField` for thumbnail / preview video / Quill toolbar image & video embeds
-  - `useTaxonomyList` for metadata pickers
+  - `useTaxonomyList` for metadata pickers (info tab: `per_page: 100`, `include_images: false`)
   - `useInstructorRosterList` for collaborator selection
   - `next-intl` message dictionaries in `src/messages/{en,vi}.ts` for all course editor, review, badge, and menu copy
 
