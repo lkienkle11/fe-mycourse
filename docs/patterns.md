@@ -483,7 +483,7 @@ Before writing code for a new feature:
 
 - [ ] Read `docs/` — check architecture, flow, components, patterns
 - [ ] Run `npx gitnexus analyze --force` — understand impact
-- [ ] Before PR: `npm run quality:deps` and `npm run lint` (CI `test` on `dev` runs both) — see [`quality.md`](./quality.md)
+- [ ] Before PR: **`npm run check-all`** (CI `test` on `dev` runs **`npm run test-all`**) — see [`quality.md`](./quality.md)
 - [ ] Reuse utilities from `src/lib/utils/` (barrel) or direct paths for server-only files (`auth-session.ts`)
 - [ ] Place server data fetching in `src/api/callers/<domain>/`
 - [ ] Place SWR hooks in `src/api/hooks/<domain>/`

@@ -25,9 +25,7 @@ jobs:
       - name: Install dependencies and run quality checks
         run: |
           npm ci
-          npm run quality:deps
-          npm run lint
-          npm run test
+          npm run test-all
 
   build:
     needs: test

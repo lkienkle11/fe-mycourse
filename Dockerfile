@@ -1,4 +1,5 @@
-# Multi-stage Next.js 22 — mirrors CI: npm ci + npm run build + npm prune --omit=dev + npm run start
+# Multi-stage Next.js 22 — mirrors CI build stage: npm ci + npm run build + npm prune --omit=dev + npm run start
+# Quality gates (lint, biome, test, quality:deps) run in CI via `npm run test-all`; use `npm run check-all` locally before PR.
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
