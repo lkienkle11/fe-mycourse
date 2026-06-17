@@ -347,11 +347,9 @@ All primitives are re-exported from `src/components/ui/index.ts`.
 
 ---
 
-## Demo Components (`src/components/demo/`)
+## Demo Components
 
-| Component | File | Notes |
-|-----------|------|-------|
-| `RegisterForm` | `register-form.tsx` | Standalone demo registration form; not wired to a route or server action. Used for UI experimentation. |
+_No `src/components/demo/` folder — removed 2026-06-17 (unused demo `RegisterForm`; see Knip baseline in [`quality.md`](./quality.md))._
 
 ---
 

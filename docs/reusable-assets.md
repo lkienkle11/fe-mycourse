@@ -693,7 +693,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Writes `access_token`, `refresh_token`, and `session_id` cookies after login or email confirm. Uses `next/headers` `cookies()`.
 - **Scope**: `src/actions/auth/auth.ts` (`loginAction`, `confirmAction`) only.
 - **Import**: `import { setAuthSessionCookies } from "@/lib/utils/auth-session";`
-- **Dependencies**: `server-only`, `next/headers`, `buildAuthCookieOptions`, `getCookieDomain` from `./cookie`.
+- **Dependencies**: `server-only` (0.0.1), `next/headers`, `buildAuthCookieOptions`, `getCookieDomain` from `./cookie`.
 
 ### Asset: getCookieValue / setCookieValue
 - **Name**: `getCookieValue(name): Promise<string | null>`, `setCookieValue(name, value, options?): Promise<void>`

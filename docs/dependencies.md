@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-06-15 (@phosphor-icons/react 2.1.10 pinned)._
+_Last audited: 2026-06-17 (`server-only` 0.0.1 runtime; `knip` 6.17.1 dev; lockfile pinned)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -16,6 +16,7 @@ All dependencies for the `fe-mycourse` project. Checked against `package.json`.
 | `next` | 16.2.1 | App framework — App Router, Server Components, Server Actions, image optimization |
 | `react` | 19.2.4 | UI rendering engine |
 | `react-dom` | 19.2.4 | DOM bindings for React 19 |
+| `server-only` | 0.0.1 | Runtime guard — `import "server-only"` in `src/lib/utils/auth-session.ts`; build fails if imported from client bundles |
 
 > **Breaking-change notice:** This is Next.js **16.2** — APIs and conventions may differ from older versions. Always read `node_modules/next/dist/docs/` before using new Next.js features.
 
@@ -157,12 +158,13 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 | `@tailwindcss/postcss` | ^4 | Tailwind PostCSS plugin for v4 |
 | `eslint` | ^9 | Linter (`npm run lint`; CI via `test-all` on `dev`) |
 | `eslint-config-next` | 16.2.1 | ESLint rules for Next.js; extended in [`eslint.config.mjs`](../eslint.config.mjs) (`src/constants/**` data-only, `src/types/**` type-only) |
-| `@biomejs/biome` | ^2.4.9 | Fast formatter + linter (`npm run biome` alias, `npm run lint:biome`, `npm run format:biome`; CI via `test-all`) |
+| `@biomejs/biome` | ^2.4.9 | Formatter + linter: `npm run biome` / `lint:biome` (CI via `test-all`), `fix:biome` (`check --write`, safe fixes local), `format:biome` (format only) |
 | `@commitlint/cli` | ^20.5.0 | Commit message linting |
 | `@commitlint/config-conventional` | ^20.5.0 | Conventional Commits ruleset |
 | `shadcn` | 4.2.0 | CLI tool for adding shadcn/ui components to `src/components/ui/` |
-| `madge` | ^8.0.0 | Circular dependency analysis — `npm run cycles` / `cycles:json`; CI via `test-all` → `quality:deps` |
-| `jscpd` | ^4.2.4 | Clone detection — `npm run dupl` (`.jscpd.json`, excludes shadcn `src/components/ui/**`); CI via `test-all` → `quality:deps` |
+| `madge` | 8.0.0 | Circular dependency analysis — `npm run cycles` / `cycles:json`; CI via `test-all` → `quality:deps` |
+| `jscpd` | 4.2.4 | Clone detection — `npm run dupl` (`.jscpd.json`, excludes shadcn `src/components/ui/**`); CI via `test-all` → `quality:deps` |
+| `knip` | 6.17.1 | Dead-code gate — `npm run deadcode`; [`knip.json`](../knip.json) checks unused types + component/screen files only; CI via `test-all` |
 
 ---
 
@@ -184,4 +186,6 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 6. **Icons**: Default to `lucide-react` for shadcn/ui and new UI work. Use `react-icons` for brand logos and legacy FA/MD glyphs (sub-path imports only). Use `@phosphor-icons/react` when you need extra glyphs or weight variants (bold, fill, duotone) — import only the icons you use. Do not add a fourth icon library.
 7. **Toasts**: Use `sonner` (`toast.success`, `toast.error`, etc.) for user-facing notifications.
 8. **Stream events**: Subscribe with `hooks/events/*`; send WS via `postSocketOutbound`, broadcast via `postBroadcastOutbound`. Do not add a second WebSocket/SSE library without updating [`delivery.md`](./delivery.md).
-9. **Quality gates**: Run **`npm run check-all`** before PRs (or **`npm run test-all`** to match CI without build). CI on **`dev`** enforces `test-all` in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.
+9. **Server-only modules**: Use runtime dep `server-only` (0.0.1) with `import "server-only"` at file top (e.g. `auth-session.ts`). Never re-export from client-safe barrels (`@/lib/utils`).
+10. **Dead-code gate**: Dev dep `knip` (6.17.1) — `npm run deadcode`; config [`knip.json`](../knip.json). Pin version; run `npm install` after `package.json` changes to refresh `package-lock.json`.
+11. **Quality gates**: Run **`npm run check-all`** before PRs (or **`npm run test-all`** to match CI without build). CI on **`dev`** enforces `test-all` in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.
