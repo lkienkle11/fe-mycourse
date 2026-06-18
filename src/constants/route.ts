@@ -9,7 +9,11 @@ export const PRIVATE_ROUTES = {
   admin: {
     root: "/admin",
     users: "/admin/users",
-    courses: "/admin/courses",
+    courses: {
+      all: "/admin/courses/all",
+      reviewing: "/admin/courses/reviewing",
+      trash: "/admin/courses/trash",
+    },
     taxonomy: {
       levels: "/admin/taxonomy/levels",
       topics: "/admin/taxonomy/topics",
@@ -35,7 +39,11 @@ export const PRIVATE_ROUTES = {
     root: "/sysadmin",
     system: "/sysadmin/system",
     roles: "/sysadmin/roles",
-    courses: "/sysadmin/courses",
+    courses: {
+      all: "/sysadmin/courses/all",
+      reviewing: "/sysadmin/courses/reviewing",
+      trash: "/sysadmin/courses/trash",
+    },
     taxonomy: {
       levels: "/sysadmin/taxonomy/levels",
       topics: "/sysadmin/taxonomy/topics",
@@ -66,5 +74,8 @@ export const PRIVATE_RESOURCE_ROUTES = {
   instructor: {
     courseEditor: `${PRIVATE_ROUTES.instructor.courses}/:courseId/info`,
     courseEditorTab: `${PRIVATE_ROUTES.instructor.courses}/:courseId/:tab`,
+  },
+  sysadmin: {
+    courseReviewPreview: `${PRIVATE_ROUTES.sysadmin.courses.reviewing}/:courseId/preview`,
   },
 } as const;

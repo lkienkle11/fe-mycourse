@@ -1,5 +1,11 @@
-import { CourseReviewPage } from "@/screen/common/course/course-review-page";
+import { redirect } from "@/i18n/navigation";
+import { sysadminCoursesAllHref } from "@/lib/navigation/routes";
 
-export default function SysadminCourseReviewsRoute() {
-  return <CourseReviewPage scope="sysadmin" />;
+type Props = {
+  params: Promise<{ locale: string }>;
+};
+
+export default async function SysadminCoursesIndexRoute({ params }: Props) {
+  const { locale } = await params;
+  redirect({ href: sysadminCoursesAllHref, locale });
 }

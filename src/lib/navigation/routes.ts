@@ -107,7 +107,17 @@ export const instructorTicketsHref = toPrivateRoute(
 );
 
 export const adminUsersHref = toPrivateRoute(privateRoutes.admin.users);
-export const adminCoursesHref = toPrivateRoute(privateRoutes.admin.courses);
+export const adminCoursesAllHref = toPrivateRoute(
+  privateRoutes.admin.courses.all,
+);
+export const adminCoursesReviewingHref = toPrivateRoute(
+  privateRoutes.admin.courses.reviewing,
+);
+export const adminCoursesTrashHref = toPrivateRoute(
+  privateRoutes.admin.courses.trash,
+);
+/** @deprecated Use adminCoursesReviewingHref — kept for legacy references */
+export const adminCoursesHref = adminCoursesReviewingHref;
 export const adminTaxonomyLevelsHref = toPrivateRoute(
   privateRoutes.admin.taxonomy.levels,
 );
@@ -141,9 +151,22 @@ export const adminInstructorsTicketsHref = toPrivateRoute(
 
 export const sysadminSystemHref = toPrivateRoute(privateRoutes.sysadmin.system);
 export const sysadminRolesHref = toPrivateRoute(privateRoutes.sysadmin.roles);
-export const sysadminCoursesHref = toPrivateRoute(
-  privateRoutes.sysadmin.courses,
+export const sysadminCoursesAllHref = toPrivateRoute(
+  privateRoutes.sysadmin.courses.all,
 );
+export const sysadminCoursesReviewingHref = toPrivateRoute(
+  privateRoutes.sysadmin.courses.reviewing,
+);
+export const sysadminCoursesTrashHref = toPrivateRoute(
+  privateRoutes.sysadmin.courses.trash,
+);
+
+export function sysadminCourseReviewPreviewHref(courseId: string): string {
+  return toPrivateResourceRoute(
+    privateResourceRoutes.sysadmin.courseReviewPreview,
+    { courseId },
+  );
+}
 export const sysadminTaxonomyLevelsHref = toPrivateRoute(
   privateRoutes.sysadmin.taxonomy.levels,
 );

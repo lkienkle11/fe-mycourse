@@ -80,5 +80,11 @@ export const API_PRIVATE_ROUTES = {
     learnerById: "/api/v1/learner-courses/:courseId",
     learnerEnroll: "/api/v1/learner-courses/:courseId/enroll",
     learnerProgress: "/api/v1/learner-courses/:courseId/progress",
+    adminCourses: "/api/v1/course-admin/courses",
+    adminCoursesTrash: "/api/v1/course-admin/courses/trash",
+    adminCourseTrash: "/api/v1/course-admin/courses/:courseId/trash",
+    adminCourseRestore: "/api/v1/course-admin/courses/:courseId/restore",
+    adminCoursePermanentDelete:
+      "/api/v1/course-admin/courses/:courseId/permanent",
   },
 } as const;

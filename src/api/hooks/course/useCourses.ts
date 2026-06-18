@@ -1,14 +1,18 @@
 "use client";
 
 import {
+  getAdminCoursesKey,
   getCourseDetailKey,
   getCourseDetailService,
   getCourseReviewQueueKey,
   getEditableCoursesKey,
   getLearningCourseService,
+  getTrashedCoursesKey,
+  listAdminCoursesService,
   listEditableCoursesService,
   listPendingCourseReviewsService,
   listPublishedCoursesService,
+  listTrashedCoursesService,
 } from "@/api/callers/course";
 import { useApiDetailQuery, useApiRowsQuery } from "@/api/hooks/shared";
 import type { CourseDetail, CourseListItem } from "@/types/course";
@@ -21,10 +25,17 @@ export function useEditableCourses() {
   );
 }
 
-export function useCourseDetail(courseId: string | null) {
+export function useCourseDetail(
+  courseId: string | null,
+  options?: { includeOutline?: boolean },
+) {
+  const includeOutline = options?.includeOutline ?? true;
   return useApiDetailQuery<CourseDetail>(
-    courseId ? getCourseDetailKey(courseId) : null,
-    () => getCourseDetailService(courseId as string),
+    courseId ? getCourseDetailKey(courseId, { includeOutline }) : null,
+    () =>
+      getCourseDetailService(courseId as string, {
+        includeOutline,
+      }),
     { revalidateOnFocus: true },
   );
 }
@@ -49,6 +60,22 @@ export function useLearningCourse(courseId: string | null) {
   return useApiDetailQuery<CourseDetail>(
     courseId ? `learning-course-${courseId}` : null,
     () => getLearningCourseService(courseId as string),
+    { revalidateOnFocus: true },
+  );
+}
+
+export function useAdminCourses() {
+  return useApiRowsQuery<CourseListItem>(
+    getAdminCoursesKey(),
+    listAdminCoursesService,
+    { revalidateOnFocus: true },
+  );
+}
+
+export function useTrashedCourses() {
+  return useApiRowsQuery<CourseListItem>(
+    getTrashedCoursesKey(),
+    listTrashedCoursesService,
     { revalidateOnFocus: true },
   );
 }
