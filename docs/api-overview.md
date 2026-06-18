@@ -1,6 +1,6 @@
 # API Overview (`fe-mycourse`)
 
-_Last audited: 2026-06-08 (Me API callers + code-based error i18n)._
+_Last audited: 2026-06-17 (course/taxonomy read-path performance params + instructor course routes)._
 
 
 ## Scope
@@ -50,6 +50,40 @@ Mounted under `API_PRIVATE_ROUTES.instructor` — see `src/api/callers/instructo
 - `GET/POST/PATCH/DELETE /api/v1/instructor-profiles`, `GET …/me`
 - `GET/POST/DELETE …/instructors/:id/expertise/topics|skills`
 - `GET/POST /api/v1/instructor-tickets`, messages, `POST …/close`
+
+## Course routes (private)
+
+Mounted under `API_PRIVATE_ROUTES.course` — see `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourses.ts`, and `docs/instructor-admin.md`:
+
+| Route | Caller / hook | Notes |
+|-------|---------------|-------|
+| `GET /api/v1/courses/my` | `listMyCoursesService` / `useMyCourses` | Instructor editable course list |
+| `POST /api/v1/courses` | `createCourseService` | Body `{ title }` only |
+| `GET /api/v1/courses/:courseId` | `getCourseDetailService` / `useCourseDetail` | Optional `include_outline=false` on info/collaborators tabs |
+| `PATCH /api/v1/courses/:courseId/basic-info` | `updateCourseBasicInfoService` | Optimistic lock via `expected_row_version` |
+| `DELETE /api/v1/courses/:courseId` | `deleteCourseService` | Owner-only |
+| Collaborator CRUD | `*Collaborator*Service` | Under `/courses/:courseId/collaborators` |
+| Outline CRUD / reorder | `*Section*`, `*Lesson*`, `*SubLesson*` services | Outline tab only (`includeOutline: true`) |
+| Lease acquire/heartbeat/release | `*Lease*Service` | Edit coordination |
+| `POST …/submit-review` | `submitCourseReviewService` | Draft → `IN_REVIEW` |
+| `POST …/reopen-draft` | `reopenCourseDraftService` | Legacy fork from rejected version |
+
+**Read-path performance (instructor editor):**
+
+- `useCourseDetail(courseId)` — full detail once per courseId; SWR cache reused when switching tabs (no refetch).
+- Info tab only: `useTaxonomyList` with `include_images: false`.
+
+See `docs/api-using.md` § Course detail and § Taxonomy.
+
+## Taxonomy routes (private)
+
+`API_PRIVATE_ROUTES.taxonomy` — callers in `src/api/callers/taxonomy/taxonomy.ts`, hook `useTaxonomyList` in `src/api/hooks/taxonomy/useTaxonomy.ts`.
+
+List query extends `ApiListQueryParams` with `search_by`, `search_value`, and optional `include_images` (`false` skips image URL hydration — course editor pickers only; admin CRUD screens keep default `true`).
+
+## Media routes (private)
+
+`API_PRIVATE_ROUTES.media` — `src/api/callers/media/media.ts`, `useMediaFiles`. Used by `MediaCollectionDialog` (thumbnail, preview video, Quill embeds). See `docs/media-collection.md`.
 
 ## Error handling rules
 

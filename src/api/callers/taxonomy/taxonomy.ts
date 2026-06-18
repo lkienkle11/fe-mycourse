@@ -26,6 +26,7 @@ export function getTaxonomyListKey(
   const query = apiListQueryToRecord(filters);
   if (filters.search_by) query.search_by = filters.search_by;
   if (filters.search_value) query.search_value = filters.search_value;
+  if (filters.include_images === false) query.include_images = "false";
   return buildQueryParams(taxonomyBasePath(resourceKey), query);
 }
 

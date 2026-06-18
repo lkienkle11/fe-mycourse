@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-06-15 (OUTLINE tab mobile drag reorder via `SortableList` TouchSensor; DeltaEditor image embed link + drag resize)._
+_Last audited: 2026-06-17 (course version badges, `last_rejection_reason`, reorder nested merge). Prior: OUTLINE tab mobile drag reorder via `SortableList` TouchSensor; DeltaEditor image embed link + drag resize._
 
 ## Current pages
 
@@ -19,7 +19,10 @@ _Last audited: 2026-06-15 (OUTLINE tab mobile drag reorder via `SortableList` To
 | `/{locale}/instructor/courses/{courseId}/pricing` | `src/app/[locale]/instructor/courses/[courseId]/pricing/page.tsx` | `InstructorCourseEditorPage` (`tab="pricing"`) via shared `renderInstructorCourseEditorRoute` | Implemented |
 | `/{locale}/instructor/courses/{courseId}/certificate` | `src/app/[locale]/instructor/courses/[courseId]/certificate/page.tsx` | `InstructorCourseEditorPage` (`tab="certificate"`) via shared `renderInstructorCourseEditorRoute` | Implemented |
 | `/{locale}/instructor/tickets` | `src/app/[locale]/instructor/tickets/page.tsx` | `InstructorTicketsPage` | Implemented |
-| `/{locale}/admin/courses` | `src/app/[locale]/admin/courses/page.tsx` | `CourseReviewPage` (`scope="admin"`) | Implemented |
+| `/{locale}/admin/courses` | `src/app/[locale]/admin/courses/page.tsx` | Redirect → `/admin/courses/all` | Implemented |
+| `/{locale}/admin/courses/all` | `src/app/[locale]/admin/courses/all/page.tsx` | `CourseAdminAllPage` | Implemented |
+| `/{locale}/admin/courses/reviewing` | `src/app/[locale]/admin/courses/reviewing/page.tsx` | `CourseReviewPage` (`scope="admin"`) | Implemented |
+| `/{locale}/admin/courses/trash` | `src/app/[locale]/admin/courses/trash/page.tsx` | `CourseAdminTrashPage` | Implemented |
 | `/{locale}/admin/instructors/roster` | `src/app/[locale]/admin/instructors/roster/page.tsx` | `InstructorRosterPage` | Implemented |
 | `/{locale}/admin/instructors/approvals` | `…/approvals/page.tsx` | `InstructorApprovalsPage` | Implemented |
 | `/{locale}/admin/instructors/profiles` | `…/profiles/page.tsx` | `InstructorProfilesPage` | Implemented |
@@ -27,7 +30,11 @@ _Last audited: 2026-06-15 (OUTLINE tab mobile drag reorder via `SortableList` To
 | `/{locale}/admin/instructors/tickets` | `…/tickets/page.tsx` | `InstructorTicketsAdminPage` | Implemented |
 | `/{locale}/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}` | `src/app/[locale]/sysadmin/instructors/*/page.tsx` | Same shared instructor screens as admin | Implemented |
 | `/{locale}/sysadmin` | `src/app/[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` (placeholder) | Implemented |
-| `/{locale}/sysadmin/courses` | `src/app/[locale]/sysadmin/courses/page.tsx` | `CourseReviewPage` (`scope="sysadmin"`) | Implemented |
+| `/{locale}/sysadmin/courses` | `src/app/[locale]/sysadmin/courses/page.tsx` | Redirect → `/sysadmin/courses/all` | Implemented |
+| `/{locale}/sysadmin/courses/all` | `src/app/[locale]/sysadmin/courses/all/page.tsx` | `CourseAdminAllPage` | Implemented |
+| `/{locale}/sysadmin/courses/reviewing` | `src/app/[locale]/sysadmin/courses/reviewing/page.tsx` | `CourseReviewPage` (`scope="sysadmin"`) | Implemented |
+| `/{locale}/sysadmin/courses/reviewing/{courseId}/preview` | `src/app/[locale]/sysadmin/courses/reviewing/[courseId]/preview/page.tsx` | `CourseReviewPreviewPage` | Implemented (placeholder) |
+| `/{locale}/sysadmin/courses/trash` | `src/app/[locale]/sysadmin/courses/trash/page.tsx` | `CourseAdminTrashPage` | Implemented |
 | `/{locale}/admin/taxonomy/{resource}` | `src/app/[locale]/admin/taxonomy/*/page.tsx` | `TaxonomyListPage` (`src/screen/common/taxonomy/`) — resource: levels, topics, outcomes, skills, tags | Implemented |
 | `/{locale}/sysadmin/taxonomy/{resource}` | `src/app/[locale]/sysadmin/taxonomy/*/page.tsx` | Same shared `TaxonomyListPage` (sysadmin menu) | Implemented |
 | `/{locale}/*` (unknown path) | `src/app/[locale]/not-found.tsx`, `(web)/not-found.tsx`, `src/app/not-found.tsx` | `NotFoundPage` — localized 404 with Header + CTA | Implemented |

@@ -58,4 +58,12 @@ export const PERMISSION_IDS = {
   InstructorExpertiseUpdate: "P56",
   InstructorExpertiseDelete: "P57",
   InstructorTicketClose: "P58",
+  CourseReviewRead: "P59",
+  CourseReviewApprove: "P60",
+  CourseReviewReject: "P61",
+  CourseCatalogRead: "P62",
+  CourseCatalogTrash: "P63",
+  CourseTrashRead: "P64",
+  CourseTrashRestore: "P65",
+  CourseTrashDelete: "P66",
 } as const;

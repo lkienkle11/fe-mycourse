@@ -82,7 +82,12 @@ src/app/
     └── sysadmin/
         ├── layout.tsx
         ├── page.tsx
-        ├── courses/page.tsx    # System-admin course review queue
+        ├── courses/
+        │   ├── page.tsx            # Redirect → all
+        │   ├── all/page.tsx
+        │   ├── reviewing/page.tsx
+        │   ├── reviewing/[courseId]/preview/page.tsx
+        │   └── trash/page.tsx
         ├── taxonomy/       # App routes → shared TaxonomyListPage (resourceKey per route)
         └── instructors/    # same five shared screens as admin
 ```
@@ -98,7 +103,10 @@ src/screen/
 │   ├── index.ts            # Barrel: shared screens (home, taxonomy, instructor, course)
 │   ├── course/
 │   │   ├── index.ts
-│   │   └── course-review-page.tsx  # Shared admin/sysadmin course review queue
+│   │   ├── course-admin-all-page.tsx
+│   │   ├── course-admin-trash-page.tsx
+│   │   ├── course-review-page.tsx      # Shared admin/sysadmin review queue
+│   │   └── course-review-preview-page.tsx
 │   ├── instructor/
 │   │   ├── index.ts
 │   │   ├── instructor-roster-page.tsx

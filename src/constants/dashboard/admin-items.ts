@@ -1,11 +1,14 @@
 import { BookOpen, LayoutDashboard, Users } from "lucide-react";
+import { COURSE_GROUP_READ_PERMISSIONS } from "@/constants/course/resources";
 import { INSTRUCTOR_MENU_ICONS } from "@/constants/dashboard/instructor-icons";
 import { TAXONOMY_MENU_ICONS } from "@/constants/dashboard/taxonomy-icons";
 import { INSTRUCTOR_GROUP_READ_PERMISSIONS } from "@/constants/instructor/resources";
 import { PERMISSIONS } from "@/constants/permissions";
 import { TAXONOMY_GROUP_READ_PERMISSIONS } from "@/constants/taxonomy/resources";
 import {
-  adminCoursesHref,
+  adminCoursesAllHref,
+  adminCoursesReviewingHref,
+  adminCoursesTrashHref,
   adminInstructorsApprovalsHref,
   adminInstructorsExpertiseHref,
   adminInstructorsProfilesHref,
@@ -47,9 +50,36 @@ export const ADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
   {
     id: "admin-courses",
     title: "Courses",
-    href: adminCoursesHref,
+    titleKey: "course.menu.group",
     icon: BookOpen,
-    permissions: [PERMISSIONS.CourseRead],
+    permissions: COURSE_GROUP_READ_PERMISSIONS,
+    permissionMode: "any",
+    children: [
+      {
+        id: "admin-courses-all",
+        title: "All courses",
+        titleKey: "course.menu.all",
+        href: adminCoursesAllHref,
+        icon: BookOpen,
+        permissions: [PERMISSIONS.CourseCatalogRead],
+      },
+      {
+        id: "admin-courses-reviewing",
+        title: "Reviewing",
+        titleKey: "course.menu.reviewing",
+        href: adminCoursesReviewingHref,
+        icon: BookOpen,
+        permissions: [PERMISSIONS.CourseReviewRead],
+      },
+      {
+        id: "admin-courses-trash",
+        title: "Trash",
+        titleKey: "course.menu.trash",
+        href: adminCoursesTrashHref,
+        icon: BookOpen,
+        permissions: [PERMISSIONS.CourseTrashRead],
+      },
+    ],
   },
   {
     id: "admin-taxonomy",

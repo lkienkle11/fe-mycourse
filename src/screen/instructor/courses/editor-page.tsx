@@ -83,7 +83,12 @@ export function InstructorCourseEditorPage({
   const editableVersion = data?.draft_version;
   const liveVersion = data?.live_version;
   const activeVersion = editableVersion ?? liveVersion;
-  const editable = Boolean(editableVersion);
+  const editable = editableVersion?.status === "DRAFT";
+  const rejectionReason =
+    data?.last_rejection_reason ??
+    (editableVersion?.status === "REJECTED"
+      ? editableVersion.rejection_reason
+      : "");
   const canManageCollaborators = data?.collaborator_role === "OWNER";
   const outline = data?.outline ?? [];
 
@@ -143,7 +148,8 @@ export function InstructorCourseEditorPage({
     editableVersion,
     mutateDetail: mutate,
   });
-  const basicInfoFilters = tab === "info" ? { page: 1, per_page: 100 } : null;
+  const basicInfoFilters =
+    tab === "info" ? { page: 1, per_page: 100, include_images: false } : null;
   const rosterFilters =
     tab === "collaborators" ? { page: 1, per_page: 100 } : null;
   const { rows: levelRows } = useTaxonomyList("levels", basicInfoFilters);
@@ -238,7 +244,7 @@ export function InstructorCourseEditorPage({
 
   useRegisterDashboardPageHeader(headerOverride);
 
-  if (isLoading) {
+  if (!data && isLoading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
@@ -389,18 +395,26 @@ export function InstructorCourseEditorPage({
           <CourseStatusBadge status={activeVersion.status} />
           <Badge variant="outline">
             {tCommon("versionBadge", {
-              version: String(activeVersion.version_no),
+              version: String(
+                editableVersion?.version_no ?? liveVersion?.version_no ?? 0,
+              ),
             })}
           </Badge>
+          {liveVersion && editableVersion ? (
+            <Badge variant="secondary">
+              {tCommon("publishedVersionBadge", {
+                version: String(liveVersion.version_no),
+              })}
+            </Badge>
+          ) : null}
           <Badge variant="outline">
             {tCommon(`collaboratorRole.${data.collaborator_role}`)}
           </Badge>
         </div>
-        {editableVersion?.status === "REJECTED" &&
-        editableVersion.rejection_reason ? (
+        {rejectionReason ? (
           <p className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
             {tEditor("rejectionReason", {
-              reason: editableVersion.rejection_reason,
+              reason: rejectionReason,
             })}
           </p>
         ) : null}

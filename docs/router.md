@@ -123,11 +123,18 @@ src/app/[locale]/
 | `/vi/instructor/courses/{courseId}/pricing` | `[locale]/instructor/courses/[courseId]/pricing/page.tsx` | `InstructorCourseEditorPage` (`tab="pricing"`) | ✅ Implemented |
 | `/vi/instructor/courses/{courseId}/certificate` | `[locale]/instructor/courses/[courseId]/certificate/page.tsx` | `InstructorCourseEditorPage` (`tab="certificate"`) | ✅ Implemented |
 | `/vi/instructor/tickets` | `[locale]/instructor/tickets/page.tsx` | `InstructorTicketsPage` | ✅ Implemented |
-| `/vi/admin/courses` | `[locale]/admin/courses/page.tsx` | `CourseReviewPage` (`scope="admin"`) | ✅ Implemented |
+| `/vi/admin/courses` | `[locale]/admin/courses/page.tsx` | Redirect → `/admin/courses/all` | ✅ Implemented |
+| `/vi/admin/courses/all` | `[locale]/admin/courses/all/page.tsx` | `CourseAdminAllPage` | ✅ Implemented |
+| `/vi/admin/courses/reviewing` | `[locale]/admin/courses/reviewing/page.tsx` | `CourseReviewPage` (`scope="admin"`) | ✅ Implemented |
+| `/vi/admin/courses/trash` | `[locale]/admin/courses/trash/page.tsx` | `CourseAdminTrashPage` | ✅ Implemented |
 | `/vi/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | `admin/instructors/*/page.tsx` | Shared instructor screens | ✅ Implemented |
 | `/vi/sysadmin/instructors/*` | `sysadmin/instructors/*/page.tsx` | Shared instructor screens | ✅ Implemented |
 | `/vi/sysadmin` | `[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` | ✅ Shell + placeholder |
-| `/vi/sysadmin/courses` | `[locale]/sysadmin/courses/page.tsx` | `CourseReviewPage` (`scope="sysadmin"`) | ✅ Implemented |
+| `/vi/sysadmin/courses` | `[locale]/sysadmin/courses/page.tsx` | Redirect → `/sysadmin/courses/all` | ✅ Implemented |
+| `/vi/sysadmin/courses/all` | `[locale]/sysadmin/courses/all/page.tsx` | `CourseAdminAllPage` | ✅ Implemented |
+| `/vi/sysadmin/courses/reviewing` | `[locale]/sysadmin/courses/reviewing/page.tsx` | `CourseReviewPage` (`scope="sysadmin"`) | ✅ Implemented |
+| `/vi/sysadmin/courses/reviewing/:courseId/preview` | `[locale]/sysadmin/courses/reviewing/.../preview/page.tsx` | `CourseReviewPreviewPage` (placeholder) | ✅ Implemented |
+| `/vi/sysadmin/courses/trash` | `[locale]/sysadmin/courses/trash/page.tsx` | `CourseAdminTrashPage` | ✅ Implemented |
 | `/vi/admin/taxonomy/levels` (and topics, outcomes, skills, tags) | `admin/taxonomy/*/page.tsx` | Shared `TaxonomyListPage` | ✅ Implemented |
 | `/vi/sysadmin/taxonomy/*` | `sysadmin/taxonomy/*/page.tsx` | Shared `TaxonomyListPage` | ✅ Implemented |
 | `/vi/this-route-does-not-exist` (any unknown path) | `not-found.tsx` chain | `NotFoundPage` | ✅ Implemented |

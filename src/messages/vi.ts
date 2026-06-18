@@ -283,6 +283,14 @@ const messages = {
         tags: "Thẻ",
       },
     },
+    course: {
+      menu: {
+        group: "Khóa học",
+        all: "Tất cả khóa học",
+        reviewing: "Chờ xét duyệt",
+        trash: "Khóa học rác",
+      },
+    },
   },
   media: {
     validation: {
@@ -592,6 +600,7 @@ const messages = {
       back: "Quay lại",
       noVersionYet: "Chưa có phiên bản",
       versionBadge: "Phiên bản {version}",
+      publishedVersionBadge: "Đã duyệt v{version}",
       status: {
         DRAFT: "Bản nháp",
         IN_REVIEW: "Đang duyệt",
@@ -664,8 +673,10 @@ const messages = {
       columns: {
         course: "Khóa học",
         owner: "Chủ sở hữu",
+        version: "Phiên bản",
         status: "Trạng thái",
       },
+      previewButton: "Xem trước",
       loading: "Đang tải hàng chờ duyệt...",
       empty: "Không có khóa học nào đang chờ duyệt.",
       approve: "Duyệt",
@@ -680,6 +691,66 @@ const messages = {
         rejected: "Đã từ chối khóa học.",
         approveError: "Không thể duyệt khóa học.",
         rejectError: "Không thể từ chối khóa học.",
+      },
+      preview: {
+        title: "Xem trước khóa học",
+        placeholder: "Trang này đang được phát triển sau",
+      },
+    },
+    menu: {
+      group: "Khóa học",
+      all: "Tất cả khóa học",
+      reviewing: "Chờ xét duyệt",
+      trash: "Khóa học rác",
+    },
+    adminAll: {
+      title: "Tất cả khóa học",
+      description:
+        "Các khóa học đã phê duyệt và đang phát hành, không nằm trong thùng rác. Cột phiên bản là bản publish hiện tại.",
+      loading: "Đang tải khóa học...",
+      empty: "Không có khóa học đã phê duyệt.",
+      columns: {
+        course: "Khóa học",
+        owner: "Chủ sở hữu",
+        version: "Phiên bản publish",
+      },
+      actions: {
+        menu: "Thao tác",
+        moveToTrash: "Cho vào thùng rác",
+      },
+      confirmTrash: {
+        title: "Chuyển khóa học vào thùng rác?",
+        description:
+          "“{title}” sẽ bị ẩn khỏi người học và trình biên tập cho đến khi khôi phục từ thùng rác. Có thể hoàn tác thao tác này.",
+      },
+      toast: {
+        movedToTrash: "Đã chuyển khóa học vào thùng rác.",
+      },
+    },
+    trash: {
+      title: "Khóa học rác",
+      description:
+        "Các khóa học đã phê duyệt được chuyển vào thùng rác. Không thể chỉnh sửa hoặc học cho đến khi khôi phục hoặc xóa vĩnh viễn.",
+      loading: "Đang tải thùng rác...",
+      empty: "Không có khóa học nào trong thùng rác.",
+      columns: {
+        course: "Khóa học",
+        owner: "Chủ sở hữu",
+        version: "Phiên bản",
+        status: "Trạng thái",
+      },
+      actions: {
+        menu: "Thao tác",
+        restore: "Khôi phục",
+        permanentDelete: "Xóa vĩnh viễn",
+      },
+      confirmDelete: {
+        title: "Xóa khóa học vĩnh viễn?",
+        description: "“{title}” sẽ bị xóa hoàn toàn. Không thể hoàn tác.",
+      },
+      toast: {
+        restored: "Đã khôi phục khóa học.",
+        deleted: "Đã xóa khóa học vĩnh viễn.",
       },
     },
     editor: {

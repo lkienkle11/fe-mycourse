@@ -55,8 +55,18 @@ export async function listEditableCoursesService(): Promise<CourseListItem[]> {
   return data.data ?? [];
 }
 
-export function getCourseDetailKey(courseId: string): string {
-  return courseUrl(routes.byId, courseId);
+export function getCourseDetailKey(
+  courseId: string,
+  options?: { includeOutline?: boolean },
+): string {
+  const query: Record<string, string> = {};
+  if (options?.includeOutline === false) {
+    query.include_outline = "false";
+  }
+  return requireUrl(
+    buildQueryParams(routes.byId, query, { courseId: String(courseId) }),
+    "Invalid course URL",
+  );
 }
 
 export async function createCourseService(
@@ -74,9 +84,10 @@ export async function createCourseService(
 
 export async function getCourseDetailService(
   courseId: string,
+  options?: { includeOutline?: boolean },
 ): Promise<CourseDetail> {
   const { data } = await apiFetch<ApiResponse<CourseDetail>>(
-    getCourseDetailKey(courseId),
+    getCourseDetailKey(courseId, options),
   );
   if (!data.data) {
     throw new Error(data.message || "Failed to load course");
@@ -537,4 +548,60 @@ export async function getCourseProgressService(
     throw new Error(data.message || "Failed to load progress");
   }
   return data.data;
+}
+
+export function getAdminCoursesKey(): string {
+  return routes.adminCourses;
+}
+
+export function getTrashedCoursesKey(): string {
+  return routes.adminCoursesTrash;
+}
+
+export async function listAdminCoursesService(): Promise<CourseListItem[]> {
+  const { data } = await apiFetch<ApiResponse<CourseListItem[]>>(
+    routes.adminCourses,
+  );
+  return data.data ?? [];
+}
+
+export async function listTrashedCoursesService(): Promise<CourseListItem[]> {
+  const { data } = await apiFetch<ApiResponse<CourseListItem[]>>(
+    routes.adminCoursesTrash,
+  );
+  return data.data ?? [];
+}
+
+export async function restoreTrashedCourseService(
+  courseId: string,
+): Promise<void> {
+  const url = requireUrl(
+    buildQueryParams(routes.adminCourseRestore, undefined, {
+      courseId: String(courseId),
+    }),
+    "Invalid restore URL",
+  );
+  await apiPost(url, {});
+}
+
+export async function trashCourseService(courseId: string): Promise<void> {
+  const url = requireUrl(
+    buildQueryParams(routes.adminCourseTrash, undefined, {
+      courseId: String(courseId),
+    }),
+    "Invalid trash URL",
+  );
+  await apiPost(url, {});
+}
+
+export async function permanentDeleteTrashedCourseService(
+  courseId: string,
+): Promise<void> {
+  const url = requireUrl(
+    buildQueryParams(routes.adminCoursePermanentDelete, undefined, {
+      courseId: String(courseId),
+    }),
+    "Invalid permanent delete URL",
+  );
+  await apiDelete(url);
 }

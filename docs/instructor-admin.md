@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-06-08 (Zod validation + code-based API errors)._
+_Last audited: 2026-06-17 (course info tab load performance: `include_outline`, `include_images`; browser-verified reject-fork UI)._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -16,7 +16,9 @@ Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `
 | My tickets | — | — | `/instructor/tickets` |
 | My courses | — | — | `/instructor/courses` |
 | Course editor | — | — | `/instructor/courses/{courseId}/{info\|outline\|collaborators\|pricing\|certificate}` |
-| Course reviews | `/admin/courses` | `/sysadmin/courses` | — |
+| Course reviews | `/admin/courses/reviewing` | `/sysadmin/courses/reviewing` | — |
+| Review preview | — | `/sysadmin/courses/reviewing/{courseId}/preview` | — |
+| Course catalog (all / trash) | `/admin/courses/all`, `/admin/courses/trash` | `/sysadmin/courses/all`, `/sysadmin/courses/trash` | — |
 
 Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages). Course review queues are implemented for admin/sysadmin; instructor course authoring is implemented under the instructor dashboard.
 
@@ -83,6 +85,10 @@ Course authoring / review reuses the same dashboard and API patterns:
 **My Courses** (`InstructorCoursesPage`): create dialog sends `{ title }` only; slug preview is read-only (`slugifyName(title)`). Title must have ≥5 non-whitespace characters (FE `courseCreateSchema` + BE `nonwhitespace_min=5`).
 
 **Course editor basic info** (`/instructor/courses/:id/info`): title is editable on save; BE recomputes `courses.slug` from the new title. About course uses `DeltaEditor` with `mediaEmbedKinds={ABOUT_COURSE_MEDIA_EMBED_KINDS}` (`["image","document"]` module constant), `allowLink`, and custom placeholder — Quill Delta JSON with font picker, hyperlinks on selected text (brand color `#3dcbb1` / `var(--base-primary)`, underline, pointer cursor) **and image embeds** (toolbar link dialog or **image overlay link-edit button** → `DeltaEditorLinkDialog` edit/remove; **link text color** via toolbar `linkColor` picker next to Link button), **image embed 4-corner drag-resize** (NW/NE/SW/SE handles; persists `width`/`height`), image/document embeds via dialog, paste, or drag-and-drop (video disabled on this tab); **link Edit/Remove** (Quill Snow tooltip) updates or strips the full same-URL segment across heading/list block gaps; embed × remove calls `onDelete` → `deleteMediaFile`; paste/drop upload via `useDeltaEditorMediaHandlers` → `onObjectEmbedded`. Save uses `courseBasicInfoSchema` + `toUpdateCourseBasicInfoPayload` (all required basic-info fields including `title`; preview video optional). Learning outcome is a single required dropdown (exactly one `outcome_ids` entry).
+
+**Course editor header** (`editor-page.tsx`): status badge from active draft (or live when no draft). Version badges: `course.common.versionBadge` shows edit `version_no` (`draft_version` when present); when both `draft_version` and `live_version` exist, `course.common.publishedVersionBadge` shows the approved number. Editing is enabled only when `draft_version.status === "DRAFT"` (`IN_REVIEW` / legacy `REJECTED` are read-only in tabs). After admin reject, BE forks a new draft at `max(version_no)+1`; UI shows `last_rejection_reason` (or legacy `draft_version.rejection_reason` on `REJECTED` pointer) in a destructive alert. Primary action: **Prepare draft** when approved-only; **Submit for review** when `DRAFT`; **Reopen draft** only for legacy `REJECTED` pointer (new data auto-forks on reject).
+
+**Load performance:** `useCourseDetail(courseId)` — một SWR cache key per course (full detail kèm outline); chuyển tab info/outline/collaborators **không** refetch, dùng cache. Lần đầu vào editor fetch một lần; skeleton chỉ khi `!data && isLoading`. Tab info: `useTaxonomyList` với `include_images: false` (chỉ khi `tab === "info"`).
 
 **Course editor outline** (`/instructor/courses/:id/outline`): ... Outline cards show ... **locale-aware duration label** via `formatDurationMs(buildDurationUnits(tCommon), …)` — suffixes from `course.common.durationUnitHours|Minutes|Seconds` in `src/messages/{en,vi}.ts`, not hardcoded in `duration.ts`. Section / lesson / item row actions are grouped in `CourseOutlineRowActions` (shared `DropdownMenu`; label `course.common.actions`; menu items from `CourseOutlineItemKind`). Sub-lesson create/edit dialog (`CourseSubLessonDialog`) switches VIDEO / TEXT / QUIZ fields via a kind→renderer map; **TEXT and QUIZ** include shared `SubLessonDurationFields` (Hours / Minutes / Seconds → `estimated_duration_ms` on save); **VIDEO** shows read-only duration from the selected `MediaFile.duration` (no H/M/S inputs). Dialog body uses `overflow-x-hidden` and `break-all` so long video IDs/URLs wrap inside the modal (no horizontal scrollbar). Drag reorder (sections, lessons, lesson items) uses shared `SortableList` with mobile touch support (`TouchSensor` + 44px drag handle); applies **optimistic UI** via `useCourseOutlineReorder`: order updates in SWR cache before the reorder API runs; success shows `course.editor.toast.sectionsReordered` / `lessonsReordered` / `itemsReordered` and merges the API response; failure shows `toastApiError` and restores the pre-drag snapshot.
 

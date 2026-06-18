@@ -8,7 +8,7 @@ import {
   rejectCourseReviewService,
 } from "@/api/callers/course";
 import { useCourseReviewQueue } from "@/api/hooks/course";
-import { CourseStatusBadge } from "@/components/features/course/course-status-badge";
+import { buildCourseAdminListColumns } from "@/components/features/course/course-admin-list-columns";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { RequiredLabel } from "@/components/shared/required-label";
@@ -21,6 +21,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Link } from "@/i18n/navigation";
+import { sysadminCourseReviewPreviewHref } from "@/lib/navigation/routes";
 import { toastApiError } from "@/lib/utils/api-error";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import { courseRejectReasonSchema } from "@/schema/course";
@@ -42,28 +44,16 @@ export function CourseReviewPage({
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
 
   const columns = useMemo<DataTableColumn<CourseListItem>[]>(
-    () => [
-      {
-        id: "title",
-        header: t("columns.course"),
-        cell: (row) => (
-          <div className="space-y-1">
-            <div className="font-medium">{row.title || row.slug}</div>
-            <div className="text-xs text-muted-foreground">/{row.slug}</div>
-          </div>
-        ),
-      },
-      {
-        id: "owner",
-        header: t("columns.owner"),
-        cell: (row) => row.owner_user_id,
-      },
-      {
-        id: "status",
-        header: t("columns.status"),
-        cell: (row) => <CourseStatusBadge status={row.review_status} />,
-      },
-    ],
+    () =>
+      buildCourseAdminListColumns(
+        {
+          course: t("columns.course"),
+          owner: t("columns.owner"),
+          version: t("columns.version"),
+          status: t("columns.status"),
+        },
+        { includeStatus: true },
+      ),
     [t],
   );
 
@@ -118,7 +108,14 @@ export function CourseReviewPage({
           actionsHeader={tCommon("actions")}
           emptyMessage={t("empty")}
           renderActions={(row) => (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              {_scope === "sysadmin" ? (
+                <Button type="button" size="sm" variant="outline" asChild>
+                  <Link href={sysadminCourseReviewPreviewHref(row.id)}>
+                    {t("previewButton")}
+                  </Link>
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 size="sm"

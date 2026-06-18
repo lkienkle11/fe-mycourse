@@ -227,19 +227,19 @@ Create the vhost file:
 sudo nano /etc/nginx/sites-available/mycourse-web
 ```
 
-Paste the following:
+Paste the following. For the complete nginx configuration with SSL setup, see **`deploy/nginx/nginx.conf`** in the repository:
 
 ```nginx
 server {
     listen 80;
     server_name yourdomain.net www.yourdomain.net;
 
-    # Security headers (HTTPS equivalents added automatically by Certbot)
+    # Bảo mật Headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
-    # Next.js static assets — long cache, content-addressed filenames
+    # Tối ưu Cache cực mạnh cho các file tĩnh (CSS/JS) của Next.js
     location /_next/static/ {
         proxy_pass http://127.0.0.1:3000;
         proxy_cache_valid 200 365d;
@@ -247,7 +247,7 @@ server {
         proxy_set_header Host $host;
     }
 
-    # Everything else → Next.js app
+    # Bắn mọi luồng traffic khác vào Next.js
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
@@ -257,8 +257,10 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header Upgrade           $http_upgrade;
         proxy_set_header Connection        "upgrade";
-        proxy_read_timeout 90s;
-        proxy_buffering off;    # Required for Next.js streaming / SSE
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_buffering off;    # BẮT BUỘC tắt để Next.js App Router (Streaming) hoạt động
+        proxy_cache off;
     }
 }
 ```

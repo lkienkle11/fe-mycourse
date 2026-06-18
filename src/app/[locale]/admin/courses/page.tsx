@@ -1,5 +1,11 @@
-import { CourseReviewPage } from "@/screen/common/course/course-review-page";
+import { redirect } from "@/i18n/navigation";
+import { adminCoursesAllHref } from "@/lib/navigation/routes";
 
-export default function AdminCourseReviewsRoute() {
-  return <CourseReviewPage scope="admin" />;
+type Props = {
+  params: Promise<{ locale: string }>;
+};
+
+export default async function AdminCoursesIndexRoute({ params }: Props) {
+  const { locale } = await params;
+  redirect({ href: adminCoursesAllHref, locale });
 }

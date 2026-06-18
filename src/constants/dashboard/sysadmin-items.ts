@@ -1,11 +1,14 @@
 import { BookOpen, LayoutDashboard, Server, Shield } from "lucide-react";
+import { COURSE_GROUP_READ_PERMISSIONS } from "@/constants/course/resources";
 import { INSTRUCTOR_MENU_ICONS } from "@/constants/dashboard/instructor-icons";
 import { TAXONOMY_MENU_ICONS } from "@/constants/dashboard/taxonomy-icons";
 import { INSTRUCTOR_GROUP_READ_PERMISSIONS } from "@/constants/instructor/resources";
 import { PERMISSIONS } from "@/constants/permissions";
 import { TAXONOMY_GROUP_READ_PERMISSIONS } from "@/constants/taxonomy/resources";
 import {
-  sysadminCoursesHref,
+  sysadminCoursesAllHref,
+  sysadminCoursesReviewingHref,
+  sysadminCoursesTrashHref,
   sysadminInstructorsApprovalsHref,
   sysadminInstructorsExpertiseHref,
   sysadminInstructorsProfilesHref,
@@ -55,9 +58,36 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
   {
     id: "sysadmin-courses",
     title: "Courses",
-    href: sysadminCoursesHref,
+    titleKey: "course.menu.group",
     icon: BookOpen,
-    permissions: [PERMISSIONS.CourseRead],
+    permissions: COURSE_GROUP_READ_PERMISSIONS,
+    permissionMode: "any",
+    children: [
+      {
+        id: "sysadmin-courses-all",
+        title: "All courses",
+        titleKey: "course.menu.all",
+        href: sysadminCoursesAllHref,
+        icon: BookOpen,
+        permissions: [PERMISSIONS.CourseCatalogRead],
+      },
+      {
+        id: "sysadmin-courses-reviewing",
+        title: "Reviewing",
+        titleKey: "course.menu.reviewing",
+        href: sysadminCoursesReviewingHref,
+        icon: BookOpen,
+        permissions: [PERMISSIONS.CourseReviewRead],
+      },
+      {
+        id: "sysadmin-courses-trash",
+        title: "Trash",
+        titleKey: "course.menu.trash",
+        href: sysadminCoursesTrashHref,
+        icon: BookOpen,
+        permissions: [PERMISSIONS.CourseTrashRead],
+      },
+    ],
   },
   {
     id: "sysadmin-taxonomy",
