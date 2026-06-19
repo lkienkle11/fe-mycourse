@@ -7,7 +7,7 @@ This is the **frontend** deployment runbook for the MyCourse Next.js application
 
 **Scope of this document:** Next.js-specific steps — environment variables, `next build` / `next start`, Nginx vhost for the web app, PM2 config, and the frontend go-live checklist.
 
-**Replace `yourdomain.net`** with your real domain throughout. Paths below use **`/opt/mycourse/fe`** as a monorepo example; the checked-in **`ecosystem.config.cjs`** uses **`/var/www/fe-mycourse`** (dev), **`/var/www/fe-mycourse-staging`**, and **`/var/www/fe-mycourse-prod`** as `cwd` values — substitute your actual checkout path in every command.
+**Replace `yourdomain.net`** with your real domain throughout. Paths below use **`/opt/mycourse/fe`** as a monorepo example; the checked-in **`ecosystem.config.cjs`** supports dynamic paths (runtime deploy uses shared `DEPLOY_PATH`, with optional per-env overrides `DEPLOY_PATH_DEV` / `DEPLOY_PATH_STG` / `DEPLOY_PATH_MAIN`) and defaults to `/var/www/fe-mycourse`, `/var/www/fe-mycourse-staging`, `/var/www/fe-mycourse-prod` — substitute your actual checkout path in every command.
 
 ---
 
@@ -312,7 +312,7 @@ After TLS is active, update `NEXT_PUBLIC_API_URL` to use `https://api.yourdomain
 
 ### Step 11 — Run Next.js under PM2
 
-The repository includes **`ecosystem.config.cjs`** at the frontend root with three apps (`mycourse-web-dev`, `mycourse-web-staging`, `mycourse-web-prod`) and per-environment `cwd` / `env_file`. CI for **`dev`** reloads **`mycourse-web-dev`** only. The snippet below is a minimal single-app example; align names and paths with that file if you use the shipped config.
+The repository includes **`ecosystem.config.cjs`** at the frontend root with three apps (`mycourse-web-dev`, `mycourse-web-staging`, `mycourse-web-prod`) and per-environment `cwd` / `env_file`. Runtime deploy can pass shared `DEPLOY_PATH` only (current CI behavior), while per-env overrides (`DEPLOY_PATH_DEV/STG/MAIN`) remain optional. `env_file` defaults are `.env.local` (dev), `.env.staging` (staging), `.env.prod` (prod). CI for **`dev`** reloads **`mycourse-web-dev`** only.
 
 Create or update the PM2 ecosystem file. If you already have one from the backend guide at `/opt/mycourse/ecosystem.config.cjs`, add the `mycourse-web` entry:
 
@@ -596,7 +596,7 @@ File: **`.github/workflows/enforce-main-from-dev.yml`**. Trigger: **pull request
 
 File: **`.github/workflows/deploy-dev.yml`**. Trigger: **push to `dev`**. Concurrency: `fe-deploy-${{ github.ref }}` with **`cancel-in-progress: true`**.
 
-This workflow differs from the backend: there is **no artifact rsync** — the **`deploy`** job SSHs into the VPS, syncs git, does a **clean `node_modules`**, runs **`npm ci` + `npm run build` + `npm prune --omit=dev` on the server**, then **`pm2 reload mycourse-web-dev`** (or starts `ecosystem.config.cjs --only mycourse-web-dev`). Like the backend, CI uses **`test` → `build` → `deploy`**: **`test`** runs **`npm run test-all`** (`lint` → `biome` → `test` → `deadcode` → `quality:deps`); **`build`** runs `npm ci` + `npm run build` on the runner so a broken mainline fails before SSH. Production bundles on the VPS come from the **server** build (ensure `NEXT_PUBLIC_API_URL` and related vars exist in the server env file referenced by PM2, e.g. `env_file` in `ecosystem.config.cjs`). Quality checks are **not** re-run on the VPS.
+This workflow differs from the backend: there is **no artifact rsync** — the **`deploy`** job SSHs into the VPS, syncs git, does a **clean `node_modules`**, runs **`npm ci` + `npm run build` + `npm prune --omit=dev` on the server**, then exports `DEPLOY_PATH` once and reloads via **`pm2 reload ecosystem.config.cjs --only mycourse-web-dev --update-env`** (or start fallback in the same shell with that exported env). Like the backend, CI uses **`test` → `build` → `deploy`**: **`test`** runs **`npm run test-all`** (`lint` → `biome` → `test` → `deadcode` → `quality:deps`); **`build`** runs `npm ci` + `npm run build` on the runner so a broken mainline fails before SSH. Production bundles on the VPS come from the **server** build (ensure `NEXT_PUBLIC_API_URL` and related vars exist in the server env file referenced by PM2, e.g. `env_file` in `ecosystem.config.cjs`). Quality checks are **not** re-run on the VPS.
 
 ### Required GitHub Secrets (frontend)
 
@@ -606,6 +606,8 @@ This workflow differs from the backend: there is **no artifact rsync** — the *
 | `SSH_HOST` | Server IP or hostname |
 | `SSH_USER` | SSH user |
 | `DEPLOY_PATH_DEV` | Absolute path to the **frontend** git checkout on the server (must match `cwd` for `mycourse-web-dev` in `ecosystem.config.cjs`) |
+| `DEPLOY_PATH_STG` *(optional)* | Path override for `mycourse-web-staging` when staging lives in a separate checkout |
+| `DEPLOY_PATH_MAIN` *(optional)* | Path override for `mycourse-web-prod` when prod lives in a separate checkout |
 
 ### Job structure
 
@@ -613,7 +615,7 @@ This workflow differs from the backend: there is **no artifact rsync** — the *
 |-----|----------------|
 | `test` | Checkout, Node 22 (`cache: npm`), `npm ci` + **`npm run test-all`** — fails on ESLint, Biome, Knip (`deadcode`: unused types + component files), cycles, jscpd threshold, or placeholder `test` step |
 | `build` | After `test`: `npm ci` + `npm run build` — fails if the app does not compile |
-| `deploy` | After `build`: SSH → `cd $DEPLOY_PATH_DEV` → `git stash -u`, `git checkout dev`, `git pull`, **`rm -rf node_modules`**, `npm ci`, `npm run build`, **`npm prune --omit=dev`**, PM2 reload/start **`mycourse-web-dev`** |
+| `deploy` | After `build`: SSH → `cd $DEPLOY_PATH_DEV` → `git stash -u`, `git checkout dev`, `git pull`, **`rm -rf node_modules`**, `npm ci`, `npm run build`, **`npm prune --omit=dev`**, `export DEPLOY_PATH`, then `pm2 reload ecosystem.config.cjs --only mycourse-web-dev --update-env` (start fallback if missing) |
 
 ### Workflow (matches repo)
 
@@ -687,15 +689,17 @@ jobs:
             npm ci && \
             npm run build && \
             npm prune --omit=dev && \
-            (pm2 reload mycourse-web-dev || pm2 start ecosystem.config.cjs --only mycourse-web-dev)"
+            (export DEPLOY_PATH='${{ secrets.DEPLOY_PATH_DEV }}'; pm2 reload ecosystem.config.cjs --only mycourse-web-dev --update-env || pm2 start ecosystem.config.cjs --only mycourse-web-dev --update-env)"
 ```
 
 ### Notes
 
-- **`DEPLOY_PATH_DEV`** — same naming convention as the backend workflow secret (`be/.github/workflows/deploy-dev.yml`); values differ per service (BE vs FE paths).
+- **`DEPLOY_PATH_DEV`** — same naming convention as the backend workflow secret (`be/.github/workflows/deploy-dev.yml`); values differ per service (BE vs FE paths). Workflow maps this secret into runtime `DEPLOY_PATH` for PM2.
+- **`DEPLOY_PATH_STG` / `DEPLOY_PATH_MAIN`** — optional for staging/prod entries in `ecosystem.config.cjs`; if omitted, file defaults are used.
 - **Clean `node_modules` on deploy** — guarantees lockfile-aligned installs after each pull (matches the workflow as of 2026).
 - **`npm prune --omit=dev` on deploy** — removes devDependencies from `node_modules` after build so the VPS keeps only runtime packages (ESLint, Biome, Madge, jscpd, Knip, TypeScript, etc. are not needed at runtime).
 - **`NEXT_PUBLIC_*` on the server** — must be present when **`npm run build`** runs on the VPS (e.g. `.env.production.local`, `.env.local`, or env injected before build). Changing them without rebuilding leaves a stale client bundle.
+- **Default PM2 env files** — `mycourse-web-dev` reads `.env.local`, `mycourse-web-staging` reads `.env.staging`, `mycourse-web-prod` reads `.env.prod` unless you override with `DEPLOY_ENV_FILE_DEV/STG/MAIN`.
 - **`AUTH_COOKIE_DOMAIN`** — runtime / server-side for cookies; keep on the server, not required in GitHub Actions for this workflow.
 - **Backend CI** — **`test` → `build` → `deploy`**, branch **`master`**, **`make test-all`** in **`test`**, **`rsync`** binary to `DEPLOY_PATH_DEV/bin/` — see [backend Appendix C](../../be-mycourse/docs/deploy.md#appendix-c--cicd-with-github-actions).
 - **Frontend quality in CI** — [`docs/quality.md`](./quality.md) (`test-all`, `check-all`, `deadcode`, `cycles`, `dupl`, `quality:deps`, `lint`, `biome`). Local only: `fix:biome`, `format:biome`.
