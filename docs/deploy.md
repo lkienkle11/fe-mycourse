@@ -596,7 +596,7 @@ File: **`.github/workflows/enforce-main-from-dev.yml`**. Trigger: **pull request
 
 File: **`.github/workflows/deploy-dev.yml`**. Trigger: **push to `dev`**. Concurrency: `fe-deploy-${{ github.ref }}` with **`cancel-in-progress: true`**.
 
-This workflow now mirrors the backend artifact pattern: **`build`** creates production runtime outputs on the runner (`.next`, pruned `node_modules`, `public`, `package.json`, `package-lock.json`) and uploads them as **`frontend-runtime`** artifact; **`deploy`** downloads that artifact, syncs git metadata on VPS, then `rsync`s runtime files into `DEPLOY_PATH_DEV` before PM2 reload. CI still runs **`test` → `build` → `deploy`**. Because the deployed bundle is built in CI, ensure `NEXT_PUBLIC_API_URL` (and any other `NEXT_PUBLIC_*`) is available in the CI build environment.
+This workflow now mirrors the backend artifact pattern: **`build`** creates production runtime outputs on the runner (`.next`, pruned `node_modules`, `public`, `package.json`, `package-lock.json`) and uploads them as **`frontend-runtime`** artifact (`include-hidden-files: true` is required so hidden `.next` is included); **`deploy`** downloads that artifact, verifies required paths/files exist, syncs git metadata on VPS, then `rsync`s runtime files into `DEPLOY_PATH_DEV` before PM2 reload. CI still runs **`test` → `build` → `deploy`**. Because the deployed bundle is built in CI, ensure `NEXT_PUBLIC_API_URL` (and any other `NEXT_PUBLIC_*`) is available in the CI build environment.
 
 ### Required GitHub Secrets (frontend)
 
@@ -675,6 +675,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-runtime
+          include-hidden-files: true
           path: |
             .next
             node_modules
@@ -692,6 +693,14 @@ jobs:
         with:
           name: frontend-runtime
           path: frontend-runtime
+
+      - name: Verify runtime artifact contents
+        run: |
+          test -d frontend-runtime/.next
+          test -d frontend-runtime/node_modules
+          test -d frontend-runtime/public
+          test -f frontend-runtime/package.json
+          test -f frontend-runtime/package-lock.json
 
       - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.9.0
@@ -731,6 +740,7 @@ jobs:
 - **`NEXT_PUBLIC_API_URL_DEV`** — build-time value for CI artifact build. If it is empty, CI still builds but your deployed client bundle may point to the wrong API URL.
 - **`DEPLOY_PATH_STG` / `DEPLOY_PATH_MAIN`** — optional for staging/prod entries in `ecosystem.config.cjs`; if omitted, file defaults are used.
 - **Runtime artifact source** — `deploy` uses CI artifact (`frontend-runtime`), not `npm build` on VPS.
+- **Hidden build directory** — `.next` is hidden; `upload-artifact` must set `include-hidden-files: true` or deploy sync fails with missing `frontend-runtime/.next`.
 - **Pruned dependencies** — `npm prune --omit=dev` now runs in CI `build`; uploaded `node_modules` is production-only.
 - **`NEXT_PUBLIC_*` in CI** — because build happens on runner, these variables must exist in CI (secrets/vars). Changing them requires a new CI build to refresh the client bundle.
 - **Default PM2 env files** — `mycourse-web-dev` reads `.env.local`, `mycourse-web-staging` reads `.env.staging`, `mycourse-web-prod` reads `.env.prod` unless you override with `DEPLOY_ENV_FILE_DEV/STG/MAIN`.
