@@ -67,4 +67,4 @@ jobs:
             npm ci && \
             npm run build && \
             npm prune --omit=dev && \
-            (pm2 reload mycourse-web-dev || pm2 start ecosystem.config.cjs --only mycourse-web-dev)"
+            (export DEPLOY_PATH='${{ secrets.DEPLOY_PATH_DEV }}'; pm2 reload ecosystem.config.cjs --only mycourse-web-dev --update-env || pm2 start ecosystem.config.cjs --only mycourse-web-dev --update-env)"
