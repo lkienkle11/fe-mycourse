@@ -596,7 +596,7 @@ File: **`.github/workflows/enforce-main-from-dev.yml`**. Trigger: **pull request
 
 File: **`.github/workflows/deploy-dev.yml`**. Trigger: **push to `dev`**. Concurrency: `fe-deploy-${{ github.ref }}` with **`cancel-in-progress: true`**.
 
-This workflow differs from the backend: there is **no artifact rsync** — the **`deploy`** job SSHs into the VPS, syncs git, does a **clean `node_modules`**, runs **`npm ci` + `npm run build` + `npm prune --omit=dev` on the server**, then reloads via **`pm2 reload ecosystem.config.cjs --only mycourse-web-dev --update-env`** (or start fallback with the same env injection). Like the backend, CI uses **`test` → `build` → `deploy`**: **`test`** runs **`npm run test-all`** (`lint` → `biome` → `test` → `deadcode` → `quality:deps`); **`build`** runs `npm ci` + `npm run build` on the runner so a broken mainline fails before SSH. Production bundles on the VPS come from the **server** build (ensure `NEXT_PUBLIC_API_URL` and related vars exist in the server env file referenced by PM2, e.g. `env_file` in `ecosystem.config.cjs`). Quality checks are **not** re-run on the VPS.
+This workflow differs from the backend: there is **no artifact rsync** — the **`deploy`** job SSHs into the VPS, syncs git, does a **clean `node_modules`**, runs **`npm ci` + `npm run build` + `npm prune --omit=dev` on the server**, then exports `DEPLOY_PATH` once and reloads via **`pm2 reload ecosystem.config.cjs --only mycourse-web-dev --update-env`** (or start fallback in the same shell with that exported env). Like the backend, CI uses **`test` → `build` → `deploy`**: **`test`** runs **`npm run test-all`** (`lint` → `biome` → `test` → `deadcode` → `quality:deps`); **`build`** runs `npm ci` + `npm run build` on the runner so a broken mainline fails before SSH. Production bundles on the VPS come from the **server** build (ensure `NEXT_PUBLIC_API_URL` and related vars exist in the server env file referenced by PM2, e.g. `env_file` in `ecosystem.config.cjs`). Quality checks are **not** re-run on the VPS.
 
 ### Required GitHub Secrets (frontend)
 
@@ -615,7 +615,7 @@ This workflow differs from the backend: there is **no artifact rsync** — the *
 |-----|----------------|
 | `test` | Checkout, Node 22 (`cache: npm`), `npm ci` + **`npm run test-all`** — fails on ESLint, Biome, Knip (`deadcode`: unused types + component files), cycles, jscpd threshold, or placeholder `test` step |
 | `build` | After `test`: `npm ci` + `npm run build` — fails if the app does not compile |
-| `deploy` | After `build`: SSH → `cd $DEPLOY_PATH_DEV` → `git stash -u`, `git checkout dev`, `git pull`, **`rm -rf node_modules`**, `npm ci`, `npm run build`, **`npm prune --omit=dev`**, inject shared `DEPLOY_PATH` and `pm2 reload ecosystem.config.cjs --only mycourse-web-dev --update-env` (start fallback if missing) |
+| `deploy` | After `build`: SSH → `cd $DEPLOY_PATH_DEV` → `git stash -u`, `git checkout dev`, `git pull`, **`rm -rf node_modules`**, `npm ci`, `npm run build`, **`npm prune --omit=dev`**, `export DEPLOY_PATH`, then `pm2 reload ecosystem.config.cjs --only mycourse-web-dev --update-env` (start fallback if missing) |
 
 ### Workflow (matches repo)
 
@@ -689,7 +689,7 @@ jobs:
             npm ci && \
             npm run build && \
             npm prune --omit=dev && \
-            (DEPLOY_PATH='${{ secrets.DEPLOY_PATH_DEV }}' pm2 reload ecosystem.config.cjs --only mycourse-web-dev --update-env || DEPLOY_PATH='${{ secrets.DEPLOY_PATH_DEV }}' pm2 start ecosystem.config.cjs --only mycourse-web-dev --update-env)"
+            (export DEPLOY_PATH='${{ secrets.DEPLOY_PATH_DEV }}'; pm2 reload ecosystem.config.cjs --only mycourse-web-dev --update-env || pm2 start ecosystem.config.cjs --only mycourse-web-dev --update-env)"
 ```
 
 ### Notes
