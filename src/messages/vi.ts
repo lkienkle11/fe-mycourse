@@ -609,7 +609,7 @@ const messages = {
       },
       collaboratorRole: {
         OWNER: "Chủ sở hữu",
-        EDITOR: "Biên tập viên",
+        EDITOR: "Cộng tác viên",
       },
       subLessonKind: {
         VIDEO: "Video",

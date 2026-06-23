@@ -612,7 +612,7 @@ const messages = {
       },
       collaboratorRole: {
         OWNER: "Owner",
-        EDITOR: "Editor",
+        EDITOR: "Collaborator",
       },
       subLessonKind: {
         VIDEO: "Video",
