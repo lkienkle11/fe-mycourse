@@ -1,6 +1,5 @@
 "use client";
 
-import { MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -10,16 +9,11 @@ import {
 } from "@/api/callers/course";
 import { useTrashedCourses } from "@/api/hooks/course";
 import { buildCourseAdminListColumns } from "@/components/features/course/course-admin-list-columns";
+import { CourseAdminTableActionsMenu } from "@/components/features/course/course-admin-table-actions-menu";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { toastApiError } from "@/lib/utils/api-error";
 import type { CourseListItem } from "@/types/course";
 
@@ -81,31 +75,20 @@ export function CourseAdminTrashPage() {
           actionsHeader={t("actions.menu")}
           emptyMessage={t("empty")}
           renderActions={(row) => (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8"
-                  disabled={pendingActionId === row.id}
-                  aria-label={t("actions.menu")}
-                >
-                  <MoreHorizontal className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => void handleRestore(row)}>
-                  {t("actions.restore")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => setDeleteTarget(row)}
-                >
-                  {t("actions.permanentDelete")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <CourseAdminTableActionsMenu
+              menuLabel={t("actions.menu")}
+              disabled={pendingActionId === row.id}
+            >
+              <DropdownMenuItem onClick={() => void handleRestore(row)}>
+                {t("actions.restore")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => setDeleteTarget(row)}
+              >
+                {t("actions.permanentDelete")}
+              </DropdownMenuItem>
+            </CourseAdminTableActionsMenu>
           )}
         />
       )}

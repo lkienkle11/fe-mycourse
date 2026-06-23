@@ -680,6 +680,9 @@ const messages = {
         status: "Status",
       },
       previewButton: "Preview",
+      actions: {
+        menu: "Actions",
+      },
       loading: "Loading review queue...",
       empty: "No courses are waiting for review.",
       approve: "Approve",

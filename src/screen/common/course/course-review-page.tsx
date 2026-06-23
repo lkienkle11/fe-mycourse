@@ -9,6 +9,7 @@ import {
 } from "@/api/callers/course";
 import { useCourseReviewQueue } from "@/api/hooks/course";
 import { buildCourseAdminListColumns } from "@/components/features/course/course-admin-list-columns";
+import { CourseReviewRowActions } from "@/components/features/course/course-review-row-actions";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { RequiredLabel } from "@/components/shared/required-label";
@@ -21,19 +22,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Link } from "@/i18n/navigation";
-import { sysadminCourseReviewPreviewHref } from "@/lib/navigation/routes";
 import { toastApiError } from "@/lib/utils/api-error";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import { courseRejectReasonSchema } from "@/schema/course";
 import type { CourseListItem } from "@/types/course";
 
-export function CourseReviewPage({
-  scope: _scope,
-}: {
-  scope: "admin" | "sysadmin";
-}) {
-  void _scope;
+export function CourseReviewPage({ scope }: { scope: "admin" | "sysadmin" }) {
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.review");
   const tValidation = useTranslations("course.validation");
@@ -105,35 +99,16 @@ export function CourseReviewPage({
         <DataTable
           columns={columns}
           rows={rows}
-          actionsHeader={tCommon("actions")}
+          actionsHeader={t("actions.menu")}
           emptyMessage={t("empty")}
           renderActions={(row) => (
-            <div className="flex flex-wrap gap-2">
-              {_scope === "sysadmin" ? (
-                <Button type="button" size="sm" variant="outline" asChild>
-                  <Link href={sysadminCourseReviewPreviewHref(row.id)}>
-                    {t("previewButton")}
-                  </Link>
-                </Button>
-              ) : null}
-              <Button
-                type="button"
-                size="sm"
-                disabled={pendingActionId === row.id}
-                onClick={() => void handleApprove(row)}
-              >
-                {t("approve")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                disabled={pendingActionId === row.id}
-                onClick={() => setRejectTarget(row)}
-              >
-                {t("reject")}
-              </Button>
-            </div>
+            <CourseReviewRowActions
+              scope={scope}
+              course={row}
+              disabled={pendingActionId === row.id}
+              onApprove={handleApprove}
+              onReject={setRejectTarget}
+            />
           )}
         />
       )}

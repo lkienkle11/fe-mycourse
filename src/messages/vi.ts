@@ -677,6 +677,9 @@ const messages = {
         status: "Trạng thái",
       },
       previewButton: "Xem trước",
+      actions: {
+        menu: "Thao tác",
+      },
       loading: "Đang tải hàng chờ duyệt...",
       empty: "Không có khóa học nào đang chờ duyệt.",
       approve: "Duyệt",
