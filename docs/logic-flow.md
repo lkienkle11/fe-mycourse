@@ -282,12 +282,37 @@ Components can subscribe to the global error store:
 
 ---
 
-## 10. Course Editor — Submit-for-Review Validation Flow
+## 10. Course Editor — Basic Info Save (Optimistic Lock)
 
-**Source:** `src/lib/utils/course.ts`, `src/hooks/course/use-course-editor-state.ts`
+**Source:** `src/hooks/course/use-course-editor-state.ts`, `src/lib/utils/course.ts`, `updateCourseBasicInfoService`
 
 ```
-Instructor clicks "Submit for Review"
+User clicks Save on info tab
+  ↓
+handleSaveBasicInfo()
+  ├─ courseBasicInfoSchema.safeParse(basicInfo)  → fail? toastValidationError
+  ├─ PATCH /courses/:id/basic-info  { …fields, expected_row_version }
+  ├─ success: setBasicInfo.expected_row_version ← response draft_version.row_version
+  ├─ mutateDetail(response, { revalidate: false })  → SWR cache row_version in sync
+  └─ toast "basicInfoSaved"
+
+useCourseBasicInfoState(activeVersion)
+  ├─ draft version id changed  → reset full form from server
+  └─ same id, row_version changed  → update expected_row_version only (external refresh / cache)
+```
+
+BE increments `row_version` on each PATCH; stale `expected_row_version` returns `409` / app code `3005`.
+
+---
+
+## 11. Course Editor — Submit-for-Review Validation Flow
+
+**Source:** `src/lib/utils/course.ts`, `src/hooks/course/use-course-editor-state.ts`, `src/screen/instructor/courses/editor-page.tsx`
+
+**Visibility:** Submit / prepare / reopen header buttons render only when `courseDetail.collaborator_role === "OWNER"` (`canManageReviewWorkflow`). Collaborators (`EDITOR`) may still edit basic info and outline when `draft_version.status === "DRAFT"`.
+
+```
+Owner clicks "Submit for Review"  (button hidden for EDITOR)
   ↓
 handleSubmitReview()  [use-course-editor-state.ts]
   ↓
@@ -313,6 +338,7 @@ issues !== null?
   ↓
 issues === null?
   → submitReviewService(courseId)  POST /api/v1/courses/:courseId/submit-review
+  → BE requireOwnerAccess (EDITOR without button still gets 403 if called directly)
 ```
 
 ### Sub-lesson content validation on save (`saveSubLesson`)
@@ -354,7 +380,7 @@ const isPreview = subLessonForm.kind === "QUIZ" ? false : subLessonForm.is_previ
 
 ---
 
-## 11. Stream Event Ingest Flow
+## 12. Stream Event Ingest Flow
 
 ```
 EventsStreamProvider mounts (client)
@@ -398,7 +424,7 @@ Allowed inbound types by source (see `src/events/core/normalize-inbound.ts`):
 
 ---
 
-## 12. Course version numbering (editor)
+## 13. Course version numbering (editor)
 
 ```
 Instructor opens /instructor/courses/:courseId/*
@@ -410,12 +436,19 @@ useCourseDetail(courseId)
 Info tab: useTaxonomyList ×5 with include_images=false (parallel, SWR dedupe 5m)
   ↓
 editable = draft_version?.status === "DRAFT"
+canManageReviewWorkflow = collaborator_role === "OWNER"
   ↓
 Header badges:
   - versionBadge → draft_version.version_no (or live when no draft)
   - publishedVersionBadge → live_version.version_no when both draft and live exist
+  - collaboratorRole badge → OWNER / EDITOR ("Cộng tác viên" / "Collaborator")
   ↓
-Submit for review (DRAFT only):
+Header actions (owner-only):
+  - no draft + live → Prepare draft  (POST …/draft/prepare)
+  - DRAFT → Submit for review
+  - legacy REJECTED pointer → Reopen draft
+  ↓
+Submit for review (DRAFT only, OWNER only):
   POST /api/v1/courses/:courseId/submit-review
   → same version_no; status IN_REVIEW; tabs read-only until decision
   ↓

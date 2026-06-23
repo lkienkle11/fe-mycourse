@@ -93,6 +93,8 @@ Implemented:
 - basic metadata editing (info tab; taxonomy pickers with `include_images: false`)
 - outline CRUD and reordering (same `useCourseDetail` SWR cache — no refetch on tab switch)
 - collaborator management
+- owner-only review workflow buttons (prepare draft / submit for review / reopen draft — hidden for `EDITOR`)
+- collaborator role i18n: `course.common.collaboratorRole.EDITOR` → **Cộng tác viên** (vi) / **Collaborator** (en)
 - English and Vietnamese translations for course list, editor tabs, dialogs, status badges, review queue, and course menu labels
 
 ### Admin and sysadmin review screens
