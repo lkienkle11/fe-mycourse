@@ -3,8 +3,12 @@ import "server-only";
 import { cookies } from "next/headers";
 import { buildAuthCookieOptions, getCookieDomain } from "./cookie";
 
-/** MaxAge (seconds) cho refresh_token / session_id khi remember_me = true (30 ngày). */
-export const REMEMBER_ME_MAX_AGE = 30 * 24 * 60 * 60;
+/**
+ * MaxAge (seconds) cho refresh_token / session_id khi remember_me = true.
+ * Phải khớp với BE domain.RememberMeRefreshTTL = 14 * 24 * time.Hour.
+ * Sliding window: mỗi lần silent refresh proxy ghi lại đúng Max-Age từ BE.
+ */
+export const REMEMBER_ME_MAX_AGE = 14 * 24 * 60 * 60;
 
 export interface AuthSessionTokens {
   access_token: string;
@@ -15,6 +19,14 @@ export interface AuthSessionTokens {
 export interface SetAuthSessionCookiesInput {
   tokens: AuthSessionTokens;
   rememberMe?: boolean;
+  /**
+   * Explicit Max-Age (seconds) for refresh_token/session_id cookies.
+   * When provided, takes precedence over the rememberMe-derived value.
+   * Intended for the BFF refresh proxy, which forwards the exact TTL
+   * computed by BE (so remember-me sessions preserve their Max-Age
+   * after every silent token rotation).
+   */
+  refreshMaxAge?: number;
 }
 
 /**
@@ -23,9 +35,18 @@ export interface SetAuthSessionCookiesInput {
 export async function setAuthSessionCookies({
   tokens,
   rememberMe = false,
+  refreshMaxAge: explicitRefreshMaxAge,
 }: SetAuthSessionCookiesInput): Promise<void> {
   const { access_token, refresh_token, session_id } = tokens;
-  const refreshMaxAge = rememberMe ? REMEMBER_ME_MAX_AGE : undefined;
+  // explicitRefreshMaxAge (> 0) takes precedence; 0 means session-scoped cookie.
+  const refreshMaxAge =
+    explicitRefreshMaxAge !== undefined
+      ? explicitRefreshMaxAge > 0
+        ? explicitRefreshMaxAge
+        : undefined
+      : rememberMe
+        ? REMEMBER_ME_MAX_AGE
+        : undefined;
   const isProduction = process.env.NODE_ENV === "production";
   const domain = getCookieDomain(process.env.AUTH_COOKIE_DOMAIN);
   const sameSite = "lax" as const;
