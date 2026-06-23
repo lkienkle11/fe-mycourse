@@ -14,6 +14,7 @@ import { rawPost } from "./raw-http";
 
 const DEFAULT_BASE_URL = "http://localhost:3000/api";
 const DEFAULT_TIMEOUT_MS = 10_000;
+const CLIENT_REFRESH_PROXY_PATH = "/api/auth/refresh";
 
 // Resolved once at module load — used by the raw refresh helper.
 const resolvedBaseURL =
@@ -84,7 +85,7 @@ type RefreshSessionPair = {
 
 /**
  * Server: reads HttpOnly refresh/session cookies via next/headers.
- * Client: returns `{}` — browser sends HttpOnly cookies via withCredentials.
+ * Client: returns `{}` so the browser sends HttpOnly cookies via withCredentials.
  */
 async function getRefreshSessionPair(): Promise<RefreshSessionPair | null> {
   if (!isServer()) {
@@ -122,6 +123,20 @@ async function doTokenRefresh(
   pair: RefreshSessionPair,
 ): Promise<RefreshTokenResponse | null> {
   try {
+    if (!isServer()) {
+      const { data: envelope } = await rawPost<
+        ApiResponse<RefreshTokenResponse>,
+        null
+      >(CLIENT_REFRESH_PROXY_PATH, null, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true,
+        timeout: DEFAULT_TIMEOUT_MS,
+      });
+      const payload = envelope?.data;
+      if (!payload?.access_token) return null;
+      return payload;
+    }
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
