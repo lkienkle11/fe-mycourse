@@ -60,13 +60,14 @@ Mounted under `API_PRIVATE_ROUTES.course` — see `src/api/callers/course/course
 | `GET /api/v1/courses/my` | `listMyCoursesService` / `useMyCourses` | Instructor editable course list |
 | `POST /api/v1/courses` | `createCourseService` | Body `{ title }` only |
 | `GET /api/v1/courses/:courseId` | `getCourseDetailService` / `useCourseDetail` | Optional `include_outline=false` on info/collaborators tabs |
-| `PATCH /api/v1/courses/:courseId/basic-info` | `updateCourseBasicInfoService` | Optimistic lock via `expected_row_version` |
+| `PATCH /api/v1/courses/:courseId/basic-info` | `updateCourseBasicInfoService` | Optimistic lock via `expected_row_version`; FE updates lock from PATCH response + SWR cache (`handleSaveBasicInfo` / `useCourseBasicInfoState`) so back-to-back saves stay in sync |
 | `DELETE /api/v1/courses/:courseId` | `deleteCourseService` | Owner-only |
 | Collaborator CRUD | `*Collaborator*Service` | Under `/courses/:courseId/collaborators` |
 | Outline CRUD / reorder | `*Section*`, `*Lesson*`, `*SubLesson*` services | Outline tab only (`includeOutline: true`) |
 | Lease acquire/heartbeat/release | `*Lease*Service` | Edit coordination |
-| `POST …/submit-review` | `submitCourseReviewService` | Draft → `IN_REVIEW` |
-| `POST …/reopen-draft` | `reopenCourseDraftService` | Legacy fork from rejected version |
+| `POST …/draft/prepare` | `prepareCourseDraftService` | Fork next DRAFT from published (**owner-only** BE + hidden for EDITOR in UI) |
+| `POST …/submit-review` | `submitCourseReviewService` | Draft → `IN_REVIEW` (**owner-only**) |
+| `POST …/reopen-draft` | `reopenCourseDraftService` | Legacy fork from rejected version (**owner-only**) |
 
 **Read-path performance (instructor editor):**
 

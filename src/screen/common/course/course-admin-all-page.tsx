@@ -1,22 +1,16 @@
 "use client";
 
-import { MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { trashCourseService } from "@/api/callers/course";
 import { useAdminCourses } from "@/api/hooks/course";
 import { buildCourseAdminListColumns } from "@/components/features/course/course-admin-list-columns";
+import { CourseAdminTableActionsMenu } from "@/components/features/course/course-admin-table-actions-menu";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { toastApiError } from "@/lib/utils/api-error";
 import { canMoveCourseToTrash } from "@/lib/utils/course";
 import type { CourseListItem } from "@/types/course";
@@ -70,28 +64,17 @@ export function CourseAdminAllPage() {
               return null;
             }
             return (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-8"
-                    disabled={pendingActionId === row.id}
-                    aria-label={t("actions.menu")}
-                  >
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => setTrashTarget(row)}
-                  >
-                    {t("actions.moveToTrash")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <CourseAdminTableActionsMenu
+                menuLabel={t("actions.menu")}
+                disabled={pendingActionId === row.id}
+              >
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setTrashTarget(row)}
+                >
+                  {t("actions.moveToTrash")}
+                </DropdownMenuItem>
+              </CourseAdminTableActionsMenu>
             );
           }}
         />

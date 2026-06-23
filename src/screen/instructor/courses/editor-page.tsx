@@ -90,6 +90,7 @@ export function InstructorCourseEditorPage({
       ? editableVersion.rejection_reason
       : "");
   const canManageCollaborators = data?.collaborator_role === "OWNER";
+  const canManageReviewWorkflow = data?.collaborator_role === "OWNER";
   const outline = data?.outline ?? [];
 
   const {
@@ -162,6 +163,10 @@ export function InstructorCourseEditorPage({
     ? tCommon("loadingCourse")
     : (activeVersion?.title ?? tCommon("notLoaded"));
   const headerActions = useMemo(() => {
+    if (!canManageReviewWorkflow) {
+      return null;
+    }
+
     if (!editableVersion && liveVersion) {
       return (
         <Button
@@ -194,6 +199,7 @@ export function InstructorCourseEditorPage({
 
     return null;
   }, [
+    canManageReviewWorkflow,
     editableVersion,
     handlePrepareDraft,
     handleReopenDraft,
