@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { KeyedMutator } from "swr";
 import {
@@ -71,15 +71,24 @@ type UseCourseEditorStateParams = {
 };
 
 function useCourseBasicInfoState(activeVersion?: CourseVersion) {
+  const activeVersionId = activeVersion?.id ?? "";
+  const activeRowVersion = activeVersion?.row_version ?? 0;
   const [basicInfo, setBasicInfo] = useState<CourseBasicInfoForm>(() =>
     createCourseBasicInfoState(activeVersion),
   );
-  const syncedVersionIdRef = useRef(activeVersion?.id ?? "");
-  const activeVersionId = activeVersion?.id ?? "";
+  const [syncedVersionId, setSyncedVersionId] = useState(activeVersionId);
+  const [syncedRowVersion, setSyncedRowVersion] = useState(activeRowVersion);
 
-  if (syncedVersionIdRef.current !== activeVersionId) {
-    syncedVersionIdRef.current = activeVersionId;
+  if (syncedVersionId !== activeVersionId) {
+    setSyncedVersionId(activeVersionId);
+    setSyncedRowVersion(activeRowVersion);
     setBasicInfo(createCourseBasicInfoState(activeVersion));
+  } else if (syncedRowVersion !== activeRowVersion) {
+    setSyncedRowVersion(activeRowVersion);
+    setBasicInfo((prev) => ({
+      ...prev,
+      expected_row_version: activeRowVersion,
+    }));
   }
 
   const tagSelection = useMemo(
@@ -370,12 +379,19 @@ export function useCourseEditorState({
     }
     setIsSavingBasicInfo(true);
     try {
-      await updateCourseBasicInfoService(
+      const detail = await updateCourseBasicInfoService(
         courseId,
         toUpdateCourseBasicInfoPayload(basicInfo),
       );
+      const nextRowVersion = detail.draft_version?.row_version;
+      if (nextRowVersion != null) {
+        setBasicInfo((prev) => ({
+          ...prev,
+          expected_row_version: nextRowVersion,
+        }));
+      }
+      await mutateDetail(detail, { revalidate: false });
       toast.success(t("basicInfoSaved"));
-      await refreshDetail();
     } catch (error) {
       toastApiError(tErrors, error);
     } finally {

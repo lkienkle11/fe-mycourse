@@ -523,9 +523,25 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `buildCourseAdminListColumns`
 - **Type**: Factory function → `DataTable` column defs
 - **Path**: `src/components/features/course/course-admin-list-columns.tsx`
-- **Purpose**: Shared columns (title, owner, review status, version id, actions slot) for All Courses and Trash pages.
-- **Scope**: `course-admin-all-page`, `course-admin-trash-page`.
+- **Purpose**: Shared columns (title, owner, review status, version id, actions slot) for All Courses, Trash, and Review queue pages.
+- **Scope**: `course-admin-all-page`, `course-admin-trash-page`, `course-review-page`.
 - **Dependencies**: `DataTable` column types, i18n `course.*`.
+
+### Asset: CourseAdminTableActionsMenu
+- **Name**: `CourseAdminTableActionsMenu`
+- **Type**: React component
+- **Path**: `src/components/features/course/course-admin-table-actions-menu.tsx`
+- **Purpose**: Shared `DropdownMenu` shell for admin course list row actions — ghost `MoreHorizontal` icon trigger, `align="end"` content, `menuLabel` for `aria-label`.
+- **Scope**: `course-admin-all-page`, `course-admin-trash-page`; composed by `CourseReviewRowActions`.
+- **Dependencies**: `DropdownMenu` primitives from `src/components/ui/dropdown-menu.tsx`.
+
+### Asset: CourseReviewRowActions
+- **Name**: `CourseReviewRowActions`
+- **Type**: React component
+- **Path**: `src/components/features/course/course-review-row-actions.tsx`
+- **Purpose**: Review-queue row menu: sysadmin gets Preview link (`sysadminCourseReviewPreviewHref`), then Approve and Reject (`variant="destructive"`).
+- **Scope**: `course-review-page` (`scope="admin"` | `"sysadmin"`).
+- **Dependencies**: `CourseAdminTableActionsMenu`, `Link` from `@/i18n/navigation`, i18n `course.review.*`.
 
 ### Asset: instructor course detail hook
 - **Name**: `getCourseDetailKey`, `getCourseDetailService`, `useCourseDetail`
@@ -637,7 +653,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course.ts`, `src/lib/utils/duration.ts`
-- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories (including H/M/S duration parts for TEXT/QUIZ), `buildSubLessonEstimatedDurationPayload` / `validateSubLessonDurationForm`, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE), `validateSubLessonFormContent` / `validateCourseSubmitReadiness` (QUIZ rules delegate to `courseQuizOptionSchema`), quiz editor state helpers `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` for `SubLessonQuizFields`, and `formatDurationMs` / `parseDurationPartsToMs` / `splitMsToDurationParts` for outline labels.
+- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories (including H/M/S duration parts for TEXT/QUIZ), `buildSubLessonEstimatedDurationPayload` / `validateSubLessonDurationForm`, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE), `validateSubLessonFormContent` / `validateCourseSubmitReadiness` (QUIZ rules delegate to `courseQuizOptionSchema`), quiz editor state helpers `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` for `SubLessonQuizFields`, and `formatDurationMs` / `parseDurationPartsToMs` / `splitMsToDurationParts` for outline labels. **Review workflow UI** (`editor-page.tsx`): `canManageReviewWorkflow` gates prepare/submit/reopen header buttons to `collaborator_role === "OWNER"`.
 - **Scope**: `use-course-editor-state`, `editor-page.tsx`, `course-editor-outline-tab.tsx`, `course-editor-dialogs.tsx`.
 - **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`); `duration.ts` for display/payload conversion.
 

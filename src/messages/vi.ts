@@ -609,7 +609,7 @@ const messages = {
       },
       collaboratorRole: {
         OWNER: "Chủ sở hữu",
-        EDITOR: "Biên tập viên",
+        EDITOR: "Cộng tác viên",
       },
       subLessonKind: {
         VIDEO: "Video",
@@ -677,6 +677,9 @@ const messages = {
         status: "Trạng thái",
       },
       previewButton: "Xem trước",
+      actions: {
+        menu: "Thao tác",
+      },
       loading: "Đang tải hàng chờ duyệt...",
       empty: "Không có khóa học nào đang chờ duyệt.",
       approve: "Duyệt",
