@@ -62,15 +62,20 @@ Interceptor checks refresh conditions:
     isRefreshing === false? →
       isRefreshing = true
       ↓
-      rawPost(API_PUBLIC_ROUTES.auth.refresh, null, headers: {
-        X-Refresh-Token: refresh_token cookie,
-        X-Session-Id:    session_id cookie
-      })
+      browser path:
+        rawPost("/api/auth/refresh")  // FE proxy route
+        FE proxy reads refresh/session HttpOnly cookies
+        FE proxy calls BE refresh with X-Refresh-Token + X-Session-Id
+      server path:
+        rawPost(API_PUBLIC_ROUTES.auth.refresh, null, headers: {
+          X-Refresh-Token: refresh_token cookie,
+          X-Session-Id:    session_id cookie
+        })
       ↓
       Refresh succeeds?
         YES → new access_token, refresh_token received
-              → setCookieValue("access_token", newToken)
-              → setCookieValue("refresh_token", newRefreshToken)
+              → browser: FE proxy already rewrote rotated auth cookies
+              → server: syncAuthSessionCookiesAction updates Next cookies
               → flushRefreshQueue(newAccessToken) → retry all queued requests
               → retry original failed request with new token
         NO  → flushRefreshQueue(null) → reject all queued requests
