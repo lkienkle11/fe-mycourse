@@ -203,13 +203,13 @@ AuthLayout (client)
   → useAuth()                           [src/api/hooks/auth/useAuth.ts — SWR]
       → getMeService()                  [src/api/callers/auth — apiFetch wrapper]
         → apiFetch(getMeEndpointKey)    [GET /api/v1/me]
-          ↑ Authorization: Bearer <access_token>   (added by Axios interceptor)
+          ↑ Server-side only: Authorization: Bearer <access_token> (Axios interceptor)
 ```
 
 Optional: `useGetMe()` / `useSyncMeFromAuth()` in [`src/hooks/auth/use-auth-store.ts`](src/hooks/auth/use-auth-store.ts) — shallow `useMeStore` slice and SWR → store sync; `AppProviders` mounts `MeSwrSync` under `SWRConfig` to run the sync (see [`src/components/providers/app-providers.tsx`](src/components/providers/app-providers.tsx)).
 
-- **Header-based auth**: the Axios request interceptor in `src/api/instance.ts` reads the `access_token` cookie and attaches it as `Authorization: Bearer <token>` on every request.
-- **Automatic token refresh**: the response interceptor calls `POST /api/v1/auth/refresh` (via `rawPost` in `src/api/raw-http.ts`, so refresh does not depend on `apiInstance`) and retries the original request when **both** `refresh_token` and `session_id` cookies exist **and** either (a) the response is `401`/`403` with `X-Token-Expired: true` (access JWT expired — see BE `middleware/auth_jwt.go`), or (b) the response is **`401` with no non-empty `Authorization: Bearer …` on the outgoing request** (e.g. `access_token` cookie cleared while refresh cookies remain). Other `401`/`403` responses are reported and rejected without a refresh attempt.
+- **Header-based auth**: server-side requests (RSC/Server Action) read `access_token` via `next/headers` and set `Authorization: Bearer <token>`. Browser requests rely on `withCredentials: true` so BE reads HttpOnly cookies directly.
+- **Automatic token refresh**: the response interceptor retries eligible `401`/`403` failures. Browser path calls FE proxy `POST /api/auth/refresh` (no token storage in browser), and proxy forwards explicit refresh headers to BE using HttpOnly cookies read on Next server. Server path still calls BE refresh directly.
 - **401 = not authenticated**: `getMeService` catches 401 and returns `null` instead of throwing, so SWR does not treat it as an error.
 
 ### Conditional Rendering in `AuthLayout`
@@ -310,21 +310,22 @@ const canManage = useSatisfiesPermissions({
 
 ### How it works
 
-When `refresh_token` and `session_id` are present, an automatic rotation runs **before** the error is surfaced if **all** of the following hold: response is `401` or `403`; the request has not already been retried (`_retry`); and **either** the response includes `X-Token-Expired: true` **or** the failed request had **no** non-empty `Authorization: Bearer …` and the status is `401` (missing access token while a session still exists).
+An automatic rotation runs **before** the error is surfaced if **all** of the following hold: response is `401` or `403`; the request has not already been retried (`_retry`); and **either** the response includes `X-Token-Expired: true` **or** the failed request had **no** non-empty `Authorization: Bearer …` and the status is `401` (missing access token while a session still exists).
 
 ```
 Request → BE → 401 (or 403 with X-Token-Expired)
   │
-  ├─ [eligible + refresh cookies present, no _retry]
-  │     POST /api/v1/auth/refresh  (rawPost in raw-http.ts — no apiInstance)
-  │       X-Refresh-Token: <refresh_jwt>
-  │       X-Session-Id:    <session_id>
+  ├─ [eligible, no _retry]
+  │     POST /api/v1/auth/refresh  (server path; rawPost in raw-http.ts — no apiInstance)
+  │       X-Refresh-Token / X-Session-Id:
+  │         - server: from next/headers cookies
+  │         - client: through FE proxy /api/auth/refresh (same-origin)
   │     ├─ [success] Update cookies → retry original request → return response
   │     └─ [failure] Report error → reject promise
   │
   └─ [second attempt, _retry flag set] → Report error → reject promise
 
-Otherwise (no refresh cookies, wrong kind of 401/403, other status) → report + reject immediately
+Otherwise (wrong kind of 401/403, other status) → report + reject immediately
 ```
 
 ### Raw HTTP (`src/api/raw-http.ts` + `src/api/index.ts`)

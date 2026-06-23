@@ -111,7 +111,7 @@ await setAuthSessionCookies({
 
 **Client API calls:** `createApiInstance` uses `withCredentials: true`. The browser sends HttpOnly cookies; the Go backend reads `access_token` from the cookie when no `Authorization` header is present. **Server-side** Next.js still reads HttpOnly cookies via `next/headers` and attaches `Authorization: Bearer …`.
 
-**After silent refresh (client):** `syncAuthSessionCookiesAction` (`src/actions/auth/sync-auth-session.ts`) rewrites HttpOnly cookies from the refresh JSON response.
+**After silent refresh (client):** FE proxy route `POST /api/auth/refresh` rewrites HttpOnly cookies via `setAuthSessionCookies` before returning tokens to the interceptor.
 
 **Step 5 — SWR revalidation**
 
@@ -232,19 +232,19 @@ Every Axios request goes through the interceptor in `createApiInstance`:
 
 ```
 Request
-  └─ interceptor reads access_token cookie
-      ├─ Client: js-cookie  (getCookieValue → Cookies.get)
-      └─ Server: next/headers  (getCookieValue → cookies().get)
-  └─ If a non-empty access token exists → sets  Authorization: Bearer <access_token>
-  └─ If the cookie is missing / empty → no Authorization header (BE returns 401 "missing bearer token")
+  └─ Server: interceptor reads access_token via next/headers and sets
+      Authorization: Bearer <access_token>
+  └─ Client: does not attach Authorization manually; browser sends HttpOnly cookies
+      via withCredentials and BE reads access_token from cookie
+  └─ If access_token cookie is missing / empty → no bearer context → BE returns 401 "missing bearer token"
 ```
 
 ### 4.2 Token refresh flow
 
-Triggered when **all** of: HTTP `401` or `403`; response not already retried (`_retry`); **`refresh_token` and `session_id` cookies present**; **and** either the response header `X-Token-Expired: true` is set **(access JWT expired)**, **or** the failure is **`401` and the outgoing request had no non-empty `Authorization: Bearer …`** (session cookies exist but `access_token` was cleared — BE does not send `X-Token-Expired` for that case; see `be-mycourse/middleware/auth_jwt.go`).
+Triggered when **all** of: HTTP `401` or `403`; response not already retried (`_retry`); and **either** the response header `X-Token-Expired: true` is set **(access JWT expired)**, **or** the failure is **`401` and the outgoing request had no non-empty `Authorization: Bearer …`** (session cookies exist but `access_token` was cleared — BE does not send `X-Token-Expired` for that case; see `be-mycourse/middleware/auth_jwt.go`).
 
 ```
-Eligible 401/403 + refresh cookies?
+Eligible 401/403?
   │
   ├─ cfg._retry already set? → surface error immediately (prevent retry loop)
   │
@@ -253,7 +253,7 @@ Eligible 401/403 + refresh cookies?
   │     POST /api/v1/auth/refresh  (rawPost in src/api/raw-http.ts — not apiInstance)
   │       X-Refresh-Token: <refresh_jwt>
   │       X-Session-Id:    <session_id>
-  │     ├─ success → update cookies (setCookieValue) → retry original request
+  │     ├─ success → syncAuthSessionCookiesAction (setAuthSessionCookies) → retry original request
   │     └─ failure → reportError → reject
   │
   └─ CLIENT PATH (with mutex to prevent refresh stampede):
@@ -261,10 +261,10 @@ Eligible 401/403 + refresh cookies?
           → queue resolver in pendingResolvers → wait
         isRefreshing == false:
           → set isRefreshing = true
-          → read refresh_token + session_id from js-cookie
-          → POST /api/v1/auth/refresh  (rawPost — bypasses interceptors, avoids circular import with methods.ts)
+          → POST /api/auth/refresh (rawPost to FE proxy, same-origin)
+            FE proxy reads HttpOnly cookies, sends explicit headers to BE refresh
           ├─ success:
-          │     update cookies (js-cookie)
+          │     FE proxy already rewrote rotated cookies to browser
           │     flushRefreshQueue(newAccessToken) → unblock all queued requests
           │     retry original request
           └─ failure:
@@ -277,14 +277,16 @@ Any other 4xx/5xx → reportError → reject
 ### 4.3 Refresh request format
 
 ```
-POST /api/v1/auth/refresh
-Headers:
-  Content-Type: application/json
-  X-Refresh-Token: <refresh_jwt>
-  X-Session-Id:    <session_id>
+Client path:
+  POST /api/auth/refresh
+  (FE proxy reads cookies server-side and forwards explicit headers to BE)
 
-Response 200:
-  { code: 0, data: { access_token, refresh_token, session_id } }
+Server path:
+  POST /api/v1/auth/refresh
+  Headers:
+    Content-Type: application/json
+    X-Refresh-Token: <refresh_jwt>
+    X-Session-Id:    <session_id>
 ```
 
 The `session_id` does not change across rotations. Both `access_token` and `refresh_token` are rotated.
@@ -293,7 +295,7 @@ The `session_id` does not change across rotations. Both `access_token` and `refr
 
 | Environment | Cookie update method |
 |-------------|---------------------|
-| Client (browser) | BE `Set-Cookie` on `AUTH_COOKIE_DOMAIN` (no FE Server Action — avoids duplicate cookies) |
+| Client (browser) | FE proxy `/api/auth/refresh` rewrites cookies via `setAuthSessionCookies` |
 | Server (SSR / Server Action) | `syncAuthSessionCookiesAction` → `setAuthSessionCookies` via `next/headers` |
 
 BE and FE must use the **same** `AUTH_COOKIE_DOMAIN` (e.g. `yourdomain.net`) on hosted multi-subdomain setups.
