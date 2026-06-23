@@ -20,7 +20,7 @@ Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `
 | Review preview | — | `/sysadmin/courses/reviewing/{courseId}/preview` | — |
 | Course catalog (all / trash) | `/admin/courses/all`, `/admin/courses/trash` | `/sysadmin/courses/all`, `/sysadmin/courses/trash` | — |
 
-Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages). Course review queues are implemented for admin/sysadmin; instructor course authoring is implemented under the instructor dashboard.
+Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages). Course review queues are implemented for admin/sysadmin; instructor course authoring is implemented under the instructor dashboard. **Review queue** (`CourseReviewPage`): each row uses shared `CourseReviewRowActions` (⋮ menu — sysadmin: Preview / Approve / Reject; admin: Approve / Reject). All/Trash catalog rows use shared `CourseAdminTableActionsMenu`.
 
 ## Screen layer
 
