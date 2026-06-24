@@ -257,12 +257,32 @@ export type RejectCourseDraftPayload = {
   reason: string;
 };
 
+export type ApproveCourseDraftPayload = {
+  approval_note: string;
+};
+
+export type CourseReviewHistoryStatus = "APPROVED" | "REJECTED";
+
+export type CourseReviewHistoryItem = {
+  version_no: number;
+  status: CourseReviewHistoryStatus;
+  note: string;
+  reviewed_at: number;
+};
+
+export type CourseReviewHistoryFilters = {
+  page?: number;
+  per_page?: number;
+  status?: CourseReviewHistoryStatus | "";
+};
+
 export type CourseEditorTab =
   | "info"
   | "outline"
   | "collaborators"
   | "pricing"
-  | "certificate";
+  | "certificate"
+  | "review-history";
 
 export type CourseSelectionKey = "tag_ids" | "skill_ids" | "outcome_ids";
 
