@@ -572,7 +572,11 @@ const messages = {
       quizOptionsMin: "Add at least one quiz option.",
       collaboratorUserId: "Please select a collaborator.",
       rejectReason: "Please enter a rejection reason.",
-      rejectReasonMax: "Rejection reason must be at most 2000 characters.",
+      rejectReasonMin: "Rejection reason must be at least 5 characters.",
+      rejectReasonMax: "Rejection reason must be at most 500 characters.",
+      approveFeedback: "Please enter approval feedback.",
+      approveFeedbackMin: "Approval feedback must be at least 5 characters.",
+      approveFeedbackMax: "Approval feedback must be at most 500 characters.",
       videoMediaRequired: "Please select a video file.",
       submitBasicInfoIncomplete:
         "Submit is blocked because required basic information is incomplete.",
@@ -687,10 +691,19 @@ const messages = {
       empty: "No courses are waiting for review.",
       approve: "Approve",
       reject: "Reject",
+      approveDialog: {
+        title: "What feedback or improvements are needed?",
+        label: "Approval feedback",
+        placeholder:
+          "Share feedback or suggestions before approving this course.",
+        hint: "{count} / {max} characters (minimum {min}).",
+      },
       rejectDialog: {
         title: "Reject course draft",
+        label: "Rejection reason",
         placeholder:
           "Explain what the instructor should fix before resubmitting.",
+        hint: "{count} / {max} characters (minimum {min}).",
       },
       toast: {
         approved: "Course approved.",
@@ -770,6 +783,20 @@ const messages = {
         collaborators: "Collaborators",
         pricing: "Pricing",
         certificate: "Certificate",
+        "review-history": "Review history",
+      },
+      reviewHistory: {
+        title: "Review history",
+        description: "Past approvals and rejections for this course.",
+        loading: "Loading review history...",
+        empty: "No review history yet.",
+        emptyNote: "No note provided.",
+        filterAll: "All",
+        filterApproved: "Approved",
+        filterRejected: "Rejected",
+        statusApproved: "Approved",
+        statusRejected: "Rejected",
+        versionBadge: "Version {version}",
       },
       actions: {
         prepareDraft: "Prepare draft",

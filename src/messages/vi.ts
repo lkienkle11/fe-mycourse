@@ -569,7 +569,11 @@ const messages = {
       quizOptionsMin: "Cần ít nhất một lựa chọn trắc nghiệm.",
       collaboratorUserId: "Vui lòng chọn cộng tác viên.",
       rejectReason: "Vui lòng nhập lý do từ chối.",
-      rejectReasonMax: "Lý do từ chối tối đa 2000 ký tự.",
+      rejectReasonMin: "Lý do từ chối phải có ít nhất 5 ký tự.",
+      rejectReasonMax: "Lý do từ chối tối đa 500 ký tự.",
+      approveFeedback: "Vui lòng nhập góp ý khi duyệt.",
+      approveFeedbackMin: "Góp ý phải có ít nhất 5 ký tự.",
+      approveFeedbackMax: "Góp ý tối đa 500 ký tự.",
       videoMediaRequired: "Vui lòng chọn tệp video.",
       submitBasicInfoIncomplete:
         "Không thể gửi duyệt vì thông tin cơ bản bắt buộc chưa đầy đủ.",
@@ -684,10 +688,19 @@ const messages = {
       empty: "Không có khóa học nào đang chờ duyệt.",
       approve: "Duyệt",
       reject: "Từ chối",
+      approveDialog: {
+        title: "Cần góp ý, cải thiện gì thêm?",
+        label: "Góp ý khi duyệt",
+        placeholder:
+          "Chia sẻ góp ý hoặc đề xuất cải thiện trước khi phê duyệt khóa học.",
+        hint: "{count} / {max} ký tự (tối thiểu {min}).",
+      },
       rejectDialog: {
         title: "Từ chối bản nháp khóa học",
+        label: "Lý do từ chối",
         placeholder:
           "Giải thích những gì giảng viên cần chỉnh sửa trước khi gửi lại.",
+        hint: "{count} / {max} ký tự (tối thiểu {min}).",
       },
       toast: {
         approved: "Đã duyệt khóa học.",
@@ -766,6 +779,20 @@ const messages = {
         collaborators: "Cộng tác viên",
         pricing: "Giá bán",
         certificate: "Chứng chỉ",
+        "review-history": "Lịch sử xét duyệt",
+      },
+      reviewHistory: {
+        title: "Lịch sử xét duyệt",
+        description: "Các lần phê duyệt và từ chối trước đây của khóa học này.",
+        loading: "Đang tải lịch sử xét duyệt...",
+        empty: "Chưa có lịch sử xét duyệt.",
+        emptyNote: "Không có ghi chú.",
+        filterAll: "Tất cả",
+        filterApproved: "Đã duyệt",
+        filterRejected: "Đã từ chối",
+        statusApproved: "Đã duyệt",
+        statusRejected: "Đã từ chối",
+        versionBadge: "Phiên bản {version}",
       },
       actions: {
         prepareDraft: "Chuẩn bị bản nháp",

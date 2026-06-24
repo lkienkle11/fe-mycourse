@@ -122,6 +122,7 @@ src/app/[locale]/
 | `/vi/instructor/courses/{courseId}/collaborators` | `[locale]/instructor/courses/[courseId]/collaborators/page.tsx` | `InstructorCourseEditorPage` (`tab="collaborators"`) | ✅ Implemented |
 | `/vi/instructor/courses/{courseId}/pricing` | `[locale]/instructor/courses/[courseId]/pricing/page.tsx` | `InstructorCourseEditorPage` (`tab="pricing"`) | ✅ Implemented |
 | `/vi/instructor/courses/{courseId}/certificate` | `[locale]/instructor/courses/[courseId]/certificate/page.tsx` | `InstructorCourseEditorPage` (`tab="certificate"`) | ✅ Implemented |
+| `/vi/instructor/courses/{courseId}/review-history` | `[locale]/instructor/courses/[courseId]/review-history/page.tsx` | `InstructorCourseEditorPage` (`tab="review-history"`) — paginated approve/reject cards; URL query `page`, `status` | ✅ Implemented |
 | `/vi/instructor/tickets` | `[locale]/instructor/tickets/page.tsx` | `InstructorTicketsPage` | ✅ Implemented |
 | `/vi/admin/courses` | `[locale]/admin/courses/page.tsx` | Redirect → `/admin/courses/all` | ✅ Implemented |
 | `/vi/admin/courses/all` | `[locale]/admin/courses/all/page.tsx` | `CourseAdminAllPage` | ✅ Implemented |

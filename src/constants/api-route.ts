@@ -76,6 +76,7 @@ export const API_PRIVATE_ROUTES = {
     pendingReviews: "/api/v1/course-reviews/pending",
     approveReview: "/api/v1/course-reviews/:courseId/approve",
     rejectReview: "/api/v1/course-reviews/:courseId/reject",
+    reviewHistory: "/api/v1/courses/:courseId/review-history",
     learnerCollection: "/api/v1/learner-courses",
     learnerById: "/api/v1/learner-courses/:courseId",
     learnerEnroll: "/api/v1/learner-courses/:courseId/enroll",

@@ -20,6 +20,7 @@ import {
   CourseSubLessonDialog,
 } from "@/components/features/course/course-editor-dialogs";
 import { CourseOutlineTab } from "@/components/features/course/course-editor-outline-tab";
+import { CourseEditorReviewHistoryTab } from "@/components/features/course/course-editor-review-history-tab";
 import { CourseStatusBadge } from "@/components/features/course/course-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ type CourseEditorTabPropsMap = {
   collaborators: ComponentProps<typeof CourseCollaboratorsTab>;
   pricing: ComponentProps<typeof CourseEditorComingSoonTab>;
   certificate: ComponentProps<typeof CourseEditorComingSoonTab>;
+  "review-history": ComponentProps<typeof CourseEditorReviewHistoryTab>;
 };
 
 type CourseEditorTabPanelDefinition<
@@ -388,6 +390,12 @@ export function InstructorCourseEditorPage({
         title: tEditor("certificate.title"),
         description: tEditor("certificate.description"),
         comingSoonLabel: tEditor("certificate.comingSoon"),
+      },
+    },
+    "review-history": {
+      Component: CourseEditorReviewHistoryTab,
+      props: {
+        courseId,
       },
     },
   } satisfies {
