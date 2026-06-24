@@ -129,10 +129,15 @@ export function validateMediaUploadBatch(
 
 export type MediaEmbedKind = "image" | "video" | "document";
 
-/** Default embed kinds for TEXT sub-lessons (image + video). */
+/** Default embed kinds when `DeltaEditor` does not override `mediaEmbedKinds`. */
 export const DEFAULT_MEDIA_EMBED_KINDS: readonly MediaEmbedKind[] = [
   "image",
   "video",
+];
+
+/** TEXT sub-lesson editor: image embeds only (no video). */
+export const TEXT_SUB_LESSON_MEDIA_EMBED_KINDS: readonly MediaEmbedKind[] = [
+  "image",
 ];
 
 /** Media embed removed from DeltaEditor — enough to call `deleteMediaFile(object_key)`. */
