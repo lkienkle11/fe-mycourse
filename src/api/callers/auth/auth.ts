@@ -80,12 +80,13 @@ export async function getMeService(): Promise<MeResponse | null> {
 export async function loginService(payload: LoginPayload): Promise<{
   data: ApiResponse<LoginResponse>;
   cookies: Record<string, string>;
+  setCookieHeaders: string | string[] | undefined;
 }> {
-  const { data, cookies } = await apiPost<
+  const { data, cookies, setCookieHeaders } = await apiPost<
     ApiResponse<LoginResponse>,
     LoginPayload
   >(API_PUBLIC_ROUTES.auth.login, payload);
-  return { data, cookies };
+  return { data, cookies, setCookieHeaders };
 }
 
 /**
@@ -104,14 +105,15 @@ export async function registerService(
 /**
  * Gọi API xác nhận email — trả token pair giống login.
  */
-export async function confirmService(
-  payload: ConfirmPayload,
-): Promise<{ data: ApiResponse<LoginResponse> }> {
-  const { data } = await apiPost<ApiResponse<LoginResponse>, ConfirmPayload>(
-    API_PUBLIC_ROUTES.auth.confirm,
-    payload,
-  );
-  return { data };
+export async function confirmService(payload: ConfirmPayload): Promise<{
+  data: ApiResponse<LoginResponse>;
+  setCookieHeaders: string | string[] | undefined;
+}> {
+  const { data, setCookieHeaders } = await apiPost<
+    ApiResponse<LoginResponse>,
+    ConfirmPayload
+  >(API_PUBLIC_ROUTES.auth.confirm, payload);
+  return { data, setCookieHeaders };
 }
 
 /**

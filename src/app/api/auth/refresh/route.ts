@@ -3,7 +3,10 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { API_PUBLIC_ROUTES } from "@/constants/api-route";
-import { setAuthSessionCookies } from "@/lib/utils/auth-session";
+import {
+  refreshMaxAgeFromBeSetCookie,
+  setAuthSessionCookies,
+} from "@/lib/utils/auth-session";
 import type { ApiResponse } from "@/types/api";
 import type { RefreshTokenResponse } from "@/types/auth";
 
@@ -13,38 +16,12 @@ const resolvedBaseURL =
   process.env.NEXT_PUBLIC_API_URL ?? process.env.API_URL ?? DEFAULT_BASE_URL;
 
 /**
- * Parse the Max-Age directive (in seconds) for a specific cookie name from
- * the Set-Cookie response header(s).  Returns undefined when the named cookie
- * is not found or carries no Max-Age (i.e. it is a session-scoped cookie).
- */
-function parseMaxAgeForCookie(
-  setCookieHeader: string | string[] | undefined,
-  cookieName: string,
-): number | undefined {
-  if (!setCookieHeader) return undefined;
-  const entries = Array.isArray(setCookieHeader)
-    ? setCookieHeader
-    : [setCookieHeader];
-
-  for (const entry of entries) {
-    const nameValuePart = entry.split(";")[0] ?? "";
-    const eqIdx = nameValuePart.indexOf("=");
-    if (eqIdx === -1) continue;
-    const name = nameValuePart.slice(0, eqIdx).trim();
-    if (name.toLowerCase() !== cookieName.toLowerCase()) continue;
-
-    const match = /[Mm]ax-[Aa]ge=(\d+)/.exec(entry);
-    return match ? parseInt(match[1], 10) : undefined;
-  }
-  return undefined;
-}
-
-/**
  * Browser-safe refresh proxy:
  * - reads HttpOnly refresh/session cookies on Next server
  * - sends explicit refresh headers to BE (avoids duplicate-cookie ambiguity)
- * - reads the Max-Age from BE's Set-Cookie to preserve remember-me status
- * - rewrites rotated auth cookies back to browser with the correct TTL
+ * - reads Max-Age from BE Set-Cookie (authoritative TTL from BE token_ttl.go)
+ * - falls back to auth_session_expires_at (absolute expiry) when Set-Cookie is not surfaced
+ * - rewrites rotated auth cookies back to browser
  */
 export async function POST(): Promise<
   NextResponse<ApiResponse<RefreshTokenResponse | null>>
@@ -87,10 +64,10 @@ export async function POST(): Promise<
       | undefined;
 
     // Forward the exact Max-Age that BE computed for this session.
-    // For remember-me: BE sets Max-Age ≈ RememberMeRefreshTTL (14 days, sliding).
-    // For non-remember-me: BE sets Max-Age = remaining lifetime (decreasing).
+    // For remember-me: BE sets Max-Age ≈ RememberMeRefreshTTL (30 days, sliding).
+    // For non-remember-me: BE sets Max-Age = remaining lifetime (decreasing, max 3 days).
     // Passing it here means FE cookies always match BE session expiry exactly.
-    const refreshMaxAge = parseMaxAgeForCookie(rawSetCookie, "refresh_token");
+    const refreshMaxAge = refreshMaxAgeFromBeSetCookie(rawSetCookie);
 
     const envelope = beResponse.data;
     const payload = envelope?.data;

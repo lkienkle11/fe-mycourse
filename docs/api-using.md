@@ -154,8 +154,8 @@ The response interceptor in `src/api/instance.ts` handles silent token refresh a
 
 - Triggers on eligible `401` / `403` responses (`X-Token-Expired: true` or `401` missing bearer token).
 - **Client**: uses a mutex (single refresh, queued requests) to avoid refresh stampedes.
-- **Client refresh transport**: browser calls FE proxy `POST /api/auth/refresh`; proxy reads HttpOnly cookies server-side, sends explicit `X-Refresh-Token` / `X-Session-Id` to BE, then rewrites rotated cookies back to browser.
-- **Server**: per-request isolation, no mutex needed.
+- **Client refresh transport**: browser calls FE proxy `POST /api/auth/refresh`; proxy relays tokens and rewrites cookies using BE `Set-Cookie` Max-Age or `auth_session_expires_at` fallback.
+- **Server (SSR)**: `instance.ts` + `syncAuthSessionCookiesAction` use the same cookie relay strategy.
 - After refresh: all queued requests are retried with the new token.
 - On refresh failure: all requests reject and `reportError` is called.
 

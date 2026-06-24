@@ -299,7 +299,7 @@ Login and signup calls are proxied through Next.js Server Actions (`"use server"
 
 Auth tokens (`access_token`, `refresh_token`, `session_id`) are stored as **HttpOnly**, `SameSite=Lax` cookies. Client-side JavaScript cannot read them (XSS blast radius reduced). The browser sends cookies on API requests via `withCredentials: true`; the Go backend reads the JWT from the `access_token` cookie when no `Authorization` header is present. Server-side Next.js code still reads HttpOnly cookies via `next/headers` and attaches `Authorization: Bearer …` when proxying to the API.
 
-`buildAuthCookieOptions` (auth cookies) enforces `httpOnly: true` and `secure: true` in production. After silent refresh on the client, `syncAuthSessionCookiesAction` (`src/actions/auth/sync-auth-session.ts`) rewrites HttpOnly cookies via Server Action.
+`buildAuthCookieOptions` (auth cookies) enforces `httpOnly: true` and `secure: true` in production. After silent refresh, the FE proxy and `syncAuthSessionCookiesAction` rewrite cookies using BE `Set-Cookie` Max-Age when available, otherwise the persisted `auth_session_expires_at` HttpOnly cookie (absolute expiry from last BE Set-Cookie).
 
 **Follow-up (not in this pass):** stop returning raw tokens in JSON body (BE-03), enable CSRF middleware (BE-04).
 

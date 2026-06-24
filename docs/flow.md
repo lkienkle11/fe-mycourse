@@ -86,16 +86,17 @@ handleAuthSubmit("signup", signupValues, locale) // → registerAction({ locale 
 
 - Calls `loginService(payload)` which issues `POST /api/v1/auth/login` **from the Next.js server** (not the browser).
 - The Go API returns `{ code, message, data: { access_token, refresh_token, session_id } }`.
-- The action calls `setAuthSessionCookies` from `src/lib/utils/auth-session.ts` (server-only — **not** imported via `@/lib/utils` barrel, so client bundles stay clean):
+- Server Action parses **BE `Set-Cookie` Max-Age** from the login/confirm response and passes it to `setAuthSessionCookies`:
 
 ```ts
-import { setAuthSessionCookies } from "@/lib/utils/auth-session";
-
+const { data: response, setCookieHeaders } = await loginService(payload);
 await setAuthSessionCookies({
   tokens: { access_token, refresh_token, session_id },
-  rememberMe: payload.remember_me,
+  refreshMaxAge: refreshMaxAgeFromBeSetCookie(setCookieHeaders),
 });
 ```
+
+TTL is **not** hardcoded on FE — it comes from BE `Set-Cookie`. Fallback: `auth_session_expires_at` stores absolute expiry (Unix seconds); remaining Max-Age = `expires_at - now`.
 
 **Step 4 — Cookie strategy**
 
@@ -107,11 +108,11 @@ await setAuthSessionCookies({
 | `sameSite` | `lax` | Prevents CSRF while allowing top-level navigation redirects |
 | `secure` | `true` (production) | Forces HTTPS-only transmission |
 | `domain` | parent domain (e.g. `yourdomain.net`) | Allows cookies to be sent to `api.yourdomain.net` when FE and API are on separate subdomains. Controlled by `AUTH_COOKIE_DOMAIN` env var. |
-| `maxAge` | — (`access_token`), 30 days (refresh/session if `remember_me=true`) | Session-scoped by default; persisted if user checks "Remember me" |
+| `maxAge` | — (`access_token`), refresh/session from BE Set-Cookie Max-Age | Parsed by BFF; fallback `auth_session_expires_at` |
 
 **Client API calls:** `createApiInstance` uses `withCredentials: true`. The browser sends HttpOnly cookies; the Go backend reads `access_token` from the cookie when no `Authorization` header is present. **Server-side** Next.js still reads HttpOnly cookies via `next/headers` and attaches `Authorization: Bearer …`.
 
-**After silent refresh (client):** FE proxy route `POST /api/auth/refresh` rewrites HttpOnly cookies via `setAuthSessionCookies` before returning tokens to the interceptor.
+**After silent refresh (client):** FE proxy reads BE `Set-Cookie` Max-Age; if unavailable, uses `auth_session_expires_at` (last value from BE).
 
 **Step 5 — SWR revalidation**
 
