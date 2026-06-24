@@ -65,15 +65,46 @@ export function buildAxiosConfigWithCookies(
   };
 }
 
+/**
+ * Parse the Max-Age directive (in seconds) for a specific cookie name from
+ * the Set-Cookie response header(s).
+ */
+export function parseMaxAgeForCookie(
+  setCookieHeader: string | string[] | undefined,
+  cookieName: string,
+): number | undefined {
+  if (!setCookieHeader) return undefined;
+  const entries = Array.isArray(setCookieHeader)
+    ? setCookieHeader
+    : [setCookieHeader];
+
+  for (const entry of entries) {
+    const nameValuePart = entry.split(";")[0] ?? "";
+    const eqIdx = nameValuePart.indexOf("=");
+    if (eqIdx === -1) continue;
+    const name = nameValuePart.slice(0, eqIdx).trim();
+    if (name.toLowerCase() !== cookieName.toLowerCase()) continue;
+
+    const match = /[Mm]ax-[Aa]ge=(\d+)/.exec(entry);
+    return match ? parseInt(match[1], 10) : undefined;
+  }
+  return undefined;
+}
+
 /** Normalizes an Axios response into `ApiResult` header/cookie fields. */
 export function parseAxiosResponseMeta(rawHeaders: Record<string, unknown>): {
   headers: Record<string, string>;
   cookies: Record<string, string>;
+  setCookieHeaders: string | string[] | undefined;
 } {
+  const setCookieHeaders = rawHeaders["set-cookie"] as
+    | string
+    | string[]
+    | undefined;
+
   return {
     headers: normalizeHeaders(rawHeaders),
-    cookies: parseSetCookies(
-      rawHeaders["set-cookie"] as string | string[] | undefined,
-    ),
+    cookies: parseSetCookies(setCookieHeaders),
+    setCookieHeaders,
   };
 }

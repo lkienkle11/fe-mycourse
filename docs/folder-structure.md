@@ -445,7 +445,7 @@ src/lib/
 │   ├── cookie.ts           # isomorphic getCookieValue / setCookieValue; buildCookieOptions
 │   ├── permission.ts       # satisfiesPermissions, PERMISSION_NAME_TO_ID, filterPermissionNavTree, id lookup
 │   ├── dashboard.ts        # filterDashboardItems (wraps filterPermissionNavTree)
-│   └── auth-session.ts     # SERVER ONLY — setAuthSessionCookies (import directly, not via barrel)
+│   └── auth-session.ts     # SERVER ONLY — setAuthSessionCookies, auth_session_expires_at, resolveRefreshMaxAgeFromBe
 ├── font.ts                 # next/font definitions: Roboto, Gilroy, GeistMono
 └── http.ts                 # Placeholder for future HTTP utilities
 ```

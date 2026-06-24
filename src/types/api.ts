@@ -130,10 +130,12 @@ export type ApiPaginatedResponse<T = unknown> = ApiResponse<
  *                `set-cookie` is excluded here; use `cookies` instead.
  * `cookies`    – cookies parsed from the `Set-Cookie` response header,
  *                keyed by cookie name with the raw value (attributes stripped).
+ * `setCookieHeaders` – raw `Set-Cookie` header value(s) for Max-Age parsing.
  */
 export interface ApiResult<T = unknown> {
   data: T;
   statusCode: number;
   headers: Record<string, string>;
   cookies: Record<string, string>;
+  setCookieHeaders: string | string[] | undefined;
 }
