@@ -44,6 +44,7 @@ export const courseEditorTabs = [
   "collaborators",
   "pricing",
   "certificate",
+  "review-history",
 ] as const satisfies ReadonlyArray<CourseEditorTab>;
 
 export function createCourseBasicInfoState(
