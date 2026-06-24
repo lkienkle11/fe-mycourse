@@ -32,8 +32,9 @@ Server Action reads response:
   - data.code === ApiErrorCode.Success?   [ApiErrorCode from src/constants/api-error-code.ts]
     YES → set 3 cookies on browser via next/headers cookies().set():
             access_token   (HttpOnly — browser sends via withCredentials; BE reads cookie)
-            refresh_token  (HttpOnly, maxAge=30d if rememberMe)
-            session_id     (HttpOnly, same maxAge as refresh_token)
+            refresh_token  (HttpOnly, maxAge from BE Set-Cookie)
+            session_id     (HttpOnly, same maxAge)
+            auth_session_expires_at (HttpOnly FE-only — absolute expiry for refresh fallback)
           → return { success: true, message, code }
     NO  → return { success: false, message, code }
   ↓
@@ -74,8 +75,7 @@ Interceptor checks refresh conditions:
       ↓
       Refresh succeeds?
         YES → new access_token, refresh_token received
-              → browser: FE proxy already rewrote rotated auth cookies
-              → server: syncAuthSessionCookiesAction updates Next cookies
+              → browser/server: rewrite cookies from BE Set-Cookie Max-Age (fallback auth_session_expires_at)
               → flushRefreshQueue(newAccessToken) → retry all queued requests
               → retry original failed request with new token
         NO  → flushRefreshQueue(null) → reject all queued requests

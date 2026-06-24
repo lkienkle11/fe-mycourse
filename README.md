@@ -265,6 +265,8 @@ interface RefreshTokenResponse {
 }
 ```
 
+Remember-me is **not** in the API JSON. FE cookie TTL comes from BE `Set-Cookie` Max-Age; fallback `auth_session_expires_at` stores absolute expiry for silent refresh.
+
 ### `useGetMe` hook usage
 
 ```ts

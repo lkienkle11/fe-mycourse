@@ -95,9 +95,17 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `LoginResponse`, `RefreshTokenResponse`
 - **Type**: Interface
 - **Path**: `src/types/auth/auth.ts`
-- **Purpose**: Response bodies for login and token refresh endpoints.
-- **Scope**: `src/api/callers/auth/auth.ts`, `src/actions/auth/auth.ts`, `src/api/instance.ts` interceptor.
+- **Purpose**: Response bodies for login, confirm, and refresh — three token fields only (no remember-me metadata in JSON).
+- **Scope**: `src/api/callers/auth/auth.ts`, `src/actions/auth/auth.ts`, `src/api/instance.ts`, refresh proxy.
 - **Dependencies**: none.
+
+### Asset: AUTH_SESSION_EXPIRES_AT_COOKIE / resolveRefreshMaxAgeFromBe
+- **Name**: `AUTH_SESSION_EXPIRES_AT_COOKIE`, `resolveRefreshMaxAgeFromBe()`, `refreshMaxAgeFromBeSetCookie()`, `expiresAtFromMaxAge()`, `remainingSecondsUntilExpiresAt()`
+- **Type**: Constant + server-only helpers
+- **Path**: `src/lib/utils/auth-session.ts`
+- **Purpose**: FE-only HttpOnly cookie storing **absolute session expiry** (Unix seconds) derived from BE `Set-Cookie` Max-Age. Fallback computes `expires_at - now` so non-remember sessions are never extended when Set-Cookie is unavailable.
+- **Scope**: `setAuthSessionCookies`, `clearAuthSessionCookies`, refresh proxy, login/confirm actions.
+- **Dependencies**: `parseMaxAgeForCookie` from `axios-helpers`.
 
 ### Asset: AuthActions
 - **Name**: `AuthActions`
@@ -730,12 +738,28 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: none.
 
 ### Asset: syncAuthSessionCookiesAction
-- **Name**: `syncAuthSessionCookiesAction(tokens: AuthSessionTokens): Promise<void>`
+- **Name**: `syncAuthSessionCookiesAction(tokens: SyncAuthSessionCookiesInput): Promise<void>`
 - **Type**: Server Action
 - **Path**: `src/actions/auth/sync-auth-session.ts`
-- **Purpose**: Rewrites HttpOnly auth cookies after client-side silent token refresh (Axios interceptor cannot set HttpOnly cookies from JS).
-- **Scope**: `src/api/instance.ts` refresh path.
+- **Purpose**: Rewrites HttpOnly auth cookies after server-side silent refresh. TTL from BE `Set-Cookie` Max-Age or persisted `auth_session_expires_at` (remaining lifetime).
+- **Scope**: `src/api/instance.ts` SSR refresh path.
 - **Dependencies**: `setAuthSessionCookies` from `@/lib/utils/auth-session`.
+
+### Asset: resolveRefreshMaxAgeFromBe
+- **Name**: `resolveRefreshMaxAgeFromBe(input): number | undefined`
+- **Type**: Utility function
+- **Path**: `src/lib/utils/auth-session.ts`
+- **Purpose**: Resolves refresh/session cookie Max-Age (seconds). Priority: `refreshMaxAge` (parsed Set-Cookie) → remaining seconds until `auth_session_expires_at`. No hardcoded TTL constants.
+- **Scope**: `setAuthSessionCookies`, refresh proxy, SSR interceptor relay.
+- **Dependencies**: `parseMaxAgeForCookie`.
+
+### Asset: parseMaxAgeForCookie
+- **Name**: `parseMaxAgeForCookie(setCookieHeader, cookieName): number | undefined`
+- **Type**: Utility function
+- **Path**: `src/api/axios-helpers.ts`
+- **Purpose**: Parses `Max-Age` from raw BE `Set-Cookie` header(s) for `refresh_token`.
+- **Scope**: `src/app/api/auth/refresh/route.ts`, `src/api/instance.ts` SSR refresh.
+- **Dependencies**: none.
 
 ### Asset: pending-tab-auth-sync / useAuthConfirmTabSync
 - **Path**: `src/lib/auth/pending-tab-auth-sync.ts`, `src/hooks/auth/use-auth-confirm-tab-sync.ts`
@@ -746,8 +770,8 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `setAuthSessionCookies(input: SetAuthSessionCookiesInput): Promise<void>`
 - **Type**: Server-only utility function
 - **Path**: `src/lib/utils/auth-session.ts` — **not** re-exported from `@/lib/utils` (barrel is client-safe).
-- **Purpose**: Writes `access_token`, `refresh_token`, and `session_id` cookies after login or email confirm. Uses `next/headers` `cookies()`.
-- **Scope**: `src/actions/auth/auth.ts` (`loginAction`, `confirmAction`) only.
+- **Purpose**: Writes auth cookies after login, confirm, or refresh relay. Persists absolute expiry in `auth_session_expires_at` when BE Set-Cookie is parsed; fallback never extends expiry.
+- **Scope**: `src/actions/auth/auth.ts`, `src/actions/auth/sync-auth-session.ts`, `src/app/api/auth/refresh/route.ts`.
 - **Import**: `import { setAuthSessionCookies } from "@/lib/utils/auth-session";`
 - **Dependencies**: `server-only` (0.0.1), `next/headers`, `buildAuthCookieOptions`, `getCookieDomain` from `./cookie`.
 
