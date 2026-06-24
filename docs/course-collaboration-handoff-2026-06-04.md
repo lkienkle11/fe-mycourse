@@ -118,7 +118,7 @@ Added:
 - `src/components/features/course/course-status-badge.tsx`
 - `src/components/shared/delta-editor.tsx`
 
-Section description and lesson summary use the shared `CourseOutlineItemDialog` with `DeltaEditor` (`allowMediaEmbed={false}`) — Quill Delta JSON, text formatting only (no image/video/object embeds). TEXT sub-lessons use full `DeltaEditor` with media embeds. Toolbar font picker (Roboto, Gilroy, Geist Mono, serif, monospace). Image/video via `MediaCollectionDialog`, paste (Ctrl+V), or drag-and-drop — paste/drop upload is delegated to `onObjectEmbedded` (`useDeltaEditorMediaHandlers` → `uploadMediaFiles`); embed removal (× or Backspace/Delete) calls `onDelete` → `deleteMediaFile`. Delta stores URL references only (no base64).
+Section description and lesson summary use the shared `CourseOutlineItemDialog` with `DeltaEditor` (`allowMediaEmbed={false}`) — Quill Delta JSON, text formatting only (no image/video/object embeds); dialog shell uses `min-w-0 overflow-x-hidden` (same layout pattern as `CourseSubLessonDialog`) so long description/summary text wraps inside the modal. TEXT sub-lessons use full `DeltaEditor` with `mediaEmbedKinds={TEXT_SUB_LESSON_MEDIA_EMBED_KINDS}` (`["image"]` only — no video). Toolbar font picker (Roboto, Gilroy, Geist Mono, serif, monospace). Image embeds via `MediaCollectionDialog`, paste (Ctrl+V), or drag-and-drop — paste/drop upload is delegated to `onObjectEmbedded` (`useDeltaEditorMediaHandlers` → `uploadMediaFiles`); embed removal (× or Backspace/Delete) calls `onDelete` → `deleteMediaFile`. Delta stores URL references only (no base64).
 
 ## Important fixes already completed
 
