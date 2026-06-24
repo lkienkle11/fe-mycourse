@@ -36,6 +36,7 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/instructor/courses/{courseId}/collaborators` | Active | `InstructorCourseEditorPage` — route-backed collaborators tab |
 | `/{locale}/instructor/courses/{courseId}/pricing` | Active | `InstructorCourseEditorPage` — route-backed pricing placeholder |
 | `/{locale}/instructor/courses/{courseId}/certificate` | Active | `InstructorCourseEditorPage` — route-backed certificate placeholder |
+| `/{locale}/instructor/courses/{courseId}/review-history` | Active | `InstructorCourseEditorPage` — `CourseEditorReviewHistoryTab` (filter + pagination + URL sync) |
 | `/{locale}/instructor/tickets` | Active | `InstructorTicketsPage` — create ticket, thread, close (P58) |
 | `/{locale}/admin/courses` | Active | Redirect → `/admin/courses/all` |
 | `/{locale}/admin/courses/all` | Active | `CourseAdminAllPage` — all courses + filter + move to trash |
