@@ -10,6 +10,7 @@ import { getCookieValue, isServer } from "@/lib/utils";
 import { useApiError } from "@/store/api-error-store";
 import type { ApiResponse } from "@/types/api";
 import type { RefreshTokenResponse } from "@/types/auth";
+import { parseMaxAgeForCookie } from "./axios-helpers";
 import { rawPost } from "./raw-http";
 
 const DEFAULT_BASE_URL = "http://localhost:3000/api";
@@ -99,6 +100,7 @@ async function getRefreshSessionPair(): Promise<RefreshSessionPair | null> {
 
 async function persistRefreshedAuthSession(
   tokens: RefreshTokenResponse,
+  refreshMaxAge?: number,
 ): Promise<void> {
   // Client: BE Set-Cookie (AUTH_COOKIE_DOMAIN) already updates browser cookies.
   // Server: BE Set-Cookie stays on the Next.js server — relay tokens to the browser.
@@ -112,6 +114,7 @@ async function persistRefreshedAuthSession(
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token,
     session_id: tokens.session_id,
+    ...(refreshMaxAge !== undefined ? { refreshMaxAge } : {}),
   });
 }
 
@@ -121,7 +124,7 @@ async function persistRefreshedAuthSession(
 
 async function doTokenRefresh(
   pair: RefreshSessionPair,
-): Promise<RefreshTokenResponse | null> {
+): Promise<{ tokens: RefreshTokenResponse; refreshMaxAge?: number } | null> {
   try {
     if (!isServer()) {
       const { data: envelope } = await rawPost<
@@ -134,7 +137,7 @@ async function doTokenRefresh(
       });
       const payload = envelope?.data;
       if (!payload?.access_token) return null;
-      return payload;
+      return { tokens: payload };
     }
 
     const headers: Record<string, string> = {
@@ -144,7 +147,7 @@ async function doTokenRefresh(
       headers["X-Refresh-Token"] = pair.refreshToken;
       headers["X-Session-Id"] = pair.sessionId;
     }
-    const { data: envelope } = await rawPost<
+    const { data: envelope, setCookieHeaders } = await rawPost<
       ApiResponse<RefreshTokenResponse>,
       null
     >(resolvedBaseURL + API_PUBLIC_ROUTES.auth.refresh, null, {
@@ -154,7 +157,14 @@ async function doTokenRefresh(
     });
     const payload = envelope?.data;
     if (!payload?.access_token) return null;
-    return payload;
+    const refreshMaxAge = parseMaxAgeForCookie(
+      setCookieHeaders,
+      "refresh_token",
+    );
+    return {
+      tokens: payload,
+      ...(refreshMaxAge !== undefined ? { refreshMaxAge } : {}),
+    };
   } catch {
     return null;
   }
@@ -259,13 +269,14 @@ export function createApiInstance(
 
         // ---- Server-side path (no shared mutex) ----
         if (isServer()) {
-          const tokens = await doTokenRefresh(pair);
-          if (!tokens) {
+          const refreshResult = await doTokenRefresh(pair);
+          if (!refreshResult) {
             reportError(error);
             return Promise.reject(error);
           }
 
-          await persistRefreshedAuthSession(tokens);
+          const { tokens, refreshMaxAge } = refreshResult;
+          await persistRefreshedAuthSession(tokens, refreshMaxAge);
           cfg.headers.set("Authorization", `Bearer ${tokens.access_token}`);
           return instance(cfg);
         }
@@ -286,14 +297,15 @@ export function createApiInstance(
 
         isRefreshing = true;
         try {
-          const tokens = await doTokenRefresh(pair);
-          if (!tokens) {
+          const refreshResult = await doTokenRefresh(pair);
+          if (!refreshResult) {
             flushRefreshQueue(null);
             reportError(error);
             return Promise.reject(error);
           }
 
-          await persistRefreshedAuthSession(tokens);
+          const { tokens, refreshMaxAge } = refreshResult;
+          await persistRefreshedAuthSession(tokens, refreshMaxAge);
           flushRefreshQueue(tokens.access_token);
 
           cfg.headers.set("Authorization", `Bearer ${tokens.access_token}`);

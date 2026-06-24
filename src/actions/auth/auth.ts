@@ -15,6 +15,7 @@ import {
 import { ApiErrorCode } from "@/constants/api-error-code";
 import {
   clearAuthSessionCookies,
+  refreshMaxAgeFromBeSetCookie,
   setAuthSessionCookies,
 } from "@/lib/utils/auth-session";
 
@@ -63,13 +64,13 @@ export async function loginAction(
   payload: LoginPayload,
 ): Promise<AuthActionResult> {
   try {
-    const { data: response } = await loginService(payload);
+    const { data: response, setCookieHeaders } = await loginService(payload);
 
     if (response.code === ApiErrorCode.Success && response.data) {
       const { access_token, refresh_token, session_id } = response.data;
       await setAuthSessionCookies({
         tokens: { access_token, refresh_token, session_id },
-        rememberMe: payload.remember_me,
+        refreshMaxAge: refreshMaxAgeFromBeSetCookie(setCookieHeaders),
       });
       return { success: true, message: response.message, code: response.code };
     }
@@ -109,13 +110,13 @@ export async function confirmAction(
   payload: ConfirmPayload,
 ): Promise<AuthActionResult> {
   try {
-    const { data: response } = await confirmService(payload);
+    const { data: response, setCookieHeaders } = await confirmService(payload);
 
     if (response.code === ApiErrorCode.Success && response.data) {
       const { access_token, refresh_token, session_id } = response.data;
       await setAuthSessionCookies({
         tokens: { access_token, refresh_token, session_id },
-        rememberMe: false,
+        refreshMaxAge: refreshMaxAgeFromBeSetCookie(setCookieHeaders),
       });
       return { success: true, message: response.message, code: response.code };
     }
