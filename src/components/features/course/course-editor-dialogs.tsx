@@ -28,6 +28,7 @@ import {
   applyQuizOptionCorrectChange,
 } from "@/lib/utils/course";
 import { buildDurationUnits, formatDurationMs } from "@/lib/utils/duration";
+import { TEXT_SUB_LESSON_MEDIA_EMBED_KINDS } from "@/lib/utils/media";
 import { newV7 } from "@/lib/utils/uuid";
 import type {
   CourseBasicInfoForm,
@@ -81,23 +82,25 @@ function CourseOutlineItemDialog({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent className="scrollbar-app max-h-[90vh] max-w-3xl overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="scrollbar-app max-h-[90vh] max-w-3xl overflow-x-hidden overflow-y-auto">
+        <DialogHeader className="min-w-0">
           <DialogTitle>{t(titleKey)}</DialogTitle>
           <DialogDescription className="sr-only">
             {t(titleKey)}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-2">
+        <div className="min-w-0 space-y-3 overflow-x-hidden">
+          <div className="min-w-0 space-y-2">
             <RequiredLabel htmlFor={fieldId}>{t("titleLabel")}</RequiredLabel>
             <Input
               id={fieldId}
+              className="min-w-0"
               value={title}
               onChange={(event) => onTitleChange(event.target.value)}
             />
           </div>
           <DeltaEditor
+            className="min-w-0"
             value={body}
             label={bodyLabel}
             required
@@ -212,10 +215,7 @@ function subLessonDialogTitle(
   mode: CourseSubLessonDialogState["mode"] | undefined,
   labels: { create: string; edit: string },
 ): string {
-  if (mode === "create") {
-    return labels.create;
-  }
-  return labels.edit;
+  return mode === "create" ? labels.create : labels.edit;
 }
 
 function SubLessonCheckboxField({
@@ -389,6 +389,7 @@ function SubLessonTextFields({
         className="min-w-0"
         surfaceClassName="max-h-[320px]"
         value={form.text_delta}
+        mediaEmbedKinds={TEXT_SUB_LESSON_MEDIA_EMBED_KINDS}
         onObjectEmbedded={onObjectEmbedded}
         onDelete={onDelete}
         onChange={(value) =>
