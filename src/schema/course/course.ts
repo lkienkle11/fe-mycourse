@@ -128,8 +128,16 @@ export const courseRejectReasonSchema = z.object({
   reason: z
     .string({ message: "validation.rejectReason" })
     .trim()
-    .min(1, { message: "validation.rejectReason" })
-    .max(2000, { message: "validation.rejectReasonMax" }),
+    .min(5, { message: "validation.rejectReasonMin" })
+    .max(500, { message: "validation.rejectReasonMax" }),
+});
+
+export const courseApproveFeedbackSchema = z.object({
+  approval_note: z
+    .string({ message: "validation.approveFeedback" })
+    .trim()
+    .min(5, { message: "validation.approveFeedbackMin" })
+    .max(500, { message: "validation.approveFeedbackMax" }),
 });
 
 export type CourseCreateValues = z.infer<typeof courseCreateSchema>;
@@ -140,3 +148,6 @@ export type CourseSubLessonValues = z.infer<typeof courseSubLessonSchema>;
 export type CourseQuizContentValues = z.infer<typeof courseQuizOptionSchema>;
 export type CourseCollaboratorValues = z.infer<typeof courseCollaboratorSchema>;
 export type CourseRejectReasonValues = z.infer<typeof courseRejectReasonSchema>;
+export type CourseApproveFeedbackValues = z.infer<
+  typeof courseApproveFeedbackSchema
+>;

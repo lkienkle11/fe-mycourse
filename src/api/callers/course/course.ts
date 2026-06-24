@@ -1,15 +1,22 @@
 import { apiDelete, apiFetch, apiPatch, apiPost } from "@/api/methods";
 import { API_PRIVATE_ROUTES } from "@/constants/api-route";
 import { buildQueryParams } from "@/lib/utils";
-import type { ApiResponse } from "@/types/api";
+import type {
+  ApiPaginatedData,
+  ApiPaginatedResponse,
+  ApiResponse,
+} from "@/types/api";
 import type {
   AcquireCourseLeasePayload,
+  ApproveCourseDraftPayload,
   CourseCollaborator,
   CourseDetail,
   CourseEnrollment,
   CourseLease,
   CourseListItem,
   CourseProgress,
+  CourseReviewHistoryFilters,
+  CourseReviewHistoryItem,
   CourseSection,
   CreateCoursePayload,
   RejectCourseDraftPayload,
@@ -472,6 +479,7 @@ export async function listPendingCourseReviewsService(): Promise<
 
 export async function approveCourseReviewService(
   courseId: string,
+  payload: ApproveCourseDraftPayload,
 ): Promise<CourseDetail> {
   const url = requireUrl(
     buildQueryParams(routes.approveReview, undefined, {
@@ -479,7 +487,10 @@ export async function approveCourseReviewService(
     }),
     "Invalid approve URL",
   );
-  const { data } = await apiPost<ApiResponse<CourseDetail>>(url, {});
+  const { data } = await apiPost<
+    ApiResponse<CourseDetail>,
+    ApproveCourseDraftPayload
+  >(url, payload);
   if (!data.data) {
     throw new Error(data.message || "Failed to approve course");
   }
@@ -502,6 +513,41 @@ export async function rejectCourseReviewService(
   >(url, payload);
   if (!data.data) {
     throw new Error(data.message || "Failed to reject course");
+  }
+  return data.data;
+}
+
+export function getCourseReviewHistoryKey(
+  courseId: string,
+  filters: CourseReviewHistoryFilters = {},
+): string | null {
+  const query: Record<string, string> = {};
+  if (filters.page != null) {
+    query.page = String(filters.page);
+  }
+  if (filters.per_page != null) {
+    query.per_page = String(filters.per_page);
+  }
+  if (filters.status) {
+    query.status = filters.status;
+  }
+  return buildQueryParams(routes.reviewHistory, query, {
+    courseId: String(courseId),
+  });
+}
+
+export async function listCourseReviewHistoryService(
+  courseId: string,
+  filters: CourseReviewHistoryFilters = {},
+): Promise<ApiPaginatedData<CourseReviewHistoryItem[]>> {
+  const url = getCourseReviewHistoryKey(courseId, filters);
+  if (!url) {
+    throw new Error("Invalid review history URL");
+  }
+  const { data } =
+    await apiFetch<ApiPaginatedResponse<CourseReviewHistoryItem[]>>(url);
+  if (!data.data) {
+    throw new Error(data.message || "Failed to load review history");
   }
   return data.data;
 }

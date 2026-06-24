@@ -543,6 +543,14 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `course-review-page` (`scope="admin"` | `"sysadmin"`).
 - **Dependencies**: `CourseAdminTableActionsMenu`, `Link` from `@/i18n/navigation`, i18n `course.review.*`.
 
+### Asset: course review history tab + hook
+- **Name**: `getCourseReviewHistoryKey`, `listCourseReviewHistoryService`, `useCourseReviewHistory`, `CourseEditorReviewHistoryTab`
+- **Type**: API callers + SWR hook + React component
+- **Path**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourseReviewHistory.ts`, `src/components/features/course/course-editor-review-history-tab.tsx`
+- **Purpose**: Paginated instructor review history (`GET /courses/:id/review-history`); filter by `APPROVED`/`REJECTED`; URL query sync via `instructorCourseEditorTabHref`.
+- **Scope**: `InstructorCourseEditorPage` tab `review-history`.
+- **Dependencies**: `useApiListQuery`, `InstructorListPagination`, `courseApproveFeedbackSchema` / `courseRejectReasonSchema` on admin review page.
+
 ### Asset: instructor course detail hook
 - **Name**: `getCourseDetailKey`, `getCourseDetailService`, `useCourseDetail`
 - **Type**: API callers + SWR hook
@@ -653,7 +661,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course.ts`, `src/lib/utils/duration.ts`
-- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry, basic-info/sub-lesson form state factories (including H/M/S duration parts for TEXT/QUIZ), `buildSubLessonEstimatedDurationPayload` / `validateSubLessonDurationForm`, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE), `validateSubLessonFormContent` / `validateCourseSubmitReadiness` (QUIZ rules delegate to `courseQuizOptionSchema`), quiz editor state helpers `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` for `SubLessonQuizFields`, and `formatDurationMs` / `parseDurationPartsToMs` / `splitMsToDurationParts` for outline labels. **Review workflow UI** (`editor-page.tsx`): `canManageReviewWorkflow` gates prepare/submit/reopen header buttons to `collaborator_role === "OWNER"`.
+- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry (6 tabs incl. `review-history`), basic-info/sub-lesson form state factories (including H/M/S duration parts for TEXT/QUIZ), `buildSubLessonEstimatedDurationPayload` / `validateSubLessonDurationForm`, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE), `validateSubLessonFormContent` / `validateCourseSubmitReadiness` (QUIZ rules delegate to `courseQuizOptionSchema`), quiz editor state helpers `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` for `SubLessonQuizFields`, and `formatDurationMs` / `parseDurationPartsToMs` / `splitMsToDurationParts` for outline labels. **Review workflow UI** (`editor-page.tsx`): `canManageReviewWorkflow` gates prepare/submit/reopen header buttons to `collaborator_role === "OWNER"`.
 - **Scope**: `use-course-editor-state`, `editor-page.tsx`, `course-editor-outline-tab.tsx`, `course-editor-dialogs.tsx`.
 - **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`); `duration.ts` for display/payload conversion.
 
