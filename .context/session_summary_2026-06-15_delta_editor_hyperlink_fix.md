@@ -36,7 +36,7 @@ After selecting text and applying a URL via the link toolbar dialog, the link ei
 
 Route: `http://localhost:3000/vi/instructor/courses/019eba14-f726-7599-8587-627371d20c3c/info`
 
-1. Login `user01@yopmail.com` / `Test@1234` if prompted
+1. Log in with a local dev account if prompted
 2. Select text in Giới thiệu khóa học → link icon → URL `https://www.google.com/?hl=vi` → Áp dụng
 3. Verify: anchor in DOM, color `rgb(61, 203, 177)`, underline, cursor pointer
 
