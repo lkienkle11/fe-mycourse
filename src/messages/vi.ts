@@ -856,11 +856,25 @@ const messages = {
         title: "Cộng tác viên",
         description:
           "Mọi người đều có thể xem danh sách. Chỉ chủ sở hữu mới có thể thêm hoặc xóa cộng tác viên.",
-        addInstructorLabel: "Thêm giảng viên",
-        selectInstructor: "Chọn giảng viên",
         addEditor: "Thêm biên tập viên",
         adding: "Đang thêm...",
         remove: "Gỡ bỏ",
+        listSearchPlaceholder: "Tìm theo tên hoặc email",
+        listSearchAction: "Tìm kiếm",
+        listLoading: "Đang tải danh sách cộng tác viên...",
+        listEmpty: "Không có cộng tác viên nào.",
+        picker: {
+          title: "Thêm biên tập viên",
+          description:
+            "Chọn một hoặc nhiều giảng viên để thêm làm cộng tác viên.",
+          searchPlaceholder: "Tìm theo tên hoặc email",
+          searchAction: "Tìm kiếm",
+          loading: "Đang tải danh sách giảng viên...",
+          empty: "Không tìm thấy giảng viên phù hợp.",
+          cancel: "Hủy",
+          addSelected: "Thêm đã chọn",
+          adding: "Đang thêm...",
+        },
       },
       pricing: {
         title: "Giá bán",

@@ -9,7 +9,6 @@ import {
   deleteCourseSubLessonService,
 } from "@/api/callers/course";
 import { useCourseDetail } from "@/api/hooks/course";
-import { useInstructorRosterList } from "@/api/hooks/instructor";
 import { useTaxonomyList } from "@/api/hooks/taxonomy/useTaxonomy";
 import { CourseBasicInfoTab } from "@/components/features/course/course-editor-basic-tab";
 import { CourseCollaboratorsTab } from "@/components/features/course/course-editor-collaborators-tab";
@@ -111,8 +110,6 @@ export function InstructorCourseEditorPage({
     subLessonDialog,
     subLessonForm,
     setSubLessonForm,
-    collaboratorUserId,
-    setCollaboratorUserId,
     isSubmittingCollaborator,
     videoDialogOpen,
     setVideoDialogOpen,
@@ -135,7 +132,7 @@ export function InstructorCourseEditorPage({
     closeSubLessonDialog,
     saveSubLesson,
     toggleSelection,
-    handleAddCollaborator,
+    handleAddCollaborators,
     handleRemoveCollaborator,
     handleSubmitReview,
     handleReopenDraft,
@@ -153,14 +150,11 @@ export function InstructorCourseEditorPage({
   });
   const basicInfoFilters =
     tab === "info" ? { page: 1, per_page: 100, include_images: false } : null;
-  const rosterFilters =
-    tab === "collaborators" ? { page: 1, per_page: 100 } : null;
   const { rows: levelRows } = useTaxonomyList("levels", basicInfoFilters);
   const { rows: topicRows } = useTaxonomyList("topics", basicInfoFilters);
   const { rows: tagRows } = useTaxonomyList("tags", basicInfoFilters);
   const { rows: skillRows } = useTaxonomyList("skills", basicInfoFilters);
   const { rows: outcomeRows } = useTaxonomyList("outcomes", basicInfoFilters);
-  const { rows: rosterRows } = useInstructorRosterList(rosterFilters);
   const courseTitleLabel = isLoading
     ? tCommon("loadingCourse")
     : (activeVersion?.title ?? tCommon("notLoaded"));
@@ -344,21 +338,11 @@ export function InstructorCourseEditorPage({
   } satisfies ComponentProps<typeof CourseOutlineTab>;
 
   const collaboratorsTabProps = {
+    courseId,
     canManageCollaborators,
-    state: {
-      collaboratorUserId,
-      setCollaboratorUserId,
-      isSubmittingCollaborator,
-    },
-    data: {
-      rosterRows,
-      collaborators: data.collaborators,
-    },
-    actions: {
-      onAddCollaborator: () => void handleAddCollaborator(),
-      onRemoveCollaborator: (collaborator) =>
-        void handleRemoveCollaborator(collaborator),
-    },
+    isSubmittingCollaborator,
+    onAddCollaborators: handleAddCollaborators,
+    onRemoveCollaborator: handleRemoveCollaborator,
   } satisfies ComponentProps<typeof CourseCollaboratorsTab>;
 
   const courseEditorTabPanels = {
