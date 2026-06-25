@@ -33,6 +33,8 @@ export const API_PRIVATE_ROUTES = {
   },
   instructor: {
     roster: "/api/v1/instructors",
+    rosterBulk: "/api/v1/instructors/bulk",
+    rosterCandidates: "/api/v1/instructors/roster-candidates",
     rosterById: "/api/v1/instructors/:id",
     expertiseTopics: "/api/v1/instructors/:id/expertise/topics",
     expertiseTopicByRow: "/api/v1/instructors/:id/expertise/topics/:topicRowId",

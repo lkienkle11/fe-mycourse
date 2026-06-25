@@ -421,6 +421,9 @@ const messages = {
       title: "Instructor roster",
       addButton: "Add instructor",
       addSuccess: "Instructor added to roster.",
+      addPartialSuccess:
+        "Added {succeeded} instructor(s). {failed} could not be added.",
+      addAllFailed: "Could not add the selected instructors.",
       searchPlaceholder: "Search by name or email…",
       viewProfile: "View profile",
       profileNotFound: "No profile found for this instructor.",
@@ -439,6 +442,17 @@ const messages = {
         cancel: "Cancel",
         confirm: "Add",
         submitting: "Adding…",
+      },
+      picker: {
+        title: "Add instructor",
+        description: "Select one or more users to assign the instructor role.",
+        searchPlaceholder: "Search by name or email",
+        searchAction: "Search",
+        loading: "Loading users…",
+        empty: "No matching users found.",
+        cancel: "Cancel",
+        addSelected: "Add selected",
+        adding: "Adding…",
       },
       deleteTitle: "Remove from roster?",
       deleteDescription:

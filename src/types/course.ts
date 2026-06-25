@@ -1,4 +1,5 @@
 import type { ApiListQueryParams } from "@/types/api";
+import type { UserPickerCandidate } from "@/types/user-picker";
 
 export type CourseVersionStatus =
   | "DRAFT"
@@ -274,7 +275,7 @@ export type CourseReviewHistoryItem = {
 
 export type CourseCollaboratorListFilters = ApiListQueryParams;
 
-export type CourseInstructorCandidate = Omit<CourseCollaborator, "role">;
+export type CourseInstructorCandidate = UserPickerCandidate;
 
 export type CourseInstructorCandidateFilters = ApiListQueryParams;
 
