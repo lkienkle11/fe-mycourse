@@ -132,13 +132,10 @@ function useCourseBasicInfoState(activeVersion?: CourseVersion) {
 }
 
 function useCourseCollaboratorState() {
-  const [collaboratorUserId, setCollaboratorUserId] = useState("");
   const [isSubmittingCollaborator, setIsSubmittingCollaborator] =
     useState(false);
 
   return {
-    collaboratorUserId,
-    setCollaboratorUserId,
     isSubmittingCollaborator,
     setIsSubmittingCollaborator,
   };
@@ -302,12 +299,8 @@ export function useCourseEditorState({
     setOutcomeId,
     toggleSelection,
   } = useCourseBasicInfoState(activeVersion);
-  const {
-    collaboratorUserId,
-    setCollaboratorUserId,
-    isSubmittingCollaborator,
-    setIsSubmittingCollaborator,
-  } = useCourseCollaboratorState();
+  const { isSubmittingCollaborator, setIsSubmittingCollaborator } =
+    useCourseCollaboratorState();
   const {
     thumbnailDialogOpen,
     setThumbnailDialogOpen,
@@ -616,26 +609,27 @@ export function useCourseEditorState({
     }
   };
 
-  const handleAddCollaborator = async () => {
-    const parsed = courseCollaboratorSchema.safeParse({
-      user_id: collaboratorUserId,
-    });
-    if (!parsed.success) {
-      toast.error(tValidation("collaboratorUserId"));
+  const handleAddCollaborators = async (userIds: string[]) => {
+    if (userIds.length === 0) {
       return;
     }
-    const userId = parsed.data.user_id;
     setIsSubmittingCollaborator(true);
     try {
-      await addCourseCollaboratorService(courseId, {
-        user_id: userId,
-        role: "EDITOR",
-      });
+      for (const userId of userIds) {
+        const parsed = courseCollaboratorSchema.safeParse({ user_id: userId });
+        if (!parsed.success) {
+          toast.error(tValidation("collaboratorUserId"));
+          throw new Error("invalid collaborator user id");
+        }
+        await addCourseCollaboratorService(courseId, {
+          user_id: parsed.data.user_id,
+          role: "EDITOR",
+        });
+      }
       toast.success(t("collaboratorAdded"));
-      setCollaboratorUserId("");
-      await refreshDetail();
     } catch (error) {
       toastApiError(tErrors, error);
+      throw error;
     } finally {
       setIsSubmittingCollaborator(false);
     }
@@ -645,18 +639,19 @@ export function useCourseEditorState({
     try {
       await removeCourseCollaboratorService(courseId, collaborator.user_id);
       toast.success(t("collaboratorRemoved"));
-      await refreshDetail();
     } catch (error) {
       toastApiError(tErrors, error);
+      throw error;
     }
   };
 
   const handleSubmitReview = async () => {
-    if (!courseDetail) {
+    const detail = await mutateDetail();
+    if (!detail) {
       toast.error(tValidation("submitBasicInfoIncomplete"));
       return;
     }
-    const issues = validateCourseSubmitReadiness(courseDetail);
+    const issues = validateCourseSubmitReadiness(detail);
     if (issues?.length) {
       toastValidationError(tValidation, issues, "submitBasicInfoIncomplete");
       return;
@@ -696,8 +691,6 @@ export function useCourseEditorState({
     subLessonDialog,
     subLessonForm,
     setSubLessonForm,
-    collaboratorUserId,
-    setCollaboratorUserId,
     isSubmittingCollaborator,
     videoDialogOpen,
     setVideoDialogOpen,
@@ -720,7 +713,7 @@ export function useCourseEditorState({
     closeSubLessonDialog,
     saveSubLesson,
     toggleSelection,
-    handleAddCollaborator,
+    handleAddCollaborators,
     handleRemoveCollaborator,
     handleSubmitReview,
     handleReopenDraft,

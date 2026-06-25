@@ -49,7 +49,7 @@ npm run quality:deps
 
 ## Manual test steps
 
-1. Login: `user01@yopmail.com` / `Test@1234`
+1. Log in with a local dev account
 2. Open `/{locale}/instructor/courses/{courseId}/outline`
 3. DevTools → mobile viewport (e.g. iPhone 12, 390px)
 4. **Hold ~0.2s** on grip icon (⋮⋮) for section / lesson / item row

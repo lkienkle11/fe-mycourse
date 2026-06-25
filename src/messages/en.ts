@@ -860,11 +860,25 @@ const messages = {
         title: "Collaborators",
         description:
           "Everyone can view the list. Only the owner can add or remove collaborators.",
-        addInstructorLabel: "Add instructor",
-        selectInstructor: "Select an instructor",
         addEditor: "Add editor",
         adding: "Adding...",
         remove: "Remove",
+        listSearchPlaceholder: "Search by name or email",
+        listSearchAction: "Search",
+        listLoading: "Loading collaborators...",
+        listEmpty: "No collaborators found.",
+        picker: {
+          title: "Add editor",
+          description:
+            "Select one or more instructors to add as collaborators.",
+          searchPlaceholder: "Search by name or email",
+          searchAction: "Search",
+          loading: "Loading instructors...",
+          empty: "No matching instructors found.",
+          cancel: "Cancel",
+          addSelected: "Add selected",
+          adding: "Adding...",
+        },
       },
       pricing: {
         title: "Pricing",
