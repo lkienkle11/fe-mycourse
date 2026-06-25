@@ -102,7 +102,7 @@ Reject application requires `rejection_reason` (1–2000 chars) via `InstructorA
 
 - **Schemas**: `src/schema/instructor/instructor.ts` — email, rejection reason, expertise topic/skill, ticket subject/message.
 - **Validation namespace**: `instructor.validation.*` in `src/messages/{en,vi}.ts`.
-- **Required fields UI**: `RequiredLabel` on roster email (`ConfirmAddInstructorDialog`), rejection reason (`InstructorApprovalActions`), expertise topic/skill pickers (`InstructorExpertisePage`), ticket subject/message (`InstructorTicketsPage`).
+- **Required fields UI**: `RequiredLabel` on rejection reason (`InstructorApprovalActions`), expertise topic/skill pickers (`InstructorExpertisePage`), ticket subject/message (`InstructorTicketsPage`).
 - **Pre-submit validation**: Zod `safeParse` + `toastValidationError` before API (email, rejection reason, topic_id, skill_id, ticket subject/body).
 - **Pre-submit**: `instructorEmailSchema`, `instructorRejectionReasonSchema`, `instructorTicketSchema` — toast `instructor.validation.*` on failure.
 - **API failures**: all roster/approvals/expertise/tickets/profiles catches → `toastApiError(tErrors, error)`; do not use `instructor.common.errorGeneric` for API responses.
@@ -114,7 +114,7 @@ Reject application requires `rejection_reason` (1–2000 chars) via `InstructorA
 | Component | Purpose |
 |-----------|---------|
 | `InstructorProfileViewDialog` | Read-only profile popup (approvals / roster / profiles) with identity block (`full_name`, `avatar` + fallback) |
-| `ConfirmAddInstructorDialog` | Add roster member by email |
+| `InstructorRosterPickerDialog` | Multi-select roster add dialog (search, pagination, responsive overflow) backed by `GET /instructors/roster-candidates` |
 | `InstructorApprovalActions` | Approve / reject (reason required) / delete application |
 
 Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, taxonomy list hooks for expertise pickers (`useTaxonomyList` for topic/skill **names**; list rows show names, not raw IDs).
