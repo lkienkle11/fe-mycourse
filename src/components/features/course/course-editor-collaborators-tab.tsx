@@ -23,6 +23,7 @@ import { PERMISSIONS } from "@/constants/permissions";
 import { useRouter } from "@/i18n/navigation";
 import { instructorCourseEditorTabHref } from "@/lib/navigation/routes";
 import type { CourseCollaborator } from "@/types/course";
+import type { UserPickerConfirmResult } from "@/types/user-picker";
 
 const PER_PAGE = 10;
 
@@ -30,7 +31,9 @@ type CourseCollaboratorsTabProps = {
   courseId: string;
   canManageCollaborators: boolean;
   isSubmittingCollaborator: boolean;
-  onAddCollaborators: (userIds: string[]) => Promise<void>;
+  onAddCollaborators: (
+    userIds: string[],
+  ) => Promise<UserPickerConfirmResult | undefined>;
   onRemoveCollaborator: (collaborator: CourseCollaborator) => Promise<void>;
 };
 
@@ -103,9 +106,12 @@ export function CourseCollaboratorsTab({
     syncUrl({ page: 1, search: searchInput.trim() });
   };
 
-  const handleAddCollaborators = async (userIds: string[]) => {
+  const handleAddCollaborators = async (
+    userIds: string[],
+  ): Promise<UserPickerConfirmResult | undefined> => {
     await onAddCollaborators(userIds);
     await mutate();
+    return undefined;
   };
 
   const handleRemoveCollaborator = async (collaborator: CourseCollaborator) => {

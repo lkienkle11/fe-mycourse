@@ -559,13 +559,29 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `InstructorCourseEditorPage` tab `review-history`.
 - **Dependencies**: `useApiListQuery`, `InstructorListPagination`, `courseApproveFeedbackSchema` / `courseRejectReasonSchema` on admin review page.
 
+### Asset: user multi-select picker (shared)
+- **Name**: `UserMultiSelectPickerDialog`, `UserMultiSelectPickerFeatureDialog`, `UserPickerCandidate`, `UserPickerConfirmResult`, `USER_PICKER_PER_PAGE`, `useUserMultiSelectPickerState`, `useInstructorRosterPickerLabels`, `useCourseCollaboratorPickerLabels`, `useUserPickerPaginationLabels`
+- **Type**: React component + shared types + hooks
+- **Path**: `src/components/shared/user-multi-select-picker-dialog.tsx`, `src/components/shared/user-multi-select-picker-feature-dialog.tsx`, `src/types/user-picker.ts`, `src/hooks/user-picker/`
+- **Purpose**: Shared multi-select user picker UI. `UserMultiSelectPickerFeatureDialog` wires picker state + SWR candidates + labels (dedupes feature wrappers). `onAfterPartialSuccess` revalidates candidate list after partial bulk add. `USER_PICKER_PER_PAGE` in `src/constants/user-picker.ts`.
+- **Scope**: Course collaborator add + instructor roster add modals.
+- **Dependencies**: `InstructorListPagination`, `buildInstructorPageFooterFromInfo`, `Checkbox`, `Dialog`.
+
+### Asset: instructor roster picker + hook
+- **Name**: `getInstructorRosterCandidatesKey`, `listInstructorRosterCandidatesService`, `addInstructorRosterBulkService`, `useInstructorRosterCandidates`, `InstructorRosterPickerDialog`
+- **Type**: API callers + SWR hook + React component
+- **Path**: `src/api/callers/instructor/instructor.ts`, `src/api/hooks/instructor/useInstructorRosterCandidates.ts`, `src/components/features/instructor/instructor-roster-picker-dialog.tsx`
+- **Purpose**: Admin/sysadmin roster add modal — multi-select from `GET /instructors/roster-candidates` (P42); excludes users with instructor/sysadmin/admin roles; bulk add via `POST /instructors/bulk`.
+- **Scope**: `InstructorRosterPage` (`/admin/instructors/roster`, `/sysadmin/instructors/roster`).
+- **Dependencies**: `UserMultiSelectPickerDialog`, `useUserMultiSelectPickerState`, `UserPickerFilters`, `PermissionGate` + `InstructorRosterCreate`, `handleAddInstructors(userIds[])`.
+
 ### Asset: course collaborators tab + picker + hooks
 - **Name**: `getCourseCollaboratorsKey`, `listCourseCollaboratorsService`, `useCourseCollaborators`, `getCourseInstructorCandidatesKey`, `listCourseInstructorCandidatesService`, `useCourseInstructorCandidates`, `CourseCollaboratorsTab`, `CourseCollaboratorPickerDialog`
 - **Type**: API callers + SWR hooks + React components
 - **Path**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourseCollaborators.ts`, `src/api/hooks/course/useCourseInstructorCandidates.ts`, `src/components/features/course/course-editor-collaborators-tab.tsx`, `src/components/features/course/course-collaborator-picker-dialog.tsx`
 - **Purpose**: Paginated collaborator list with search/URL sync; owner opens multi-select picker backed by `GET …/instructor-candidates` (`course_collaborator_candidate:read` / P67, replaces global `instructor_roster:read` P41). Picker stays open on add failure (selection preserved for retry). After remove on the last page, tab clamps URL to `total_pages`. List refresh uses `useCourseCollaborators().mutate()` only — add/remove do not refetch full `CourseDetail` (submit revalidates via `mutateDetail()`). **Responsive overflow**: picker `max-w-xl` with `overflow-x-hidden`; long `display_name` uses `truncate` + `title`; long `email` uses `break-all` (same on tab list rows). Pattern matches `course-editor-dialogs` (`min-w-0` flex chain). UI gates add/picker with `PermissionGate` + `canManageCollaborators` (OWNER).
 - **Scope**: `InstructorCourseEditorPage` tab `collaborators`.
-- **Dependencies**: `useApiListQuery`, `InstructorListPagination`, `buildInstructorPageFooterFromInfo`, `Checkbox`, `Dialog`, `handleAddCollaborators(userIds[])` in `useCourseEditorState`. Filter types: `CourseCollaboratorListFilters` / `CourseInstructorCandidateFilters` = `ApiListQueryParams`; `CourseInstructorCandidate` = `Omit<CourseCollaborator, "role">`.
+- **Dependencies**: `useApiListQuery`, `InstructorListPagination`, `buildInstructorPageFooterFromInfo`, `Checkbox`, `Dialog`, `UserMultiSelectPickerDialog`, `handleAddCollaborators(userIds[])` in `useCourseEditorState`. Filter types: `CourseCollaboratorListFilters` / `CourseInstructorCandidateFilters` = `ApiListQueryParams`; `CourseInstructorCandidate` = `UserPickerCandidate`.
 
 ### Asset: instructor course detail hook
 - **Name**: `getCourseDetailKey`, `getCourseDetailService`, `useCourseDetail`

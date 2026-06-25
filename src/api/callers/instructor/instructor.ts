@@ -9,7 +9,8 @@ import type {
 import type {
   AddExpertiseSkillPayload,
   AddExpertiseTopicPayload,
-  AddRosterPayload,
+  AddRosterBulkPayload,
+  AddRosterBulkResult,
   AddTicketMessagePayload,
   CreateTicketPayload,
   InstructorApplication,
@@ -25,6 +26,10 @@ import type {
   RejectApplicationPayload,
   UpsertProfileResponse,
 } from "@/types/instructor";
+import type {
+  UserPickerCandidate,
+  UserPickerFilters,
+} from "@/types/user-picker";
 
 const routes = API_PRIVATE_ROUTES.instructor;
 
@@ -53,6 +58,41 @@ export function getInstructorRosterListKey(
   return buildQueryParams(routes.roster, listQueryToRecord(filters));
 }
 
+export function getInstructorRosterCandidatesKey(
+  filters: UserPickerFilters = {},
+): string | null {
+  return buildQueryParams(
+    routes.rosterCandidates,
+    apiListQueryToRecord(filters),
+  );
+}
+
+export async function listInstructorRosterCandidatesService(
+  filters: UserPickerFilters = {},
+): Promise<ApiPaginatedData<UserPickerCandidate[]>> {
+  const url = getInstructorRosterCandidatesKey(filters);
+  if (!url) throw new Error("Invalid roster candidates URL");
+  const { data } =
+    await apiFetch<ApiPaginatedResponse<UserPickerCandidate[]>>(url);
+  if (!data.data) {
+    throw new Error(data.message || "Failed to load roster candidates");
+  }
+  return data.data;
+}
+
+export async function addInstructorRosterBulkService(
+  payload: AddRosterBulkPayload,
+): Promise<AddRosterBulkResult> {
+  const { data } = await apiPost<
+    ApiResponse<AddRosterBulkResult>,
+    AddRosterBulkPayload
+  >(routes.rosterBulk, payload);
+  if (!data.data) {
+    throw new Error(data.message || "Failed to add instructors");
+  }
+  return data.data;
+}
+
 export async function listInstructorRosterService(
   filters: InstructorListFilters = {},
 ): Promise<ApiPaginatedData<InstructorRosterMember[]>> {
@@ -61,17 +101,6 @@ export async function listInstructorRosterService(
   const { data } =
     await apiFetch<ApiPaginatedResponse<InstructorRosterMember[]>>(url);
   if (!data.data) throw new Error(data.message || "Failed to load roster");
-  return data.data;
-}
-
-export async function addInstructorRosterService(
-  payload: AddRosterPayload,
-): Promise<InstructorRosterMember> {
-  const { data } = await apiPost<
-    ApiResponse<InstructorRosterMember>,
-    AddRosterPayload
-  >(routes.roster, payload);
-  if (!data.data) throw new Error(data.message || "Failed to add instructor");
   return data.data;
 }
 

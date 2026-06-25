@@ -5,12 +5,12 @@ import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  addInstructorRosterService,
+  addInstructorRosterBulkService,
   deleteInstructorRosterService,
   getInstructorProfileByUserService,
 } from "@/api/callers/instructor";
 import { useInstructorRosterList } from "@/api/hooks/instructor";
-import { ConfirmAddInstructorDialog } from "@/components/features/instructor";
+import { InstructorRosterPickerDialog } from "@/components/features/instructor";
 import {
   buildInstructorPageFooterFromInfo,
   InstructorProfileDeleteActions,
@@ -29,6 +29,7 @@ import type {
   InstructorProfile,
   InstructorRosterMember,
 } from "@/types/instructor";
+import type { UserPickerConfirmResult } from "@/types/user-picker";
 
 export function InstructorRosterPage() {
   const t = useTranslations("instructor.roster");
@@ -135,15 +136,50 @@ export function InstructorRosterPage() {
     }));
   };
 
-  const handleAdd = async (email: string) => {
+  const handleAddInstructors = async (
+    userIds: string[],
+  ): Promise<UserPickerConfirmResult | undefined> => {
+    if (userIds.length === 0) {
+      return;
+    }
     setIsAdding(true);
     try {
-      await addInstructorRosterService({ email });
-      toast.success(t("addSuccess"));
-      setAddOpen(false);
+      const result = await addInstructorRosterBulkService({
+        user_ids: userIds,
+      });
       await mutate();
+
+      const succeededCount = result.added.length;
+      const failedCount = result.failed.length;
+
+      if (failedCount === 0) {
+        toast.success(t("addSuccess"));
+        return;
+      }
+
+      if (succeededCount === 0) {
+        toast.error(t("addAllFailed"));
+        throw new Error("bulk roster add failed");
+      }
+
+      toast.warning(
+        t("addPartialSuccess", {
+          succeeded: String(succeededCount),
+          failed: String(failedCount),
+        }),
+      );
+      return {
+        succeededIds: result.added.map((member) => member.id),
+        failedCount,
+      };
     } catch (error) {
-      toastApiError(tErrors, error);
+      if (
+        !(error instanceof Error) ||
+        error.message !== "bulk roster add failed"
+      ) {
+        toastApiError(tErrors, error);
+      }
+      throw error;
     } finally {
       setIsAdding(false);
     }
@@ -227,11 +263,11 @@ export function InstructorRosterPage() {
           name: deleteTarget?.full_name ?? "",
         })}
       >
-        <ConfirmAddInstructorDialog
+        <InstructorRosterPickerDialog
           open={addOpen}
           onOpenChange={setAddOpen}
-          onConfirm={handleAdd}
-          isLoading={isAdding}
+          onConfirm={handleAddInstructors}
+          isSubmitting={isAdding}
         />
       </InstructorProfileDeleteFooter>
     </div>

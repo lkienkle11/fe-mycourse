@@ -420,6 +420,9 @@ const messages = {
       title: "Danh sách giảng viên",
       addButton: "Thêm giảng viên",
       addSuccess: "Đã thêm giảng viên vào danh sách.",
+      addPartialSuccess:
+        "Đã thêm {succeeded} giảng viên. Không thể thêm {failed} người.",
+      addAllFailed: "Không thể thêm các giảng viên đã chọn.",
       searchPlaceholder: "Tìm theo tên hoặc email…",
       viewProfile: "Xem hồ sơ",
       profileNotFound: "Không tìm thấy hồ sơ cho giảng viên này.",
@@ -438,6 +441,18 @@ const messages = {
         cancel: "Hủy",
         confirm: "Thêm",
         submitting: "Đang thêm…",
+      },
+      picker: {
+        title: "Thêm giảng viên",
+        description:
+          "Chọn một hoặc nhiều người dùng để gán vai trò giảng viên.",
+        searchPlaceholder: "Tìm theo tên hoặc email",
+        searchAction: "Tìm kiếm",
+        loading: "Đang tải danh sách người dùng…",
+        empty: "Không tìm thấy người dùng phù hợp.",
+        cancel: "Hủy",
+        addSelected: "Thêm đã chọn",
+        adding: "Đang thêm…",
       },
       deleteTitle: "Xóa khỏi danh sách?",
       deleteDescription:

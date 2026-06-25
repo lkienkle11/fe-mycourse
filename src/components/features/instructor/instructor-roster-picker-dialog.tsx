@@ -1,16 +1,15 @@
 "use client";
 
-import { useCourseInstructorCandidates } from "@/api/hooks/course";
+import { useInstructorRosterCandidates } from "@/api/hooks/instructor";
 import { UserMultiSelectPickerFeatureDialog } from "@/components/shared/user-multi-select-picker-feature-dialog";
 import { useUserMultiSelectPickerState } from "@/hooks/user-picker/use-user-multi-select-picker-state";
 import {
-  useCourseCollaboratorPickerLabels,
+  useInstructorRosterPickerLabels,
   useUserPickerPaginationLabels,
 } from "@/hooks/user-picker/use-user-picker-labels";
 import type { UserPickerConfirmResult } from "@/types/user-picker";
 
-type CourseCollaboratorPickerDialogProps = {
-  courseId: string;
+type InstructorRosterPickerDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isSubmitting: boolean;
@@ -19,20 +18,15 @@ type CourseCollaboratorPickerDialogProps = {
   ) => Promise<UserPickerConfirmResult | undefined>;
 };
 
-export function CourseCollaboratorPickerDialog({
-  courseId,
+export function InstructorRosterPickerDialog({
   open,
   onOpenChange,
   isSubmitting,
   onConfirm,
-}: CourseCollaboratorPickerDialogProps) {
+}: InstructorRosterPickerDialogProps) {
   const picker = useUserMultiSelectPickerState();
-  const candidates = useCourseInstructorCandidates(
-    courseId,
-    picker.filters,
-    open,
-  );
-  const labels = useCourseCollaboratorPickerLabels();
+  const candidates = useInstructorRosterCandidates(picker.filters, open);
+  const labels = useInstructorRosterPickerLabels();
   const paginationLabels = useUserPickerPaginationLabels();
 
   return (
