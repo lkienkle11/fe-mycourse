@@ -226,7 +226,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ### Asset: PERMISSIONS
 - **Name**: `PERMISSIONS`
-- **Type**: Constant object (40 entries)
+- **Type**: Constant object (67 entries)
 - **Path**: `src/constants/permissions.ts`
 - **Purpose**: Canonical permission names — 1:1 mirror of BE `constants.AllPermissions` (e.g. `CourseCreate` → `course:create`).
 - **Scope**: Permission checks, admin UI labels, API alignment.
@@ -234,7 +234,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ### Asset: PERMISSION_IDS
 - **Name**: `PERMISSION_IDS`
-- **Type**: Constant object (`P1`…`P58`)
+- **Type**: Constant object (`P1`…`P67`)
 - **Path**: `src/constants/permission-ids.ts`
 - **Purpose**: DB `permissions.permission_id` keyed like BE `perm_id` tags.
 - **Scope**: Admin RBAC UI, id ↔ name lookup via utils.
@@ -558,6 +558,14 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Paginated instructor review history (`GET /courses/:id/review-history`); filter by `APPROVED`/`REJECTED`; URL query sync via `instructorCourseEditorTabHref`.
 - **Scope**: `InstructorCourseEditorPage` tab `review-history`.
 - **Dependencies**: `useApiListQuery`, `InstructorListPagination`, `courseApproveFeedbackSchema` / `courseRejectReasonSchema` on admin review page.
+
+### Asset: course collaborators tab + picker + hooks
+- **Name**: `getCourseCollaboratorsKey`, `listCourseCollaboratorsService`, `useCourseCollaborators`, `getCourseInstructorCandidatesKey`, `listCourseInstructorCandidatesService`, `useCourseInstructorCandidates`, `CourseCollaboratorsTab`, `CourseCollaboratorPickerDialog`
+- **Type**: API callers + SWR hooks + React components
+- **Path**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourseCollaborators.ts`, `src/api/hooks/course/useCourseInstructorCandidates.ts`, `src/components/features/course/course-editor-collaborators-tab.tsx`, `src/components/features/course/course-collaborator-picker-dialog.tsx`
+- **Purpose**: Paginated collaborator list with search/URL sync; owner opens multi-select picker backed by `GET …/instructor-candidates` (`course_collaborator_candidate:read` / P67, replaces global `instructor_roster:read` P41). Picker stays open on add failure (selection preserved for retry). After remove on the last page, tab clamps URL to `total_pages`. List refresh uses `useCourseCollaborators().mutate()` only — add/remove do not refetch full `CourseDetail` (submit revalidates via `mutateDetail()`). **Responsive overflow**: picker `max-w-xl` with `overflow-x-hidden`; long `display_name` uses `truncate` + `title`; long `email` uses `break-all` (same on tab list rows). Pattern matches `course-editor-dialogs` (`min-w-0` flex chain). UI gates add/picker with `PermissionGate` + `canManageCollaborators` (OWNER).
+- **Scope**: `InstructorCourseEditorPage` tab `collaborators`.
+- **Dependencies**: `useApiListQuery`, `InstructorListPagination`, `buildInstructorPageFooterFromInfo`, `Checkbox`, `Dialog`, `handleAddCollaborators(userIds[])` in `useCourseEditorState`. Filter types: `CourseCollaboratorListFilters` / `CourseInstructorCandidateFilters` = `ApiListQueryParams`; `CourseInstructorCandidate` = `Omit<CourseCollaborator, "role">`.
 
 ### Asset: instructor course detail hook
 - **Name**: `getCourseDetailKey`, `getCourseDetailService`, `useCourseDetail`

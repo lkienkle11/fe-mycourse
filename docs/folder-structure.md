@@ -379,8 +379,8 @@ src/constants/
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
 ├── route.ts                # PUBLIC_ROUTES + PRIVATE_ROUTES + PUBLIC_RESOURCE_ROUTES + PRIVATE_RESOURCE_ROUTES (central FE navigation values)
 ├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (user-menu config values incl. permissions/titleKey; roles group first)
-├── permissions.ts          # PERMISSIONS — P1…P58 (mirror BE AllPermissions)
-├── permission-ids.ts       # PERMISSION_IDS — P1…P58
+├── permissions.ts          # PERMISSIONS — P1…P67 (mirror BE AllPermissions)
+├── permission-ids.ts       # PERMISSION_IDS — P1…P67
 ├── roles.ts                # ROLES — sysadmin, admin, instructor, learner
 ├── dashboard/
 │   ├── index.ts            # ADMIN_DASHBOARD_ITEMS, INSTRUCTOR_*, SYSADMIN_* (barrel)

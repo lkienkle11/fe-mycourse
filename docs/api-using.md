@@ -227,6 +227,19 @@ export function useCourses() {
 - Place the fetcher function in `src/api/callers/<domain>/<domain>.ts`.
 - Place the hook in `src/api/hooks/<domain>/use<Domain>.ts`.
 
+### Course collaborators (instructor editor)
+
+Callers in `src/api/callers/course/course.ts`:
+
+| Service | Method | Path | Notes |
+|---------|--------|------|-------|
+| `listCourseCollaboratorsService` | GET | `/api/v1/courses/:courseId/collaborators` | Paginated (`page`, `per_page`, optional `search`); returns `ApiPaginatedData<CourseCollaborator[]>` |
+| `listCourseInstructorCandidatesService` | GET | `/api/v1/courses/:courseId/instructor-candidates` | Requires `course_collaborator_candidate:read` (P67); owner-only on BE; paginated picker source |
+| `addCourseCollaboratorService` | POST | `/api/v1/courses/:courseId/collaborators` | Sequential calls for multi-add |
+| `removeCourseCollaboratorService` | DELETE | `/api/v1/courses/:courseId/collaborators/:userId` | |
+
+Hooks: `useCourseCollaborators`, `useCourseInstructorCandidates` in `src/api/hooks/course/`. Filter params reuse `ApiListQueryParams` (`page`, `per_page`, `search`). Picker API requires **`course_collaborator_candidate:read` (P67)**. UI: `CourseCollaboratorsTab`, `CourseCollaboratorPickerDialog` (closes only after successful multi-add; errors keep dialog open; `PermissionGate` on add/picker for owners).
+
 ### Course-admin (sysadmin catalog + trash)
 
 Callers in `src/api/callers/course/course.ts`:

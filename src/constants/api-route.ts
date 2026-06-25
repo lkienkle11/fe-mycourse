@@ -57,6 +57,7 @@ export const API_PRIVATE_ROUTES = {
     basicInfo: "/api/v1/courses/:courseId/basic-info",
     collaborators: "/api/v1/courses/:courseId/collaborators",
     collaboratorByUser: "/api/v1/courses/:courseId/collaborators/:userId",
+    instructorCandidates: "/api/v1/courses/:courseId/instructor-candidates",
     sections: "/api/v1/courses/:courseId/sections",
     sectionById: "/api/v1/courses/:courseId/sections/:sectionId",
     reorderSections: "/api/v1/courses/:courseId/sections/reorder",
