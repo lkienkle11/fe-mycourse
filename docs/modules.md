@@ -85,12 +85,12 @@ _Last audited: 2026-06-17 (course read-path performance: `include_outline`, `inc
   - `SortableList` for section / lesson / sub-lesson ordering (mobile: `TouchSensor` + 44px grip handle)
   - `MediaCollectionDialog` + `ImageFileField` for thumbnail / preview video / Quill toolbar image & video embeds
   - `useTaxonomyList` for metadata pickers (info tab: `per_page: 100`, `include_images: false`)
-  - `useInstructorRosterList` for collaborator selection
+  - `useCourseCollaborators` + `useCourseInstructorCandidates` for collaborator list / picker (P67 `course_collaborator_candidate:read`; replaces `useInstructorRosterList` P41)
   - `next-intl` message dictionaries in `src/messages/{en,vi}.ts` for all course editor, review, badge, and menu copy
 
 ## Authorization constants & hooks
 
-- **Constants**: `PERMISSIONS` (58 names), `PERMISSION_IDS` (P1–P58), `ROLES` in `src/constants/` — mirror BE `AllPermissions` and role tags.
+- **Constants**: `PERMISSIONS` (67 names), `PERMISSION_IDS` (P1–P67), `ROLES` in `src/constants/` — mirror BE `AllPermissions` and role tags.
 - **Types**: `PermissionName`, `PermissionId`, `RoleName` in `src/types/permissions/`.
 - **Utils**: `PERMISSION_NAME_TO_ID`, `permissionIdFromName`, `permissionNameFromId` in `src/lib/utils/permission.ts`.
 - **Utils**: `src/lib/utils/permission.ts` — `hasAllPermissions` matches BE `RequirePermission` (AND semantics); `filterPermissionNavTree` deep-filters nested nav (dashboard + user menu).

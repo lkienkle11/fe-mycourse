@@ -62,6 +62,7 @@ Mounted under `API_PRIVATE_ROUTES.course` — see `src/api/callers/course/course
 | `GET /api/v1/courses/:courseId` | `getCourseDetailService` / `useCourseDetail` | Optional `include_outline=false` on info/collaborators tabs |
 | `PATCH /api/v1/courses/:courseId/basic-info` | `updateCourseBasicInfoService` | Optimistic lock via `expected_row_version`; FE updates lock from PATCH response + SWR cache (`handleSaveBasicInfo` / `useCourseBasicInfoState`) so back-to-back saves stay in sync |
 | `DELETE /api/v1/courses/:courseId` | `deleteCourseService` | Owner-only |
+| Collaborator list / picker | `listCourseCollaboratorsService`, `listCourseInstructorCandidatesService`, `useCourseCollaborators`, `useCourseInstructorCandidates` | Paginated `GET …/collaborators` (`course_instructor:read`) + picker `GET …/instructor-candidates` (**P67** `course_collaborator_candidate:read`; owner-only in repo) |
 | Collaborator CRUD | `*Collaborator*Service` | Under `/courses/:courseId/collaborators` |
 | Outline CRUD / reorder | `*Section*`, `*Lesson*`, `*SubLesson*` services | Outline tab only (`includeOutline: true`) |
 | Lease acquire/heartbeat/release | `*Lease*Service` | Edit coordination |
