@@ -85,4 +85,6 @@ export const PERMISSIONS = {
   CourseTrashRead: "course_trash:read",
   CourseTrashRestore: "course_trash:restore",
   CourseTrashDelete: "course_trash:delete",
+  // Course collaborator picker
+  CourseCollaboratorCandidateRead: "course_collaborator_candidate:read",
 } as const;

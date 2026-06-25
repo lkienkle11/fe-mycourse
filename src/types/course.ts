@@ -1,3 +1,5 @@
+import type { ApiListQueryParams } from "@/types/api";
+
 export type CourseVersionStatus =
   | "DRAFT"
   | "IN_REVIEW"
@@ -269,6 +271,12 @@ export type CourseReviewHistoryItem = {
   note: string;
   reviewed_at: number;
 };
+
+export type CourseCollaboratorListFilters = ApiListQueryParams;
+
+export type CourseInstructorCandidate = Omit<CourseCollaborator, "role">;
+
+export type CourseInstructorCandidateFilters = ApiListQueryParams;
 
 export type CourseReviewHistoryFilters = {
   page?: number;

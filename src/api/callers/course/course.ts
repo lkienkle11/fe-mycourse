@@ -1,6 +1,7 @@
 import { apiDelete, apiFetch, apiPatch, apiPost } from "@/api/methods";
 import { API_PRIVATE_ROUTES } from "@/constants/api-route";
 import { buildQueryParams } from "@/lib/utils";
+import { apiListQueryToRecord } from "@/lib/utils/list-query";
 import type {
   ApiPaginatedData,
   ApiPaginatedResponse,
@@ -10,8 +11,11 @@ import type {
   AcquireCourseLeasePayload,
   ApproveCourseDraftPayload,
   CourseCollaborator,
+  CourseCollaboratorListFilters,
   CourseDetail,
   CourseEnrollment,
+  CourseInstructorCandidate,
+  CourseInstructorCandidateFilters,
   CourseLease,
   CourseListItem,
   CourseProgress,
@@ -133,13 +137,56 @@ export async function deleteCourseService(courseId: string): Promise<void> {
   await apiDelete<ApiResponse<null>>(courseUrl(routes.byId, courseId));
 }
 
+export function getCourseCollaboratorsKey(
+  courseId: string,
+  filters: CourseCollaboratorListFilters = {},
+): string | null {
+  return buildQueryParams(routes.collaborators, apiListQueryToRecord(filters), {
+    courseId: String(courseId),
+  });
+}
+
 export async function listCourseCollaboratorsService(
   courseId: string,
-): Promise<CourseCollaborator[]> {
-  const { data } = await apiFetch<ApiResponse<CourseCollaborator[]>>(
-    courseUrl(routes.collaborators, courseId),
+  filters: CourseCollaboratorListFilters = {},
+): Promise<ApiPaginatedData<CourseCollaborator[]>> {
+  const url = getCourseCollaboratorsKey(courseId, filters);
+  if (!url) {
+    throw new Error("Invalid collaborators URL");
+  }
+  const { data } =
+    await apiFetch<ApiPaginatedResponse<CourseCollaborator[]>>(url);
+  if (!data.data) {
+    throw new Error(data.message || "Failed to load collaborators");
+  }
+  return data.data;
+}
+
+export function getCourseInstructorCandidatesKey(
+  courseId: string,
+  filters: CourseInstructorCandidateFilters = {},
+): string | null {
+  return buildQueryParams(
+    routes.instructorCandidates,
+    apiListQueryToRecord(filters),
+    { courseId: String(courseId) },
   );
-  return data.data ?? [];
+}
+
+export async function listCourseInstructorCandidatesService(
+  courseId: string,
+  filters: CourseInstructorCandidateFilters = {},
+): Promise<ApiPaginatedData<CourseInstructorCandidate[]>> {
+  const url = getCourseInstructorCandidatesKey(courseId, filters);
+  if (!url) {
+    throw new Error("Invalid instructor candidates URL");
+  }
+  const { data } =
+    await apiFetch<ApiPaginatedResponse<CourseInstructorCandidate[]>>(url);
+  if (!data.data) {
+    throw new Error(data.message || "Failed to load instructor candidates");
+  }
+  return data.data;
 }
 
 export async function addCourseCollaboratorService(
