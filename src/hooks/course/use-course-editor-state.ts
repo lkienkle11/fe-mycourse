@@ -61,6 +61,7 @@ import type {
   CourseSubLessonFormState,
   CourseVersion,
 } from "@/types/course";
+import type { UserPickerConfirmResult } from "@/types/user-picker";
 
 type UseCourseEditorStateParams = {
   courseId: string;
@@ -609,9 +610,11 @@ export function useCourseEditorState({
     }
   };
 
-  const handleAddCollaborators = async (userIds: string[]) => {
+  const handleAddCollaborators = async (
+    userIds: string[],
+  ): Promise<UserPickerConfirmResult | undefined> => {
     if (userIds.length === 0) {
-      return;
+      return undefined;
     }
     setIsSubmittingCollaborator(true);
     try {
@@ -627,6 +630,7 @@ export function useCourseEditorState({
         });
       }
       toast.success(t("collaboratorAdded"));
+      return undefined;
     } catch (error) {
       toastApiError(tErrors, error);
       throw error;

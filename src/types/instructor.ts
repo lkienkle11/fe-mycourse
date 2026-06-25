@@ -97,8 +97,18 @@ export type InstructorTicketListFilters = Omit<ApiListQueryParams, "status"> & {
   ticket_status?: InstructorTicketStatus;
 };
 
-export type AddRosterPayload = {
-  email: string;
+export type AddRosterBulkPayload = {
+  user_ids: string[];
+};
+
+export type AddRosterBulkFailure = {
+  user_id: string;
+  message: string;
+};
+
+export type AddRosterBulkResult = {
+  added: InstructorRosterMember[];
+  failed: AddRosterBulkFailure[];
 };
 
 export type RejectApplicationPayload = {

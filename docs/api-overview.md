@@ -45,7 +45,7 @@ Frontend API layer lives in `src/api/` and is used by `src/actions/` and client 
 
 Mounted under `API_PRIVATE_ROUTES.instructor` — see `src/api/callers/instructor/instructor.ts` and `docs/instructor-admin.md`:
 
-- `GET/POST/DELETE /api/v1/instructors` (roster)
+- `GET/DELETE /api/v1/instructors` (roster list/remove); `POST /api/v1/instructors/bulk` (add)
 - `GET/POST /api/v1/instructor-applications`, approve/reject, delete
 - `GET/POST/PATCH/DELETE /api/v1/instructor-profiles`, `GET …/me`
 - `GET/POST/DELETE …/instructors/:id/expertise/topics|skills`
