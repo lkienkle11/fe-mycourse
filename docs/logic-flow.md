@@ -1,6 +1,6 @@
 # Logic Flow
 
-_Last audited: 2026-06-17 (course version numbering §12, reject-fork draft, reorder nested merge). Prior: quiz single-choice validation + editor UI, course editor submit validation._
+_Last audited: 2026-06-26 (course admin ⋮ menu → dialog: `modal={false}` + deferred `onSelect` so `body` stays clickable after approve/trash flows). Prior: course version numbering §13, reject-fork draft, reorder nested merge._
 
 
 Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifecycle, data fetching, and form submission patterns.
@@ -470,3 +470,29 @@ Admin approve:
 ```
 
 Legacy data: if `current_draft_version_id` still points to `REJECTED`, **Reopen draft** calls `POST …/reopen-draft` to fork `max+1` (same as reject fork).
+
+---
+
+## 14. Dropdown menu → dialog (catalog, review queue, course outline)
+
+```
+Row action menu (admin catalog | review queue | instructor outline)
+  ↓
+DropdownMenu modal={false}
+  → CourseAdminTableActionsMenu (admin/sysadmin lists)
+  → CourseOutlineRowActions (instructor outline tab)
+  ↓
+User selects an action that opens Dialog / AlertDialog or runs post-menu work
+  → DeferredDropdownMenuItem.onAction
+  → deferDropdownAction(callback)   // setTimeout(0) — menu unmounts first
+  ↓
+Examples:
+  CourseReviewPage — Approve/Reject Dialog → POST course-reviews approve/reject
+  CourseAdminAllPage — ConfirmDeleteDialog → trashCourseService
+  CourseAdminTrashPage — ConfirmDeleteDialog or restore API
+  Instructor outline — openSectionDialog / openLessonDialog / openSubLessonDialog
+  ↓
+Dialog closes → document.body.pointerEvents stays "auto" (page + sidebar clickable)
+```
+
+**Regression fixed (2026-06-26):** modal `DropdownMenu` + immediate `Dialog` left `body { pointer-events: none }`. Shared fix: `deferDropdownAction` + `DeferredDropdownMenuItem` + `modal={false}` on row-action menus.

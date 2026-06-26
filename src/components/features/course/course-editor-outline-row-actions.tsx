@@ -2,11 +2,11 @@
 
 import { MoreVertical } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { DeferredDropdownMenuItem } from "@/components/shared/deferred-dropdown-menu-item";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { CourseOutlineItemKind } from "@/types/course";
@@ -69,7 +69,7 @@ export function CourseOutlineRowActions({
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
@@ -82,19 +82,19 @@ export function CourseOutlineRowActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {OUTLINE_ROW_ACTIONS[kind].map((action) => {
-          const onClick = handlers[action.id];
-          if (!onClick) {
+          const onAction = handlers[action.id];
+          if (!onAction) {
             return null;
           }
 
           return (
-            <DropdownMenuItem
+            <DeferredDropdownMenuItem
               key={action.id}
               variant={action.variant}
-              onClick={onClick}
+              onAction={onAction}
             >
               {t(action.labelKey)}
-            </DropdownMenuItem>
+            </DeferredDropdownMenuItem>
           );
         })}
       </DropdownMenuContent>

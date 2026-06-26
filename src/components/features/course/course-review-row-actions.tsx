@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { CourseAdminTableActionsMenu } from "@/components/features/course/course-admin-table-actions-menu";
+import { DeferredDropdownMenuItem } from "@/components/shared/deferred-dropdown-menu-item";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Link } from "@/i18n/navigation";
 import { sysadminCourseReviewPreviewHref } from "@/lib/navigation/routes";
@@ -39,12 +40,15 @@ export function CourseReviewRowActions({
           </Link>
         </DropdownMenuItem>
       ) : null}
-      <DropdownMenuItem onClick={() => onApprove(course)}>
+      <DeferredDropdownMenuItem onAction={() => onApprove(course)}>
         {t("approve")}
-      </DropdownMenuItem>
-      <DropdownMenuItem variant="destructive" onClick={() => onReject(course)}>
+      </DeferredDropdownMenuItem>
+      <DeferredDropdownMenuItem
+        variant="destructive"
+        onAction={() => onReject(course)}
+      >
         {t("reject")}
-      </DropdownMenuItem>
+      </DeferredDropdownMenuItem>
     </CourseAdminTableActionsMenu>
   );
 }

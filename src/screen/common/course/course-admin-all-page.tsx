@@ -10,7 +10,7 @@ import { CourseAdminTableActionsMenu } from "@/components/features/course/course
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { DeferredDropdownMenuItem } from "@/components/shared/deferred-dropdown-menu-item";
 import { toastApiError } from "@/lib/utils/api-error";
 import { canMoveCourseToTrash } from "@/lib/utils/course";
 import type { CourseListItem } from "@/types/course";
@@ -68,12 +68,12 @@ export function CourseAdminAllPage() {
                 menuLabel={t("actions.menu")}
                 disabled={pendingActionId === row.id}
               >
-                <DropdownMenuItem
+                <DeferredDropdownMenuItem
                   className="text-destructive focus:text-destructive"
-                  onClick={() => setTrashTarget(row)}
+                  onAction={() => setTrashTarget(row)}
                 >
                   {t("actions.moveToTrash")}
-                </DropdownMenuItem>
+                </DeferredDropdownMenuItem>
               </CourseAdminTableActionsMenu>
             );
           }}
