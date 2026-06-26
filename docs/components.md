@@ -199,7 +199,8 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | `PermissionGate` | `permission-gate.tsx` | Client wrapper: shows `children` when `useSatisfiesPermissions` passes; optional `fallback`. Props: `permissions`, `permissionMode` (`"all"` \| `"any"`). |
 | `RequiredLabel` | `required-label.tsx` | Extends `Label` with optional required asterisk (`required` prop, default `true`). |
 | `FieldError` | `field-error.tsx` | Inline validation message below a control; pair with `resolveValidationMessage`. |
-| `ConfirmDeleteDialog` | `confirm-delete-dialog.tsx` | Alert dialog for soft-delete confirm; copy from `taxonomy.delete` namespace. |
+| `ConfirmActionDialog` | `confirm-action-dialog.tsx` | Generic `AlertDialog` confirm shell (`title`, `description`, `confirmLabel`, `cancelLabel`, `isLoading`, `loadingLabel`); blocks close while loading. Composed by `ConfirmDeleteDialog` and course submit-review confirm. |
+| `ConfirmDeleteDialog` | `confirm-delete-dialog.tsx` | Soft-delete confirm; thin wrapper over `ConfirmActionDialog` with `taxonomy.delete` default labels. |
 | `DataTable` | `data-table.tsx` | Generic sortable admin table (`columns`, `rows`, `sort`, `renderActions`) with optional built-in filter toolbar (`FilterBy`, search, per-option custom input via `DataTableFilterByOption.customInputComponent`). First used by taxonomy lists. |
 | `SortableList` | `sortable-list.tsx` | Vertical `@dnd-kit` reorder list; items need string `id`. Mobile: `TouchSensor` (200ms hold) + 44px drag handle (`touch-none`); desktop: `MouseSensor` (8px distance). |
 | `SortableTreeEditor` | `sortable-tree-editor.tsx` | Nested sortable tree (name + read-only slug); used by taxonomy topics/skills form editor. |
