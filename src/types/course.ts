@@ -31,6 +31,7 @@ export type Course = {
 };
 
 export type CourseListItem = Course & {
+  owner_display_name?: string;
   title: string;
   review_status: CourseVersionStatus | "";
   version_id?: string;

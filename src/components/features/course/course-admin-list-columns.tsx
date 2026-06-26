@@ -24,7 +24,7 @@ export function buildCourseAdminListColumns(
     {
       id: "owner",
       header: labels.owner,
-      cell: (row) => row.owner_user_id,
+      cell: (row) => row.owner_display_name?.trim() || row.owner_user_id,
     },
     {
       id: "version",
