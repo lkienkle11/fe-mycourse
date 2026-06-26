@@ -582,7 +582,6 @@ const messages = {
       quizPrompt: "Vui lòng nhập câu hỏi trắc nghiệm.",
       quizOptionBody: "Vui lòng nhập nội dung cho mỗi lựa chọn trắc nghiệm.",
       quizOptionsMin: "Cần ít nhất một lựa chọn trắc nghiệm.",
-      collaboratorUserId: "Vui lòng chọn cộng tác viên.",
       rejectReason: "Vui lòng nhập lý do từ chối.",
       rejectReasonMin: "Lý do từ chối phải có ít nhất 5 ký tự.",
       rejectReasonMax: "Lý do từ chối tối đa 500 ký tự.",
@@ -878,6 +877,8 @@ const messages = {
         listSearchAction: "Tìm kiếm",
         listLoading: "Đang tải danh sách cộng tác viên...",
         listEmpty: "Không có cộng tác viên nào.",
+        listRefreshError:
+          "Đã cập nhật cộng tác viên, nhưng không thể làm mới danh sách.",
         picker: {
           title: "Thêm biên tập viên",
           description:
@@ -984,7 +985,9 @@ const messages = {
         itemDeleted: "Đã xóa nội dung bài học.",
         itemsReordered: "Đã lưu thứ tự nội dung bài học.",
         collaboratorAdded: "Đã thêm cộng tác viên.",
-        collaboratorAddError: "Không thể thêm cộng tác viên.",
+        collaboratorAddPartialSuccess:
+          "Đã thêm {succeeded} cộng tác viên. Không thể thêm {failed} người.",
+        collaboratorAddAllFailed: "Không thể thêm các cộng tác viên đã chọn.",
         collaboratorRemoved: "Đã gỡ cộng tác viên.",
         collaboratorRemoveError: "Không thể gỡ cộng tác viên.",
         submitted: "Đã gửi bản nháp để duyệt.",

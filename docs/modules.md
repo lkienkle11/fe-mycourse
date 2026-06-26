@@ -86,6 +86,7 @@ _Last audited: 2026-06-17 (course read-path performance: `include_outline`, `inc
   - `MediaCollectionDialog` + `ImageFileField` for thumbnail / preview video / Quill toolbar image & video embeds
   - `useTaxonomyList` for metadata pickers (info tab: `per_page: 100`, `include_images: false`)
   - `useCourseCollaborators` + `useCourseInstructorCandidates` for collaborator list / picker (P67 `course_collaborator_candidate:read`; replaces `useInstructorRosterList` P41)
+  - `useCourseCollaboratorActions` + `finalizeBulkUserPickerSubmit` for bulk add partial-success UX (shared with instructor roster page)
   - `next-intl` message dictionaries in `src/messages/{en,vi}.ts` for all course editor, review, badge, and menu copy
 
 ## Authorization constants & hooks

@@ -584,7 +584,6 @@ const messages = {
       quizPrompt: "Please enter a quiz prompt.",
       quizOptionBody: "Please enter text for each quiz option.",
       quizOptionsMin: "Add at least one quiz option.",
-      collaboratorUserId: "Please select a collaborator.",
       rejectReason: "Please enter a rejection reason.",
       rejectReasonMin: "Rejection reason must be at least 5 characters.",
       rejectReasonMax: "Rejection reason must be at most 500 characters.",
@@ -881,6 +880,8 @@ const messages = {
         listSearchAction: "Search",
         listLoading: "Loading collaborators...",
         listEmpty: "No collaborators found.",
+        listRefreshError:
+          "Collaborators were updated, but the list could not be refreshed.",
         picker: {
           title: "Add editor",
           description:
@@ -983,7 +984,9 @@ const messages = {
         itemDeleted: "Lesson item deleted.",
         itemsReordered: "Lesson item order saved.",
         collaboratorAdded: "Collaborator added.",
-        collaboratorAddError: "Could not add collaborator.",
+        collaboratorAddPartialSuccess:
+          "Added {succeeded} collaborator(s). {failed} could not be added.",
+        collaboratorAddAllFailed: "Could not add the selected collaborators.",
         collaboratorRemoved: "Collaborator removed.",
         collaboratorRemoveError: "Could not remove collaborator.",
         submitted: "Draft submitted for review.",

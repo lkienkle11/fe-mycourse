@@ -6,14 +6,12 @@ import { toast } from "sonner";
 import type { KeyedMutator } from "swr";
 import {
   acquireCourseLeaseService,
-  addCourseCollaboratorService,
   createCourseLessonService,
   createCourseSectionService,
   createCourseSubLessonService,
   heartbeatCourseLeaseService,
   prepareCourseDraftService,
   releaseCourseLeaseService,
-  removeCourseCollaboratorService,
   reopenCourseDraftService,
   submitCourseReviewService,
   updateCourseBasicInfoService,
@@ -21,6 +19,7 @@ import {
   updateCourseSectionService,
   updateCourseSubLessonService,
 } from "@/api/callers/course";
+import { useCourseCollaboratorActions } from "@/hooks/course/use-course-collaborator-actions";
 import { useCourseOutlineReorder } from "@/hooks/course/use-course-outline-reorder";
 import { toastApiError } from "@/lib/utils/api-error";
 import {
@@ -38,14 +37,12 @@ import { createEmptyDeltaString } from "@/lib/utils/course-delta";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import {
   courseBasicInfoSchema,
-  courseCollaboratorSchema,
   courseLessonSchema,
   courseSectionSchema,
   courseSubLessonSchema,
 } from "@/schema/course";
 import type {
   CourseBasicInfoForm,
-  CourseCollaborator,
   CourseDetail,
   CourseLease,
   CourseLesson,
@@ -61,7 +58,6 @@ import type {
   CourseSubLessonFormState,
   CourseVersion,
 } from "@/types/course";
-import type { UserPickerConfirmResult } from "@/types/user-picker";
 
 type UseCourseEditorStateParams = {
   courseId: string;
@@ -302,6 +298,11 @@ export function useCourseEditorState({
   } = useCourseBasicInfoState(activeVersion);
   const { isSubmittingCollaborator, setIsSubmittingCollaborator } =
     useCourseCollaboratorState();
+  const { handleAddCollaborators, handleRemoveCollaborator } =
+    useCourseCollaboratorActions({
+      courseId,
+      setIsSubmittingCollaborator,
+    });
   const {
     thumbnailDialogOpen,
     setThumbnailDialogOpen,
@@ -607,45 +608,6 @@ export function useCourseEditorState({
       await refreshDetail();
     } catch (error) {
       toastApiError(tErrors, error);
-    }
-  };
-
-  const handleAddCollaborators = async (
-    userIds: string[],
-  ): Promise<UserPickerConfirmResult | undefined> => {
-    if (userIds.length === 0) {
-      return undefined;
-    }
-    setIsSubmittingCollaborator(true);
-    try {
-      for (const userId of userIds) {
-        const parsed = courseCollaboratorSchema.safeParse({ user_id: userId });
-        if (!parsed.success) {
-          toast.error(tValidation("collaboratorUserId"));
-          throw new Error("invalid collaborator user id");
-        }
-        await addCourseCollaboratorService(courseId, {
-          user_id: parsed.data.user_id,
-          role: "EDITOR",
-        });
-      }
-      toast.success(t("collaboratorAdded"));
-      return undefined;
-    } catch (error) {
-      toastApiError(tErrors, error);
-      throw error;
-    } finally {
-      setIsSubmittingCollaborator(false);
-    }
-  };
-
-  const handleRemoveCollaborator = async (collaborator: CourseCollaborator) => {
-    try {
-      await removeCourseCollaboratorService(courseId, collaborator.user_id);
-      toast.success(t("collaboratorRemoved"));
-    } catch (error) {
-      toastApiError(tErrors, error);
-      throw error;
     }
   };
 
