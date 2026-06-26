@@ -547,15 +547,31 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `CourseAdminTableActionsMenu`
 - **Type**: React component
 - **Path**: `src/components/features/course/course-admin-table-actions-menu.tsx`
-- **Purpose**: Shared `DropdownMenu` shell for admin course list row actions — ghost `MoreHorizontal` icon trigger, `align="end"` content, `menuLabel` for `aria-label`.
+- **Purpose**: Shared `DropdownMenu` shell for admin course list row actions — ghost `MoreHorizontal` icon trigger, `align="end"` content, `menuLabel` for `aria-label`. Uses `modal={false}` so opening a confirm/dialog from a menu item does not leave `body` with `pointer-events: none` after the dialog closes (Radix dismissable-layer stack bug when modal dropdown + dialog overlap).
 - **Scope**: `course-admin-all-page`, `course-admin-trash-page`; composed by `CourseReviewRowActions`.
 - **Dependencies**: `DropdownMenu` primitives from `src/components/ui/dropdown-menu.tsx`.
+
+### Asset: deferDropdownAction
+- **Name**: `deferDropdownAction`
+- **Type**: Utility function
+- **Path**: `src/lib/utils/defer-dropdown-action.ts`
+- **Purpose**: Schedules a dropdown menu action on the next tick (`setTimeout(0)`) so Radix can unmount the menu before a nested `Dialog`/`AlertDialog` opens — prevents `body { pointer-events: none }` after close.
+- **Scope**: Used by `DeferredDropdownMenuItem`; exported from `src/lib/utils/index.ts`.
+- **Dependencies**: none.
+
+### Asset: DeferredDropdownMenuItem
+- **Name**: `DeferredDropdownMenuItem`
+- **Type**: React component
+- **Path**: `src/components/shared/deferred-dropdown-menu-item.tsx`
+- **Purpose**: `DropdownMenuItem` wrapper — `onAction` runs via `deferDropdownAction` on `onSelect`. Standard pattern for row menus that open dialogs.
+- **Scope**: `CourseReviewRowActions`, `course-admin-all-page`, `course-admin-trash-page`, `CourseOutlineRowActions`.
+- **Dependencies**: `deferDropdownAction`, `DropdownMenuItem` from `src/components/ui/dropdown-menu.tsx`.
 
 ### Asset: CourseReviewRowActions
 - **Name**: `CourseReviewRowActions`
 - **Type**: React component
 - **Path**: `src/components/features/course/course-review-row-actions.tsx`
-- **Purpose**: Review-queue row menu: sysadmin gets Preview link (`sysadminCourseReviewPreviewHref`), then Approve and Reject (`variant="destructive"`).
+- **Purpose**: Review-queue row menu: sysadmin gets Preview link (`sysadminCourseReviewPreviewHref`), then Approve and Reject (`variant="destructive"`). Approve/Reject use `DeferredDropdownMenuItem`.
 - **Scope**: `course-review-page` (`scope="admin"` | `"sysadmin"`).
 - **Dependencies**: `CourseAdminTableActionsMenu`, `Link` from `@/i18n/navigation`, i18n `course.review.*`.
 
@@ -611,7 +627,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `listAdminCoursesService`, `listTrashedCoursesService`, `trashCourseService`, `restoreTrashedCourseService`, `permanentDeleteTrashedCourseService`, `useAdminCourses`, `useTrashedCourses`
 - **Type**: API callers + SWR hooks
 - **Path**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourses.ts`
-- **Purpose**: Sysadmin course catalog, trash list, and trash lifecycle mutations.
+- **Purpose**: Sysadmin course catalog, trash list, and trash lifecycle mutations. Row ⋮ actions use `DeferredDropdownMenuItem` when opening `ConfirmDeleteDialog`.
 - **Scope**: `course-admin-all-page`, `course-admin-trash-page`.
 - **Dependencies**: `apiFetch`, `admin:modify` permission on BE.
 
@@ -635,9 +651,9 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `CourseOutlineRowActions`
 - **Type**: React component
 - **Path**: `src/components/features/course/course-editor-outline-row-actions.tsx`
-- **Purpose**: Shared outline row action menu for section, lesson, and sub-lesson (item) rows. `DropdownMenu` trigger uses `course.common.actions`; menu entries come from `OUTLINE_ROW_ACTIONS` keyed by `CourseOutlineItemKind` (`section` | `lesson` | `item`).
+- **Purpose**: Shared outline row action menu for section, lesson, and sub-lesson (item) rows. `DropdownMenu modal={false}`; entries use `DeferredDropdownMenuItem` (`OUTLINE_ROW_ACTIONS` keyed by `CourseOutlineItemKind`: `section` | `lesson` | `item`).
 - **Scope**: `course-editor-outline-tab.tsx` (`SectionOutlineCard` and nested lesson/item rows).
-- **Dependencies**: `DropdownMenu` / `DropdownMenuItem` (`variant="destructive"` for delete), `CourseOutlineItemKind` from `src/types/course.ts`, i18n `course.editor.outline.*`.
+- **Dependencies**: `DeferredDropdownMenuItem`, `DropdownMenu` from `src/components/ui/dropdown-menu.tsx`, `CourseOutlineItemKind` from `src/types/course.ts`, i18n `course.editor.outline.*`.
 
 ### Asset: SubLessonKindLabel
 - **Name**: `SubLessonKindLabel`
