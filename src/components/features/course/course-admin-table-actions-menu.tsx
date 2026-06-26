@@ -21,7 +21,10 @@ export function CourseAdminTableActionsMenu({
   children,
 }: CourseAdminTableActionsMenuProps) {
   return (
-    <DropdownMenu>
+    // Non-modal so opening a Dialog from a menu item does not leave `body` with
+    // `pointer-events: none` after the dialog closes (Radix layer stack bug).
+    // Pair menu items that open dialogs with DeferredDropdownMenuItem.
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"

@@ -41,6 +41,7 @@ export {
 } from "./course-delta";
 export { filterDashboardItems } from "./dashboard";
 export { formatUnixDateTime } from "./date";
+export { deferDropdownAction } from "./defer-dropdown-action";
 export type { DurationUnits } from "./duration";
 export {
   buildDurationUnits,
