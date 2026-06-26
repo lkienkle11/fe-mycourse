@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useCourseCollaborators } from "@/api/hooks/course";
 import { CourseCollaboratorPickerDialog } from "@/components/features/course/course-collaborator-picker-dialog";
 import { buildInstructorPageFooterFromInfo } from "@/components/features/instructor/instructor-action-controls";
@@ -109,18 +110,26 @@ export function CourseCollaboratorsTab({
   const handleAddCollaborators = async (
     userIds: string[],
   ): Promise<UserPickerConfirmResult | undefined> => {
-    await onAddCollaborators(userIds);
-    await mutate();
-    return undefined;
+    const result = await onAddCollaborators(userIds);
+    try {
+      await mutate();
+    } catch {
+      toast.warning(t("listRefreshError"));
+    }
+    return result;
   };
 
   const handleRemoveCollaborator = async (collaborator: CourseCollaborator) => {
     await onRemoveCollaborator(collaborator);
-    const updated = await mutate();
-    const totalPages =
-      updated?.page_info.total_pages ?? pageInfo?.total_pages ?? 1;
-    if (page > totalPages) {
-      syncUrl({ page: totalPages });
+    try {
+      const updated = await mutate();
+      const totalPages =
+        updated?.page_info.total_pages ?? pageInfo?.total_pages ?? 1;
+      if (page > totalPages) {
+        syncUrl({ page: totalPages });
+      }
+    } catch {
+      toast.warning(t("listRefreshError"));
     }
   };
 

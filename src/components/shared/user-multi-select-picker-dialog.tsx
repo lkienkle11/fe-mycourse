@@ -97,6 +97,8 @@ export function UserMultiSelectPickerDialog({
         await onAfterPartialSuccess?.();
         return;
       }
+      // Full success: revalidate picker candidates before close so reopen does not show stale rows.
+      await onAfterPartialSuccess?.();
       handleOpenChange(false);
     } catch {
       // Parent shows the error toast; keep dialog open and selection for retry.
