@@ -539,7 +539,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `buildCourseAdminListColumns`
 - **Type**: Factory function → `DataTable` column defs
 - **Path**: `src/components/features/course/course-admin-list-columns.tsx`
-- **Purpose**: Shared columns (title, owner, version) for All Courses, Trash, and Review queue pages.
+- **Purpose**: Shared columns (title, owner display name, version) for All Courses, Trash, and Review queue pages. Owner column renders `owner_display_name` (course-module convention, same source as `Collaborator.display_name`) and falls back to `owner_user_id`.
 - **Scope**: `course-admin-all-page`, `course-admin-trash-page`, `course-review-page`.
 - **Dependencies**: `DataTable` column types, i18n `course.*`.
 
