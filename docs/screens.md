@@ -39,17 +39,17 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/instructor/courses/{courseId}/review-history` | Active | `InstructorCourseEditorPage` — `CourseEditorReviewHistoryTab` (filter + pagination + URL sync) |
 | `/{locale}/instructor/tickets` | Active | `InstructorTicketsPage` — create ticket, thread, close (P58) |
 | `/{locale}/admin/courses` | Active | Redirect → `/admin/courses/all` |
-| `/{locale}/admin/courses/all` | Active | `CourseAdminAllPage` — all courses + filter + move to trash |
-| `/{locale}/admin/courses/reviewing` | Active | `CourseReviewPage` (`scope="admin"`) — pending review queue |
-| `/{locale}/admin/courses/trash` | Active | `CourseAdminTrashPage` — restore / permanent delete |
+| `/{locale}/admin/courses/all` | Active | `CourseAdminAllPage` — all courses + filter + move to trash (⋮ → `ConfirmDeleteDialog`; menu `modal={false}` + deferred `onSelect`) |
+| `/{locale}/admin/courses/reviewing` | Active | `CourseReviewPage` (`scope="admin"`) — pending review queue (⋮ → approve/reject `Dialog`) |
+| `/{locale}/admin/courses/trash` | Active | `CourseAdminTrashPage` — restore / permanent delete (⋮ → confirm or restore; deferred `onSelect`) |
 | `/{locale}/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | Active | Shared `Instructor*Page` screens imported directly from app routes |
 | `/{locale}/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}` | Active | Same shared screens |
 | `/{locale}/sysadmin` | Active | Sysadmin dashboard shell (`SysadminDashboardPage` placeholder) |
 | `/{locale}/sysadmin/courses` | Active | Redirect → `/sysadmin/courses/all` |
-| `/{locale}/sysadmin/courses/all` | Active | `CourseAdminAllPage` — all courses + filter + move to trash |
-| `/{locale}/sysadmin/courses/reviewing` | Active | `CourseReviewPage` (`scope="sysadmin"`) — pending review queue |
+| `/{locale}/sysadmin/courses/all` | Active | `CourseAdminAllPage` — all courses + filter + move to trash (same ⋮ / dialog pattern as admin) |
+| `/{locale}/sysadmin/courses/reviewing` | Active | `CourseReviewPage` (`scope="sysadmin"`) — pending review queue (+ Preview link in ⋮ menu) |
 | `/{locale}/sysadmin/courses/reviewing/{courseId}/preview` | Active | `CourseReviewPreviewPage` — placeholder |
-| `/{locale}/sysadmin/courses/trash` | Active | `CourseAdminTrashPage` — restore / permanent delete |
+| `/{locale}/sysadmin/courses/trash` | Active | `CourseAdminTrashPage` — restore / permanent delete (same ⋮ / dialog pattern as admin) |
 | `/{locale}/admin/taxonomy/{resource}` | Active | Shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags); create/edit increments `formDialogKey` and passes `key={formDialogKey}` to `TaxonomyFormDialog` so edit hydrates from list row `initialData` |
 | `/{locale}/sysadmin/taxonomy/{resource}` | Active | Same shared `TaxonomyListPage` (sysadmin menu + permissions) |
 | `/{locale}/*` (unknown path) | Active | Custom 404 — `NotFoundPage` via `not-found.tsx` chain |
@@ -112,7 +112,7 @@ Each layout layer adds a concern without re-rendering the parent:
 - **`src/screen/common/instructor/`** — shared admin screens: roster, approvals, profiles, expertise, admin tickets; barrel: `src/screen/common/instructor/index.ts`.
 - **`src/screen/common/course/`** — shared course review screen used by admin and sysadmin.
 - **`src/components/shared/delta-editor.tsx`** — WYSIWYG `DeltaEditor` + read-only `DeltaViewer` for Quill Delta JSON (font family picker, optional hyperlink toolbar via `allowLink` + `DeltaEditorLinkDialog` — text and **image embed** links, **link text color** picker via `bindQuillLinkColorHandler` in `delta-editor-link-color.ts`, Quill Snow tooltip **Edit/Remove** via `bindQuillLinkTooltipFix` in `delta-editor-link-quill.ts`, **image embed 4-corner drag-resize** via `bindQuillImageResize` in `delta-editor-image-resize.ts`, embed × remove, `onObjectEmbedded` / `onDelete` callbacks, `MediaCollectionDialog` toolbar embeds). Quill blot/helpers in `src/lib/quill/` (`delta-editor-quill.ts`, `delta-editor-link-quill.ts`, `delta-editor-link-color.ts`, `delta-editor.css`).
-- **`src/components/features/course/`** — non-page course editor tabs and dialogs (`course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-outline-row-actions.tsx`, `sub-lesson-kind-label.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx`); the three tab components consume grouped prop objects from the screen shell to keep page JSX short as tabs grow; outline rows use `SortableList` (mobile touch drag via `TouchSensor` + 44px grip handle), `CourseOutlineRowActions` for section/lesson/item mutations, `SubLessonKindLabel` + `SUB_LESSON_KIND_ICONS` for sub-lesson type glyphs, and `OutlineDurationLabel` + `formatDurationMs` for `estimated_duration_ms` display. `SubLessonQuizFields` / `SubLessonTextFields` share `SubLessonDurationFields`; `SubLessonQuizFields` delegates single-choice correct-answer UI rules to `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` in `src/lib/utils/course.ts`.
+- **`src/components/features/course/`** — non-page course editor tabs and dialogs (`course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-outline-row-actions.tsx`, `sub-lesson-kind-label.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx`); the three tab components consume grouped prop objects from the screen shell to keep page JSX short as tabs grow; outline rows use `SortableList` (mobile touch drag via `TouchSensor` + 44px grip handle), `CourseOutlineRowActions` (`modal={false}` + `DeferredDropdownMenuItem`) for section/lesson/item mutations, `SubLessonKindLabel` + `SUB_LESSON_KIND_ICONS` for sub-lesson type glyphs, and `OutlineDurationLabel` + `formatDurationMs` for `estimated_duration_ms` display. `SubLessonQuizFields` / `SubLessonTextFields` share `SubLessonDurationFields`; `SubLessonQuizFields` delegates single-choice correct-answer UI rules to `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` in `src/lib/utils/course.ts`.
 - **`src/components/features/instructor/`** — shared instructor/admin/sysadmin pagination, action/footer helpers, and the `renderInstructorCourseEditorRoute` adapter reused by the 5 instructor course editor route pages.
 - **`src/screen/sysadmin/`** — `SysadminDashboardPage` only. Shared admin/sysadmin content lives under `src/screen/common/**`.
 

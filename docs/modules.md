@@ -65,7 +65,9 @@ _Last audited: 2026-06-17 (course read-path performance: `include_outline`, `inc
 - **UI**:
   - `src/screen/instructor/courses/page.tsx` — editable course list + create/delete owner flow
   - `src/screen/instructor/courses/editor-page.tsx` — editor shell, status header (edit `version_no` badge + optional `publishedVersionBadge` when both draft and live exist), route-backed tab panels; `useCourseDetail(courseId)` single SWR cache (tab switch = no refetch); taxonomy lists on **info** tab only (`include_images: false`); `editable` only when `draft_version.status === "DRAFT"`; shows `last_rejection_reason` after reject-fork
-  - `src/screen/common/course/course-review-page.tsx` — shared admin/sysadmin review queue
+  - `src/screen/common/course/course-review-page.tsx` — shared admin/sysadmin review queue (⋮ `CourseReviewRowActions` → approve/reject `Dialog`; non-modal menu + deferred `onSelect`)
+  - `src/screen/common/course/course-admin-all-page.tsx` — catalog + move to trash (`ConfirmDeleteDialog`)
+  - `src/screen/common/course/course-admin-trash-page.tsx` — restore / permanent delete
   - `src/components/features/course/course-status-badge.tsx`
   - `src/components/shared/delta-editor.tsx` — shared WYSIWYG `DeltaEditor` + read-only `DeltaViewer` (Delta JSON; font picker; inline image/video via toolbar, paste, or drag-and-drop; embed × remove; `onObjectEmbedded` / `onDelete`)
   - `src/lib/quill/` — Quill blots, toolbar, paste/drop, embed-remove helpers + `delta-editor.css`; **`ensureQuillLoaded()`** dynamic-imports Quill on the client (SSR-safe)
@@ -73,7 +75,7 @@ _Last audited: 2026-06-17 (course read-path performance: `include_outline`, `inc
   - `src/lib/utils/course-delta.ts` — shared Delta parse/stringify/text/embed-diff helpers for validation and editor state
   - `src/lib/utils/duration.ts` — ms ↔ H/M/S conversion; `formatDurationMs` + `buildDurationUnits` (suffixes from `course.common.durationUnit*` i18n keys)
   - `src/lib/utils/course.ts` — course editor tab registry, form state factories (`duration_hours` / `duration_minutes` / `duration_seconds` UI fields), `buildSubLessonEstimatedDurationPayload`, `validateSubLessonDurationForm`, payload mapping, outline stable-id helpers, and optimistic outline reorder patch/merge helpers (`assignSequentialOrderIndex`, `replaceSectionLessons`, `mergeReorderedLessons`, `mergeReorderedSections`, …)
-  - `src/components/features/course/course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-outline-row-actions.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx` — split editor render helpers kept outside `src/screen/**` to satisfy the page-only screen rule; tab components receive grouped `state` / `taxonomyRows|data` / `actions` props instead of long flat prop lists; outline row mutations share `CourseOutlineRowActions` (`CourseOutlineItemKind`: section / lesson / item)
+  - `src/components/features/course/course-editor-basic-tab.tsx`, `course-editor-outline-tab.tsx`, `course-editor-outline-row-actions.tsx`, `course-editor-collaborators-tab.tsx`, `course-editor-dialogs.tsx` — split editor render helpers kept outside `src/screen/**` to satisfy the page-only screen rule; tab components receive grouped `state` / `taxonomyRows|data` / `actions` props instead of long flat prop lists; outline row mutations share `CourseOutlineRowActions` (`modal={false}` + `DeferredDropdownMenuItem`; `CourseOutlineItemKind`: section / lesson / item)
   - `src/components/features/instructor/instructor-course-editor-route.tsx` — shared route renderer reused by the 5 App Router course editor pages so route glue stays out of `src/app/**`
   - `src/components/features/instructor/instructor-action-controls.tsx` — shared instructor admin action/footer helpers
   - `src/components/features/instructor/instructor-list-pagination.tsx` — shared instructor/admin/sysadmin pagination helper

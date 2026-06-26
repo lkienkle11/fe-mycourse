@@ -13,7 +13,7 @@ import { CourseAdminTableActionsMenu } from "@/components/features/course/course
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { DeferredDropdownMenuItem } from "@/components/shared/deferred-dropdown-menu-item";
 import { toastApiError } from "@/lib/utils/api-error";
 import type { CourseListItem } from "@/types/course";
 
@@ -79,15 +79,17 @@ export function CourseAdminTrashPage() {
               menuLabel={t("actions.menu")}
               disabled={pendingActionId === row.id}
             >
-              <DropdownMenuItem onClick={() => void handleRestore(row)}>
+              <DeferredDropdownMenuItem
+                onAction={() => void handleRestore(row)}
+              >
                 {t("actions.restore")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
+              </DeferredDropdownMenuItem>
+              <DeferredDropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                onClick={() => setDeleteTarget(row)}
+                onAction={() => setDeleteTarget(row)}
               >
                 {t("actions.permanentDelete")}
-              </DropdownMenuItem>
+              </DeferredDropdownMenuItem>
             </CourseAdminTableActionsMenu>
           )}
         />

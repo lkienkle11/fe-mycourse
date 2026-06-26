@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
+_Last audited: 2026-06-26 (shared `deferDropdownAction` + `DeferredDropdownMenuItem` for menu→dialog flows). Prior: Quill SSR lazy load via `ensureQuillLoaded`._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -66,6 +66,18 @@ import { Header, Footer } from "@/components/common";
 // ❌ Wrong
 import { Header } from "@/components/common/header/header";
 ```
+
+### DropdownMenu → Dialog / AlertDialog (row actions)
+
+When a `DropdownMenuItem` opens a page-level `Dialog` or `AlertDialog` (course review approve/reject, move to trash, outline add/edit, etc.):
+
+1. Use a **non-modal** menu shell: `<DropdownMenu modal={false}>` (`CourseAdminTableActionsMenu`, `CourseOutlineRowActions`).
+2. Use **`DeferredDropdownMenuItem`** (`onAction` prop) instead of raw `onClick` / inline `setTimeout`.
+3. Under the hood: `deferDropdownAction()` in `src/lib/utils/defer-dropdown-action.ts` schedules the callback on the next tick so the menu layer unmounts before the dialog mounts.
+
+Without this, Radix can leave `document.body` with `pointer-events: none` after the dialog closes — the dashboard appears frozen until reload.
+
+**Reuse:** `DeferredDropdownMenuItem`, `deferDropdownAction`, `CourseAdminTableActionsMenu`, `CourseReviewRowActions`, `CourseOutlineRowActions`, `course-admin-all-page`, `course-admin-trash-page`. See `docs/logic-flow.md` §14.
 
 ### Client-only libraries (Quill)
 
