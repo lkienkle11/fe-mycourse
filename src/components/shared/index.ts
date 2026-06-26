@@ -1,3 +1,4 @@
+export * from "./confirm-action-dialog";
 export * from "./confirm-delete-dialog";
 export * from "./dagre-tree-dialog";
 export * from "./data-table";

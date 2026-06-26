@@ -56,15 +56,11 @@ export function CourseReviewPage({ scope }: { scope: "admin" | "sysadmin" }) {
 
   const columns = useMemo<DataTableColumn<CourseListItem>[]>(
     () =>
-      buildCourseAdminListColumns(
-        {
-          course: t("columns.course"),
-          owner: t("columns.owner"),
-          version: t("columns.version"),
-          status: t("columns.status"),
-        },
-        { includeStatus: true },
-      ),
+      buildCourseAdminListColumns({
+        course: t("columns.course"),
+        owner: t("columns.owner"),
+        version: t("columns.version"),
+      }),
     [t],
   );
 

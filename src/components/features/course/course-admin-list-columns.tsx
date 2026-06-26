@@ -1,4 +1,3 @@
-import { CourseStatusBadge } from "@/components/features/course/course-status-badge";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import type { CourseListItem } from "@/types/course";
 
@@ -6,19 +5,12 @@ export type CourseAdminListColumnLabels = {
   course: string;
   owner: string;
   version: string;
-  status?: string;
-};
-
-type BuildCourseAdminListColumnsOptions = {
-  /** When true, include review status column (review queue only). */
-  includeStatus?: boolean;
 };
 
 export function buildCourseAdminListColumns(
   labels: CourseAdminListColumnLabels,
-  options?: BuildCourseAdminListColumnsOptions,
 ): DataTableColumn<CourseListItem>[] {
-  const columns: DataTableColumn<CourseListItem>[] = [
+  return [
     {
       id: "title",
       header: labels.course,
@@ -40,19 +32,4 @@ export function buildCourseAdminListColumns(
       cell: (row) => row.version_no || "—",
     },
   ];
-
-  if (options?.includeStatus && labels.status) {
-    columns.push({
-      id: "status",
-      header: labels.status,
-      cell: (row) => {
-        if (!row.review_status) {
-          return "—";
-        }
-        return <CourseStatusBadge status={row.review_status} />;
-      },
-    });
-  }
-
-  return columns;
 }

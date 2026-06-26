@@ -817,6 +817,13 @@ const messages = {
         submitForReview: "Submit for review",
         reopenDraft: "Reopen draft",
       },
+      submitConfirm: {
+        title: "Submit for review?",
+        description:
+          "Your draft will be sent to admins for review. You will not be able to edit the course until it is approved or rejected.",
+        confirm: "Submit for review",
+        submitting: "Submitting...",
+      },
       basicInfo: {
         title: "Course information",
         description:
@@ -991,6 +998,8 @@ const messages = {
         collaboratorRemoveError: "Could not remove collaborator.",
         submitted: "Draft submitted for review.",
         submitError: "Could not submit the draft.",
+        refreshAfterSubmitFailed:
+          "Draft was submitted but the page could not refresh. Please reload the page.",
         reopened: "Draft reopened.",
         reopenError: "Could not reopen the draft.",
       },

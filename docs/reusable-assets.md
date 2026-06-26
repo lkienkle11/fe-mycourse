@@ -527,11 +527,19 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `course-admin-all-page` row actions.
 - **Dependencies**: `CourseListItem` from `src/types/course.ts`.
 
+### Asset: ConfirmActionDialog
+- **Name**: `ConfirmActionDialog`
+- **Type**: React component
+- **Path**: `src/components/shared/confirm-action-dialog.tsx`
+- **Purpose**: Generic `AlertDialog` confirm shell with custom labels, loading state, and close guard while `isLoading`.
+- **Scope**: `ConfirmDeleteDialog` wrapper; instructor course editor submit-review confirm (`editor-page.tsx`).
+- **Dependencies**: `AlertDialog` primitives from `src/components/ui/alert-dialog.tsx`.
+
 ### Asset: buildCourseAdminListColumns
 - **Name**: `buildCourseAdminListColumns`
 - **Type**: Factory function → `DataTable` column defs
 - **Path**: `src/components/features/course/course-admin-list-columns.tsx`
-- **Purpose**: Shared columns (title, owner, review status, version id, actions slot) for All Courses, Trash, and Review queue pages.
+- **Purpose**: Shared columns (title, owner, version) for All Courses, Trash, and Review queue pages.
 - **Scope**: `course-admin-all-page`, `course-admin-trash-page`, `course-review-page`.
 - **Dependencies**: `DataTable` column types, i18n `course.*`.
 

@@ -1,16 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 
 export type ConfirmDeleteDialogProps = {
   open: boolean;
@@ -32,29 +23,15 @@ export function ConfirmDeleteDialog({
   const t = useTranslations("taxonomy.delete");
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title ?? t("title")}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {description ?? t("description")}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>
-            {t("cancel")}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            disabled={isLoading}
-            onClick={(event) => {
-              event.preventDefault();
-              void onConfirm();
-            }}
-          >
-            {t("confirm")}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmActionDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      onConfirm={onConfirm}
+      isLoading={isLoading}
+      title={title ?? t("title")}
+      description={description ?? t("description")}
+      cancelLabel={t("cancel")}
+      confirmLabel={t("confirm")}
+    />
   );
 }

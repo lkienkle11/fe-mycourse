@@ -314,7 +314,11 @@ BE increments `row_version` on each PATCH; stale `expected_row_version` returns 
 ```
 Owner clicks "Submit for Review"  (button hidden for EDITOR)
   ↓
-handleSubmitReview()  [use-course-editor-state.ts]
+AlertDialog confirmation  [editor-page.tsx — ConfirmActionDialog + course.editor.submitConfirm]
+  → Cancel → no API call
+  → Confirm
+  ↓
+handleSubmitReview()  [use-course-editor-state.ts]  → returns boolean
   ↓
 validateCourseSubmitReadiness(courseDetail)  [src/lib/utils/course.ts]
   ├─ draftVersion present?     NO  → ZodIssue(submitBasicInfoIncomplete)
@@ -339,6 +343,8 @@ issues !== null?
 issues === null?
   → submitReviewService(courseId)  POST /api/v1/courses/:courseId/submit-review
   → BE requireOwnerAccess (EDITOR without button still gets 403 if called directly)
+  → return true; dialog closes
+  → refreshDetail() best-effort; on failure toast course.editor.toast.refreshAfterSubmitFailed (submit already succeeded)
 ```
 
 ### Sub-lesson content validation on save (`saveSubLesson`)

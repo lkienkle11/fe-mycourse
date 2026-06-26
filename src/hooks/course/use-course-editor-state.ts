@@ -611,24 +611,32 @@ export function useCourseEditorState({
     }
   };
 
-  const handleSubmitReview = async () => {
+  const handleSubmitReview = async (): Promise<boolean> => {
     const detail = await mutateDetail();
     if (!detail) {
       toast.error(tValidation("submitBasicInfoIncomplete"));
-      return;
+      return false;
     }
     const issues = validateCourseSubmitReadiness(detail);
     if (issues?.length) {
       toastValidationError(tValidation, issues, "submitBasicInfoIncomplete");
-      return;
+      return false;
     }
     try {
       await submitCourseReviewService(courseId);
       toast.success(t("submitted"));
-      await refreshDetail();
     } catch (error) {
       toastApiError(tErrors, error);
+      return false;
     }
+
+    try {
+      await refreshDetail();
+    } catch {
+      toast.error(t("refreshAfterSubmitFailed"));
+    }
+
+    return true;
   };
 
   const handleReopenDraft = async () => {
