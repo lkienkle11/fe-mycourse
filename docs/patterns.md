@@ -307,7 +307,7 @@ Schemas live under `src/schema/<domain>/` (barrel `@/schema`). Each module uses 
 | `media.validation` | `tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected` |
 | `taxonomy.form.validation` | `name`, `nameMax`, `shortDescription`, `shortDescriptionMax`, `descriptionMaxLines`, `descriptionLineMax` |
 | `instructor.validation` | `email`, `rejectionReason`, `rejectionReasonMax`, `topicId`, `skillId`, `ticketSubject`, `ticketMessage` |
-| `course.validation` | `title`, `titleMax`, `shortDescriptionMax`, `sectionTitle`, `lessonTitle`, `subLessonTitle`, `subLessonKind`, `quizPrompt`, `quizOptionBody`, `quizOptionsMin`, `quizCorrectAnswerRequired`, `quizSingleChoiceMultipleCorrect`, `quizPreviewNotAllowed`, `videoMediaRequired`, `textContentRequired`, `submitInvalidSubLesson`, `submitBasicInfoIncomplete`, `submitCollaboratorRequired`, `submitOutlineNoSections`, `submitOutlineNoLessons`, `submitOutlineNoItems`, `collaboratorUserId`, `rejectReason`, `rejectReasonMax` |
+| `course.validation` | `title`, `titleMax`, `shortDescriptionMax`, `sectionTitle`, `lessonTitle`, `subLessonTitle`, `subLessonKind`, `quizPrompt`, `quizOptionBody`, `quizOptionsMin`, `quizCorrectAnswerRequired`, `quizSingleChoiceMultipleCorrect`, `quizPreviewNotAllowed`, `videoMediaRequired`, `textContentRequired`, `submitInvalidSubLesson`, `submitBasicInfoIncomplete`, `submitCollaboratorRequired`, `submitOutlineNoSections`, `submitOutlineNoLessons`, `submitOutlineNoItems`, `rejectReason`, `rejectReasonMax` |
 
 Taxonomy forms resolve Zod keys via `useTranslations("taxonomy.form")` + schema key `validation.*` (same parent-namespace pattern as auth).
 
@@ -457,27 +457,49 @@ Media lists add optional `category` and `sort_order` on the same type (`MediaLis
 
 For human-readable file sizes in the UI, use `formatBytes()` from `src/lib/utils/format-bytes.ts` (exported via `@/lib/utils`). Do not copy byte-formatting logic into feature components.
 
-## 11. `src/constants/` — values only
+## 11. Bulk user-picker confirm (partial success)
+
+When a multi-select user picker calls a bulk add API that returns `{ added[], failed[] }`, **do not copy** toast/control-flow logic into each screen. Use `finalizeBulkUserPickerSubmit` from `@/lib/utils/user-picker-bulk-submit`:
+
+```ts
+return await finalizeBulkUserPickerSubmit<MyRowType>({
+  userIds,
+  submit: (ids) => myBulkService({ user_ids: ids }),
+  mapSucceededIds: (added) => added.map((row) => row.id),
+  afterSubmit: async () => { await mutate(); }, // optional
+  toasts: {
+    onSuccess: () => toast.success(t("addSuccess")),
+    onAllFailed: () => toast.error(t("addAllFailed")),
+    onPartialSuccess: (succeeded, failed) =>
+      toast.warning(t("addPartialSuccess", { succeeded: String(succeeded), failed: String(failed) })),
+    onApiError: (error) => toastApiError(tErrors, error),
+  },
+});
+```
+
+Wrap with local loading state (`setIsAdding(true/false)`). `afterSubmit` (e.g. `mutate()`) runs only when at least one user was added — not on all-failed. Current usage: `InstructorRosterPage`, `useCourseCollaboratorActions`.
+
+## 12. `src/constants/` — values only
 
 [`eslint.config.mjs`](../eslint.config.mjs) enforces **data-only** modules under `src/constants/` (no functions, type exports, or `.tsx`). Put runtime helpers in `src/lib/utils/` and shared types in `src/types/`. Details: [`docs/quality.md`](./quality.md#eslint-eslintconfigmjs).
 
-## 12. `src/types/` — types only
+## 13. `src/types/` — types only
 
 Same ESLint config enforces **type-only** files under `src/types/` (no `const`, functions, or `export *`). Exception: value imports from `@/constants/**` are allowed when deriving types (e.g. `PermissionName`, `ApiErrorCodeValue`). Runtime maps like `ApiErrorCode` live in `src/constants/`; helpers like `isApiSuccess()` live in `src/lib/utils/`.
 
-## 13. `src/screen/` — pages only
+## 14. `src/screen/` — pages only
 
 [`eslint.config.mjs`](../eslint.config.mjs) restricts each `src/screen/**` module folder to **`index.ts`** plus **`page.tsx`** or **`*-page.tsx`** only. Put reusable UI in `src/components/`. Details: [`docs/quality.md`](./quality.md#srcscreen--page-files-only).
 
 ---
 
-## 14. Slug fields
+## 15. Slug fields
 
 Taxonomy and course-create slugs are **read-only** in the UI. Show a live preview with `generateSlug(name)` / `slugifyName(name)` while the user types the name or title. **Do not send `slug` in create/update API payloads** — the backend computes the persisted slug with `utils.SlugifyName`. Use one shared `TaxonomyTreeNode` type (`slug?` optional on write); strip slugs with `toTaxonomyTreeWritePayload()` before taxonomy mutations. Do not expose an editable slug input or duplicate tree node types.
 
 ---
 
-## 15. Adding New Features Checklist
+## 16. Adding New Features Checklist
 
 Before writing code for a new feature:
 

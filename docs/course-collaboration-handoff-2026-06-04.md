@@ -1,11 +1,12 @@
 # Course Collaboration Handoff
 
-_Last updated: 2026-06-25 (collaborators tab: paginated list + P67 picker). Prior: 2026-06-17 version numbering; 2026-06-05 course i18n pass._
+_Last updated: 2026-06-25 (collaborators tab: paginated list + P67 picker + bulk review v2). Prior: 2026-06-17 version numbering; 2026-06-05 course i18n pass._
 
 ## 2026-06-25 addendum (collaborators tab)
 
 - `useCourseCollaborators` — paginated list + search/URL sync
-- `useCourseInstructorCandidates` + `CourseCollaboratorPickerDialog` — multi-select add; **P67** `PermissionGate`; replaces `useInstructorRosterList` (P41)
+- `useCourseInstructorCandidates` + `CourseCollaboratorPickerDialog` — multi-select add via `POST …/collaborators/bulk`; partial success via `UserPickerConfirmResult`; **P67** `PermissionGate`
+- `useCourseCollaboratorActions` — bulk add/remove via `finalizeBulkUserPickerSubmit` (`src/lib/utils/user-picker-bulk-submit.ts`); shared partial-success toasts with instructor roster
 - Picker/dialog: closes only on successful add; responsive overflow (`truncate` / `break-all`)
 
 ## Purpose
