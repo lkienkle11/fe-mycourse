@@ -24,12 +24,12 @@ import { PERMISSIONS } from "@/constants/permissions";
 import { useRegisterDashboardPageHeader } from "@/hooks/dashboard";
 import { pickCharacter } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
+import { finalizeBulkUserPickerSubmit } from "@/lib/utils/user-picker-bulk-submit";
 import type {
   InstructorListFilters,
   InstructorProfile,
   InstructorRosterMember,
 } from "@/types/instructor";
-import type { UserPickerConfirmResult } from "@/types/user-picker";
 
 export function InstructorRosterPage() {
   const t = useTranslations("instructor.roster");
@@ -136,50 +136,29 @@ export function InstructorRosterPage() {
     }));
   };
 
-  const handleAddInstructors = async (
-    userIds: string[],
-  ): Promise<UserPickerConfirmResult | undefined> => {
-    if (userIds.length === 0) {
-      return;
-    }
+  const handleAddInstructors = async (userIds: string[]) => {
     setIsAdding(true);
     try {
-      const result = await addInstructorRosterBulkService({
-        user_ids: userIds,
+      return await finalizeBulkUserPickerSubmit<InstructorRosterMember>({
+        userIds,
+        submit: (ids) => addInstructorRosterBulkService({ user_ids: ids }),
+        mapSucceededIds: (added) => added.map((member) => member.id),
+        afterSubmit: async () => {
+          await mutate();
+        },
+        toasts: {
+          onSuccess: () => toast.success(t("addSuccess")),
+          onAllFailed: () => toast.error(t("addAllFailed")),
+          onPartialSuccess: (succeeded, failed) =>
+            toast.warning(
+              t("addPartialSuccess", {
+                succeeded: String(succeeded),
+                failed: String(failed),
+              }),
+            ),
+          onApiError: (error) => toastApiError(tErrors, error),
+        },
       });
-      await mutate();
-
-      const succeededCount = result.added.length;
-      const failedCount = result.failed.length;
-
-      if (failedCount === 0) {
-        toast.success(t("addSuccess"));
-        return;
-      }
-
-      if (succeededCount === 0) {
-        toast.error(t("addAllFailed"));
-        throw new Error("bulk roster add failed");
-      }
-
-      toast.warning(
-        t("addPartialSuccess", {
-          succeeded: String(succeededCount),
-          failed: String(failedCount),
-        }),
-      );
-      return {
-        succeededIds: result.added.map((member) => member.id),
-        failedCount,
-      };
-    } catch (error) {
-      if (
-        !(error instanceof Error) ||
-        error.message !== "bulk roster add failed"
-      ) {
-        toastApiError(tErrors, error);
-      }
-      throw error;
     } finally {
       setIsAdding(false);
     }
