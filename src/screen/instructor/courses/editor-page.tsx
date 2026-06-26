@@ -1,7 +1,12 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { type ComponentProps, type ComponentType, useMemo } from "react";
+import {
+  type ComponentProps,
+  type ComponentType,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import {
   deleteCourseLessonService,
@@ -21,6 +26,7 @@ import {
 import { CourseOutlineTab } from "@/components/features/course/course-editor-outline-tab";
 import { CourseEditorReviewHistoryTab } from "@/components/features/course/course-editor-review-history-tab";
 import { CourseStatusBadge } from "@/components/features/course/course-status-badge";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,6 +86,8 @@ export function InstructorCourseEditorPage({
   const tCommon = useTranslations("course.common");
   const tEditor = useTranslations("course.editor");
   const tToast = useTranslations("course.editor.toast");
+  const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const { data, isLoading, mutate } = useCourseDetail(courseId);
   const editableVersion = data?.draft_version;
   const liveVersion = data?.live_version;
@@ -155,6 +163,17 @@ export function InstructorCourseEditorPage({
   const { rows: tagRows } = useTaxonomyList("tags", basicInfoFilters);
   const { rows: skillRows } = useTaxonomyList("skills", basicInfoFilters);
   const { rows: outcomeRows } = useTaxonomyList("outcomes", basicInfoFilters);
+  const handleConfirmSubmitReview = async () => {
+    setIsSubmittingReview(true);
+    try {
+      const submitted = await handleSubmitReview();
+      if (submitted) {
+        setSubmitConfirmOpen(false);
+      }
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
   const courseTitleLabel = isLoading
     ? tCommon("loadingCourse")
     : (activeVersion?.title ?? tCommon("notLoaded"));
@@ -179,7 +198,7 @@ export function InstructorCourseEditorPage({
 
     if (editableVersion?.status === "DRAFT") {
       return (
-        <Button type="button" onClick={() => void handleSubmitReview()}>
+        <Button type="button" onClick={() => setSubmitConfirmOpen(true)}>
           {tEditor("actions.submitForReview")}
         </Button>
       );
@@ -199,7 +218,6 @@ export function InstructorCourseEditorPage({
     editableVersion,
     handlePrepareDraft,
     handleReopenDraft,
-    handleSubmitReview,
     isPreparingDraft,
     liveVersion,
     tEditor,
@@ -481,6 +499,18 @@ export function InstructorCourseEditorPage({
         setVideoDialogOpen={setVideoDialogOpen}
         subLessonForm={subLessonForm}
         setSubLessonForm={setSubLessonForm}
+      />
+
+      <ConfirmActionDialog
+        open={submitConfirmOpen}
+        onOpenChange={setSubmitConfirmOpen}
+        onConfirm={handleConfirmSubmitReview}
+        isLoading={isSubmittingReview}
+        title={tEditor("submitConfirm.title")}
+        description={tEditor("submitConfirm.description")}
+        cancelLabel={tCommon("cancel")}
+        confirmLabel={tEditor("submitConfirm.confirm")}
+        loadingLabel={tEditor("submitConfirm.submitting")}
       />
     </div>
   );

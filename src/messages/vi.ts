@@ -814,6 +814,13 @@ const messages = {
         submitForReview: "Gửi duyệt",
         reopenDraft: "Mở lại bản nháp",
       },
+      submitConfirm: {
+        title: "Gửi duyệt khóa học?",
+        description:
+          "Bản nháp sẽ được gửi cho quản trị viên xét duyệt. Bạn sẽ không thể chỉnh sửa khóa học cho đến khi được duyệt hoặc từ chối.",
+        confirm: "Gửi duyệt",
+        submitting: "Đang gửi...",
+      },
       basicInfo: {
         title: "Thông tin khóa học",
         description:
@@ -992,6 +999,8 @@ const messages = {
         collaboratorRemoveError: "Không thể gỡ cộng tác viên.",
         submitted: "Đã gửi bản nháp để duyệt.",
         submitError: "Không thể gửi bản nháp để duyệt.",
+        refreshAfterSubmitFailed:
+          "Bản nháp đã được gửi duyệt nhưng không thể làm mới trang. Vui lòng tải lại trang.",
         reopened: "Đã mở lại bản nháp.",
         reopenError: "Không thể mở lại bản nháp.",
       },
