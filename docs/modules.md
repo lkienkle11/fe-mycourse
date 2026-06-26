@@ -28,7 +28,7 @@ _Last audited: 2026-06-17 (course read-path performance: `include_outline`, `inc
 - `Shared` exposes reusable helpers/types/constants (`lib/language`, `constants/browse-menu.ts`, …).
 - `Taxonomy` provides admin CRUD for levels/topics/outcomes/skills/tags; list filters reuse `ApiListQueryParams` and extend with taxonomy typed-search (`search_by`, `search_value`).
 - `Media` provides the reusable media library dialog (browse/upload/select); taxonomy cover images use it. List filters extend `ApiListQueryParams` with `category` / `sort_order`.
-- `Course` provides instructor course CRUD, draft editing tabs, outline sorting, collaborator management (role label **Cộng tác viên** / **Collaborator** for `EDITOR`), and admin/sysadmin review actions. Review workflow buttons (prepare / submit / reopen) are **owner-only** in UI and API.
+- `Course` provides instructor course CRUD, draft editing tabs, outline sorting, collaborator management (role label **Cộng tác viên** / **Collaborator** for `EDITOR`), and admin/sysadmin review actions. Review workflow buttons (prepare / submit / reopen) are **owner-only** in UI and API. Admin catalog, trash, and review queue tables use `CourseListItem.owner_display_name` for the owner column (fallback `owner_user_id`).
 
 ## Taxonomy module
 

@@ -254,6 +254,8 @@ Callers in `src/api/callers/course/course.ts`:
 
 Hooks in `src/api/hooks/course/useCourses.ts`: `useAdminCourses`, `useTrashedCourses`. After trash/restore/delete, call `mutate` on the relevant SWR keys.
 
+**List response (`CourseListItem`):** admin catalog, trash, and review queue (`GET /course-reviews/pending`) return items with `owner_user_id` plus optional `owner_display_name` (owner display name from BE; same source as collaborator `display_name`). Admin/review table columns render `owner_display_name` and fall back to `owner_user_id` when empty (`buildCourseAdminListColumns`).
+
 Eligibility helper: `canMoveCourseToTrash` in `src/lib/utils/course.ts` (mirrors BE trash rules for UI).
 
 ---
