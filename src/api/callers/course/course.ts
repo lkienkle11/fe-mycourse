@@ -9,6 +9,8 @@ import type {
 } from "@/types/api";
 import type {
   AcquireCourseLeasePayload,
+  AddCollaboratorsBulkPayload,
+  AddCollaboratorsBulkResult,
   ApproveCourseDraftPayload,
   CourseCollaborator,
   CourseCollaboratorListFilters,
@@ -189,16 +191,16 @@ export async function listCourseInstructorCandidatesService(
   return data.data;
 }
 
-export async function addCourseCollaboratorService(
+export async function addCourseCollaboratorsBulkService(
   courseId: string,
-  payload: { user_id: string; role: "OWNER" | "EDITOR" },
-): Promise<CourseCollaborator[]> {
+  payload: AddCollaboratorsBulkPayload,
+): Promise<AddCollaboratorsBulkResult> {
   const { data } = await apiPost<
-    ApiResponse<CourseCollaborator[]>,
-    { user_id: string; role: "OWNER" | "EDITOR" }
-  >(courseUrl(routes.collaborators, courseId), payload);
+    ApiResponse<AddCollaboratorsBulkResult>,
+    AddCollaboratorsBulkPayload
+  >(courseUrl(routes.collaboratorsBulk, courseId), payload);
   if (!data.data) {
-    throw new Error(data.message || "Failed to add collaborator");
+    throw new Error(data.message || "Failed to add collaborators");
   }
   return data.data;
 }

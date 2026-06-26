@@ -117,13 +117,6 @@ export const courseQuizOptionSchema = z
     }
   });
 
-export const courseCollaboratorSchema = z.object({
-  user_id: z
-    .string({ message: "validation.collaboratorUserId" })
-    .min(1, { message: "validation.collaboratorUserId" })
-    .uuid({ message: "validation.collaboratorUserId" }),
-});
-
 export const courseRejectReasonSchema = z.object({
   reason: z
     .string({ message: "validation.rejectReason" })
@@ -146,7 +139,6 @@ export type CourseSectionValues = z.infer<typeof courseSectionSchema>;
 export type CourseLessonValues = z.infer<typeof courseLessonSchema>;
 export type CourseSubLessonValues = z.infer<typeof courseSubLessonSchema>;
 export type CourseQuizContentValues = z.infer<typeof courseQuizOptionSchema>;
-export type CourseCollaboratorValues = z.infer<typeof courseCollaboratorSchema>;
 export type CourseRejectReasonValues = z.infer<typeof courseRejectReasonSchema>;
 export type CourseApproveFeedbackValues = z.infer<
   typeof courseApproveFeedbackSchema

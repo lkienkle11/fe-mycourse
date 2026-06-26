@@ -83,6 +83,21 @@ export type CourseCollaborator = {
   avatar_url?: string;
 };
 
+export type AddCollaboratorsBulkPayload = {
+  user_ids: string[];
+  role?: CourseCollaboratorRole;
+};
+
+export type AddCollaboratorsBulkFailure = {
+  user_id: string;
+  message: string;
+};
+
+export type AddCollaboratorsBulkResult = {
+  added: CourseCollaborator[];
+  failed: AddCollaboratorsBulkFailure[];
+};
+
 export type CourseQuizOption = {
   id: string;
   option_key: string;
