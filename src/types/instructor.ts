@@ -54,6 +54,8 @@ export type InstructorExpertiseTopic = {
   id: string;
   user_id: string;
   topic_id: string;
+  name?: string;
+  slug?: string;
   created_at: number;
   updated_at: number;
 };
@@ -62,6 +64,8 @@ export type InstructorExpertiseSkill = {
   id: string;
   user_id: string;
   skill_id: string;
+  name?: string;
+  slug?: string;
   created_at: number;
   updated_at: number;
 };
