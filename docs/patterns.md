@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-06-26 (shared `deferDropdownAction` + `DeferredDropdownMenuItem` for menu→dialog flows). Prior: Quill SSR lazy load via `ensureQuillLoaded`._
+_Last audited: 2026-06-29 (SearchableSelect `useApiInfiniteListQuery` + `getRowKey` page-merge dedupe). Prior: shared `deferDropdownAction` + `DeferredDropdownMenuItem` for menu→dialog flows (2026-06-26)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -157,6 +157,26 @@ export const getMeEndpointKey = "/api/v1/me"; // defined once
 import { getMeEndpointKey } from "@/api/callers/auth/auth";
 mutate(getMeEndpointKey);
 ```
+
+### SearchableSelect: SWR infinite list + UI hook
+
+**Implementation (2026-06-29):** Split pattern — data layer uses `useApiInfiniteListQuery` (`useSWRInfinite` in `src/api/hooks/shared.ts`); popover UX stays in `useSearchablePaginatedOptions` (open state, debounced search input, pinned `selectedLabel`, `excludeValues`, `onOptionSelect`).
+
+| Layer | Hook / primitive | Responsibility |
+|-------|------------------|----------------|
+| Data | `useApiInfiniteListQuery` | SWR infinite pages, merged `rows` (optional `getRowKey` dedupe across pages), `loadMore`, `hasMore`, `mutate` / `retry` |
+| UI + wiring | `useSearchablePaginatedOptions` | Popover open/close, debounced search → SWR key, pinned label, client `excludeValues` |
+| Presentational | `SearchableSelect` | `Popover` + `Command` trigger and list |
+
+**Consumer config:** pass `getPageKey(params)` using existing caller key builders (`getInstructorRosterListKey`, `getTaxonomyListKey`, …). Do **not** pass ad-hoc `fetchPage` — SWR fetcher uses `fetchPaginatedListByKey` on the canonical URL key.
+
+**Fetch gating:** `useSearchablePaginatedOptions` passes `enabled && open` into `useApiInfiniteListQuery` so lists are not requested while the trigger is idle. Close/reopen reuses SWR cache (`revalidateOnFocus: false`, `revalidateFirstPage: false`).
+
+**Search:** debounced input updates the key prefix; hook resets infinite `size` to 1 when debounced search changes.
+
+**Page merge dedupe:** pass optional `getRowKey` into `useApiInfiniteListQuery`. `useSearchablePaginatedOptions` sets `getRowKey: (item) => mapToOption(item).value` so unstable pagination or overlapping pages never surface duplicate options in the dropdown.
+
+**Precedent:** same split as `useUserMultiSelectPickerState` + `useInstructorRosterCandidates`, but infinite scroll uses `useSWRInfinite` instead of page-number state + `useApiListQuery`.
 
 ---
 

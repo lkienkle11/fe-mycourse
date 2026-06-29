@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-06-08 (RequiredLabel, FieldError for form validation)._
+_Last audited: 2026-06-29 (SearchableSelect + useSearchablePaginatedOptions for expertise dropdowns)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -207,6 +207,7 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | `SortableTreeEditor` | `sortable-tree-editor.tsx` | Nested sortable tree (name + read-only slug); used by taxonomy topics/skills form editor. |
 | `DagreTreeDialog` | `dagre-tree-dialog.tsx` | Dagre layout popup (`@xyflow/react` + `dagre`); `nodesDraggable` prop (default `true`); node labels **name only**; vertical/horizontal toggle; CSS in this file. Taxonomy passes `nodesDraggable={false}`. |
 | `SearchBar` | `search-bar.tsx` | Global search input (UI stub). `visibility`: `"header"` (default, hidden below `md`) or `"sidebar"` (full-width flex for mobile sheet). |
+| `SearchableSelect` | `searchable-select.tsx` | Single-select combobox (`Popover` + `Command` + `Button` trigger). Uses `selectedLabel` from hook (pinned across popover close). Search input, infinite scroll via `onLoadMore`. Fetch errors via hook `onError`. |
 
 `src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog` (shared Zod schemas, `RequiredLabel`, `FieldError`, `toastApiError`; `useForm`/`useState` initialized from `initialData` on mount — parent remounts via `key`; slug preview uses `slugifyName(name)` with API `slug` fallback until `useWatch` reports name), `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns; `child_render` column opens tree view).
 
@@ -227,6 +228,7 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | `useCustomLanguage` | `hooks/language/use-custom-language.ts` | `{ languageCode, locale, languageLabel }` from `useLanguageStore` |
 | `useSyncLanguageFromLocale` | `hooks/language/use-sync-language-from-locale.ts` | Syncs `useLocale()` → store (mount in `AppProviders`) |
 | `useIsMobile` | `hooks/use-mobile.ts` | Viewport &lt; 768px |
+| `useSearchablePaginatedOptions` | `hooks/searchable-select/use-searchable-paginated-options.ts` | Popover UX + wiring for `SearchableSelect`: debounced search, pinned `selectedLabel`, `excludeValues`, `onOptionSelect`. Data via `useApiInfiniteListQuery` with `getRowKey` dedupe on `mapToOption(item).value`. See `docs/patterns.md` §4 SearchableSelect. |
 
 Server/RSC: `resolveCustomLanguage(locale)` in `src/lib/language/resolve-language.ts` (no Context).
 
