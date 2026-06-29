@@ -1,39 +1,36 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   addInstructorExpertiseSkillService,
   addInstructorExpertiseTopicService,
   deleteInstructorExpertiseSkillService,
   deleteInstructorExpertiseTopicService,
+  getInstructorRosterListKey,
 } from "@/api/callers/instructor";
+import { getTaxonomyListKey } from "@/api/callers/taxonomy";
 import {
   useInstructorExpertiseSkills,
   useInstructorExpertiseTopics,
-  useInstructorRosterList,
 } from "@/api/hooks/instructor";
-import { useTaxonomyList } from "@/api/hooks/taxonomy/useTaxonomy";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { PermissionGate } from "@/components/shared/permission-gate";
 import { RequiredLabel } from "@/components/shared/required-label";
+import { SearchableSelect } from "@/components/shared/searchable-select";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PERMISSIONS } from "@/constants/permissions";
+import { useSearchablePaginatedOptions } from "@/hooks/searchable-select/use-searchable-paginated-options";
 import { toastApiError } from "@/lib/utils/api-error";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import {
   instructorExpertiseSkillSchema,
   instructorExpertiseTopicSchema,
 } from "@/schema/instructor";
+import type { InstructorRosterMember } from "@/types/instructor";
+import type { TaxonomyEntityMap } from "@/types/taxonomy";
 
 export function InstructorExpertisePage() {
   const t = useTranslations("instructor.expertise");
@@ -47,69 +44,141 @@ export function InstructorExpertisePage() {
   const [deleteSkillId, setDeleteSkillId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { rows: roster } = useInstructorRosterList({ page: 1, per_page: 100 });
+  const handlePickerError = useCallback(
+    (error: unknown) => {
+      toastApiError(tErrors, error);
+    },
+    [tErrors],
+  );
+
   const { rows: topics, mutate: mutateTopics } =
     useInstructorExpertiseTopics(instructorId);
   const { rows: skills, mutate: mutateSkills } =
     useInstructorExpertiseSkills(instructorId);
-  const { rows: taxonomyTopics } = useTaxonomyList("topics", {
-    page: 1,
-    per_page: 100,
-    status: "ACTIVE",
-  });
-  const { rows: taxonomySkills } = useTaxonomyList("skills", {
-    page: 1,
-    per_page: 100,
-    status: "ACTIVE",
-  });
 
-  const instructorOptions = useMemo(
-    () =>
-      roster.map((member) => ({
-        value: String(member.id),
-        label: `${member.full_name} (${member.email})`,
-      })),
-    [roster],
+  const instructorGetPageKey = useCallback(
+    ({
+      page,
+      per_page,
+      search,
+    }: {
+      page: number;
+      per_page: number;
+      search?: string;
+    }) => getInstructorRosterListKey({ page, per_page, search }),
+    [],
   );
 
-  const topicNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const topic of taxonomyTopics) {
-      map.set(topic.id, topic.name);
-    }
-    return map;
-  }, [taxonomyTopics]);
+  const mapInstructorOption = useCallback(
+    (member: InstructorRosterMember) => ({
+      value: String(member.id),
+      label: `${member.full_name} (${member.email})`,
+    }),
+    [],
+  );
 
-  const skillNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const skill of taxonomySkills) {
-      map.set(skill.id, skill.name);
-    }
-    return map;
-  }, [taxonomySkills]);
+  const instructorPicker = useSearchablePaginatedOptions({
+    value: instructorId ?? "",
+    onValueChange: (nextValue) => {
+      setInstructorId(nextValue || null);
+      setTopicToAdd("");
+      setSkillToAdd("");
+    },
+    onError: handlePickerError,
+    getPageKey: instructorGetPageKey,
+    mapToOption: mapInstructorOption,
+  });
+
+  const topicGetPageKey = useCallback(
+    ({
+      page,
+      per_page,
+      search,
+    }: {
+      page: number;
+      per_page: number;
+      search?: string;
+    }) =>
+      getTaxonomyListKey("topics", {
+        page,
+        per_page,
+        status: "ACTIVE",
+        include_images: false,
+        ...(search ? { search_by: "name" as const, search_value: search } : {}),
+      }),
+    [],
+  );
+
+  const mapTopicOption = useCallback(
+    (topic: TaxonomyEntityMap["topics"]) => ({
+      value: String(topic.id),
+      label: topic.name,
+    }),
+    [],
+  );
 
   const assignedTopicIds = useMemo(
     () => new Set(topics.map((row) => row.topic_id)),
     [topics],
   );
+
+  const topicPicker = useSearchablePaginatedOptions({
+    value: topicToAdd,
+    onValueChange: setTopicToAdd,
+    enabled: instructorId != null,
+    onError: handlePickerError,
+    getPageKey: topicGetPageKey,
+    mapToOption: mapTopicOption,
+    excludeValues: assignedTopicIds,
+  });
+
+  const skillGetPageKey = useCallback(
+    ({
+      page,
+      per_page,
+      search,
+    }: {
+      page: number;
+      per_page: number;
+      search?: string;
+    }) =>
+      getTaxonomyListKey("skills", {
+        page,
+        per_page,
+        status: "ACTIVE",
+        include_images: false,
+        ...(search ? { search_by: "name" as const, search_value: search } : {}),
+      }),
+    [],
+  );
+
+  const mapSkillOption = useCallback(
+    (skill: TaxonomyEntityMap["skills"]) => ({
+      value: String(skill.id),
+      label: skill.name,
+    }),
+    [],
+  );
+
   const assignedSkillIds = useMemo(
     () => new Set(skills.map((row) => row.skill_id)),
     [skills],
   );
 
-  const availableTopics = useMemo(
-    () => taxonomyTopics.filter((topic) => !assignedTopicIds.has(topic.id)),
-    [taxonomyTopics, assignedTopicIds],
-  );
-  const availableSkills = useMemo(
-    () => taxonomySkills.filter((skill) => !assignedSkillIds.has(skill.id)),
-    [taxonomySkills, assignedSkillIds],
-  );
+  const skillPicker = useSearchablePaginatedOptions({
+    value: skillToAdd,
+    onValueChange: setSkillToAdd,
+    enabled: instructorId != null,
+    onError: handlePickerError,
+    getPageKey: skillGetPageKey,
+    mapToOption: mapSkillOption,
+    excludeValues: assignedSkillIds,
+  });
 
-  const resolveTopicName = (topicId: string) =>
-    topicNameById.get(topicId) ?? t("unknownName", { id: topicId });
-  const resolveSkillName = (skillId: string) =>
-    skillNameById.get(skillId) ?? t("unknownName", { id: skillId });
+  const resolveTopicName = (topicId: string, joinedName?: string) =>
+    joinedName?.trim() || t("unknownName", { id: topicId });
+  const resolveSkillName = (skillId: string, joinedName?: string) =>
+    joinedName?.trim() || t("unknownName", { id: skillId });
 
   const addTopic = async () => {
     if (!instructorId) return;
@@ -125,7 +194,7 @@ export function InstructorExpertisePage() {
         topic_id: parsed.data.topic_id,
       });
       toast.success(t("addTopicSuccess"));
-      setTopicToAdd("");
+      topicPicker.onOptionSelect("");
       await mutateTopics();
     } catch (error) {
       toastApiError(tErrors, error);
@@ -146,7 +215,7 @@ export function InstructorExpertisePage() {
         skill_id: parsed.data.skill_id,
       });
       toast.success(t("addSkillSuccess"));
-      setSkillToAdd("");
+      skillPicker.onOptionSelect("");
       await mutateSkills();
     } catch (error) {
       toastApiError(tErrors, error);
@@ -181,25 +250,32 @@ export function InstructorExpertisePage() {
     }
   };
 
+  const pickerLabels = {
+    searchPlaceholder: tc("search"),
+    emptyLabel: tc("empty"),
+    loadingLabel: tc("loading"),
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex max-w-md flex-col gap-2">
         <span className="text-sm font-medium">{t("selectInstructor")}</span>
-        <Select
+        <SearchableSelect
           value={instructorId ?? ""}
-          onValueChange={(value) => setInstructorId(value || null)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={t("selectInstructorPlaceholder")} />
-          </SelectTrigger>
-          <SelectContent>
-            {instructorOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onValueChange={instructorPicker.onOptionSelect}
+          selectedLabel={instructorPicker.selectedLabel}
+          options={instructorPicker.options}
+          open={instructorPicker.open}
+          onOpenChange={instructorPicker.onOpenChange}
+          searchInput={instructorPicker.searchInput}
+          onSearchInputChange={instructorPicker.onSearchInputChange}
+          isLoading={instructorPicker.isLoading}
+          isLoadingMore={instructorPicker.isLoadingMore}
+          hasMore={instructorPicker.hasMore}
+          onLoadMore={instructorPicker.loadMore}
+          placeholder={t("selectInstructorPlaceholder")}
+          {...pickerLabels}
+        />
       </div>
 
       {!instructorId ? (
@@ -217,18 +293,23 @@ export function InstructorExpertisePage() {
               <div className="flex flex-wrap items-end gap-2">
                 <div className="space-y-2">
                   <RequiredLabel>{t("pickTopic")}</RequiredLabel>
-                  <Select value={topicToAdd} onValueChange={setTopicToAdd}>
-                    <SelectTrigger className="w-[280px]">
-                      <SelectValue placeholder={t("pickTopic")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableTopics.map((topic) => (
-                        <SelectItem key={topic.id} value={String(topic.id)}>
-                          {topic.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={topicToAdd}
+                    onValueChange={topicPicker.onOptionSelect}
+                    selectedLabel={topicPicker.selectedLabel}
+                    options={topicPicker.options}
+                    open={topicPicker.open}
+                    onOpenChange={topicPicker.onOpenChange}
+                    searchInput={topicPicker.searchInput}
+                    onSearchInputChange={topicPicker.onSearchInputChange}
+                    isLoading={topicPicker.isLoading}
+                    isLoadingMore={topicPicker.isLoadingMore}
+                    hasMore={topicPicker.hasMore}
+                    onLoadMore={topicPicker.loadMore}
+                    placeholder={t("pickTopic")}
+                    triggerClassName="w-[280px]"
+                    {...pickerLabels}
+                  />
                 </div>
                 <Button type="button" onClick={() => void addTopic()}>
                   {t("addTopic")}
@@ -247,7 +328,7 @@ export function InstructorExpertisePage() {
                     className="flex items-center justify-between p-3 text-sm"
                   >
                     <span className="font-medium">
-                      {resolveTopicName(row.topic_id)}
+                      {resolveTopicName(row.topic_id, row.name)}
                     </span>
                     <PermissionGate
                       permissions={[PERMISSIONS.InstructorExpertiseDelete]}
@@ -273,18 +354,23 @@ export function InstructorExpertisePage() {
               <div className="flex flex-wrap items-end gap-2">
                 <div className="space-y-2">
                   <RequiredLabel>{t("pickSkill")}</RequiredLabel>
-                  <Select value={skillToAdd} onValueChange={setSkillToAdd}>
-                    <SelectTrigger className="w-[280px]">
-                      <SelectValue placeholder={t("pickSkill")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableSkills.map((skill) => (
-                        <SelectItem key={skill.id} value={String(skill.id)}>
-                          {skill.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={skillToAdd}
+                    onValueChange={skillPicker.onOptionSelect}
+                    selectedLabel={skillPicker.selectedLabel}
+                    options={skillPicker.options}
+                    open={skillPicker.open}
+                    onOpenChange={skillPicker.onOpenChange}
+                    searchInput={skillPicker.searchInput}
+                    onSearchInputChange={skillPicker.onSearchInputChange}
+                    isLoading={skillPicker.isLoading}
+                    isLoadingMore={skillPicker.isLoadingMore}
+                    hasMore={skillPicker.hasMore}
+                    onLoadMore={skillPicker.loadMore}
+                    placeholder={t("pickSkill")}
+                    triggerClassName="w-[280px]"
+                    {...pickerLabels}
+                  />
                 </div>
                 <Button type="button" onClick={() => void addSkill()}>
                   {t("addSkill")}
@@ -303,7 +389,7 @@ export function InstructorExpertisePage() {
                     className="flex items-center justify-between p-3 text-sm"
                   >
                     <span className="font-medium">
-                      {resolveSkillName(row.skill_id)}
+                      {resolveSkillName(row.skill_id, row.name)}
                     </span>
                     <PermissionGate
                       permissions={[PERMISSIONS.InstructorExpertiseDelete]}

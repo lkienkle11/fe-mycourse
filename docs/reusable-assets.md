@@ -472,12 +472,12 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `TaxonomyResourceKey` type.
 
 ### Asset: shared API query helpers
-- **Name**: `useApiListQuery`, `useApiRowsQuery`, `useApiDetailQuery`
-- **Type**: Client hook helpers
+- **Name**: `useApiListQuery`, `useApiRowsQuery`, `useApiDetailQuery`, `useApiInfiniteListQuery`, `fetchPaginatedListByKey`
+- **Type**: Client hook helpers + fetch utility
 - **Path**: `src/api/hooks/shared.ts`
-- **Purpose**: Normalize common SWR return shapes so domain hooks can reuse one list/detail implementation instead of duplicating `rows/pageInfo/isLoading/error/mutate`.
-- **Scope**: taxonomy, instructor, course, and media hooks.
-- **Dependencies**: `useSWR`, `ApiPaginatedData`.
+- **Purpose**: Normalize common SWR return shapes so domain hooks can reuse one list/detail/infinite-list implementation instead of duplicating `rows/pageInfo/isLoading/error/mutate`. `useApiInfiniteListQuery` wraps `useSWRInfinite`, merges paginated `result` pages into `rows` (optional `getRowKey` dedupes items across pages), exposes `loadMore` / `hasMore`. `fetchPaginatedListByKey` loads `ApiPaginatedData` from a canonical list URL key.
+- **Scope**: taxonomy, instructor, course, media hooks; `useSearchablePaginatedOptions`.
+- **Dependencies**: `useSWR`, `useSWRInfinite`, `apiFetch`, `ApiPaginatedData`.
 
 ### Asset: `TaxonomyListPage`
 - **Name**: `TaxonomyListPage`, `TaxonomyListPageProps`
@@ -582,6 +582,14 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Paginated instructor review history (`GET /courses/:id/review-history`); filter by `APPROVED`/`REJECTED`; URL query sync via `instructorCourseEditorTabHref`.
 - **Scope**: `InstructorCourseEditorPage` tab `review-history`.
 - **Dependencies**: `useApiListQuery`, `InstructorListPagination`, `courseApproveFeedbackSchema` / `courseRejectReasonSchema` on admin review page.
+
+### Asset: searchable single-select dropdown (shared)
+- **Name**: `SearchableSelect`, `useSearchablePaginatedOptions`, `SEARCHABLE_SELECT_PER_PAGE`, `SearchableSelectOption`
+- **Type**: React component + hook + constant
+- **Path**: `src/components/shared/searchable-select.tsx`, `src/hooks/searchable-select/use-searchable-paginated-options.ts`, `src/constants/searchable-select.ts`
+- **Purpose**: Reusable single-select combobox with server-side search and infinite-scroll pagination (`Popover` + `Command`). Hook pins `selectedLabel` when popover closes; `onError` + `retry` on fetch failure. **Data:** `useApiInfiniteListQuery` (`useSWRInfinite`) keyed by caller `getPageKey`; fetch gated while popover closed (`enabled && open`). SWR cache survives close/reopen (`revalidateOnFocus: false`, `revalidateFirstPage: false`). Debounced search resets infinite `size` to 1.
+- **Scope**: `InstructorExpertisePage` instructor / topic / skill pickers.
+- **Dependencies**: `useApiInfiniteListQuery`, `getInstructorRosterListKey`, `getTaxonomyListKey`, `Command`, `Popover`, `Button`.
 
 ### Asset: user multi-select picker (shared)
 - **Name**: `UserMultiSelectPickerDialog`, `UserMultiSelectPickerFeatureDialog`, `UserPickerCandidate`, `UserPickerConfirmResult`, `USER_PICKER_PER_PAGE`, `useUserMultiSelectPickerState`, `useInstructorRosterPickerLabels`, `useCourseCollaboratorPickerLabels`, `useUserPickerPaginationLabels`

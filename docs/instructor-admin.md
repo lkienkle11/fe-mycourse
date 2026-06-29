@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-06-26 (course info tab `include_outline` / `include_images`; shared `DeferredDropdownMenuItem` + outline `modal={false}` for menu→dialog pointer-events fix). Prior: browser-verified reject-fork UI._
+_Last audited: 2026-06-29 (instructor expertise searchable infinite-scroll dropdowns via shared `SearchableSelect`). Prior: course info tab `include_outline` / `include_images`; shared `DeferredDropdownMenuItem` + outline `modal={false}` for menu→dialog pointer-events fix._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -117,13 +117,16 @@ Reject application requires `rejection_reason` (1–2000 chars) via `InstructorA
 | `InstructorRosterPickerDialog` | Multi-select roster add dialog (search, pagination, responsive overflow) backed by `GET /instructors/roster-candidates` |
 | `InstructorApprovalActions` | Approve / reject (reason required) / delete application |
 
-Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, taxonomy list hooks for expertise pickers (`useTaxonomyList` for topic/skill **names**; list rows show names, not raw IDs).
+Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `SearchableSelect` + `useSearchablePaginatedOptions` for expertise pickers.
 
 ## Expertise UX
 
-- Pick instructor from roster dropdown (name + email).
-- **Topics / skills tabs:** add from ACTIVE taxonomy lists; display assigned rows by **taxonomy name** (map `topic_id` / `skill_id` via loaded taxonomy rows).
-- Already-assigned topic/skill IDs are hidden from add dropdowns.
+- **Instructor / topic / skill pickers:** shared `SearchableSelect` + `useSearchablePaginatedOptions`. Data layer: `useApiInfiniteListQuery` with `getInstructorRosterListKey` / `getTaxonomyListKey` (SWR infinite cache; no refetch on close/reopen when key unchanged). UI layer: pinned `selectedLabel`, debounced search, `excludeValues`, `onError` → `toastApiError`, `retry` via `mutate`. Fetch only while popover is open (`enabled && open`).
+- **Instructor picker:** `GET /instructors` (`page`, `per_page`, `search`). Infinite scroll on near-bottom scroll; search debounce ~300 ms.
+- **Topics / skills add pickers:** `GET /taxonomy/topics` or `/skills` with `status=ACTIVE`, `search_by=name`, `search_value`, `include_images=false`, same infinite-scroll pattern.
+- **Assigned rows:** joined taxonomy `name` from expertise GET (`InstructorExpertiseTopic.name` / `InstructorExpertiseSkill.name`); fallback `instructor.expertise.unknownName`.
+- Already-assigned topic/skill IDs excluded client-side from add-picker options.
+- Page size: `SEARCHABLE_SELECT_PER_PAGE` (default 20). BE roster endpoints cap `per_page` at 100 only (`getRosterPerPage()`); applications/profiles/tickets lists are unchanged.
 
 ## Identity rendering
 
