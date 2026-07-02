@@ -70,7 +70,7 @@ export const config = {
 /[locale]/              → src/app/[locale]/layout.tsx     NextIntlClientProvider + AppProviders
 /[locale]/              → src/app/[locale]/(web)/layout.tsx  Header + main + Footer
 /[locale]/              → src/app/[locale]/(web)/page.tsx    HomePage
-/[locale]/become-instructor → src/app/[locale]/(web)/become-instructor/page.tsx  BecomeInstructorPage (planned)
+/[locale]/become-instructor → src/app/[locale]/(web)/become-instructor/page.tsx  BecomeInstructorPage
 /[locale]/confirm-email → src/app/[locale]/(web)/confirm-email/page.tsx  Email confirm
 /[locale]/logout        → src/app/[locale]/(web)/logout/page.tsx         Logout
 /[locale]/admin         → src/app/[locale]/admin/layout.tsx   DashboardLayout (admin items)

@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-07-02 — instructor application user page (`become-instructor`), admin ADM enhancements planned; expertise searchable dropdowns via shared `SearchableSelect`._
+_Last audited: 2026-07-02 — become-instructor page implemented; admin ADM-01–03 implemented; expertise searchable dropdowns via shared `SearchableSelect`._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -154,13 +154,13 @@ Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `Searchable
 
 ## Admin enhancements (ADM-01–03)
 
-Planned upgrades to `instructor-approvals-page.tsx` (prototype: `code-temp/admin.ts`):
+Implemented upgrades to `instructor-approvals-page.tsx` (prototype: `code-temp/admin.ts`):
 
 | Task | Component / change |
 |------|-------------------|
-| ADM-01 | `InstructorUserCell` — avatar + `display_name` + `email` column (replaces visible `user_id`) on roster, approvals, profiles, expertise, tickets |
-| ADM-02 | `PreviewPDF` (`@react-pdf-viewer/*`) + full detail modal — company snapshot, topics/skills chips, CV inline, rejection history |
-| ADM-03 | Filter `returned` status, refresh after approve/reject, `max-w-3xl` detail modal |
+| ADM-01 | `InstructorUserCell` — avatar + `display_name` + `email` column on approvals list (also used on roster, profiles, expertise, tickets where applicable) |
+| ADM-02 | `PreviewPdf` (`src/components/shared/preview-pdf.tsx`, iframe fallback) + `InstructorProfileViewDialog` — company snapshot, topics/skills chips, CV inline, rejection history |
+| ADM-03 | Filter `returned` status, list refresh after approve/reject, `max-w-3xl` detail modal |
 
 List/detail consume BE identity + snapshot fields from migration **`000029`** contract.
 

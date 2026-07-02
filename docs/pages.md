@@ -8,7 +8,7 @@ _Last audited: 2026-07-02 (become-instructor route documented). Prior: course ve
 |-----|------------|------------------|--------|
 | `/` | `src/app/page.tsx` | Redirect → `/vi` (default locale) | Implemented |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | `HomePage` (`src/screen/common/home/page.tsx`) | Implemented |
-| `/{locale}/become-instructor` | `src/app/[locale]/(web)/become-instructor/page.tsx` | `BecomeInstructorPage` — instructor application (states A–H) | **Planned** (docs + BE `000029`; see `docs/instructor-application.md`) |
+| `/{locale}/become-instructor` | `src/app/[locale]/(web)/become-instructor/page.tsx` | `BecomeInstructorPage` — instructor application (states A–H) | Implemented (see `docs/instructor-application.md`) |
 | `/{locale}/confirm-email` | `src/app/[locale]/(web)/confirm-email/page.tsx` | `ConfirmEmailContent` → `confirmAction` | Implemented |
 | `/{locale}/logout` | `src/app/[locale]/(web)/logout/page.tsx` | `LogoutContent` → `logoutAction` (+ cross-tab `broadcast:logout`) | Implemented |
 | `/{locale}/admin` | `src/app/[locale]/admin/page.tsx` | `AdminDashboardPage` (placeholder dashboard) | Implemented |
