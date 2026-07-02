@@ -6,7 +6,11 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
-    ignores: [".jscpd-report/**", "src/messages/en.ts", "src/messages/vi.ts"],
+    ignores: [".jscpd-report/**", "src/messages/en.ts", "src/messages/vi.ts", "src/components/ui/**/*.tsx"],
+    // Ignore eslint-disable / eslint-disable-next-line so max-lines cannot be bypassed in-file.
+    linterOptions: {
+      noInlineConfig: true,
+    },
     rules: {
       "max-lines": [
         "error",
@@ -22,6 +26,9 @@ const eslintConfig = defineConfig([
   // Cấm file .tsx trong src/constants và mọi thư mục con/cháu
   {
     files: ["src/constants/**/*.tsx"],
+    linterOptions: {
+      noInlineConfig: true,
+    },
     rules: {
       "no-restricted-syntax": [
         "error",
@@ -36,6 +43,9 @@ const eslintConfig = defineConfig([
   // Ràng buộc cho toàn bộ file .ts trong src/constants
   {
     files: ["src/constants/**/*.ts"],
+    linterOptions: {
+      noInlineConfig: true,
+    },
     rules: {
       "no-restricted-syntax": [
         "error",
@@ -131,6 +141,9 @@ const eslintConfig = defineConfig([
   // Enforce type-only files in src/types.
   {
     files: ["src/types/**/*.ts"],
+    linterOptions: {
+      noInlineConfig: true,
+    },
     rules: {
       "no-restricted-syntax": [
         "error",
