@@ -12,6 +12,7 @@ import {
   InstructorProfileDeleteFooter,
   InstructorTableSection,
 } from "@/components/features/instructor/instructor-action-controls";
+import { InstructorUserCell } from "@/components/features/instructor/instructor-user-cell";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import {
   Select,
@@ -22,6 +23,10 @@ import {
 } from "@/components/ui/select";
 import { PERMISSIONS } from "@/constants/permissions";
 import { toastApiError } from "@/lib/utils/api-error";
+import {
+  resolveInstructorApplicationProfile,
+  resolveInstructorDisplayName,
+} from "@/lib/utils/instructor-application-helpers";
 import type {
   InstructorApplication,
   InstructorListFilters,
@@ -62,11 +67,10 @@ export function InstructorApprovalsPage() {
 
   const columns = useMemo<DataTableColumn<InstructorApplication>[]>(
     () => [
-      { id: "id", header: t("columns.id"), cell: (row) => row.id },
       {
-        id: "user_id",
-        header: t("columns.userId"),
-        cell: (row) => row.user_id,
+        id: "user",
+        header: t("columns.user"),
+        cell: (row) => <InstructorUserCell application={row} />,
       },
       {
         id: "review_status",
@@ -75,6 +79,14 @@ export function InstructorApprovalsPage() {
           const key = row.review_status as InstructorReviewStatus;
           return t(`status.${key}`);
         },
+      },
+      {
+        id: "submitted_at",
+        header: t("columns.submittedAt"),
+        cell: (row) =>
+          row.submitted_at
+            ? new Date(row.submitted_at * 1000).toLocaleDateString()
+            : "—",
       },
     ],
     [t],
@@ -98,6 +110,7 @@ export function InstructorApprovalsPage() {
       <SelectContent>
         <SelectItem value="ALL">{t("statusAll")}</SelectItem>
         <SelectItem value="pending">{t("status.pending")}</SelectItem>
+        <SelectItem value="returned">{t("status.returned")}</SelectItem>
         <SelectItem value="approved">{t("status.approved")}</SelectItem>
         <SelectItem value="rejected">{t("status.rejected")}</SelectItem>
       </SelectContent>
@@ -119,6 +132,8 @@ export function InstructorApprovalsPage() {
       setIsDeleting(false);
     }
   };
+
+  const selectedProfile = resolveInstructorApplicationProfile(selected);
 
   return (
     <div className="flex flex-col gap-4">
@@ -159,6 +174,10 @@ export function InstructorApprovalsPage() {
               compact
               onSuccess={async () => {
                 await mutate();
+                if (selected?.id === row.id) {
+                  setProfileOpen(false);
+                  setSelected(null);
+                }
               }}
             />
           </InstructorProfileDeleteActions>
@@ -169,10 +188,12 @@ export function InstructorApprovalsPage() {
         {...footerProps}
         profileOpen={profileOpen}
         onProfileOpenChange={setProfileOpen}
-        profile={selected?.profile ?? null}
-        fullName={selected?.full_name}
+        profile={selectedProfile}
+        application={selected}
+        fullName={resolveInstructorDisplayName(selected)}
         avatarUrl={selected?.avatar}
         profileTitle={t("profileTitle", { id: String(selected?.id ?? "") })}
+        profileDialogMaxWidthClassName="max-w-3xl"
         deleteOpen={deleteOpen}
         onDeleteOpenChange={setDeleteOpen}
         onDeleteConfirm={handleDelete}

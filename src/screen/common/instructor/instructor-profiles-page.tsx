@@ -63,7 +63,7 @@ export function InstructorProfilesPage() {
       {
         id: "headline",
         header: t("columns.headline"),
-        cell: (row) => row.profile.headline || "—",
+        cell: (row) => row.profile?.headline || "—",
       },
     ],
     [t],

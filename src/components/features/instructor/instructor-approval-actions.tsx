@@ -47,7 +47,9 @@ export function InstructorApprovalActions({
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
 
-  const isPending = application.review_status === "pending";
+  const isActionable =
+    application.review_status === "pending" ||
+    application.review_status === "returned";
   const reasonLength = reason.trim().length;
   const reasonValid =
     reasonLength >= REJECTION_MIN && reasonLength <= REJECTION_MAX;
@@ -89,7 +91,7 @@ export function InstructorApprovalActions({
     }
   };
 
-  if (!isPending) return null;
+  if (!isActionable) return null;
 
   const buttonSize = compact ? "sm" : "default";
 

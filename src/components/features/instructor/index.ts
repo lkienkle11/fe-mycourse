@@ -7,3 +7,4 @@ export { InstructorListPagination } from "./instructor-list-pagination";
 export type { InstructorProfileViewDialogProps } from "./instructor-profile-view-dialog";
 export { InstructorProfileViewDialog } from "./instructor-profile-view-dialog";
 export { InstructorRosterPickerDialog } from "./instructor-roster-picker-dialog";
+export { InstructorUserCell } from "./instructor-user-cell";
