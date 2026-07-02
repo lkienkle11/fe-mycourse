@@ -1,14 +1,17 @@
 # Instructor management (FE)
 
-_Last audited: 2026-06-29 (instructor expertise searchable infinite-scroll dropdowns via shared `SearchableSelect`). Prior: course info tab `include_outline` / `include_images`; shared `DeferredDropdownMenuItem` + outline `modal={false}` for menu→dialog pointer-events fix._
+_Last audited: 2026-07-02 — instructor application user page (`become-instructor`), admin ADM enhancements planned; expertise searchable dropdowns via shared `SearchableSelect`._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
+**User application page:** [`instructor-application.md`](./instructor-application.md)
+
 ## Routes
 
-| Screen | Admin | Sysadmin | Instructor role |
-|--------|-------|----------|-----------------|
-| Roster | `/admin/instructors/roster` | `/sysadmin/instructors/roster` | — |
+| Screen | Admin | Sysadmin | Instructor role | Learner (public web) |
+|--------|-------|----------|-----------------|----------------------|
+| **Become instructor** | — | — | — | `/{locale}/become-instructor` |
+| Roster | `/admin/instructors/roster` | `/sysadmin/instructors/roster` | — | — |
 | Applications (approvals) | `/admin/instructors/approvals` | `/sysadmin/instructors/approvals` | — |
 | Profiles | `/admin/instructors/profiles` | `/sysadmin/instructors/profiles` | — |
 | Expertise (topics + skills) | `/admin/instructors/expertise` | `/sysadmin/instructors/expertise` | — |
@@ -54,7 +57,7 @@ Instructor group on **admin** and **sysadmin** (`ADMIN_DASHBOARD_ITEMS` / `SYSAD
 
 Instructor layout authorization now accepts either `instructor:modify` or `course_instructor:read`, so course collaborators are not blocked by the dashboard shell.
 
-## Permissions (P41–P58)
+## Permissions (P41–P58, P68)
 
 Mirror BE `AllPermissions` in `src/constants/permissions.ts` and `PERMISSION_IDS` in `permission-ids.ts`:
 
@@ -62,6 +65,7 @@ Mirror BE `AllPermissions` in `src/constants/permissions.ts` and `PERMISSION_IDS
 |------|-----------------------------|
 | Roster | `instructor_roster:read`, `:create`, `:delete` |
 | Applications | `instructor_application:read`, `:create`, `:update`, `:delete`, `:approve`, `:reject` |
+| Submit block | `instructor_application:submit_blocked` (P68) — State B on become-instructor page **after** G/H ruled out (see [`instructor-application.md`](./instructor-application.md)) |
 | Profiles | `instructor_profile:read`, `:create`, `:update`, `:delete` |
 | Expertise | `instructor_expertise:read`, `:create`, `:delete` |
 | Ticket close | `instructor_ticket:close` (instructor role on `/instructor/tickets`) |
@@ -148,14 +152,26 @@ Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `Searchable
 - API errors: global `errors.codes.*` (not under `instructor.*`).
 - Sidebar labels: `dashboard.instructor.menu.*` (same keys as taxonomy uses `dashboard.taxonomy.menu.*`).
 
+## Admin enhancements (ADM-01–03)
+
+Planned upgrades to `instructor-approvals-page.tsx` (prototype: `code-temp/admin.ts`):
+
+| Task | Component / change |
+|------|-------------------|
+| ADM-01 | `InstructorUserCell` — avatar + `display_name` + `email` column (replaces visible `user_id`) on roster, approvals, profiles, expertise, tickets |
+| ADM-02 | `PreviewPDF` (`@react-pdf-viewer/*`) + full detail modal — company snapshot, topics/skills chips, CV inline, rejection history |
+| ADM-03 | Filter `returned` status, refresh after approve/reject, `max-w-3xl` detail modal |
+
+List/detail consume BE identity + snapshot fields from migration **`000029`** contract.
+
 ## Out of scope (FE)
 
-- Public “become instructor” page (BE submit API exists; no marketing route).
-- Assignments / activity log (BE stubs → toast “coming soon” when wired).
+- Assignments / activity log (BE stubs → toast "coming soon" when wired).
 - Public learner course storefront and learner lesson player UI.
 
 ## Related docs
 
 - BE contract: `be-mycourse/docs/modules/instructor.md`
+- User application page: [`instructor-application.md`](./instructor-application.md)
 - FE routes: [`router.md`](./router.md), [`pages.md`](./pages.md), [`screens.md`](./screens.md)
-- Quality gate: [`quality.md`](./quality.md), `temporary-docs/tieu-chuan-check-be-fe/fe-mycourse.md`
+- Quality gate: [`quality.md`](./quality.md)

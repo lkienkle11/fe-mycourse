@@ -14,6 +14,7 @@ _Last audited: 2026-06-17 (course read-path performance: `include_outline`, `inc
 - `Shared`: `src/lib/utils`, `src/constants`, `src/config`
 - `Taxonomy`: `src/types/taxonomy`, `src/constants/taxonomy`, `src/api/callers/taxonomy`, `src/components/features/taxonomy`, `src/screen/common/taxonomy`, app routes under `admin/taxonomy/*` and `sysadmin/taxonomy/*`
 - `Media`: `src/types/media`, `src/constants/media`, `src/api/callers/media`, `src/components/features/media` (collection popup; no dedicated route page yet)
+- `Instructor application (user)`: `src/lib/instructor-application/`, `src/screen/common/instructor/become-instructor-page.tsx`, route `(web)/become-instructor` — see `docs/instructor-application.md`
 - `Instructor`: `src/types/instructor.ts`, `src/constants/instructor`, `src/api/callers/instructor`, `src/api/hooks/instructor`, `src/components/features/instructor`, `src/screen/common/instructor`, `src/screen/instructor/tickets`, app routes under `admin/instructors/*`, `sysadmin/instructors/*`, `instructor/tickets`
 - `Course`: `src/types/course.ts`, `src/api/callers/course`, `src/api/hooks/course`, `src/components/features/course`, `src/screen/instructor/courses`, `src/screen/common/course`, app routes under `instructor/courses/*`, `admin/courses/{all,reviewing,trash}`, `sysadmin/courses/{all,reviewing,trash,reviewing/[courseId]/preview}`
 
@@ -56,7 +57,7 @@ _Last audited: 2026-06-17 (course read-path performance: `include_outline`, `inc
 - **Constants**: `src/constants/instructor/resources.ts` — `INSTRUCTOR_GROUP_READ_PERMISSIONS`; `src/constants/dashboard/instructor-icons.ts` — `INSTRUCTOR_MENU_ICONS`; instructor group in `admin-items.ts` / `sysadmin-items.ts` / `instructor-items.ts`.
 - **API**: `src/api/callers/instructor/instructor.ts`, `src/api/hooks/instructor/*`, shared SWR normalizers in `src/api/hooks/shared.ts`; routes in `API_PRIVATE_ROUTES.instructor`.
 - **UI**: `src/screen/common/instructor/*` (shared pages), `src/screen/instructor/tickets/page.tsx`, app routes under `src/app/[locale]/{admin,sysadmin}/instructors/*/page.tsx`; `src/components/features/instructor/*`.
-- **Docs**: `docs/instructor-admin.md` (routes, permissions, expertise names, tickets).
+- **Docs**: `docs/instructor-admin.md` (admin routes, permissions, ADM enhancements), **`docs/instructor-application.md`** (user become-instructor page).
 
 ## Course module
 

@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-06-17 (course version badges, `last_rejection_reason`, reorder nested merge). Prior: OUTLINE tab mobile drag reorder via `SortableList` TouchSensor; DeltaEditor image embed link + drag resize._
+_Last audited: 2026-07-02 (become-instructor route documented). Prior: course version badges, reorder nested merge._
 
 ## Current pages
 
@@ -8,6 +8,7 @@ _Last audited: 2026-06-17 (course version badges, `last_rejection_reason`, reord
 |-----|------------|------------------|--------|
 | `/` | `src/app/page.tsx` | Redirect → `/vi` (default locale) | Implemented |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | `HomePage` (`src/screen/common/home/page.tsx`) | Implemented |
+| `/{locale}/become-instructor` | `src/app/[locale]/(web)/become-instructor/page.tsx` | `BecomeInstructorPage` — instructor application (states A–H) | **Planned** (docs + BE `000029`; see `docs/instructor-application.md`) |
 | `/{locale}/confirm-email` | `src/app/[locale]/(web)/confirm-email/page.tsx` | `ConfirmEmailContent` → `confirmAction` | Implemented |
 | `/{locale}/logout` | `src/app/[locale]/(web)/logout/page.tsx` | `LogoutContent` → `logoutAction` (+ cross-tab `broadcast:logout`) | Implemented |
 | `/{locale}/admin` | `src/app/[locale]/admin/page.tsx` | `AdminDashboardPage` (placeholder dashboard) | Implemented |
@@ -56,7 +57,7 @@ _Last audited: 2026-06-17 (course version badges, `last_rejection_reason`, reord
 | Logout | Dedicated page `/{locale}/logout` (also linked from user menu) |
 
 Route constants:
-- `PUBLIC_ROUTES` (`src/constants/route.ts`): public/no-login routes (`home`, `forgotPassword`, `confirmEmail`, `logout`)
+- `PUBLIC_ROUTES` (`src/constants/route.ts`): public/no-login routes (`home`, `forgotPassword`, `confirmEmail`, `logout`, **`becomeInstructor`**)
 - `PRIVATE_ROUTES` (`src/constants/route.ts`): login-required routes (`admin`, `instructor`, `sysadmin`, `account`)
 - `PUBLIC_RESOURCE_ROUTES` / `PRIVATE_RESOURCE_ROUTES` (`src/constants/route.ts`): dynamic templates (`:param`) for resource pages
 - Route builders/helpers live in `src/lib/navigation/routes.ts` (for example `instructorCourseEditorHref(courseId)` for `/instructor/courses/:courseId/info` and `instructorCourseEditorTabHref(courseId, tab)` for the route-backed editor tabs)
