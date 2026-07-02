@@ -1,5 +1,92 @@
 import { z } from "zod";
 
+const yearsExperienceCodeSchema = z.enum([
+  "UNDER_1_YEAR",
+  "ONE_TO_TWO_YEARS",
+  "THREE_TO_FIVE_YEARS",
+  "SIX_TO_TEN_YEARS",
+  "OVER_TEN_YEARS",
+]);
+
+const instructorCertificateSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  issuer: z.string().trim().min(1).max(80),
+  issued_year: z.number().int().min(1950).max(2100),
+  credential_url: z.union([z.string().url(), z.literal("")]).optional(),
+});
+
+export const instructorApplicationSubmitSchema = z.object({
+  headline: z
+    .string({ message: "validation.headline" })
+    .trim()
+    .min(1, { message: "validation.headline" })
+    .max(100, { message: "validation.headlineMax" }),
+  bio: z
+    .string({ message: "validation.bio" })
+    .trim()
+    .min(100, { message: "validation.bioMin" })
+    .max(2000, { message: "validation.bioMax" }),
+  years_of_experience: yearsExperienceCodeSchema,
+  current_job_title: z
+    .string({ message: "validation.currentJobTitle" })
+    .trim()
+    .min(1, { message: "validation.currentJobTitle" }),
+  current_job_title_id: z
+    .string({ message: "validation.currentJobTitleId" })
+    .trim()
+    .min(1, { message: "validation.currentJobTitleId" }),
+  current_company: z
+    .string({ message: "validation.currentCompany" })
+    .trim()
+    .min(1, { message: "validation.currentCompany" }),
+  current_company_id: z.string().trim().optional().nullable(),
+  current_company_domain: z.string().trim().optional().nullable(),
+  current_company_description: z.string().trim().optional().nullable(),
+  current_company_location: z.string().trim().optional().nullable(),
+  cv_file_id: z
+    .string({ message: "validation.cvFile" })
+    .trim()
+    .min(1, { message: "validation.cvFile" })
+    .uuid({ message: "validation.cvFile" }),
+  linkedin_url: z.union([z.string().url(), z.literal("")]).optional(),
+  github_url: z.union([z.string().url(), z.literal("")]).optional(),
+  portfolio_links: z
+    .array(z.union([z.string().url(), z.literal("")]))
+    .max(5, { message: "validation.portfolioMax" })
+    .optional()
+    .default([]),
+  certificates: z
+    .array(instructorCertificateSchema)
+    .max(10, { message: "validation.certificatesMax" })
+    .optional()
+    .default([]),
+  intro_video_file_id: z
+    .union([z.string().uuid(), z.literal("")])
+    .optional()
+    .default(""),
+  topic_ids: z
+    .array(z.string().uuid({ message: "validation.topicIds" }))
+    .min(1, { message: "validation.topicIdsMin" })
+    .max(5, { message: "validation.topicIdsMax" }),
+  skill_ids: z
+    .array(z.string().uuid({ message: "validation.skillIds" }))
+    .min(1, { message: "validation.skillIdsMin" })
+    .max(15, { message: "validation.skillIdsMax" }),
+});
+
+export const instructorContactAdminSchema = z.object({
+  subject: z
+    .string({ message: "validation.contactSubject" })
+    .trim()
+    .min(1, { message: "validation.contactSubject" })
+    .max(200, { message: "validation.contactSubjectMax" }),
+  message: z
+    .string({ message: "validation.contactMessage" })
+    .trim()
+    .min(1, { message: "validation.contactMessage" })
+    .max(2000, { message: "validation.contactMessageMax" }),
+});
+
 export const instructorEmailSchema = z.object({
   email: z
     .string({ message: "validation.email" })
@@ -48,3 +135,9 @@ export type InstructorExpertiseSkillValues = z.infer<
   typeof instructorExpertiseSkillSchema
 >;
 export type InstructorTicketValues = z.infer<typeof instructorTicketSchema>;
+export type InstructorApplicationSubmitValues = z.infer<
+  typeof instructorApplicationSubmitSchema
+>;
+export type InstructorContactAdminValues = z.infer<
+  typeof instructorContactAdminSchema
+>;

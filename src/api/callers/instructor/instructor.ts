@@ -1,6 +1,8 @@
-import { apiDelete, apiFetch, apiPatch, apiPost } from "@/api/methods";
+import type { AxiosError } from "axios";
+import { apiDelete, apiFetch, apiPatch, apiPost, apiPut } from "@/api/methods";
 import { API_PRIVATE_ROUTES } from "@/constants/api-route";
 import { apiListQueryToRecord, buildQueryParams } from "@/lib/utils";
+import { isApiSuccess } from "@/lib/utils/api";
 import type {
   ApiPaginatedData,
   ApiPaginatedResponse,
@@ -12,6 +14,7 @@ import type {
   AddRosterBulkPayload,
   AddRosterBulkResult,
   AddTicketMessagePayload,
+  ContactInstructorAdminPayload,
   CreateTicketPayload,
   InstructorApplication,
   InstructorExpertiseSkill,
@@ -23,7 +26,9 @@ import type {
   InstructorTicket,
   InstructorTicketListFilters,
   InstructorTicketMessage,
+  MyInstructorApplication,
   RejectApplicationPayload,
+  SubmitInstructorApplicationPayload,
   UpsertProfileResponse,
 } from "@/types/instructor";
 import type {
@@ -116,6 +121,65 @@ export function getInstructorApplicationsListKey(
   filters: InstructorListFilters = {},
 ): string | null {
   return buildQueryParams(routes.applications, listQueryToRecord(filters));
+}
+
+export function getMyInstructorApplicationKey(): string {
+  return routes.applicationMe;
+}
+
+export async function getMyInstructorApplicationService(): Promise<MyInstructorApplication | null> {
+  try {
+    const { data } = await apiFetch<ApiResponse<MyInstructorApplication>>(
+      routes.applicationMe,
+    );
+    return data.data ?? null;
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiResponse<unknown>>;
+    if (axiosError.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export async function submitInstructorApplicationService(
+  payload: SubmitInstructorApplicationPayload,
+): Promise<MyInstructorApplication> {
+  const { data } = await apiPost<
+    ApiResponse<MyInstructorApplication>,
+    SubmitInstructorApplicationPayload
+  >(routes.applications, payload);
+  if (!data.data) {
+    throw new Error(data.message || "Failed to submit application");
+  }
+  return data.data;
+}
+
+export async function resubmitInstructorApplicationService(
+  payload: SubmitInstructorApplicationPayload,
+): Promise<MyInstructorApplication> {
+  const { data } = await apiPut<
+    ApiResponse<MyInstructorApplication>,
+    SubmitInstructorApplicationPayload
+  >(routes.applicationMe, payload);
+  if (!data.data) {
+    throw new Error(data.message || "Failed to resubmit application");
+  }
+  return data.data;
+}
+
+export async function contactInstructorAdminService(
+  payload: ContactInstructorAdminPayload,
+): Promise<void> {
+  const { data } = await apiPost<
+    ApiResponse<null>,
+    ContactInstructorAdminPayload
+  >(routes.applicationContactAdmin, payload);
+  if (!isApiSuccess(data)) {
+    throw new Error(
+      (data as ApiResponse<null>).message || "Failed to contact admin",
+    );
+  }
 }
 
 export async function listInstructorApplicationsService(

@@ -62,6 +62,7 @@ export const PERMISSIONS = {
   InstructorApplicationDelete: "instructor_application:delete",
   InstructorApplicationApprove: "instructor_application:approve",
   InstructorApplicationReject: "instructor_application:reject",
+  InstructorApplicationSubmitBlocked: "instructor_application:submit_blocked",
   // Instructor profile
   InstructorProfileRead: "instructor_profile:read",
   InstructorProfileCreate: "instructor_profile:create",
