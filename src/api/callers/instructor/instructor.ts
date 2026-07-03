@@ -2,7 +2,6 @@ import type { AxiosError } from "axios";
 import { apiDelete, apiFetch, apiPatch, apiPost, apiPut } from "@/api/methods";
 import { API_PRIVATE_ROUTES } from "@/constants/api-route";
 import { apiListQueryToRecord, buildQueryParams } from "@/lib/utils";
-import { isApiSuccess } from "@/lib/utils/api";
 import type {
   ApiPaginatedData,
   ApiPaginatedResponse,
@@ -15,6 +14,7 @@ import type {
   AddRosterBulkResult,
   AddTicketMessagePayload,
   ContactInstructorAdminPayload,
+  ContactInstructorAdminResponse,
   CreateTicketPayload,
   InstructorApplication,
   InstructorExpertiseSkill,
@@ -170,16 +170,15 @@ export async function resubmitInstructorApplicationService(
 
 export async function contactInstructorAdminService(
   payload: ContactInstructorAdminPayload,
-): Promise<void> {
+): Promise<ContactInstructorAdminResponse> {
   const { data } = await apiPost<
-    ApiResponse<null>,
+    ApiResponse<ContactInstructorAdminResponse>,
     ContactInstructorAdminPayload
   >(routes.applicationContactAdmin, payload);
-  if (!isApiSuccess(data)) {
-    throw new Error(
-      (data as ApiResponse<null>).message || "Failed to contact admin",
-    );
+  if (!data.data) {
+    throw new Error(data.message || "Failed to contact admin");
   }
+  return data.data;
 }
 
 export async function listInstructorApplicationsService(

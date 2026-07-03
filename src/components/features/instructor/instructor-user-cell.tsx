@@ -3,19 +3,21 @@
 import Image from "next/image";
 import { resolveInstructorDisplayName } from "@/lib/instructor-application/helpers";
 import { pickCharacter } from "@/lib/utils";
-import type { InstructorApplication } from "@/types/instructor";
+import type { InstructorUserIdentity } from "@/types/instructor";
 
 export type InstructorUserCellProps = {
-  application: Pick<
-    InstructorApplication,
-    "display_name" | "full_name" | "email" | "avatar"
+  user: Partial<
+    Pick<
+      InstructorUserIdentity,
+      "display_name" | "full_name" | "email" | "avatar"
+    >
   >;
 };
 
-export function InstructorUserCell({ application }: InstructorUserCellProps) {
-  const displayName = resolveInstructorDisplayName(application);
-  const email = application.email ?? "";
-  const avatarUrl = application.avatar ?? "";
+export function InstructorUserCell({ user }: InstructorUserCellProps) {
+  const displayName = resolveInstructorDisplayName(user);
+  const email = user.email ?? "";
+  const avatarUrl = user.avatar ?? "";
   const { label, color, backgroundColor } = pickCharacter(
     displayName || "User",
   );

@@ -13,6 +13,7 @@ import { getPageState } from "@/lib/instructor-application/get-page-state";
 import type { InstructorApplicationPageState } from "@/lib/instructor-application/page-state";
 import type {
   ContactInstructorAdminPayload,
+  ContactInstructorAdminResponse,
   MyInstructorApplication,
   SubmitInstructorApplicationPayload,
 } from "@/types/instructor";
@@ -50,9 +51,12 @@ export function useMyInstructorApplication() {
     return result;
   };
 
-  const contactAdmin = async (payload: ContactInstructorAdminPayload) => {
-    await contactInstructorAdminService(payload);
+  const contactAdmin = async (
+    payload: ContactInstructorAdminPayload,
+  ): Promise<ContactInstructorAdminResponse> => {
+    const result = await contactInstructorAdminService(payload);
     await mutate();
+    return result;
   };
 
   return {

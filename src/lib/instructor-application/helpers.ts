@@ -15,7 +15,10 @@ export function resolveInstructorApplicationProfile(
 }
 
 export function resolveInstructorDisplayName(
-  application: Pick<InstructorApplication, "display_name" | "full_name"> | null,
+  application:
+    | Pick<InstructorApplication, "display_name" | "full_name">
+    | Partial<Pick<InstructorApplication, "display_name" | "full_name">>
+    | null,
 ): string {
   if (!application) return "";
   return (

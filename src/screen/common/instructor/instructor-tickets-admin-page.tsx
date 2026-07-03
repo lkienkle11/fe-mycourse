@@ -9,6 +9,7 @@ import {
   useInstructorTicketsList,
 } from "@/api/hooks/instructor";
 import { InstructorListPagination } from "@/components/features/instructor/instructor-list-pagination";
+import { InstructorUserCell } from "@/components/features/instructor/instructor-user-cell";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { PermissionGate } from "@/components/shared/permission-gate";
@@ -59,11 +60,10 @@ export function InstructorTicketsAdminPage() {
 
   const columns = useMemo<DataTableColumn<InstructorTicket>[]>(
     () => [
-      { id: "id", header: t("columns.id"), cell: (row) => row.id },
       {
-        id: "user_id",
-        header: t("columns.userId"),
-        cell: (row) => row.user_id,
+        id: "user",
+        header: t("columns.user"),
+        cell: (row) => <InstructorUserCell user={row} />,
       },
       {
         id: "subject",
@@ -199,8 +199,11 @@ export function InstructorTicketsAdminPage() {
                 <li key={message.id} className="rounded-md border p-3 text-sm">
                   <p className="text-xs text-muted-foreground">
                     {t("messageMeta", {
-                      author: String(message.author_user_id),
+                      name: message.author_full_name || "—",
                     })}
+                    {message.author_email ? (
+                      <span>{` · ${message.author_email}`}</span>
+                    ) : null}
                   </p>
                   <p className="mt-1 whitespace-pre-wrap">{message.body}</p>
                 </li>

@@ -25,7 +25,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { PRIVATE_ROUTES, PUBLIC_ROUTES } from "@/constants/route";
-import { useMyInstructorApplication } from "@/hooks/useMyInstructorApplication";
+import { useMyInstructorApplication } from "@/hooks/instructor/use-my-instructor-application";
 import { Link } from "@/i18n/navigation";
 import {
   type FormState,

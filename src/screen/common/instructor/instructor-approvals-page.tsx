@@ -70,7 +70,7 @@ export function InstructorApprovalsPage() {
       {
         id: "user",
         header: t("columns.user"),
-        cell: (row) => <InstructorUserCell application={row} />,
+        cell: (row) => <InstructorUserCell user={row} />,
       },
       {
         id: "review_status",
@@ -192,7 +192,9 @@ export function InstructorApprovalsPage() {
         application={selected}
         fullName={resolveInstructorDisplayName(selected)}
         avatarUrl={selected?.avatar}
-        profileTitle={t("profileTitle", { id: String(selected?.id ?? "") })}
+        profileTitle={t("profileTitle", {
+          name: selected ? resolveInstructorDisplayName(selected) : "",
+        })}
         profileDialogMaxWidthClassName="max-w-3xl"
         deleteOpen={deleteOpen}
         onDeleteOpenChange={setDeleteOpen}

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { useMyInstructorApplication } from "@/hooks/useMyInstructorApplication";
+import type { useMyInstructorApplication } from "@/hooks/instructor/use-my-instructor-application";
 import { formatUnixDateTime } from "@/lib/utils";
 import { Field } from "./sections";
 

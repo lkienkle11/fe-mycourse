@@ -9,7 +9,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
-import type { useMyInstructorApplication } from "@/hooks/useMyInstructorApplication";
+import type { useMyInstructorApplication } from "@/hooks/instructor/use-my-instructor-application";
 import type { InstructorApplicationPageState } from "@/lib/instructor-application/page-state";
 import { INSTRUCTOR_PAGE_STATE } from "@/lib/instructor-application/page-state";
 import { cn, formatUnixDateTime } from "@/lib/utils";

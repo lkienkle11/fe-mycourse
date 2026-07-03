@@ -134,6 +134,11 @@ export type ContactInstructorAdminPayload = {
   message: string;
 };
 
+export type ContactInstructorAdminResponse = {
+  ticket_id: string;
+  status: InstructorTicketStatus | string;
+};
+
 export type InstructorUserIdentity = {
   full_name: string;
   avatar: string;
@@ -191,6 +196,9 @@ export type InstructorExpertiseSkill = {
 export type InstructorTicket = {
   id: string;
   user_id: string;
+  display_name?: string;
+  email?: string;
+  avatar?: string;
   subject: string;
   status: InstructorTicketStatus | string;
   created_at: number;
@@ -201,6 +209,8 @@ export type InstructorTicketMessage = {
   id: string;
   ticket_id: string;
   author_user_id: string;
+  author_full_name?: string;
+  author_email?: string;
   body: string;
   created_at: number;
   updated_at: number;

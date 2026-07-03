@@ -490,7 +490,7 @@ const messages = {
     approvals: {
       title: "Instructor applications",
       viewProfile: "View application",
-      profileTitle: "Application #{id}",
+      profileTitle: "Application — {name}",
       statusAll: "All statuses",
       approve: "Approve",
       approving: "Approving…",
@@ -518,7 +518,7 @@ const messages = {
       },
       status: {
         pending: "Pending",
-        returned: "Returned",
+        returned: "Needs revision",
         approved: "Approved",
         rejected: "Rejected",
       },
@@ -560,9 +560,9 @@ const messages = {
           body: "Submitted on {date}. We will respond within 5 business days.",
         },
         returned: {
-          title: "Your application was returned",
-          badge: "Returned",
-          body: "No reviewer picked up your application in time. You can edit and resubmit — this does not count toward the 5 rejection limit.",
+          title: "Your application needs a few updates",
+          badge: "Needs revision",
+          body: "No reviewer picked up your application in time. You can edit and resubmit — this does not count toward the rejection limit.",
         },
         rejected: {
           title: "Your application was not accepted",
@@ -679,12 +679,11 @@ const messages = {
     profiles: {
       title: "Instructor profiles",
       view: "View",
-      profileTitle: "Profile — user #{id}",
+      profileTitle: "Profile — {name}",
       deleteTitle: "Delete profile?",
       deleteDescription: "Remove this instructor profile?",
       columns: {
-        id: "ID",
-        userId: "User ID",
+        user: "User",
         headline: "Headline",
       },
     },
@@ -717,7 +716,7 @@ const messages = {
       viewMessages: "Messages",
       messagesTitle: "Messages — {subject}",
       noMessages: "No messages yet.",
-      messageMeta: "Author user #{author}",
+      messageMeta: "{name}",
       messagePlaceholder: "Write a message…",
       sendMessage: "Send",
       sending: "Sending…",
@@ -726,8 +725,7 @@ const messages = {
       threadClosed: "This ticket is closed.",
       statusAll: "All statuses",
       columns: {
-        id: "ID",
-        userId: "User ID",
+        user: "Requester",
         subject: "Subject",
         status: "Status",
       },

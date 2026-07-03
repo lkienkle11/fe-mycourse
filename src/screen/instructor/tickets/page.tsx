@@ -81,7 +81,6 @@ export function InstructorTicketsPage() {
 
   const columns = useMemo<DataTableColumn<InstructorTicket>[]>(
     () => [
-      { id: "id", header: t("columns.id"), cell: (row) => row.id },
       {
         id: "subject",
         header: t("columns.subject"),

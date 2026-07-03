@@ -490,7 +490,7 @@ const messages = {
     approvals: {
       title: "Đơn đăng ký giảng viên",
       viewProfile: "Xem đơn",
-      profileTitle: "Đơn #{id}",
+      profileTitle: "Đơn — {name}",
       statusAll: "Tất cả trạng thái",
       approve: "Duyệt",
       approving: "Đang duyệt…",
@@ -517,7 +517,7 @@ const messages = {
       },
       status: {
         pending: "Chờ duyệt",
-        returned: "Hoàn trả",
+        returned: "Cần chỉnh sửa",
         approved: "Đã duyệt",
         rejected: "Đã từ chối",
       },
@@ -560,9 +560,9 @@ const messages = {
           body: "Ngày nộp: {date}. Chúng tôi sẽ phản hồi trong tối đa 5 ngày.",
         },
         returned: {
-          title: "Hồ sơ được hoàn trả",
-          badge: "Hoàn trả",
-          body: "Chưa có người xử lý đơn. Bạn có thể chỉnh sửa và gửi lại — lần này không tính vào quota 5 lần từ chối.",
+          title: "Hồ sơ cần chỉnh sửa thêm",
+          badge: "Cần chỉnh sửa",
+          body: "Chưa có người xử lý đơn. Bạn có thể chỉnh sửa và gửi lại — lần này không tính vào số lần từ chối.",
         },
         rejected: {
           title: "Đơn chưa được chấp nhận",
@@ -679,12 +679,11 @@ const messages = {
     profiles: {
       title: "Hồ sơ giảng viên",
       view: "Xem",
-      profileTitle: "Hồ sơ — người dùng #{id}",
+      profileTitle: "Hồ sơ — {name}",
       deleteTitle: "Xóa hồ sơ?",
       deleteDescription: "Xóa hồ sơ giảng viên này?",
       columns: {
-        id: "ID",
-        userId: "ID người dùng",
+        user: "Người dùng",
         headline: "Tiêu đề",
       },
     },
@@ -717,7 +716,7 @@ const messages = {
       viewMessages: "Tin nhắn",
       messagesTitle: "Tin nhắn — {subject}",
       noMessages: "Chưa có tin nhắn.",
-      messageMeta: "Người gửi #{author}",
+      messageMeta: "{name}",
       messagePlaceholder: "Nhập tin nhắn…",
       sendMessage: "Gửi",
       sending: "Đang gửi…",
@@ -726,8 +725,7 @@ const messages = {
       threadClosed: "Yêu cầu này đã đóng.",
       statusAll: "Tất cả trạng thái",
       columns: {
-        id: "ID",
-        userId: "ID người dùng",
+        user: "Người gửi",
         subject: "Tiêu đề",
         status: "Trạng thái",
       },
