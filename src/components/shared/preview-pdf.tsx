@@ -2,11 +2,12 @@
 
 import { SpecialZoomLevel, Viewer, Worker } from "@react-pdf-viewer/core";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.js?url";
-import { useMemo } from "react";
 
+import { resolvePdfWorkerUrl } from "@/lib/pdf-worker-url";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
+
+const PDF_WORKER_URL = resolvePdfWorkerUrl();
 
 type PreviewPdfProps = {
   url: string;
@@ -14,17 +15,12 @@ type PreviewPdfProps = {
   className?: string;
 };
 
-/**
- * Inline PDF preview via @react-pdf-viewer (toolbar, zoom, sidebar).
- */
-export function PreviewPdf({
+function PreviewPdfViewer({
   url,
   title = "PDF preview",
   className,
 }: PreviewPdfProps) {
-  const defaultLayoutPluginInstance = useMemo(() => defaultLayoutPlugin(), []);
-
-  if (!url) return null;
+  const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
   return (
     <section
@@ -34,7 +30,7 @@ export function PreviewPdf({
         "h-[480px] w-full overflow-hidden rounded-md border bg-muted"
       }
     >
-      <Worker workerUrl={pdfWorkerUrl}>
+      <Worker workerUrl={PDF_WORKER_URL}>
         <Viewer
           fileUrl={url}
           plugins={[defaultLayoutPluginInstance]}
@@ -43,4 +39,12 @@ export function PreviewPdf({
       </Worker>
     </section>
   );
+}
+
+/**
+ * Inline PDF preview via @react-pdf-viewer (toolbar, zoom, sidebar).
+ */
+export function PreviewPdf({ url, ...rest }: PreviewPdfProps) {
+  if (!url) return null;
+  return <PreviewPdfViewer url={url} {...rest} />;
 }
