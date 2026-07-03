@@ -1,6 +1,6 @@
 # Instructor application page (user)
 
-_Last audited: 2026-07-03 — taxonomy chips show names (not UUIDs); no headline or bio on form; certificate PDF upload; section 5 `TaxonomySelect`; section titles without trailing question mark._
+_Last audited: 2026-07-03 — required `bio` (100–2000 chars) in section 2; no `headline` on form; taxonomy chips show names (not UUIDs); certificate PDF upload; section titles without trailing question mark._
 
 Public authenticated page for learners to submit and manage their **instructor application**. Admin review UX remains in [`instructor-admin.md`](./instructor-admin.md).
 
@@ -29,7 +29,7 @@ Feature logic lives under one namespace; components only render UI.
 | `page-state.ts` | `InstructorApplicationPageState` type + re-export `INSTRUCTOR_PAGE_STATE` |
 | `form-state.ts` | Form model, prefill from `GET /me`, submit payload mapper |
 | `validate-application-form.ts` | Zod validate + map issues → inline field error keys |
-| `helpers.ts` | `resolveInstructorApplicationProfile`, `resolveInstructorDisplayName` |
+| `helpers.ts` | `resolveInstructorApplicationProfile`, `resolveInstructorDisplayName`, taxonomy chip labels |
 | `types.ts` | Combobox / company-search UI types only |
 | `remote-data.ts` | Cloudflare JSON datasets + session cache |
 | `combobox.ts` | Job/company suggest merge + **query cache** |
@@ -40,7 +40,7 @@ Feature logic lives under one namespace; components only render UI.
 
 **API/domain types:** `src/types/instructor.ts` — single source for `YearsExperienceCode`, `MyInstructorApplication`, payloads.
 
-**UI:** `src/components/features/instructor/become-instructor-application/` — `application-form`, `sections`, `panels`, `combobox-fields`, `taxonomy-select`, `taxonomy-section`, `certificate-list` (section 5 full-width wrapper); render only.
+**UI:** `src/components/features/instructor/become-instructor-application/` — `application-form`, `sections`, `panels`, `combobox-fields`, `taxonomy-select`, `taxonomy-section`, `certificate-list`; render only.
 
 ---
 
@@ -74,23 +74,26 @@ Navbar (site header)
 Hero (content-height, primary #3dcbb1) — title + subtitle at top; no breadcrumb
 TabBar (48px) — "Application info" | "Rejection history" (or "Contact admin" in rejected_contact_admin)
 Content (max-w-[1200px], 2-col desktop) — page shell `min-h-[calc(100svh-4rem)]` flex column (this route only; web layout unchanged) so footer sits at viewport bottom on short tabs; history panel `flex-1` fills remaining height
-  ├── main — 5 form sections
+  ├── main — 6 form sections
   └── aside (w-80, sticky lg:block, accordion on mobile)
 ```
 
 ### Form sections (numbered in UI)
 
-1. Professional summary (`current_job_title` / `current_company` comboboxes, `years_of_experience` segmented control) — **no `headline` or `bio` fields** (removed from UI; API accepts omitted/empty `headline` and `bio` for backward compatibility)
-2. CV + links (`cv_file_id` **PDF only**; `linkedin_url`, `github_url`, `portfolio_links` ≤5)
-3. Certificates (≤10) — optional collapsible; each row: title, issuer, year, credential URL **or** (label `hoặc` + line break + **Chứng chỉ PDF**) `certificate_file_id` via `MediaCollectionDialog` (`uploadAllowedExtensions` PDF). BE requires **either** non-empty `credential_url` **or** `certificate_file_id` (`application/pdf`, **READY**) per saved certificate row.
-4. Intro video (`intro_video_file_id`, `visibleTabs={["video"]}`) — optional collapsible
-5. Expertise (`topic_ids` 1–5, `skill_ids` 1–15) — `TaxonomySelect` in `taxonomy-select.tsx` wraps shared `SearchableSelect` with `grid w-full` + `triggerClassName="w-full min-w-0"` so pickers span the section width. Section title has **no trailing question mark** (e.g. Vietnamese: 「Bạn có thể dạy gì」). Selected topic/skill chips show the **taxonomy name**, never the raw UUID: labels are cached when the user picks from the dropdown (`taxonomy-section.tsx`) and prefilled from `application.topics` / `application.skills` via `resolveApplicationTaxonomyLabels()` in `helpers.ts`. **Do not** change `src/components/shared/searchable-select.tsx` (also used by `instructor-expertise-page.tsx` with fixed `w-[280px]` / `max-w-md`).
+1. Professional summary — `current_job_title` / `current_company` comboboxes, `years_of_experience` segmented control. **No `headline` field** (not collected on become-instructor; API receives empty `headline` for backward compatibility).
+2. About you — **`bio` required** (`Textarea`, 100–2000 characters, live counter). Prefilled from `latest_submission.profile.bio` on resubmit.
+3. Documents & links — `cv_file_id` **PDF only**; `linkedin_url`, `github_url`, `portfolio_links` ≤5
+4. Certificates (≤10) — optional collapsible; each row: title, issuer, year, credential URL **or** (label `hoặc` + line break + **Chứng chỉ PDF**) `certificate_file_id` via `MediaCollectionDialog` (`uploadAllowedExtensions` PDF). BE requires **either** non-empty `credential_url` **or** `certificate_file_id` (`application/pdf`, **READY**) per saved certificate row.
+5. Intro video (`intro_video_file_id`, `visibleTabs={["video"]}`) — optional collapsible
+6. Expertise (`topic_ids` 1–5, `skill_ids` 1–15) — `TaxonomySelect` in `taxonomy-select.tsx` wraps shared `SearchableSelect` with `grid w-full` + `triggerClassName="w-full min-w-0"` so pickers span the section width. Section title has **no trailing question mark** (e.g. Vietnamese: 「Bạn có thể dạy gì」). Selected topic/skill chips show the **taxonomy name**, never the raw UUID: labels are cached when the user picks from the dropdown (`taxonomy-section.tsx`) and prefilled from `application.topics` / `application.skills` via `resolveApplicationTaxonomyLabels()` in `helpers.ts`. **Do not** change `src/components/shared/searchable-select.tsx` (also used by `instructor-expertise-page.tsx` with fixed `w-[280px]` / `max-w-md`).
+
+**Sidebar required checklist (no headline):** bio (≥100 chars), job title + company, years of experience, CV (PDF), ≥1 topic, ≥1 skill.
 
 **`SearchableSelect` consumers (do not break):**
 
 | File | Usage | Width |
 |------|-------|-------|
-| `become-instructor-application/taxonomy-select.tsx` | Section 5 topic/skill pickers | Full section width |
+| `become-instructor-application/taxonomy-select.tsx` | Section 6 topic/skill pickers | Full section width |
 | `instructor-expertise-page.tsx` | Instructor + topic/skill add pickers | `max-w-md` / `w-[280px]` |
 
 ---
@@ -108,7 +111,7 @@ Content (max-w-[1200px], 2-col desktop) — page shell `min-h-[calc(100svh-4rem)
 
 **FE files:** `src/api/callers/instructor/instructor.ts`, `src/hooks/instructor/use-my-instructor-application.ts`, `src/types/instructor.ts`, `src/schema/instructor/instructor.ts`, i18n `instructor.application.*`.
 
-**Vietnamese copy (`vi.ts` → `instructor.application`):** job-title field labels use **「Vai trò」** (not 「Chức danh」) — `form.jobTitle`, `form.jobTitlePlaceholder`, `sidebar.req1`. Validation messages under `instructor.validation` already use 「vai trò」. Admin `instructor.profileView.currentJobTitle` keeps 「Chức danh」 (separate screen).
+**Vietnamese copy (`vi.ts` → `instructor.application`):** job-title field labels use **「Vai trò」** (not 「Chức danh」) — `form.jobTitle`, `form.jobTitlePlaceholder`, `sidebar.req2`. Validation messages under `instructor.validation` already use 「vai trò」. Admin `instructor.profileView.currentJobTitle` keeps 「Chức danh」 (separate screen).
 
 ---
 
@@ -160,7 +163,7 @@ Admin CV preview uses `src/components/shared/preview-pdf.tsx` — thin wrapper a
 4. Confirm → `POST` (`ready_to_apply`) or `PUT /me` (resubmit states).
 5. Success toast + refetch `GET /me`.
 
-**Inline error field keys** (Zod path → UI anchor): `current_job_title` (includes `current_job_title_id`), `current_company`, `cv_file_id`, `linkedin_url`, `github_url`, `portfolio_links`, `topic_ids`, `skill_ids`, `certificates.{index}` (certificate rows). Certificate section auto-expands when a certificate row has an error.
+**Inline error field keys** (Zod path → UI anchor): `current_job_title` (includes `current_job_title_id`), `current_company`, `bio`, `cv_file_id`, `linkedin_url`, `github_url`, `portfolio_links`, `topic_ids`, `skill_ids`, `certificates.{index}` (certificate rows). Certificate section auto-expands when a certificate row has an error.
 
 **i18n:** messages resolved from `instructor.validation.*` (Zod stores `validation.{key}` in issue messages).
 
