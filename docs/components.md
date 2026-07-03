@@ -30,7 +30,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 |-----------|------|------|-------------|
 | `Accordion` | `ui/accordion.tsx` | `radix-ui` | Collapsible sections; open panels use `data-open:overflow-visible` for nested content |
 | `Alert` | `ui/alert.tsx` | — | Inline alert banners (info, warning, error) |
-| `AlertDialog` | `ui/alert-dialog.tsx` | `radix-ui` | Blocking confirm modal (destructive actions). Overlay `z-300`, content `z-301` — stacks above sticky `Header` (`z-100`) and mobile sidebar (`z-200`), same band as auth `Dialog` (`LoginSignupPopup`). |
+| `AlertDialog` | `ui/alert-dialog.tsx` | `radix-ui` | Blocking confirm modal (destructive actions). Overlay `z-300`, content `z-301` — stacks above sticky `Header` / `HeaderDashboard` (`z-20`) and mobile sidebar (`z-200`), same band as auth `Dialog` (`LoginSignupPopup`). |
 | `AspectRatio` | `ui/aspect-ratio.tsx` | `radix-ui` | Fixed ratio containers (16:9 media) |
 | `Avatar` | `ui/avatar.tsx` | `@radix-ui/react-avatar` | User avatar with fallback initials |
 | `Badge` | `ui/badge.tsx` | — | Status/label badge |
@@ -110,7 +110,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
-| `Header` | `header.tsx` | Server | Sticky `z-100`. Desktop row (`lg+`) + `HeaderMobileBar`. Brand logo/title navigates home via shared `homeHref` helper. `LoginSignupPopup` mounted after `</header>`. |
+| `Header` | `header.tsx` | Server | Sticky `z-20` (same band as `HeaderDashboard`). Desktop row (`lg+`) + `HeaderMobileBar`. Brand logo/title navigates home via shared `homeHref` helper. `LoginSignupPopup` mounted after `</header>`. |
 | `HeaderBrowseNav` | `browse-nav.tsx` | Client | Desktop-only (`lg+`) browse flyout (`NavigationMenu`). N-column hover via `activeStack`; private helper `MenuColumn`. |
 | `HeaderMobileBar` | `header-mobile-bar.tsx` | Client | Below `lg`: logo + burger opening `HeaderMobileSidebar`. Logo `Link` uses shared `homeHref`. |
 | `HeaderMobileSidebar` | `header-mobile-sidebar.tsx` | Client | Portal overlay `z-200`, panel `z-202`, `h-dvh`, slides from **right** (no Radix Sheet). Body: `overflow-y-auto` + `SearchBar` (`visibility="sidebar"`) + `BrowseSidebarMenu` + footer (`LocaleSwitcher`, `SidebarAuthFooter`). Locks `document.body` overflow while open; `Escape` closes. |
