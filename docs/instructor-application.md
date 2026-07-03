@@ -1,6 +1,6 @@
 # Instructor application page (user)
 
-_Last audited: 2026-07-02 — become-instructor page contract (states A–H), layout mapping from code-temp, API integration._
+_Last audited: 2026-07-02 — become-instructor implemented; semantic page states; module layout; rawFetch + query cache._
 
 Public authenticated page for learners to submit and manage their **instructor application**. Admin review UX remains in [`instructor-admin.md`](./instructor-admin.md).
 
@@ -19,62 +19,48 @@ Public authenticated page for learners to submit and manage their **instructor a
 
 ---
 
-## State resolver (A–H)
+## Module layout (`src/lib/instructor-application/`)
+
+Feature logic lives under one namespace; components only render UI.
+
+| File / folder | Responsibility |
+|---------------|----------------|
+| `get-page-state.ts` | Page state resolver (semantic names) |
+| `page-state.ts` | `InstructorApplicationPageState` type + re-export `INSTRUCTOR_PAGE_STATE` |
+| `form-state.ts` | Form model, prefill from `GET /me`, submit payload mapper |
+| `helpers.ts` | `resolveInstructorApplicationProfile`, `resolveInstructorDisplayName` |
+| `types.ts` | Combobox / company-search UI types only |
+| `remote-data.ts` | Cloudflare JSON datasets + session cache |
+| `combobox.ts` | Job/company suggest merge + **query cache** |
+| `wikidata-company.ts` | Wikidata search port |
+| `mock-*.ts` | Offline fallbacks |
+
+**Constants:** `src/constants/instructor-application.ts` — `YEAR_EXPERIENCE_BUCKETS`, page-state type.
+
+**API/domain types:** `src/types/instructor.ts` — single source for `YearsExperienceCode`, `MyInstructorApplication`, payloads.
+
+**UI:** `src/components/features/instructor/become-instructor-application/` — `application-form`, `sections`, `panels`, `combobox-fields` (render only).
+
+---
+
+## Page state resolver
+
+Docs use labels **A–H** for product discussion. **Runtime code uses semantic names** from `InstructorApplicationPageState`:
+
+| Doc | Runtime state | Condition |
+|-----|---------------|-----------|
+| A | `unauthenticated` | Not logged in |
+| G | `approved` | `review_status === "approved"` (before P68) |
+| H | `rejected_contact_admin` | `rejection_count >= 5` |
+| B | `submit_blocked` | Effective P68 |
+| C | `ready_to_apply` | No application / eligible first submit |
+| D | `pending_review` | `pending` within SLA |
+| E | `returned_for_revision` | `returned` |
+| F | `rejected_can_resubmit` | `rejected`, `rejection_count < 5` |
 
 Sources: auth session, `GET /api/v1/instructor-applications/me`, `GET /api/v1/me/permissions` (P68).
 
-### Priority order (mandatory)
-
-Implement `getPageState()` in this order — **do not** map P68 → State B before checking `review_status`:
-
-1. **A** — not logged in
-2. **G** — `review_status === "approved"` (wins over P68; user was approved via application flow)
-3. **H** — `rejection_count >= 5`
-4. **B** — effective `instructor_application:submit_blocked` (P68); pre-existing/roster instructor or system block
-5. **C** — no application / eligible first submit
-6. **D** — `pending` within SLA
-7. **E** — `returned`
-8. **F** — `rejected`, `rejection_count < 5`
-
-### State B vs State G
-
-| | State B | State G |
-|---|---------|---------|
-| Trigger | P68, user not in G/H | `review_status === "approved"` from `GET /me` |
-| Context | Instructor from roster/legacy, or blocked by quota | Just approved through application flow |
-| UI | Block card — cannot submit | Success CTA → `/instructor` |
-| Note | User may have P68 | User also has P68 after approve, but **G is checked first** |
-
-| State | Condition | UI |
-|-------|-----------|-----|
-| A | Not logged in | Login CTA |
-| G | `review_status === approved` | Success CTA → `/instructor` |
-| H | `rejection_count >= 5` | Tab "Contact admin" + rejection history |
-| B | P68 (after G/H ruled out) | Block card + CTA to instructor area |
-| C | Eligible first submit | Form + empty rejection history tab |
-| D | `pending`, within SLA | Read-only form + pending banner |
-| E | `returned` | Editable form + returned banner |
-| F | `rejected`, count < 5 | Editable form + rejection tab |
-
-Logic port: `temporary-docs/yeu-cau-lam-giang-vien/code-temp/script.ts` → `getPageState()` (update to match priority above).
-
-### `getPageState()` reference (pseudocode)
-
-```ts
-function getPageState(auth, meResponse, permissions): PageState {
-  if (!auth) return "A";
-  if (meResponse?.review_status === "approved") return "G";
-  if ((meResponse?.rejection_count ?? 0) >= 5) return "H";
-  if (permissions.includes("instructor_application:submit_blocked")) return "B";
-  if (!meResponse) return "C"; // GET /me → 404
-  if (meResponse.review_status === "pending") return "D";
-  if (meResponse.review_status === "returned") return "E";
-  if (meResponse.review_status === "rejected") return "F";
-  return "C";
-}
-```
-
-`GET /me` returning **404** means no application row → State **C** (first submit), unless step 4 already returned **B** (roster instructor with P68, no application).
+`getPageState()` in `src/lib/instructor-application/get-page-state.ts` implements the priority order in the table above.
 
 ---
 
@@ -85,13 +71,11 @@ Mapped from code-temp `renderPage()`:
 ```
 Navbar (site header)
 Hero (~280px, primary #3dcbb1)
-TabBar (48px) — "Application info" | "Rejection history" (or "Contact admin" in State H)
+TabBar (48px) — "Application info" | "Rejection history" (or "Contact admin" in rejected_contact_admin)
 Content (max-w-[1200px], 2-col desktop)
   ├── main — 6 form sections
   └── aside (w-80, sticky lg:block, accordion on mobile)
 ```
-
-Design tokens: primary `#3dcbb1`, 8px spacing grid, `max-width: 1200px`.
 
 ### Form sections
 
@@ -109,63 +93,61 @@ Design tokens: primary `#3dcbb1`, 8px spacing grid, `max-width: 1200px`.
 
 | Action | Method | Path |
 |--------|--------|------|
-| Bootstrap / prefill | GET | `/api/v1/instructor-applications/me` — permission `instructor_application:create` (P45) |
-| First submit (State C) | POST | `/api/v1/instructor-applications` — P45 |
-| Resubmit (State E/F) | PUT | `/api/v1/instructor-applications/me` — P45 (same as first submit; not P46) |
+| Bootstrap / prefill | GET | `/api/v1/instructor-applications/me` — P45 |
+| First submit (`ready_to_apply`) | POST | `/api/v1/instructor-applications` — P45 |
+| Resubmit (`returned_for_revision` / `rejected_can_resubmit`) | PUT | `/api/v1/instructor-applications/me` — P45 |
+| State H contact | POST | `/api/v1/instructor-applications/contact-admin` — P45 + server `rejection_count >= 5` |
 | Permission gate | GET | `/api/v1/me/permissions` |
 | Taxonomy pickers | GET | `/api/v1/taxonomy/topics`, `/api/v1/taxonomy/skills` |
 
-**FE files:**
-
-- Routes: `API_PRIVATE_ROUTES.instructorApplications` in `src/constants/api-route.ts`
-- Callers: `getMyInstructorApplicationService`, `submitInstructorApplicationService`, `resubmitInstructorApplicationService` in `src/api/callers/instructor/instructor.ts`
-- Hook: `useMyInstructorApplication.ts`
-- Types: extend `src/types/instructor.ts` — `RejectionRecord`, company snapshot, `YearsExperienceCode`, media read models, `can_resubmit`
-- Schema: extend `src/schema/instructor/instructor.ts` — bio 100–2000, years enum, portfolio ≤5, certs ≤10, topics/skills limits
-- i18n: `instructor.application.*` in `src/messages/{en,vi}.ts`
+**FE files:** `src/api/callers/instructor/instructor.ts`, `useMyInstructorApplication.ts`, `src/types/instructor.ts`, `src/schema/instructor/instructor.ts`, i18n `instructor.application.*`.
 
 ---
 
-## Remote combobox data (`src/lib/instructor-application/`)
+## Remote combobox data
 
-Port from `code-temp/` — single module, no duplication.
+Port from `code-temp/` — HTTP via **`rawFetch`** from `src/api/raw-http.ts` (timeout, signal) for third-party URLs. Privacy: user queries are sent from the browser to HH.ru / Wikidata / Cloudflare static JSON.
 
 | Dataset | URL | Fallback |
 |---------|-----|----------|
 | Job titles | `https://du-lieu-ho-so.pages.dev/chuc-danh.json` | `mock-job-titles.ts` |
 | Companies | `https://du-lieu-ho-so.pages.dev/cong-ty.json` | `mock-companies.ts` |
 | Live job search | `https://api.hh.ru/suggests/vacancy_search_keyword?text=` | merge + dedupe |
-| Live company | Wikidata `wbsearchentities` + SPARQL | `wikidata-company.ts` port |
+| Live company | Wikidata `wbsearchentities` + SPARQL | `wikidata-company.ts` |
 
-`remote-data.ts`: 8s timeout, session cache, fallback on error.
+**Session caches:**
 
-### Required merge semantics (FE-06)
+- Dataset load cache in `remote-data.ts` (full JSON once per session).
+- **Query cache** in `combobox.ts` — keyed by normalized query string; repeated focus/type with same query does not re-hit third-party APIs.
 
-1. **Wikidata + Cloudflare merge** — domain match and alias heuristics, not exact-name only.
-2. **Fallback id prefix** — `fallback:` or `local:` (not `remote:local-N`).
-3. **Source note by search state** — idle vs searching vs fallback labels.
+Merge semantics: Wikidata + Cloudflare by domain/alias; fallback id prefix `fallback:` / `local:`; source note by search state.
 
-Company select resolves by **option `id` or index**, never re-resolve by label alone.
+**Combobox UX:** do not render internal option ids (`remote:`, `hh:`, `custom:`) to end users; sync inner query via `useEffect` on value prop — no remount `key` on combobox fields.
+
+---
+
+## Admin profile shape
+
+List/detail for managed profiles and applications use **`latest_submission.profile`**. Use `resolveInstructorApplicationProfile()` from `src/lib/instructor-application/helpers.ts` — never read legacy top-level `profile` alone.
+
+---
+
+## PDF preview (`PreviewPdf`)
+
+Admin CV preview uses `src/components/shared/preview-pdf.tsx` — **iframe** embed (no `@react-pdf-viewer` dependency). Toolbar/zoom from the spec prototype are deferred; iframe matches current `package.json` and is documented here as the shipped approach.
 
 ---
 
 ## Submit UX
 
 - Confirm dialog before submit (SLA 5-day message).
-- State C → `POST`; State E/F → `PUT /me`.
+- `ready_to_apply` → `POST`; `returned_for_revision` / `rejected_can_resubmit` → `PUT /me`.
 - Success toast + refetch `GET /me`.
-
----
-
-## State H — contact admin
-
-Wire after **BE-10** contract: reuse `POST /instructor-tickets` + message (preferred) or documented alternative. Tab replaces application form when `rejection_count >= 5`.
 
 ---
 
 ## Related docs
 
-- [`instructor-admin.md`](./instructor-admin.md) — admin approvals enhancements (ADM-01–03)
+- [`instructor-admin.md`](./instructor-admin.md)
 - [`pages.md`](./pages.md), [`router.md`](./router.md), [`screens.md`](./screens.md)
-- [`components.md`](./components.md) — shared UI inventory
-- [`modules.md`](./modules.md) — module boundaries
+- [`components.md`](./components.md), [`modules.md`](./modules.md)
