@@ -117,7 +117,7 @@ Reject application requires `rejection_reason` (1–2000 chars) via `InstructorA
 
 | Component | Purpose |
 |-----------|---------|
-| `InstructorProfileViewDialog` | Read-only profile popup (approvals / roster / profiles) with identity block (`full_name`, `avatar` + fallback) |
+| `InstructorProfileViewDialog` | Read-only profile popup (approvals / roster / profiles). Title uses applicant `display_name` (merge list row + detail so name is not lost when detail omits identity). Field order: headline → bio → **CV** (`PreviewPdf`) → years of experience → … |
 | `InstructorRosterPickerDialog` | Multi-select roster add dialog (search, pagination, responsive overflow) backed by `GET /instructors/roster-candidates` |
 | `InstructorApprovalsRowActions` | Approvals table ⋮ menu: view profile, approve, reject (dialog), delete — reuses `CourseAdminTableActionsMenu` + `DeferredDropdownMenuItem` |
 
@@ -161,7 +161,7 @@ Implemented upgrades to `instructor-approvals-page.tsx` (prototype: `code-temp/a
 | Task | Component / change |
 |------|-------------------|
 | ADM-01 | `InstructorUserCell` — avatar + `display_name` + `email` on approvals, profiles, and admin tickets lists |
-| ADM-02 | `PreviewPdf` + `InstructorProfileViewDialog` — company snapshot, topics/skills chips, CV + certificate PDF inline. Dialog width: `w-[calc(100%-2rem)] sm:max-w-3xl lg:max-w-4xl` (overrides base `DialogContent` `sm:max-w-sm`). **Approvals / profiles view** fetches `GET …/:id` detail (not list row) so media URLs and taxonomy chips are present |
+| ADM-02 | `PreviewPdf` + `InstructorProfileViewDialog` — company snapshot, topics/skills chips, CV + certificate PDF inline. **CV** block is directly after **Giới thiệu** (`bio`), before **Số năm kinh nghiệm**. Dialog title `Đơn — {name}` uses `mergeInstructorApplicationDetail(listRow, detail)` so identity from the list row is kept when detail payload lacks `display_name`. Dialog width: `w-[calc(100%-2rem)] sm:max-w-3xl lg:max-w-4xl`. Approvals / profiles may fetch `GET …/:id` for hydrated media |
 | ADM-03 | Filter `returned` status, list refresh after approve/reject |
 
 **Approve → expertise:** On successful approve, BE copies application junction `topic_ids` / `skill_ids` into `instructor_expertise_*` for the applicant `user_id`. Admin expertise page uses roster picker `id` (= user UUID) with `GET /instructors/:id/expertise/topics|skills`.
