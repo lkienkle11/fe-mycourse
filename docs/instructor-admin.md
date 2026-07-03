@@ -23,7 +23,7 @@ Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `
 | Review preview | — | `/sysadmin/courses/reviewing/{courseId}/preview` | — |
 | Course catalog (all / trash) | `/admin/courses/all`, `/admin/courses/trash` | `/sysadmin/courses/all`, `/sysadmin/courses/trash` | — |
 
-Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages). Course review queues are implemented for admin/sysadmin; instructor course authoring is implemented under the instructor dashboard. **Review queue** (`CourseReviewPage`): table columns are course, owner, and version (no status column — the queue only lists pending submissions). Each row uses shared `CourseReviewRowActions` (⋮ menu — sysadmin: Preview / Approve / Reject; admin: Approve / Reject). All/Trash catalog rows use shared `CourseAdminTableActionsMenu` (`modal={false}`); dialog-opening actions use shared `DeferredDropdownMenuItem` + `deferDropdownAction` so the page stays clickable after confirm/approve flows.
+Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages). Course review queues are implemented for admin/sysadmin; instructor course authoring is implemented under the instructor dashboard. **Review queue** (`CourseReviewPage`): table columns are course, owner, and version (no status column — the queue only lists pending submissions). Each row uses shared `CourseReviewRowActions` (⋮ menu — sysadmin: Preview / Approve / Reject; admin: Approve / Reject). All/Trash catalog rows use shared `CourseAdminTableActionsMenu` (`modal={false}`); dialog-opening actions use shared `DeferredDropdownMenuItem` + `deferDropdownAction` so the page stays clickable after confirm/approve flows. **Instructor approvals** (`InstructorApprovalsPage`): each row uses `InstructorApprovalsRowActions` — same ⋮ menu pattern (View application, Approve, Reject, Delete) with `DeferredDropdownMenuItem` for dialog flows; reject reason dialog stays in the row-actions component.
 
 ## Screen layer
 
@@ -100,13 +100,13 @@ Course authoring / review reuses the same dashboard and API patterns:
 
 **Submit for review** (`handleSubmitReview`): **only rendered for `OWNER`** (`canManageReviewWorkflow` in `editor-page.tsx`). Clicking **Submit for review** opens `ConfirmActionDialog` (`course.editor.submitConfirm`) explaining that editing is locked until approval or rejection; on confirm, calls `validateCourseSubmitReadiness` (from `src/lib/utils/course.ts`) before the API. Returns `boolean` — dialog closes when POST submit succeeds even if a follow-up `refreshDetail()` fails (refresh is best-effort; failure toasts `course.editor.toast.refreshAfterSubmitFailed`). Validation checks (in order): draft version present, basic info schema passes (`courseBasicInfoSchema`), ≥1 collaborator, ≥1 section, each section ≥1 lesson, each lesson ≥1 sub-lesson, and each sub-lesson content valid. Sub-lesson rules: VIDEO must have `media_file_id`, TEXT must have ≥1 non-whitespace character, QUIZ must not be `is_preview`, must have prompt, ≥1 option, ≥1 correct answer, and single-choice quizzes must not mark more than one option correct. All failures surface as i18n keys in `course.validation.*`; see `src/messages/{en,vi}.ts`. QUIZ content rules are schema-backed via `courseQuizOptionSchema` in `src/schema/course/course.ts`. BE also enforces owner-only on `POST …/submit-review` (`403` / code `3003` for `EDITOR`). Detailed flow in [`docs/logic-flow.md` §11](./logic-flow.md).
 
-Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalActions`.
+Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalsRowActions` reject dialog.
 
 ## Validation and API errors
 
 - **Schemas**: `src/schema/instructor/instructor.ts` — email, rejection reason, expertise topic/skill, ticket subject/message.
 - **Validation namespace**: `instructor.validation.*` in `src/messages/{en,vi}.ts`.
-- **Required fields UI**: `RequiredLabel` on rejection reason (`InstructorApprovalActions`), expertise topic/skill pickers (`InstructorExpertisePage`), ticket subject/message (`InstructorTicketsPage`).
+- **Required fields UI**: `RequiredLabel` on rejection reason (`InstructorApprovalsRowActions`), expertise topic/skill pickers (`InstructorExpertisePage`), ticket subject/message (`InstructorTicketsPage`).
 - **Pre-submit validation**: Zod `safeParse` + `toastValidationError` before API (email, rejection reason, topic_id, skill_id, ticket subject/body).
 - **Pre-submit**: `instructorEmailSchema`, `instructorRejectionReasonSchema`, `instructorTicketSchema` — toast `instructor.validation.*` on failure.
 - **API failures**: all roster/approvals/expertise/tickets/profiles catches → `toastApiError(tErrors, error)`; do not use `instructor.common.errorGeneric` for API responses.
@@ -119,7 +119,7 @@ Reject application requires `rejection_reason` (1–2000 chars) via `InstructorA
 |-----------|---------|
 | `InstructorProfileViewDialog` | Read-only profile popup (approvals / roster / profiles) with identity block (`full_name`, `avatar` + fallback) |
 | `InstructorRosterPickerDialog` | Multi-select roster add dialog (search, pagination, responsive overflow) backed by `GET /instructors/roster-candidates` |
-| `InstructorApprovalActions` | Approve / reject (reason required) / delete application |
+| `InstructorApprovalsRowActions` | Approvals table ⋮ menu: view profile, approve, reject (dialog), delete — reuses `CourseAdminTableActionsMenu` + `DeferredDropdownMenuItem` |
 
 Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `SearchableSelect` + `useSearchablePaginatedOptions` for expertise pickers.
 
