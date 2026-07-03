@@ -151,7 +151,11 @@ List/detail for managed profiles and applications use **`latest_submission.profi
 
 ## PDF preview (`PreviewPdf`)
 
-Admin CV preview uses `src/components/shared/preview-pdf.tsx` — thin wrapper around **`@react-pdf-viewer/core`** + **`@react-pdf-viewer/default-layout`** (toolbar, zoom, sidebar). PDF.js worker is loaded from the bundled **`pdfjs-dist`** package (`pdf.worker.min.js?url` import), not an external CDN.
+Admin CV / certificate preview uses `src/components/shared/preview-pdf.tsx` — thin wrapper around **`@react-pdf-viewer/core`** + **`@react-pdf-viewer/default-layout`** (toolbar, zoom, sidebar).
+
+**Worker URL:** No `public/` copy and no `postinstall` script. Default: **jsDelivr CDN** — `resolvePdfWorkerUrl()` in `src/lib/pdf-worker-url.ts` reads the installed **`pdfjs-dist` version from root `package.json`** (`dependencies.pdfjs-dist`) and builds `https://cdn.jsdelivr.net/npm/pdfjs-dist@{version}/build/pdf.worker.min.js`. Optional override: `NEXT_PUBLIC_PDF_WORKER_URL` (your cloud URL; HTTPS, CORS). Do **not** use Turbopack `?url` imports for the worker — they resolve to `[object Object]` under locale-prefixed routes.
+
+**Hooks:** `defaultLayoutPlugin()` at the **top level** of inner `PreviewPdfViewer`, not inside `useMemo`.
 
 ---
 

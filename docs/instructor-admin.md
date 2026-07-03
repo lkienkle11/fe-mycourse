@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-07-03 — instructor ticket thread shows per-message author meta; admin profiles/tickets use InstructorUserCell; PreviewPdf via @react-pdf-viewer; contact-admin response typed._
+_Last audited: 2026-07-03 — PreviewPdf worker CDN URL from `package.json` via `src/lib/pdf-worker-url.ts`; optional `NEXT_PUBLIC_PDF_WORKER_URL`._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -161,8 +161,12 @@ Implemented upgrades to `instructor-approvals-page.tsx` (prototype: `code-temp/a
 | Task | Component / change |
 |------|-------------------|
 | ADM-01 | `InstructorUserCell` — avatar + `display_name` + `email` on approvals, profiles, and admin tickets lists |
-| ADM-02 | `PreviewPdf` (`src/components/shared/preview-pdf.tsx`, `@react-pdf-viewer/core` + `default-layout`, bundled `pdfjs-dist` worker) + `InstructorProfileViewDialog` — company snapshot, topics/skills chips, CV inline, rejection history |
-| ADM-03 | Filter `returned` status, list refresh after approve/reject, `max-w-3xl` detail modal |
+| ADM-02 | `PreviewPdf` + `InstructorProfileViewDialog` — company snapshot, topics/skills chips, CV + certificate PDF inline. Dialog width: `w-[calc(100%-2rem)] sm:max-w-3xl lg:max-w-4xl` (overrides base `DialogContent` `sm:max-w-sm`). **Approvals / profiles view** fetches `GET …/:id` detail (not list row) so media URLs and taxonomy chips are present |
+| ADM-03 | Filter `returned` status, list refresh after approve/reject |
+
+**Approve → expertise:** On successful approve, BE copies application junction `topic_ids` / `skill_ids` into `instructor_expertise_*` for the applicant `user_id`. Admin expertise page uses roster picker `id` (= user UUID) with `GET /instructors/:id/expertise/topics|skills`.
+
+**Profile view APIs:** `GET /api/v1/instructor-applications/:id`; `GET /api/v1/instructor-profiles/:userId`. FE: `useInstructorApplicationDetail`, `useInstructorProfileDetail`.
 
 List/detail consume BE identity + snapshot fields from migration **`000029`** contract.
 
