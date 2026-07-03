@@ -47,6 +47,8 @@ export type MediaCollectionDialogProps = {
   selectionMode?: "single" | "none";
   selectedFileId?: string;
   onSelect?: (file: MediaFile, type: MediaTab) => void;
+  /** Narrows upload accept + client validation (e.g. `[".pdf"]` for CV picker). */
+  uploadAllowedExtensions?: readonly string[];
 };
 
 export function MediaCollectionDialog({
@@ -57,6 +59,7 @@ export function MediaCollectionDialog({
   selectionMode = "none",
   selectedFileId,
   onSelect,
+  uploadAllowedExtensions,
 }: MediaCollectionDialogProps) {
   const t = useTranslations("media.collection");
   const tErrors = useTranslations("errors.codes");
@@ -288,6 +291,7 @@ export function MediaCollectionDialog({
         open={uploadOpen}
         onOpenChange={setUploadOpen}
         tab={activeTab}
+        allowedExtensions={uploadAllowedExtensions}
         onUploaded={async () => {
           await mutate();
         }}

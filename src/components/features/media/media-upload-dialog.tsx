@@ -27,6 +27,8 @@ export type MediaUploadDialogProps = {
   onOpenChange: (open: boolean) => void;
   tab: MediaTab;
   onUploaded: () => void | Promise<void>;
+  /** When set, overrides tab default accept + validates extensions on add/upload. */
+  allowedExtensions?: readonly string[];
 };
 
 export function MediaUploadDialog({
@@ -34,6 +36,7 @@ export function MediaUploadDialog({
   onOpenChange,
   tab,
   onUploaded,
+  allowedExtensions,
 }: MediaUploadDialogProps) {
   const t = useTranslations("media.upload");
   const tValidation = useTranslations("media.validation");
@@ -52,7 +55,7 @@ export function MediaUploadDialog({
 
   const addFiles = (incoming: FileList | File[]) => {
     const next = [...files, ...Array.from(incoming)];
-    const issue = validateMediaUploadBatch(next, tab);
+    const issue = validateMediaUploadBatch(next, tab, allowedExtensions);
     if (issue) {
       toast.error(tValidation(issue.messageKey));
       return;
@@ -61,7 +64,7 @@ export function MediaUploadDialog({
   };
 
   const handleUpload = async () => {
-    const issue = validateMediaUploadBatch(files, tab);
+    const issue = validateMediaUploadBatch(files, tab, allowedExtensions);
     if (issue) {
       toast.error(tValidation(issue.messageKey));
       return;
@@ -79,6 +82,11 @@ export function MediaUploadDialog({
       setIsUploading(false);
     }
   };
+
+  const accept =
+    allowedExtensions?.length && allowedExtensions.length > 0
+      ? allowedExtensions.join(",")
+      : MEDIA_TAB_ACCEPT[tab];
 
   return (
     <Dialog
@@ -132,7 +140,7 @@ export function MediaUploadDialog({
               ref={inputRef}
               type="file"
               multiple
-              accept={MEDIA_TAB_ACCEPT[tab]}
+              accept={accept}
               className="hidden"
               onChange={(event) => {
                 if (event.target.files?.length) {
