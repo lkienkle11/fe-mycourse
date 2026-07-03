@@ -30,6 +30,21 @@ export type FormState = {
   skill_ids: string[];
 };
 
+/** Clears company snapshot metadata when the user types free text (no suggestion pick). */
+export function applyCompanyFreeText(
+  prev: FormState,
+  companyName: string,
+): FormState {
+  return {
+    ...prev,
+    current_company: companyName,
+    current_company_id: "",
+    current_company_domain: "",
+    current_company_description: "",
+    current_company_location: "",
+  };
+}
+
 export const EMPTY_FORM: FormState = {
   headline: "",
   bio: "",

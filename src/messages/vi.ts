@@ -385,8 +385,8 @@ const messages = {
       bio: "Vui lòng nhập phần giới thiệu.",
       bioMin: "Giới thiệu tối thiểu 100 ký tự.",
       bioMax: "Giới thiệu tối đa 2000 ký tự.",
-      currentJobTitle: "Vui lòng nhập chức danh.",
-      currentJobTitleId: "Vui lòng chọn hoặc xác nhận chức danh.",
+      currentJobTitle: "Vui lòng nhập vai trò.",
+      currentJobTitleId: "Vui lòng chọn hoặc xác nhận vai trò.",
       currentCompany: "Vui lòng nhập tên công ty.",
       cvFile: "Vui lòng chọn CV (PDF).",
       portfolioMax: "Tối đa 5 liên kết portfolio.",
@@ -524,7 +524,6 @@ const messages = {
     },
     application: {
       hero: {
-        breadcrumb: "Trang chủ › Trở thành giảng viên",
         title: "Đăng ký giảng viên",
         subtitle:
           "Chia sẻ kiến thức và phát triển cùng học viên trên MyCourse.io",
@@ -557,12 +556,13 @@ const messages = {
         pending: {
           title: "Hồ sơ đang được xem xét",
           badge: "Đang chờ",
-          body: "Ngày nộp: {date}. Chúng tôi sẽ phản hồi trong tối đa 5 ngày.",
+          dateSubmitted: "Ngày nộp {date}",
+          body: "Chúng tôi phản hồi chậm nhất 5 ngày.",
         },
         returned: {
           title: "Hồ sơ cần chỉnh sửa thêm",
           badge: "Cần chỉnh sửa",
-          body: "Chưa có người xử lý đơn. Bạn có thể chỉnh sửa và gửi lại — lần này không tính vào số lần từ chối.",
+          body: "Chưa có người xử lý đơn. Bạn có thể chỉnh sửa và gửi lại.",
         },
         rejected: {
           title: "Đơn chưa được chấp nhận",
@@ -633,10 +633,9 @@ const messages = {
         noResults: "Không có kết quả",
         loading: "Đang tải…",
         useCustom: 'Dùng "{value}"',
-        companySourceIdle: "Dữ liệu: Wikidata + Cloudflare Pages",
-        companySourceSearching: "Đang tìm Wikidata + Cloudflare Pages…",
-        companySourceFallback:
-          "Dữ liệu: Wikidata + Cloudflare Pages (offline — dùng dữ liệu dự phòng)",
+        companySourceIdle: "",
+        companySourceSearching: "Đang tìm…",
+        companySourceNoResults: "Không tìm thấy công ty phù hợp",
         submitNote:
           "Bằng việc nộp đơn, bạn xác nhận mọi thông tin là chính xác.",
         submit: "Nộp đơn đăng ký",

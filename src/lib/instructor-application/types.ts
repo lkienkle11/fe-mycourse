@@ -6,4 +6,4 @@ export type ComboboxSuggestion = {
   domain?: string;
 };
 
-export type CompanySearchState = "idle" | "searching" | "fallback";
+export type CompanySearchState = "idle" | "searching" | "no_results";

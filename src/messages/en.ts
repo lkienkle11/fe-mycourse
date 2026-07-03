@@ -525,7 +525,6 @@ const messages = {
     },
     application: {
       hero: {
-        breadcrumb: "Home › Become an instructor",
         title: "Instructor application",
         subtitle: "Share your knowledge and grow with learners on MyCourse.io",
         statLearners: "Learners",
@@ -557,12 +556,13 @@ const messages = {
         pending: {
           title: "Your application is under review",
           badge: "Pending",
-          body: "Submitted on {date}. We will respond within 5 business days.",
+          dateSubmitted: "Submitted on {date}",
+          body: "We respond within at most 5 days.",
         },
         returned: {
           title: "Your application needs a few updates",
           badge: "Needs revision",
-          body: "No reviewer picked up your application in time. You can edit and resubmit — this does not count toward the rejection limit.",
+          body: "No reviewer picked up your application in time. You can edit and resubmit.",
         },
         rejected: {
           title: "Your application was not accepted",
@@ -633,10 +633,9 @@ const messages = {
         noResults: "No results",
         loading: "Loading…",
         useCustom: 'Use "{value}"',
-        companySourceIdle: "Data: Wikidata + Cloudflare Pages",
-        companySourceSearching: "Searching Wikidata + Cloudflare Pages…",
-        companySourceFallback:
-          "Data: Wikidata + Cloudflare Pages (offline — using fallback data)",
+        companySourceIdle: "",
+        companySourceSearching: "Searching…",
+        companySourceNoResults: "No matching companies found",
         submitNote:
           "By submitting, you confirm that all information is accurate.",
         submit: "Submit application",

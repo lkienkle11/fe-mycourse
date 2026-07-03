@@ -11,11 +11,40 @@ import {
   resolveCompanySuggestionById,
 } from "@/lib/instructor-application/combobox";
 import type { FormState } from "@/lib/instructor-application/form-state";
+import { applyCompanyFreeText } from "@/lib/instructor-application/form-state";
 import type {
   ComboboxSuggestion,
   CompanySearchState,
 } from "@/lib/instructor-application/types";
 import { Field } from "./sections";
+
+function ComboboxSuggestionOption({
+  item,
+  onPick,
+}: {
+  item: ComboboxSuggestion;
+  onPick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="block w-full px-3 py-2 text-left text-sm hover:bg-muted"
+      onMouseDown={onPick}
+    >
+      <span className="font-medium">{item.label}</span>
+      {item.description ? (
+        <span className="mt-0.5 block text-xs text-muted-foreground">
+          {item.description}
+        </span>
+      ) : null}
+      {item.location ? (
+        <span className="mt-0.5 block text-xs text-muted-foreground">
+          {item.location}
+        </span>
+      ) : null}
+    </button>
+  );
+}
 
 type AsyncComboboxFieldProps = {
   label: string;
@@ -93,11 +122,10 @@ export function AsyncComboboxField({
               </p>
             ) : null}
             {suggestions.map((item) => (
-              <button
+              <ComboboxSuggestionOption
                 key={`${item.id}-${item.label}`}
-                type="button"
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-muted"
-                onMouseDown={() => {
+                item={item}
+                onPick={() => {
                   onSelect(
                     item.label,
                     item.id || deriveCustomJobTitleId(item.label),
@@ -105,14 +133,7 @@ export function AsyncComboboxField({
                   setLocalQuery(item.label);
                   setOpen(false);
                 }}
-              >
-                <span className="font-medium">{item.label}</span>
-                {item.description ? (
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
-                    {item.description}
-                  </span>
-                ) : null}
-              </button>
+              />
             ))}
             {localQuery.trim().length >= 2 ? (
               <button
@@ -167,7 +188,7 @@ export function CompanyComboboxField({
           setLoading(false);
           setSearchState(
             items.length === 0 && localQuery.trim().length >= 2
-              ? "fallback"
+              ? "no_results"
               : "idle",
           );
         }
@@ -206,6 +227,13 @@ export function CompanyComboboxField({
     );
   }
 
+  const companySourceNote = getCompanySourceNote(
+    searchState,
+    t("companySourceIdle"),
+    t("companySourceSearching"),
+    t("companySourceNoResults"),
+  );
+
   return (
     <Field label={label} required>
       <div className="relative">
@@ -215,11 +243,7 @@ export function CompanyComboboxField({
           onChange={(e) => {
             setLocalQuery(e.target.value);
             setOpen(true);
-            setForm((prev) => ({
-              ...prev,
-              current_company: e.target.value,
-              current_company_id: "",
-            }));
+            setForm((prev) => applyCompanyFreeText(prev, e.target.value));
           }}
           onFocus={() => {
             setLocalQuery(form.current_company);
@@ -235,31 +259,20 @@ export function CompanyComboboxField({
               </p>
             ) : null}
             {suggestions.map((item, index) => (
-              <button
+              <ComboboxSuggestionOption
                 key={`${item.id}-${item.label}`}
-                type="button"
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-muted"
-                onMouseDown={() => selectSuggestion(item, index)}
-              >
-                <span className="font-medium">{item.label}</span>
-                {item.description ? (
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
-                    {item.description}
-                  </span>
-                ) : null}
-              </button>
+                item={item}
+                onPick={() => selectSuggestion(item, index)}
+              />
             ))}
           </div>
         ) : null}
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        {getCompanySourceNote(
-          searchState,
-          t("companySourceFallback"),
-          t("companySourceIdle"),
-          t("companySourceSearching"),
-        )}
-      </p>
+      {companySourceNote ? (
+        <p className="mt-1 text-xs text-muted-foreground">
+          {companySourceNote}
+        </p>
+      ) : null}
     </Field>
   );
 }

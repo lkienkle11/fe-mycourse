@@ -1,7 +1,15 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui";
 import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
@@ -9,18 +17,40 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
+import { PUBLIC_ROUTES } from "@/constants/route";
 import type { useMyInstructorApplication } from "@/hooks/instructor/use-my-instructor-application";
+import { Link } from "@/i18n/navigation";
 import type { InstructorApplicationPageState } from "@/lib/instructor-application/page-state";
 import { INSTRUCTOR_PAGE_STATE } from "@/lib/instructor-application/page-state";
 import { cn, formatUnixDateTime } from "@/lib/utils";
 
 export function BecomeInstructorHero() {
   const t = useTranslations("instructor.application");
+  const tHome = useTranslations("home");
   return (
     <section className="bg-[#3dcbb1] text-white">
       <div className="mx-auto flex min-h-[280px] max-w-[1200px] flex-col justify-between gap-6 px-4 py-10 md:flex-row md:items-end">
         <div>
-          <p className="mb-2 text-sm text-white/80">{t("hero.breadcrumb")}</p>
+          <Breadcrumb className="mb-2">
+            <BreadcrumbList className="text-white/80">
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link
+                    href={PUBLIC_ROUTES.home}
+                    className="text-white/80 hover:text-white"
+                  >
+                    {tHome("header.title")}
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="text-white/60 [&>svg]:text-white/60" />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="text-white">
+                  {t("hero.title")}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
           <h1 className="text-3xl font-bold md:text-4xl">{t("hero.title")}</h1>
           <p className="mt-2 max-w-xl text-white/90">{t("hero.subtitle")}</p>
         </div>
@@ -125,13 +155,12 @@ export function StateCard({
 export function StatusBanner({
   pageState,
   application,
-  locale,
 }: {
   pageState: InstructorApplicationPageState;
   application: ReturnType<typeof useMyInstructorApplication>["application"];
-  locale: string;
 }) {
   const t = useTranslations("instructor.application.banner");
+  const locale = useLocale();
   if (!application) return null;
 
   if (pageState === INSTRUCTOR_PAGE_STATE.pending_review) {
@@ -141,9 +170,11 @@ export function StatusBanner({
         title={t("pending.title")}
         badge={t("pending.badge")}
       >
-        {t("pending.body", {
+        {t("pending.dateSubmitted", {
           date: formatUnixDateTime(application.submitted_at, locale),
         })}
+        <br />
+        {t("pending.body")}
       </Banner>
     );
   }

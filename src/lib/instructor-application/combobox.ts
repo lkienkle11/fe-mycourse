@@ -2,7 +2,6 @@ import { rawFetch } from "@/api/raw-http";
 import {
   findRemoteCompanyByDomain,
   findRemoteCompanyByName,
-  getRemoteDatasetSources,
   loadRemoteCompanies,
   loadRemoteJobTitles,
   type RemoteCompany,
@@ -241,14 +240,11 @@ export function resolveCompanySuggestionById(
 
 export function getCompanySourceNote(
   searchState: CompanySearchState,
-  fallbackLabel: string,
   idleLabel: string,
   searchingLabel: string,
+  noResultsLabel: string,
 ): string {
-  const sources = getRemoteDatasetSources();
   if (searchState === "searching") return searchingLabel;
-  if (searchState === "fallback" || sources.companies === "fallback") {
-    return fallbackLabel;
-  }
+  if (searchState === "no_results") return noResultsLabel;
   return idleLabel;
 }

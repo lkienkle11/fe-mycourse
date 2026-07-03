@@ -236,7 +236,6 @@ export function BecomeInstructorPage() {
                     <StatusBanner
                       pageState={pageState}
                       application={application}
-                      locale={locale}
                     />
                     <ContactAdminPanel onSubmit={handleContactAdmin} />
                   </>
@@ -246,7 +245,6 @@ export function BecomeInstructorPage() {
                     <StatusBanner
                       pageState={pageState}
                       application={application}
-                      locale={locale}
                     />
                     <Collapsible
                       open={mobileGuideOpen}
