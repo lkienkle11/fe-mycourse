@@ -418,6 +418,7 @@ const messages = {
       search: "Tìm kiếm",
       filterBy: "Lọc theo",
       actions: "Thao tác",
+      actionsMenu: "Thao tác hàng",
       delete: "Xóa",
       cancel: "Hủy",
       loading: "Đang tải…",

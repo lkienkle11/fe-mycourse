@@ -418,6 +418,7 @@ const messages = {
       search: "Search",
       filterBy: "Filter by",
       actions: "Actions",
+      actionsMenu: "Row actions",
       delete: "Delete",
       cancel: "Cancel",
       loading: "Loading…",

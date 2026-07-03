@@ -1,5 +1,5 @@
-export type { InstructorApprovalActionsProps } from "./instructor-approval-actions";
-export { InstructorApprovalActions } from "./instructor-approval-actions";
+export type { InstructorApprovalsRowActionsProps } from "./instructor-approvals-row-actions";
+export { InstructorApprovalsRowActions } from "./instructor-approvals-row-actions";
 export type { InstructorCourseEditorRouteProps } from "./instructor-course-editor-route";
 export { renderInstructorCourseEditorRoute } from "./instructor-course-editor-route";
 export type { InstructorListPaginationProps } from "./instructor-list-pagination";

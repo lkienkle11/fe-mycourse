@@ -5,10 +5,9 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { deleteInstructorApplicationService } from "@/api/callers/instructor";
 import { useInstructorApplicationsList } from "@/api/hooks/instructor";
-import { InstructorApprovalActions } from "@/components/features/instructor";
+import { InstructorApprovalsRowActions } from "@/components/features/instructor";
 import {
   buildInstructorPageFooterFromInfo,
-  InstructorProfileDeleteActions,
   InstructorProfileDeleteFooter,
   InstructorTableSection,
 } from "@/components/features/instructor/instructor-action-controls";
@@ -21,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PERMISSIONS } from "@/constants/permissions";
 import {
   resolveInstructorApplicationProfile,
   resolveInstructorDisplayName,
@@ -155,32 +153,24 @@ export function InstructorApprovalsPage() {
         onFilterByChange={() => {}}
         filterByLabel={tc("filterBy")}
         renderActions={(row) => (
-          <InstructorProfileDeleteActions
-            direction="column"
-            viewLabel={t("viewProfile")}
+          <InstructorApprovalsRowActions
+            application={row}
             onView={() => {
               setSelected(row);
               setProfileOpen(true);
             }}
-            deletePermission={PERMISSIONS.InstructorApplicationDelete}
-            deleteLabel={tc("delete")}
             onDelete={() => {
               setDeleteTarget(row);
               setDeleteOpen(true);
             }}
-          >
-            <InstructorApprovalActions
-              application={row}
-              compact
-              onSuccess={async () => {
-                await mutate();
-                if (selected?.id === row.id) {
-                  setProfileOpen(false);
-                  setSelected(null);
-                }
-              }}
-            />
-          </InstructorProfileDeleteActions>
+            onSuccess={async () => {
+              await mutate();
+              if (selected?.id === row.id) {
+                setProfileOpen(false);
+                setSelected(null);
+              }
+            }}
+          />
         )}
       />
 
