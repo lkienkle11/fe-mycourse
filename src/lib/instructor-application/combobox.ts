@@ -1,3 +1,4 @@
+import { rawFetch } from "@/api/raw-http";
 import {
   findRemoteCompanyByDomain,
   findRemoteCompanyByName,
@@ -11,6 +12,26 @@ import {
 } from "./remote-data";
 import type { ComboboxSuggestion, CompanySearchState } from "./types";
 import { searchWikidataCompanies } from "./wikidata-company";
+
+const JOB_TITLE_QUERY_CACHE = new Map<string, ComboboxSuggestion[]>();
+const COMPANY_QUERY_CACHE = new Map<string, ComboboxSuggestion[]>();
+const QUERY_CACHE_MAX = 64;
+
+function queryCacheKey(query: string): string {
+  return query.trim().toLowerCase();
+}
+
+function setQueryCache(
+  cache: Map<string, ComboboxSuggestion[]>,
+  key: string,
+  value: ComboboxSuggestion[],
+): void {
+  if (cache.size >= QUERY_CACHE_MAX) {
+    const first = cache.keys().next().value;
+    if (first) cache.delete(first);
+  }
+  cache.set(key, value);
+}
 
 function normalizeLabel(value: string): string {
   return value.toLowerCase().trim().replace(/[.,-]/g, "");
@@ -107,11 +128,17 @@ function toCompanySuggestion(item: RemoteCompany): ComboboxSuggestion {
 export async function fetchJobTitleSuggestions(
   query: string,
 ): Promise<ComboboxSuggestion[]> {
+  const cacheKey = queryCacheKey(query);
+  const cached = JOB_TITLE_QUERY_CACHE.get(cacheKey);
+  if (cached) return cached;
+
   const remoteDataset = await loadRemoteJobTitles();
   const q = query.trim();
 
   if (!q || q.length < 2) {
-    return remoteDataset.slice(0, 8).map(toJobTitleSuggestion);
+    const idle = remoteDataset.slice(0, 8).map(toJobTitleSuggestion);
+    setQueryCache(JOB_TITLE_QUERY_CACHE, cacheKey, idle);
+    return idle;
   }
 
   const remoteMatches = searchRemoteJobTitles(remoteDataset, q, 8).map(
@@ -120,17 +147,24 @@ export async function fetchJobTitleSuggestions(
 
   try {
     const url = `https://api.hh.ru/suggests/vacancy_search_keyword?text=${encodeURIComponent(q)}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    if (!res.ok) throw new Error("HH suggest error");
-    const data = (await res.json()) as { items?: Array<{ text?: string }> };
+    const result = await rawFetch<{ items?: Array<{ text?: string }> }>(url, {
+      timeout: 5000,
+      signal: AbortSignal.timeout(5000),
+    });
     const hhItems: ComboboxSuggestion[] = [];
-    for (const item of (data.items ?? []).slice(0, 12)) {
+    for (const item of (result.data?.items ?? []).slice(0, 12)) {
       const label = (item.text ?? "").trim();
       if (!label) continue;
       hhItems.push({ id: deriveHhJobTitleId(label), label });
     }
-    return mergeSuggestionsByLabel(dedupeByLabel(hhItems), remoteMatches);
+    const merged = mergeSuggestionsByLabel(
+      dedupeByLabel(hhItems),
+      remoteMatches,
+    );
+    setQueryCache(JOB_TITLE_QUERY_CACHE, cacheKey, merged);
+    return merged;
   } catch {
+    setQueryCache(JOB_TITLE_QUERY_CACHE, cacheKey, remoteMatches);
     return remoteMatches;
   }
 }
@@ -138,11 +172,17 @@ export async function fetchJobTitleSuggestions(
 export async function fetchCompanySuggestions(
   query: string,
 ): Promise<ComboboxSuggestion[]> {
+  const cacheKey = queryCacheKey(query);
+  const cached = COMPANY_QUERY_CACHE.get(cacheKey);
+  if (cached) return cached;
+
   const remoteDataset = await loadRemoteCompanies();
   const q = query.trim();
 
   if (!q || q.length < 2) {
-    return remoteDataset.slice(0, 8).map(toCompanySuggestion);
+    const idle = remoteDataset.slice(0, 8).map(toCompanySuggestion);
+    setQueryCache(COMPANY_QUERY_CACHE, cacheKey, idle);
+    return idle;
   }
 
   const remoteMatches = searchRemoteCompanies(remoteDataset, q, 5).map(
@@ -171,11 +211,16 @@ export async function fetchCompanySuggestions(
         };
       }),
     );
-    return mergeSuggestionsByLabel(apiItems, remoteMatches);
+    const merged = mergeSuggestionsByLabel(apiItems, remoteMatches);
+    setQueryCache(COMPANY_QUERY_CACHE, cacheKey, merged);
+    return merged;
   } catch {
-    return remoteMatches.length > 0
-      ? remoteMatches
-      : remoteDataset.slice(0, 8).map(toCompanySuggestion);
+    const fallback =
+      remoteMatches.length > 0
+        ? remoteMatches
+        : remoteDataset.slice(0, 8).map(toCompanySuggestion);
+    setQueryCache(COMPANY_QUERY_CACHE, cacheKey, fallback);
+    return fallback;
   }
 }
 

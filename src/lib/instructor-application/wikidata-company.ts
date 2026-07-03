@@ -1,3 +1,5 @@
+import { rawFetch } from "@/api/raw-http";
+
 const WIKIDATA_API = "https://www.wikidata.org/w/api.php";
 const SPARQL_ENDPOINT = "https://query.wikidata.org/sparql";
 
@@ -59,19 +61,19 @@ async function wbSearchEntities(
     limit: "12",
   }).toString();
 
-  const res = await fetch(url.toString(), {
-    signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
-  });
-  if (!res.ok) return [];
-
-  const data = await res.json();
-  return (data?.search ?? []).map(
-    (item: { id: string; label: string; description?: string }) => ({
-      id: item.id,
-      label: item.label,
-      description: item.description,
-    }),
+  const result = await rawFetch<{ search?: WikidataSearchHit[] }>(
+    url.toString(),
+    {
+      timeout: SEARCH_TIMEOUT_MS,
+      signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
+    },
   );
+
+  return (result.data?.search ?? []).map((item) => ({
+    id: item.id,
+    label: item.label,
+    description: item.description,
+  }));
 }
 
 function mergeSearchHits(
@@ -131,16 +133,17 @@ async function runSparql(
   const sparqlUrl = new URL(SPARQL_ENDPOINT);
   sparqlUrl.search = new URLSearchParams({ format: "json", query }).toString();
 
-  const res = await fetch(sparqlUrl.toString(), {
-    headers: {
-      Accept: "application/sparql-results+json",
-    },
+  const result = await rawFetch<{
+    results?: {
+      bindings?: Array<Record<string, { value: string } | undefined>>;
+    };
+  }>(sparqlUrl.toString(), {
+    timeout: SPARQL_TIMEOUT_MS,
     signal: AbortSignal.timeout(SPARQL_TIMEOUT_MS),
+    headers: { Accept: "application/sparql-results+json" },
   });
-  if (!res.ok) return [];
 
-  const json = await res.json();
-  return json?.results?.bindings ?? [];
+  return result.data?.results?.bindings ?? [];
 }
 
 function parseFilteredCompanies(

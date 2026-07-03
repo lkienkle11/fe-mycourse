@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
 import type { useMyInstructorApplication } from "@/hooks/useMyInstructorApplication";
-import type { InstructorApplicationPageState } from "@/lib/instructor-application/types";
+import type { InstructorApplicationPageState } from "@/lib/instructor-application/page-state";
+import { INSTRUCTOR_PAGE_STATE } from "@/lib/instructor-application/page-state";
 import { cn, formatUnixDateTime } from "@/lib/utils";
 
 export function BecomeInstructorHero() {
@@ -133,7 +134,7 @@ export function StatusBanner({
   const t = useTranslations("instructor.application.banner");
   if (!application) return null;
 
-  if (pageState === "D") {
+  if (pageState === INSTRUCTOR_PAGE_STATE.pending_review) {
     return (
       <Banner
         tone="pending"
@@ -146,7 +147,7 @@ export function StatusBanner({
       </Banner>
     );
   }
-  if (pageState === "E") {
+  if (pageState === INSTRUCTOR_PAGE_STATE.returned_for_revision) {
     return (
       <Banner
         tone="returned"
@@ -157,7 +158,7 @@ export function StatusBanner({
       </Banner>
     );
   }
-  if (pageState === "F") {
+  if (pageState === INSTRUCTOR_PAGE_STATE.rejected_can_resubmit) {
     const remaining = Math.max(0, 5 - (application.rejection_count ?? 0));
     return (
       <Banner
@@ -171,7 +172,7 @@ export function StatusBanner({
       </Banner>
     );
   }
-  if (pageState === "H") {
+  if (pageState === INSTRUCTOR_PAGE_STATE.rejected_contact_admin) {
     return (
       <Banner
         tone="rejected"

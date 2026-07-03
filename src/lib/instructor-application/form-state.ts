@@ -1,10 +1,10 @@
 import { deriveCustomJobTitleId } from "@/lib/instructor-application/combobox";
-import type { YearsExperienceCode } from "@/lib/instructor-application/types";
+import { INSTRUCTOR_PAGE_STATE } from "@/lib/instructor-application/page-state";
 import type {
   InstructorCertificate,
   MyInstructorApplication,
   SubmitInstructorApplicationPayload,
-  YearsExperienceCode as YearsCode,
+  YearsExperienceCode,
 } from "@/types/instructor";
 
 export type FormState = {
@@ -91,7 +91,7 @@ export function toSubmitPayload(
   return {
     headline: form.headline.trim(),
     bio: form.bio.trim(),
-    years_of_experience: form.years_of_experience as YearsCode,
+    years_of_experience: form.years_of_experience,
     current_job_title: form.current_job_title.trim(),
     current_job_title_id:
       form.current_job_title_id.trim() ||
@@ -119,7 +119,7 @@ export function resolveInitialForm(
   application: MyInstructorApplication | null | undefined,
   pageState: string,
 ): FormState {
-  if (application && pageState !== "C") {
+  if (application && pageState !== INSTRUCTOR_PAGE_STATE.ready_to_apply) {
     return formFromApplication(application);
   }
   return { ...EMPTY_FORM };

@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import { resolveInstructorDisplayName } from "@/lib/instructor-application/helpers";
 import { pickCharacter } from "@/lib/utils";
-import { resolveInstructorDisplayName } from "@/lib/utils/instructor-application-helpers";
 import type { InstructorApplication } from "@/types/instructor";
 
 export type InstructorUserCellProps = {

@@ -11,16 +11,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { YEAR_EXPERIENCE_BUCKETS } from "@/constants/instructor-application";
 import { useSearchablePaginatedOptions } from "@/hooks/searchable-select/use-searchable-paginated-options";
 import { fetchJobTitleSuggestions } from "@/lib/instructor-application/combobox";
+import type { FormState } from "@/lib/instructor-application/form-state";
 import {
+  INSTRUCTOR_PAGE_STATE,
   type InstructorApplicationPageState,
-  YEAR_EXPERIENCE_BUCKETS,
-} from "@/lib/instructor-application/types";
+} from "@/lib/instructor-application/page-state";
 import { toastApiError } from "@/lib/utils/api-error";
 import type { TaxonomyEntityMap } from "@/types/taxonomy";
 import { AsyncComboboxField, CompanyComboboxField } from "./combobox-fields";
-import type { FormState } from "./form-state";
 import { CollapsibleSection, Field } from "./sections";
 
 export function ApplicationForm({
@@ -265,7 +266,8 @@ export function ApplicationForm({
             className="w-full bg-[#3dcbb1] hover:bg-[#35b39c] md:w-auto"
             onClick={onSubmitClick}
           >
-            {pageState === "E" || pageState === "F"
+            {pageState === INSTRUCTOR_PAGE_STATE.returned_for_revision ||
+            pageState === INSTRUCTOR_PAGE_STATE.rejected_can_resubmit
               ? t("resubmit")
               : t("submit")}
           </Button>

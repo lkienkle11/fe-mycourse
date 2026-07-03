@@ -22,11 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PERMISSIONS } from "@/constants/permissions";
-import { toastApiError } from "@/lib/utils/api-error";
 import {
   resolveInstructorApplicationProfile,
   resolveInstructorDisplayName,
-} from "@/lib/utils/instructor-application-helpers";
+} from "@/lib/instructor-application/helpers";
+import { toastApiError } from "@/lib/utils/api-error";
 import type {
   InstructorApplication,
   InstructorListFilters,

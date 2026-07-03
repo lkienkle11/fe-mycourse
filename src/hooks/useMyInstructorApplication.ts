@@ -10,7 +10,7 @@ import {
 } from "@/api/callers/instructor/instructor";
 import { useGetMe } from "@/hooks/auth/use-auth-store";
 import { getPageState } from "@/lib/instructor-application/get-page-state";
-import type { InstructorApplicationPageState } from "@/lib/instructor-application/types";
+import type { InstructorApplicationPageState } from "@/lib/instructor-application/page-state";
 import type {
   ContactInstructorAdminPayload,
   MyInstructorApplication,

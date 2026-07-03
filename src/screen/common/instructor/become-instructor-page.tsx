@@ -6,11 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ApplicationForm } from "@/components/features/instructor/become-instructor-application/application-form";
 import {
-  type FormState,
-  resolveInitialForm,
-  toSubmitPayload,
-} from "@/components/features/instructor/become-instructor-application/form-state";
-import {
   ContactAdminPanel,
   RejectionHistoryPanel,
 } from "@/components/features/instructor/become-instructor-application/panels";
@@ -32,8 +27,16 @@ import {
 import { PRIVATE_ROUTES, PUBLIC_ROUTES } from "@/constants/route";
 import { useMyInstructorApplication } from "@/hooks/useMyInstructorApplication";
 import { Link } from "@/i18n/navigation";
+import {
+  type FormState,
+  resolveInitialForm,
+  toSubmitPayload,
+} from "@/lib/instructor-application/form-state";
+import {
+  INSTRUCTOR_PAGE_STATE,
+  type InstructorApplicationActiveTab,
+} from "@/lib/instructor-application/page-state";
 import { preloadRemoteDatasets } from "@/lib/instructor-application/remote-data";
-import type { InstructorApplicationActiveTab } from "@/lib/instructor-application/types";
 import { cn } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
 import { toastValidationError } from "@/lib/utils/validation-message";
@@ -86,10 +89,19 @@ export function BecomeInstructorPage() {
   const [videoDialogOpen, setVideoDialogOpen] = useState(false);
   const [mobileGuideOpen, setMobileGuideOpen] = useState(false);
 
-  const readonly = pageState === "D";
-  const canSubmit = pageState === "C" || pageState === "E" || pageState === "F";
-  const showFormLayout = ["C", "D", "E", "F"].includes(pageState);
-  const showTabs = ["C", "D", "E", "F", "H"].includes(pageState);
+  const readonly = pageState === INSTRUCTOR_PAGE_STATE.pending_review;
+  const canSubmit =
+    pageState === INSTRUCTOR_PAGE_STATE.ready_to_apply ||
+    pageState === INSTRUCTOR_PAGE_STATE.returned_for_revision ||
+    pageState === INSTRUCTOR_PAGE_STATE.rejected_can_resubmit;
+  const showFormLayout =
+    pageState === INSTRUCTOR_PAGE_STATE.ready_to_apply ||
+    pageState === INSTRUCTOR_PAGE_STATE.pending_review ||
+    pageState === INSTRUCTOR_PAGE_STATE.returned_for_revision ||
+    pageState === INSTRUCTOR_PAGE_STATE.rejected_can_resubmit;
+  const showTabs =
+    showFormLayout ||
+    pageState === INSTRUCTOR_PAGE_STATE.rejected_contact_admin;
 
   useEffect(() => {
     preloadRemoteDatasets();
@@ -104,7 +116,7 @@ export function BecomeInstructorPage() {
     }
     setIsSubmitting(true);
     try {
-      if (pageState === "C") {
+      if (pageState === INSTRUCTOR_PAGE_STATE.ready_to_apply) {
         await submit(parsed.data);
       } else {
         await resubmit(parsed.data);
@@ -144,7 +156,7 @@ export function BecomeInstructorPage() {
   return (
     <div className="bg-background">
       <BecomeInstructorHero />
-      {pageState === "A" ? (
+      {pageState === INSTRUCTOR_PAGE_STATE.unauthenticated ? (
         <StateCard
           icon="🔒"
           title={t("stateA.title")}
@@ -159,7 +171,7 @@ export function BecomeInstructorPage() {
           }
         />
       ) : null}
-      {pageState === "B" ? (
+      {pageState === INSTRUCTOR_PAGE_STATE.submit_blocked ? (
         <StateCard
           icon="🚫"
           title={t("stateB.title")}
@@ -173,7 +185,7 @@ export function BecomeInstructorPage() {
           }
         />
       ) : null}
-      {pageState === "G" ? (
+      {pageState === INSTRUCTOR_PAGE_STATE.approved ? (
         <StateCard
           icon="✅"
           title={t("stateG.title")}
@@ -196,7 +208,9 @@ export function BecomeInstructorPage() {
                 active={activeTab === "info"}
                 onClick={() => setActiveTab("info")}
                 label={
-                  pageState === "H" ? t("tabs.contactAdmin") : t("tabs.info")
+                  pageState === INSTRUCTOR_PAGE_STATE.rejected_contact_admin
+                    ? t("tabs.contactAdmin")
+                    : t("tabs.info")
                 }
               />
               <TabButton
@@ -216,7 +230,8 @@ export function BecomeInstructorPage() {
               )}
             >
               <div>
-                {activeTab === "info" && pageState === "H" ? (
+                {activeTab === "info" &&
+                pageState === INSTRUCTOR_PAGE_STATE.rejected_contact_admin ? (
                   <>
                     <StatusBanner
                       pageState={pageState}
@@ -284,7 +299,8 @@ export function BecomeInstructorPage() {
         title={t("confirm.title")}
         description={t("confirm.description")}
         confirmLabel={
-          pageState === "E" || pageState === "F"
+          pageState === INSTRUCTOR_PAGE_STATE.returned_for_revision ||
+          pageState === INSTRUCTOR_PAGE_STATE.rejected_can_resubmit
             ? t("confirm.resubmit")
             : t("confirm.submit")
         }

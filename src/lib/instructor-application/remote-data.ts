@@ -1,3 +1,4 @@
+import { rawFetch } from "@/api/raw-http";
 import { MOCK_COMPANIES } from "./mock-companies";
 import { MOCK_JOB_TITLES } from "./mock-job-titles";
 
@@ -62,12 +63,12 @@ function toFallbackCompanies(): RemoteCompany[] {
 }
 
 async function fetchRemoteJson<T>(url: string): Promise<T[]> {
-  const res = await fetch(url, {
+  const result = await rawFetch<T[]>(url, {
+    timeout: REMOTE_FETCH_TIMEOUT_MS,
     signal: AbortSignal.timeout(REMOTE_FETCH_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`Remote fetch failed: ${url}`);
-  const data = await res.json();
-  return Array.isArray(data) ? (data as T[]) : [];
+  const data = result.data;
+  return Array.isArray(data) ? data : [];
 }
 
 export function getRemoteDatasetSources(): {
@@ -189,13 +190,4 @@ export function findRemoteCompanyByDomain(
 export function preloadRemoteDatasets(): void {
   void loadRemoteJobTitles();
   void loadRemoteCompanies();
-}
-
-export function clearRemoteDatasetSessionCache(): void {
-  jobTitlesCache = null;
-  companiesCache = null;
-  jobTitlesSource = null;
-  companiesSource = null;
-  jobTitlesPromise = null;
-  companiesPromise = null;
 }

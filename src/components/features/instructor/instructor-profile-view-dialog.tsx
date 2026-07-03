@@ -10,10 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  YEAR_EXPERIENCE_BUCKETS,
-  type YearsExperienceLabelKey,
-} from "@/lib/instructor-application/types";
+import { YEAR_EXPERIENCE_BUCKETS } from "@/constants/instructor-application";
+import type { YearsExperienceLabelKey } from "@/lib/instructor-application/page-state";
 import { formatUnixDateTime, pickCharacter } from "@/lib/utils";
 import type {
   InstructorApplication,

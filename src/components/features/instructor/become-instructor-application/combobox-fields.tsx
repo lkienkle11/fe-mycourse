@@ -10,11 +10,11 @@ import {
   getCompanySourceNote,
   resolveCompanySuggestionById,
 } from "@/lib/instructor-application/combobox";
+import type { FormState } from "@/lib/instructor-application/form-state";
 import type {
   ComboboxSuggestion,
   CompanySearchState,
 } from "@/lib/instructor-application/types";
-import type { FormState } from "./form-state";
 import { Field } from "./sections";
 
 type AsyncComboboxFieldProps = {
@@ -27,10 +27,9 @@ type AsyncComboboxFieldProps = {
   fetchSuggestions: (query: string) => Promise<ComboboxSuggestion[]>;
 };
 
-function AsyncComboboxFieldInner({
+export function AsyncComboboxField({
   label,
   value,
-  selectedId,
   readonly,
   placeholder,
   onSelect,
@@ -38,16 +37,17 @@ function AsyncComboboxFieldInner({
 }: AsyncComboboxFieldProps) {
   const t = useTranslations("instructor.application.form");
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState(value);
+  const [localQuery, setLocalQuery] = useState("");
   const [suggestions, setSuggestions] = useState<ComboboxSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
+  const displayQuery = open ? localQuery : value;
 
   useEffect(() => {
     if (!open || readonly) return;
     let cancelled = false;
     const timer = setTimeout(() => {
       setLoading(true);
-      void fetchSuggestions(query).then((items) => {
+      void fetchSuggestions(localQuery).then((items) => {
         if (!cancelled) {
           setSuggestions(items);
           setLoading(false);
@@ -58,7 +58,7 @@ function AsyncComboboxFieldInner({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, query, readonly, fetchSuggestions]);
+  }, [open, localQuery, readonly, fetchSuggestions]);
 
   if (readonly) {
     return (
@@ -72,14 +72,17 @@ function AsyncComboboxFieldInner({
     <Field label={label} required>
       <div className="relative">
         <Input
-          value={query}
+          value={displayQuery}
           placeholder={placeholder}
           onChange={(e) => {
-            setQuery(e.target.value);
+            setLocalQuery(e.target.value);
             setOpen(true);
             onSelect(e.target.value, "");
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            setLocalQuery(value);
+            setOpen(true);
+          }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
         />
         {open ? (
@@ -99,7 +102,7 @@ function AsyncComboboxFieldInner({
                     item.label,
                     item.id || deriveCustomJobTitleId(item.label),
                   );
-                  setQuery(item.label);
+                  setLocalQuery(item.label);
                   setOpen(false);
                 }}
               >
@@ -111,35 +114,23 @@ function AsyncComboboxFieldInner({
                 ) : null}
               </button>
             ))}
-            {query.trim().length >= 2 ? (
+            {localQuery.trim().length >= 2 ? (
               <button
                 type="button"
                 className="block w-full border-t px-3 py-2 text-left text-sm hover:bg-muted"
                 onMouseDown={() => {
-                  const id = deriveCustomJobTitleId(query);
-                  onSelect(query.trim(), id);
+                  const id = deriveCustomJobTitleId(localQuery);
+                  onSelect(localQuery.trim(), id);
                   setOpen(false);
                 }}
               >
-                {t("useCustom", { value: query.trim() })}
+                {t("useCustom", { value: localQuery.trim() })}
               </button>
             ) : null}
           </div>
         ) : null}
       </div>
-      {selectedId ? (
-        <p className="mt-1 text-xs text-muted-foreground">{selectedId}</p>
-      ) : null}
     </Field>
-  );
-}
-
-export function AsyncComboboxField(props: AsyncComboboxFieldProps) {
-  return (
-    <AsyncComboboxFieldInner
-      key={`${props.value}-${props.selectedId ?? ""}`}
-      {...props}
-    />
   );
 }
 
@@ -150,7 +141,7 @@ type CompanyComboboxFieldProps = {
   readonly: boolean;
 };
 
-function CompanyComboboxFieldInner({
+export function CompanyComboboxField({
   label,
   form,
   setForm,
@@ -158,23 +149,24 @@ function CompanyComboboxFieldInner({
 }: CompanyComboboxFieldProps) {
   const t = useTranslations("instructor.application.form");
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState(form.current_company);
+  const [localQuery, setLocalQuery] = useState("");
   const [suggestions, setSuggestions] = useState<ComboboxSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchState, setSearchState] = useState<CompanySearchState>("idle");
+  const displayQuery = open ? localQuery : form.current_company;
 
   useEffect(() => {
     if (!open || readonly) return;
     let cancelled = false;
     const timer = setTimeout(() => {
       setLoading(true);
-      setSearchState(query.trim().length >= 2 ? "searching" : "idle");
-      void fetchCompanySuggestions(query).then((items) => {
+      setSearchState(localQuery.trim().length >= 2 ? "searching" : "idle");
+      void fetchCompanySuggestions(localQuery).then((items) => {
         if (!cancelled) {
           setSuggestions(items);
           setLoading(false);
           setSearchState(
-            items.length === 0 && query.trim().length >= 2
+            items.length === 0 && localQuery.trim().length >= 2
               ? "fallback"
               : "idle",
           );
@@ -185,7 +177,7 @@ function CompanyComboboxFieldInner({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, query, readonly]);
+  }, [open, localQuery, readonly]);
 
   const selectSuggestion = (item: ComboboxSuggestion, index: number) => {
     const resolved =
@@ -202,7 +194,7 @@ function CompanyComboboxFieldInner({
       current_company_description: resolved.description ?? "",
       current_company_location: resolved.location ?? "",
     }));
-    setQuery(resolved.label);
+    setLocalQuery(resolved.label);
     setOpen(false);
   };
 
@@ -218,21 +210,21 @@ function CompanyComboboxFieldInner({
     <Field label={label} required>
       <div className="relative">
         <Input
-          value={query}
+          value={displayQuery}
           placeholder={t("companyPlaceholder")}
           onChange={(e) => {
-            setQuery(e.target.value);
+            setLocalQuery(e.target.value);
             setOpen(true);
             setForm((prev) => ({
               ...prev,
               current_company: e.target.value,
               current_company_id: "",
-              current_company_domain: "",
-              current_company_description: "",
-              current_company_location: "",
             }));
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            setLocalQuery(form.current_company);
+            setOpen(true);
+          }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
         />
         {open ? (
@@ -257,31 +249,17 @@ function CompanyComboboxFieldInner({
                 ) : null}
               </button>
             ))}
-            <p className="border-t px-3 py-2 text-xs text-muted-foreground">
-              {getCompanySourceNote(
-                searchState,
-                t("companySourceFallback"),
-                t("companySourceIdle"),
-                t("companySourceSearching"),
-              )}
-            </p>
           </div>
         ) : null}
       </div>
-      {form.current_company_description ? (
-        <p className="mt-1 text-xs text-muted-foreground">
-          {form.current_company_description}
-        </p>
-      ) : null}
+      <p className="mt-1 text-xs text-muted-foreground">
+        {getCompanySourceNote(
+          searchState,
+          t("companySourceFallback"),
+          t("companySourceIdle"),
+          t("companySourceSearching"),
+        )}
+      </p>
     </Field>
-  );
-}
-
-export function CompanyComboboxField(props: CompanyComboboxFieldProps) {
-  return (
-    <CompanyComboboxFieldInner
-      key={`${props.form.current_company}-${props.form.current_company_id}`}
-      {...props}
-    />
   );
 }

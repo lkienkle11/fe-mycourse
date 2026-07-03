@@ -13,6 +13,7 @@ import {
 } from "@/components/features/instructor/instructor-action-controls";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { PERMISSIONS } from "@/constants/permissions";
+import { resolveInstructorApplicationProfile } from "@/lib/instructor-application/helpers";
 import { toastApiError } from "@/lib/utils/api-error";
 import type {
   InstructorListFilters,
@@ -63,7 +64,8 @@ export function InstructorProfilesPage() {
       {
         id: "headline",
         header: t("columns.headline"),
-        cell: (row) => row.profile?.headline || "—",
+        cell: (row) =>
+          resolveInstructorApplicationProfile(row)?.headline || "—",
       },
     ],
     [t],
@@ -115,7 +117,7 @@ export function InstructorProfilesPage() {
         {...footerProps}
         profileOpen={profileOpen}
         onProfileOpenChange={setProfileOpen}
-        profile={selected?.profile ?? null}
+        profile={resolveInstructorApplicationProfile(selected)}
         fullName={selected?.full_name}
         avatarUrl={selected?.avatar}
         profileTitle={t("profileTitle", {
