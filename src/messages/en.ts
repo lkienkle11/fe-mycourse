@@ -299,6 +299,7 @@ const messages = {
       fileTooLarge: "Each file must be 2 GB or smaller.",
       totalTooLarge: "Combined size must be 2 GB or less per request.",
       executableRejected: "Executable and script files are not allowed.",
+      invalidExtension: "This file type is not allowed.",
     },
     collection: {
       title: "Media library",
@@ -616,6 +617,7 @@ const messages = {
         cv: "CV (PDF)",
         cvEmpty: "No CV selected",
         chooseCv: "Choose CV",
+        cvPdfOnly: "Only PDF files can be selected.",
         linkedin: "LinkedIn",
         github: "GitHub",
         portfolio: "Portfolio links",

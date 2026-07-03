@@ -21,7 +21,7 @@ export function RejectionHistoryPanel({
 
   if (!history.length) {
     return (
-      <div className="rounded-md border p-8 text-center text-sm text-muted-foreground">
+      <div className="flex min-h-full flex-1 flex-col items-center justify-center rounded-md border p-8 text-center text-sm text-muted-foreground">
         <p className="text-2xl">📋</p>
         <p className="mt-2 font-medium">{t("emptyTitle")}</p>
         <p className="mt-1">{t("emptyBody")}</p>

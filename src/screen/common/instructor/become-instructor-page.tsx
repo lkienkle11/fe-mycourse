@@ -24,6 +24,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { MEDIA_PDF_EXTENSIONS } from "@/constants/media/file-rules";
 import { PRIVATE_ROUTES, PUBLIC_ROUTES } from "@/constants/route";
 import { useMyInstructorApplication } from "@/hooks/instructor/use-my-instructor-application";
 import { Link } from "@/i18n/navigation";
@@ -39,6 +40,7 @@ import {
 import { preloadRemoteDatasets } from "@/lib/instructor-application/remote-data";
 import { cn } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
+import { isPdfMedia } from "@/lib/utils/media";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import {
   instructorApplicationSubmitSchema,
@@ -49,6 +51,7 @@ import type { MediaFile } from "@/types/media";
 
 export function BecomeInstructorPage() {
   const t = useTranslations("instructor.application");
+  const tForm = useTranslations("instructor.application.form");
   const tValidation = useTranslations("instructor.validation");
   const tErrors = useTranslations("errors.codes");
   const locale = useLocale();
@@ -154,7 +157,7 @@ export function BecomeInstructorPage() {
   }
 
   return (
-    <div className="bg-background">
+    <div className="flex min-h-[calc(100svh-4rem)] flex-col bg-background">
       <BecomeInstructorHero />
       {pageState === INSTRUCTOR_PAGE_STATE.unauthenticated ? (
         <StateCard
@@ -201,8 +204,8 @@ export function BecomeInstructorPage() {
       ) : null}
 
       {showTabs ? (
-        <>
-          <div className="border-b bg-background">
+        <div className="flex flex-1 flex-col">
+          <div className="shrink-0 border-b bg-background">
             <div className="mx-auto flex h-12 max-w-[1200px] gap-6 px-4">
               <TabButton
                 active={activeTab === "info"}
@@ -220,16 +223,20 @@ export function BecomeInstructorPage() {
               />
             </div>
           </div>
-          <div className="mx-auto max-w-[1200px] px-4 py-8">
+          <div className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col px-4 py-8">
             <div
               className={cn(
-                "grid gap-8",
+                "grid flex-1 gap-8",
                 showFormLayout && activeTab === "info"
                   ? "lg:grid-cols-[1fr_20rem]"
                   : "grid-cols-1",
               )}
             >
-              <div>
+              <div
+                className={cn(
+                  activeTab === "history" && "flex min-h-0 flex-1 flex-col",
+                )}
+              >
                 {activeTab === "info" &&
                 pageState === INSTRUCTOR_PAGE_STATE.rejected_contact_admin ? (
                   <>
@@ -287,7 +294,7 @@ export function BecomeInstructorPage() {
               ) : null}
             </div>
           </div>
-        </>
+        </div>
       ) : null}
 
       <ConfirmActionDialog
@@ -313,8 +320,13 @@ export function BecomeInstructorPage() {
         visibleTabs={["document"]}
         defaultTab="document"
         selectionMode="single"
+        uploadAllowedExtensions={MEDIA_PDF_EXTENSIONS}
         selectedFileId={form.cv_file_id}
         onSelect={(file: MediaFile) => {
+          if (!isPdfMedia(file)) {
+            toast.error(tForm("cvPdfOnly"));
+            return;
+          }
           setForm((prev) => ({
             ...prev,
             cv_file_id: file.id ?? "",

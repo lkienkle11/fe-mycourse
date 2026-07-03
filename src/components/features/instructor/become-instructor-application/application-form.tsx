@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { getTaxonomyListKey } from "@/api/callers/taxonomy";
-import { SearchableSelect } from "@/components/shared/searchable-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +22,7 @@ import { toastApiError } from "@/lib/utils/api-error";
 import type { TaxonomyEntityMap } from "@/types/taxonomy";
 import { AsyncComboboxField, CompanyComboboxField } from "./combobox-fields";
 import { CollapsibleSection, Field } from "./sections";
+import { TaxonomySelect } from "./taxonomy-select";
 
 export function ApplicationForm({
   form,
@@ -401,8 +401,8 @@ export function TaxonomySection({
         <div>
           <Label>{t("topics")}</Label>
           {!readonly ? (
-            <div className="mt-2 max-w-md">
-              <SearchableSelect
+            <div className="mt-2">
+              <TaxonomySelect
                 value={topicPick}
                 onValueChange={(value) => {
                   addTopic(value);
@@ -447,8 +447,8 @@ export function TaxonomySection({
         <div>
           <Label>{t("skills")}</Label>
           {!readonly ? (
-            <div className="mt-2 max-w-md">
-              <SearchableSelect
+            <div className="mt-2">
+              <TaxonomySelect
                 value={skillPick}
                 onValueChange={(value) => {
                   addSkill(value);
