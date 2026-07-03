@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-07-03 — admin profiles/tickets use InstructorUserCell; PreviewPdf via @react-pdf-viewer; contact-admin response typed._
+_Last audited: 2026-07-03 — instructor ticket thread shows per-message author meta; admin profiles/tickets use InstructorUserCell; PreviewPdf via @react-pdf-viewer; contact-admin response typed._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -139,14 +139,14 @@ Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `Searchable
 - Avatar rendering rule is shared across instructor screens:
   - use API `avatar` URL when present
   - otherwise fallback to generated initials via `pickCharacter(full_name | display_name)`.
-- Ticket message dialog shows `author_full_name` + `author_email` from BE (not `author_user_id`).
+- Ticket message thread (admin **and** instructor dialogs) shows `author_full_name` + optional `author_email` per message from BE — not `author_user_id`.
 
 ## Tickets UX
 
-| Actor | Page | Close ticket | Post message when closed |
-|-------|------|--------------|---------------------------|
-| Admin / sysadmin | `InstructorTicketsAdminPage` | No | No |
-| Instructor | `InstructorTicketsPage` | Yes (`instructor_ticket:close`) | Composer disabled when `status === "closed"` |
+| Actor | Page | Thread message meta | Close ticket | Post message when closed |
+|-------|------|---------------------|--------------|---------------------------|
+| Admin / sysadmin | `InstructorTicketsAdminPage` | `author_full_name` + `author_email` (`instructor.tickets.messageMeta`) | No | No |
+| Instructor | `InstructorTicketsPage` | Same as admin thread pattern | Yes (`instructor_ticket:close`) | Composer disabled when `status === "closed"` |
 
 ## i18n
 
