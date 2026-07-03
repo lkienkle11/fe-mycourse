@@ -8,24 +8,24 @@ const yearsExperienceCodeSchema = z.enum([
   "OVER_TEN_YEARS",
 ]);
 
-const instructorCertificateSchema = z.object({
-  title: z.string().trim().min(1).max(120),
-  issuer: z.string().trim().min(1).max(80),
-  issued_year: z.number().int().min(1950).max(2100),
-  credential_url: z.union([z.string().url(), z.literal("")]).optional(),
-});
+const instructorCertificateSchema = z
+  .object({
+    title: z.string().trim().min(1).max(120),
+    issuer: z.string().trim().min(1).max(80),
+    issued_year: z.number().int().min(1950).max(2100),
+    credential_url: z.union([z.string().url(), z.literal("")]).optional(),
+    certificate_file_id: z.union([z.string().uuid(), z.literal("")]).optional(),
+  })
+  .refine(
+    (cert) =>
+      Boolean(cert.credential_url?.trim()) ||
+      Boolean(cert.certificate_file_id?.trim()),
+    { message: "validation.certProof", path: ["certificate_file_id"] },
+  );
 
 export const instructorApplicationSubmitSchema = z.object({
-  headline: z
-    .string({ message: "validation.headline" })
-    .trim()
-    .min(1, { message: "validation.headline" })
-    .max(100, { message: "validation.headlineMax" }),
-  bio: z
-    .string({ message: "validation.bio" })
-    .trim()
-    .min(100, { message: "validation.bioMin" })
-    .max(2000, { message: "validation.bioMax" }),
+  headline: z.string().trim().max(100).optional().default(""),
+  bio: z.string().trim().max(2000).optional().default(""),
   years_of_experience: yearsExperienceCodeSchema,
   current_job_title: z
     .string({ message: "validation.currentJobTitle" })
@@ -48,10 +48,16 @@ export const instructorApplicationSubmitSchema = z.object({
     .trim()
     .min(1, { message: "validation.cvFile" })
     .uuid({ message: "validation.cvFile" }),
-  linkedin_url: z.union([z.string().url(), z.literal("")]).optional(),
-  github_url: z.union([z.string().url(), z.literal("")]).optional(),
+  linkedin_url: z
+    .union([z.string().url({ message: "validation.url" }), z.literal("")])
+    .optional(),
+  github_url: z
+    .union([z.string().url({ message: "validation.url" }), z.literal("")])
+    .optional(),
   portfolio_links: z
-    .array(z.union([z.string().url(), z.literal("")]))
+    .array(
+      z.union([z.string().url({ message: "validation.url" }), z.literal("")]),
+    )
     .max(5, { message: "validation.portfolioMax" })
     .optional()
     .default([]),

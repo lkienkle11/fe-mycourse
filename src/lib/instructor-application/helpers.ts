@@ -2,6 +2,8 @@ import type {
   InstructorApplication,
   InstructorApplicationProfile,
   InstructorProfilePayload,
+  InstructorTaxonomyChip,
+  MyInstructorApplication,
 } from "@/types/instructor";
 
 export function resolveInstructorApplicationProfile(
@@ -24,4 +26,23 @@ export function resolveInstructorDisplayName(
   return (
     application.display_name?.trim() || application.full_name?.trim() || ""
   );
+}
+
+export function taxonomyChipLabelMap(
+  chips: InstructorTaxonomyChip[] | undefined,
+): Record<string, string> {
+  if (!chips?.length) return {};
+  return Object.fromEntries(chips.map((chip) => [chip.id, chip.name]));
+}
+
+export function resolveApplicationTaxonomyLabels(
+  application: MyInstructorApplication | null | undefined,
+): {
+  topics: Record<string, string>;
+  skills: Record<string, string>;
+} {
+  return {
+    topics: taxonomyChipLabelMap(application?.topics),
+    skills: taxonomyChipLabelMap(application?.skills),
+  };
 }

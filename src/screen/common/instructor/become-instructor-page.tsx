@@ -2,7 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ApplicationForm } from "@/components/features/instructor/become-instructor-application/application-form";
 import {
@@ -31,21 +31,23 @@ import { Link } from "@/i18n/navigation";
 import {
   type FormState,
   resolveInitialForm,
-  toSubmitPayload,
 } from "@/lib/instructor-application/form-state";
+import { resolveApplicationTaxonomyLabels } from "@/lib/instructor-application/helpers";
 import {
   INSTRUCTOR_PAGE_STATE,
   type InstructorApplicationActiveTab,
 } from "@/lib/instructor-application/page-state";
 import { preloadRemoteDatasets } from "@/lib/instructor-application/remote-data";
+import {
+  type ApplicationFormErrors,
+  firstApplicationFormErrorKey,
+  validateApplicationForm,
+} from "@/lib/instructor-application/validate-application-form";
 import { cn } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
 import { isPdfMedia } from "@/lib/utils/media";
 import { toastValidationError } from "@/lib/utils/validation-message";
-import {
-  instructorApplicationSubmitSchema,
-  instructorContactAdminSchema,
-} from "@/schema/instructor";
+import { instructorContactAdminSchema } from "@/schema/instructor";
 import { useAuthStore } from "@/store/auth";
 import type { MediaFile } from "@/types/media";
 
@@ -87,6 +89,7 @@ export function BecomeInstructorPage() {
     });
   };
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<ApplicationFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cvDialogOpen, setCvDialogOpen] = useState(false);
   const [videoDialogOpen, setVideoDialogOpen] = useState(false);
@@ -106,23 +109,59 @@ export function BecomeInstructorPage() {
     showFormLayout ||
     pageState === INSTRUCTOR_PAGE_STATE.rejected_contact_admin;
 
+  const taxonomyLabels = useMemo(
+    () => resolveApplicationTaxonomyLabels(application),
+    [application],
+  );
+
   useEffect(() => {
     preloadRemoteDatasets();
   }, []);
 
+  const clearFieldError = useCallback((key: string) => {
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, []);
+
+  const scrollToFirstFieldError = useCallback(
+    (errors: ApplicationFormErrors) => {
+      const key = firstApplicationFormErrorKey(errors);
+      if (!key) return;
+      const el = document.querySelector(`[data-form-field="${key}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    },
+    [],
+  );
+
+  const handlePrepareSubmit = () => {
+    const result = validateApplicationForm(form);
+    if (!result.ok) {
+      setFieldErrors(result.errors);
+      scrollToFirstFieldError(result.errors);
+      return;
+    }
+    setFieldErrors({});
+    setConfirmOpen(true);
+  };
+
   const handleSubmit = async () => {
-    const payload = toSubmitPayload(form);
-    const parsed = instructorApplicationSubmitSchema.safeParse(payload);
-    if (!parsed.success) {
-      toastValidationError(tValidation, parsed.error.issues, "headline");
+    const result = validateApplicationForm(form);
+    if (!result.ok) {
+      setConfirmOpen(false);
+      setFieldErrors(result.errors);
+      scrollToFirstFieldError(result.errors);
       return;
     }
     setIsSubmitting(true);
     try {
       if (pageState === INSTRUCTOR_PAGE_STATE.ready_to_apply) {
-        await submit(parsed.data);
+        await submit(result.data);
       } else {
-        await resubmit(parsed.data);
+        await resubmit(result.data);
       }
       toast.success(t("toast.submitSuccess"));
       setConfirmOpen(false);
@@ -137,7 +176,7 @@ export function BecomeInstructorPage() {
   const handleContactAdmin = async (subject: string, message: string) => {
     const parsed = instructorContactAdminSchema.safeParse({ subject, message });
     if (!parsed.success) {
-      toastValidationError(tValidation, parsed.error.issues, "headline");
+      toastValidationError(tValidation, parsed.error.issues, "subject");
       return;
     }
     try {
@@ -273,8 +312,12 @@ export function BecomeInstructorPage() {
                       canSubmit={canSubmit}
                       onOpenCv={() => setCvDialogOpen(true)}
                       onOpenVideo={() => setVideoDialogOpen(true)}
-                      onSubmitClick={() => setConfirmOpen(true)}
+                      onSubmitClick={handlePrepareSubmit}
                       pageState={pageState}
+                      fieldErrors={fieldErrors}
+                      onClearFieldError={clearFieldError}
+                      initialTopicLabels={taxonomyLabels.topics}
+                      initialSkillLabels={taxonomyLabels.skills}
                     />
                   </>
                 ) : null}
@@ -332,6 +375,7 @@ export function BecomeInstructorPage() {
             cv_file_id: file.id ?? "",
             cv_file_name: file.filename ?? "",
           }));
+          clearFieldError("cv_file_id");
           setCvDialogOpen(false);
         }}
       />

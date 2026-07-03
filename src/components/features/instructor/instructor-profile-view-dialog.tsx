@@ -207,6 +207,12 @@ export function InstructorProfileViewDialog({
                     {cert.credential_url ? (
                       <p className="truncate text-xs">{cert.credential_url}</p>
                     ) : null}
+                    {cert.certificate_file?.url ? (
+                      <PreviewPdf
+                        url={cert.certificate_file.url}
+                        title={cert.certificate_file.filename ?? cert.title}
+                      />
+                    ) : null}
                   </div>
                 ))}
               </dd>

@@ -29,6 +29,10 @@ export type InstructorCertificate = {
   issuer: string;
   issued_year: number;
   credential_url?: string;
+  certificate_file_id?: string;
+  certificate_file?: InstructorMediaReadModel | null;
+  /** Client-only row key for list rendering; stripped before API submit. */
+  _local_id?: string;
 };
 
 export type InstructorCompanySnapshot = {
@@ -109,7 +113,7 @@ export type MyInstructorApplication = {
 };
 
 export type SubmitInstructorApplicationPayload = {
-  headline: string;
+  headline?: string;
   bio: string;
   years_of_experience: YearsExperienceCode;
   current_job_title: string;

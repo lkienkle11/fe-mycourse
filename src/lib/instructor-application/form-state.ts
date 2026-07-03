@@ -8,8 +8,6 @@ import type {
 } from "@/types/instructor";
 
 export type FormState = {
-  headline: string;
-  bio: string;
   years_of_experience: YearsExperienceCode;
   current_job_title: string;
   current_job_title_id: string;
@@ -46,8 +44,6 @@ export function applyCompanyFreeText(
 }
 
 export const EMPTY_FORM: FormState = {
-  headline: "",
-  bio: "",
   years_of_experience: "UNDER_1_YEAR",
   current_job_title: "",
   current_job_title_id: "",
@@ -74,8 +70,6 @@ export function formFromApplication(
   const profile = application.latest_submission?.profile;
   if (!profile) return { ...EMPTY_FORM };
   return {
-    headline: profile.headline ?? "",
-    bio: profile.bio ?? "",
     years_of_experience:
       (profile.years_of_experience as YearsExperienceCode) || "UNDER_1_YEAR",
     current_job_title: profile.current_job_title ?? "",
@@ -92,7 +86,15 @@ export function formFromApplication(
     portfolio_links: profile.portfolio_links?.length
       ? profile.portfolio_links
       : [""],
-    certificates: profile.certificates ?? [],
+    certificates: (profile.certificates ?? []).map((cert) => ({
+      title: cert.title ?? "",
+      issuer: cert.issuer ?? "",
+      issued_year: cert.issued_year ?? new Date().getFullYear(),
+      credential_url: cert.credential_url ?? "",
+      certificate_file_id: cert.certificate_file_id ?? "",
+      certificate_file: cert.certificate_file ?? null,
+      _local_id: crypto.randomUUID(),
+    })),
     intro_video_file_id: profile.intro_video_file_id ?? "",
     intro_video_name: profile.intro_video_file?.filename ?? "",
     topic_ids: application.latest_submission?.topic_ids ?? [],
@@ -104,8 +106,8 @@ export function toSubmitPayload(
   form: FormState,
 ): SubmitInstructorApplicationPayload {
   return {
-    headline: form.headline.trim(),
-    bio: form.bio.trim(),
+    headline: "",
+    bio: "",
     years_of_experience: form.years_of_experience,
     current_job_title: form.current_job_title.trim(),
     current_job_title_id:
@@ -123,7 +125,15 @@ export function toSubmitPayload(
     portfolio_links: form.portfolio_links
       .map((link) => link.trim())
       .filter(Boolean),
-    certificates: form.certificates.filter((cert) => cert.title.trim()),
+    certificates: form.certificates
+      .filter((cert) => cert.title.trim())
+      .map((cert) => ({
+        title: cert.title.trim(),
+        issuer: cert.issuer.trim(),
+        issued_year: cert.issued_year,
+        credential_url: cert.credential_url?.trim() ?? "",
+        certificate_file_id: cert.certificate_file_id?.trim() ?? "",
+      })),
     intro_video_file_id: form.intro_video_file_id,
     topic_ids: form.topic_ids,
     skill_ids: form.skill_ids,

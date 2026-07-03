@@ -51,6 +51,8 @@ type AsyncComboboxFieldProps = {
   value: string;
   readonly: boolean;
   placeholder: string;
+  errorMessage?: string;
+  fieldKey?: string;
   onSelect: (label: string, id: string) => void;
   fetchSuggestions: (query: string) => Promise<ComboboxSuggestion[]>;
 };
@@ -60,6 +62,8 @@ export function AsyncComboboxField({
   value,
   readonly,
   placeholder,
+  errorMessage,
+  fieldKey,
   onSelect,
   fetchSuggestions,
 }: AsyncComboboxFieldProps) {
@@ -90,18 +94,29 @@ export function AsyncComboboxField({
 
   if (readonly) {
     return (
-      <Field label={label} required>
+      <Field
+        label={label}
+        required
+        fieldKey={fieldKey}
+        errorMessage={errorMessage}
+      >
         <Input value={value} readOnly />
       </Field>
     );
   }
 
   return (
-    <Field label={label} required>
+    <Field
+      label={label}
+      required
+      fieldKey={fieldKey}
+      errorMessage={errorMessage}
+    >
       <div className="relative">
         <Input
           value={displayQuery}
           placeholder={placeholder}
+          aria-invalid={Boolean(errorMessage) || undefined}
           onChange={(e) => {
             setLocalQuery(e.target.value);
             setOpen(true);
@@ -159,6 +174,9 @@ type CompanyComboboxFieldProps = {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
   readonly: boolean;
+  errorMessage?: string;
+  fieldKey?: string;
+  onClearFieldError?: (key: string) => void;
 };
 
 export function CompanyComboboxField({
@@ -166,6 +184,9 @@ export function CompanyComboboxField({
   form,
   setForm,
   readonly,
+  errorMessage,
+  fieldKey,
+  onClearFieldError,
 }: CompanyComboboxFieldProps) {
   const t = useTranslations("instructor.application.form");
   const [open, setOpen] = useState(false);
@@ -220,7 +241,12 @@ export function CompanyComboboxField({
 
   if (readonly) {
     return (
-      <Field label={label} required>
+      <Field
+        label={label}
+        required
+        fieldKey={fieldKey}
+        errorMessage={errorMessage}
+      >
         <Input value={form.current_company} readOnly />
       </Field>
     );
@@ -234,12 +260,19 @@ export function CompanyComboboxField({
   );
 
   return (
-    <Field label={label} required>
+    <Field
+      label={label}
+      required
+      fieldKey={fieldKey}
+      errorMessage={errorMessage}
+    >
       <div className="relative">
         <Input
           value={displayQuery}
           placeholder={t("companyPlaceholder")}
+          aria-invalid={Boolean(errorMessage) || undefined}
           onChange={(e) => {
+            onClearFieldError?.("current_company");
             setLocalQuery(e.target.value);
             setOpen(true);
             setForm((prev) => applyCompanyFreeText(prev, e.target.value));

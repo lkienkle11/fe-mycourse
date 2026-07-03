@@ -32,6 +32,20 @@ export function firstValidationMessageKey(
   return fallback;
 }
 
+/** Resolves a stored Zod message (`validation.titleMax`) via a leaf `*.validation` translator. */
+export function translateValidationIssueMessage(
+  tValidation: unknown,
+  message: string | undefined,
+  fallback: string,
+): string {
+  const translate = tValidation as (key: string) => string;
+  const key = firstValidationMessageKey(
+    message ? [{ message } as ZodIssue] : [],
+    fallback,
+  );
+  return translate(key);
+}
+
 /** Shows a toast for the first Zod validation issue via a leaf `*.validation` translator. */
 export function toastValidationError(
   tValidation: unknown,

@@ -54,7 +54,7 @@ export function BecomeInstructorSidebar({
             compact && "text-xs",
           )}
         >
-          {["step1", "step2", "step3", "step4", "step5"].map((key) => (
+          {["step1", "step2", "step3", "step4"].map((key) => (
             <li key={key}>{t(`sidebar.${key}` as "sidebar.step1")}</li>
           ))}
         </ul>
@@ -62,11 +62,9 @@ export function BecomeInstructorSidebar({
       <div>
         <h3 className="font-semibold">{t("sidebar.requiredTitle")}</h3>
         <ul className="mt-3 list-inside list-disc text-sm text-muted-foreground">
-          {["req1", "req2", "req3", "req4", "req5", "req6", "req7"].map(
-            (key) => (
-              <li key={key}>{t(`sidebar.${key}` as "sidebar.req1")}</li>
-            ),
-          )}
+          {["req1", "req2", "req3", "req4", "req5"].map((key) => (
+            <li key={key}>{t(`sidebar.${key}` as "sidebar.req1")}</li>
+          ))}
         </ul>
       </div>
     </>
@@ -216,19 +214,37 @@ export function Banner({
 export function Field({
   label,
   required,
+  errorMessage,
+  fieldKey,
   children,
 }: {
   label: string;
   required?: boolean;
+  errorMessage?: string;
+  fieldKey?: string;
   children: React.ReactNode;
 }) {
+  const invalid = Boolean(errorMessage);
   return (
-    <div>
-      <Label className="mb-2 block">
+    <div data-form-field={fieldKey}>
+      <Label className={cn("mb-2 block", invalid && "text-destructive")}>
         {label}
         {required ? <span className="text-destructive"> *</span> : null}
       </Label>
-      {children}
+      <div
+        className={cn(
+          invalid &&
+            "[&_input]:border-destructive [&_input]:ring-3 [&_input]:ring-destructive/20 [&_textarea]:border-destructive [&_textarea]:ring-3 [&_textarea]:ring-destructive/20",
+        )}
+        aria-invalid={invalid || undefined}
+      >
+        {children}
+      </div>
+      {errorMessage ? (
+        <p className="mt-1 text-xs text-destructive" role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -236,14 +252,16 @@ export function Field({
 export function CollapsibleSection({
   title,
   optional,
+  defaultOpen,
   children,
 }: {
   title: string;
   optional?: boolean;
+  defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
   const t = useTranslations("instructor.application.form");
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen ?? false);
   return (
     <Collapsible
       open={open}
