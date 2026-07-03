@@ -2,6 +2,7 @@
 
 import { SpecialZoomLevel, Viewer, Worker } from "@react-pdf-viewer/core";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.js?url";
 import { useMemo } from "react";
 
 import "@react-pdf-viewer/core/lib/styles/index.css";
@@ -33,7 +34,7 @@ export function PreviewPdf({
         "h-[480px] w-full overflow-hidden rounded-md border bg-muted"
       }
     >
-      <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
+      <Worker workerUrl={pdfWorkerUrl}>
         <Viewer
           fileUrl={url}
           plugins={[defaultLayoutPluginInstance]}
