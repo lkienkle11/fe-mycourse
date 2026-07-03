@@ -1,6 +1,6 @@
 # Instructor application page (user)
 
-_Last audited: 2026-07-03 — dashboard-style hero breadcrumb; banner copy polish; vi validation “vai trò” wording._
+_Last audited: 2026-07-03 — section 6 `TaxonomySelect` full-width wrapper; shared `SearchableSelect` unchanged._
 
 Public authenticated page for learners to submit and manage their **instructor application**. Admin review UX remains in [`instructor-admin.md`](./instructor-admin.md).
 
@@ -39,7 +39,7 @@ Feature logic lives under one namespace; components only render UI.
 
 **API/domain types:** `src/types/instructor.ts` — single source for `YearsExperienceCode`, `MyInstructorApplication`, payloads.
 
-**UI:** `src/components/features/instructor/become-instructor-application/` — `application-form`, `sections`, `panels`, `combobox-fields` (render only).
+**UI:** `src/components/features/instructor/become-instructor-application/` — `application-form`, `sections`, `panels`, `combobox-fields`, `taxonomy-select` (section 6 full-width wrapper); render only.
 
 ---
 
@@ -70,23 +70,28 @@ Mapped from code-temp `renderPage()`:
 
 ```
 Navbar (site header)
-Hero (~280px, primary #3dcbb1)
-  └── Breadcrumb (same `Breadcrumb` primitive as dashboard): site home (`home.header.title` → `/`) → current page (`instructor.application.hero.title`). No combined breadcrumb string in i18n.
+Hero (content-height, primary #3dcbb1) — title + subtitle at top; no breadcrumb
 TabBar (48px) — "Application info" | "Rejection history" (or "Contact admin" in rejected_contact_admin)
-Content (max-w-[1200px], 2-col desktop)
+Content (max-w-[1200px], 2-col desktop) — page shell `min-h-[calc(100svh-4rem)]` flex column (this route only; web layout unchanged) so footer sits at viewport bottom on short tabs; history panel `flex-1` fills remaining height
   ├── main — 6 form sections
   └── aside (w-80, sticky lg:block, accordion on mobile)
 ```
 
-### Form sections
+### Form sections (numbered in UI)
 
-1. Professional summary (`headline`, `bio`, `years_of_experience` segmented control)
-2. Current role (`current_job_title` combobox, `current_company` combobox)
-3. CV (`cv_file_id` — PDF via `MediaCollectionDialog`, `visibleTabs={["document"]}`)
-4. Links (`linkedin_url`, `github_url`, `portfolio_links` ≤5)
-5. Certificates (≤10)
-6. Intro video (`intro_video_file_id` — `visibleTabs={["video"]}`)
-7. Expertise (`topic_ids` 1–5, `skill_ids` 1–15 via taxonomy `SearchableSelect`)
+1. Professional summary (`headline`, `current_job_title` / `current_company` comboboxes, `years_of_experience` segmented control)
+2. Bio (`bio` textarea)
+3. CV + links (`cv_file_id` **PDF only**; `linkedin_url`, `github_url`, `portfolio_links` ≤5)
+4. Certificates (≤10) — optional collapsible
+5. Intro video (`intro_video_file_id`, `visibleTabs={["video"]}`) — optional collapsible
+6. Expertise (`topic_ids` 1–5, `skill_ids` 1–15) — `TaxonomySelect` in `taxonomy-select.tsx` wraps shared `SearchableSelect` with `grid w-full` + `triggerClassName="w-full min-w-0"` so pickers span the section width. **Do not** change `src/components/shared/searchable-select.tsx` (also used by `instructor-expertise-page.tsx` with fixed `w-[280px]` / `max-w-md`).
+
+**`SearchableSelect` consumers (do not break):**
+
+| File | Usage | Width |
+|------|-------|-------|
+| `become-instructor-application/taxonomy-select.tsx` | Section 6 topic/skill pickers | Full section width |
+| `instructor-expertise-page.tsx` | Instructor + topic/skill add pickers | `max-w-md` / `w-[280px]` |
 
 ---
 
@@ -102,6 +107,8 @@ Content (max-w-[1200px], 2-col desktop)
 | Taxonomy pickers | GET | `/api/v1/taxonomy/topics`, `/api/v1/taxonomy/skills` |
 
 **FE files:** `src/api/callers/instructor/instructor.ts`, `src/hooks/instructor/use-my-instructor-application.ts`, `src/types/instructor.ts`, `src/schema/instructor/instructor.ts`, i18n `instructor.application.*`.
+
+**Vietnamese copy (`vi.ts` → `instructor.application`):** job-title field labels use **「Vai trò」** (not 「Chức danh」) — `form.jobTitle`, `form.jobTitlePlaceholder`, `sidebar.req3`. Validation messages under `instructor.validation` already use 「vai trò」. Admin `instructor.profileView.currentJobTitle` keeps 「Chức danh」 (separate screen).
 
 ---
 

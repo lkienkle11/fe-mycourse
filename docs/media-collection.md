@@ -8,7 +8,7 @@ Reusable media library popup for browsing, uploading, and selecting files. Wired
 
 | File | Role |
 |------|------|
-| `src/components/features/media/media-collection-dialog.tsx` | Main dialog: tabs, filename search, sort, pagination, upload entry |
+| `src/components/features/media/media-collection-dialog.tsx` | Main dialog: tabs, filename search, sort, pagination, upload entry; optional `uploadAllowedExtensions` narrows upload `accept` + client validation (e.g. PDF-only CV picker) |
 | `src/components/features/media/media-upload-dialog.tsx` | Nested upload (max 5 files, 2 GiB total) |
 | `src/components/features/media/media-item-card.tsx` | Grid card: preview, overflow menu, single-select via full-card overlay `button` (menu stays clickable above overlay), filename tooltip with full text |
 | `src/components/features/media/media-tab-panel.tsx` | Grid + loading skeleton + empty state |
@@ -106,7 +106,7 @@ Radix `DialogContent` requires a description for screen readers:
 
 ## Validation and API errors
 
-- **Client upload checks**: `validateMediaUploadBatch()` in `src/lib/utils/media.ts` → toast `media.validation.*` (`tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected`).
+- **Client upload checks**: `validateMediaUploadBatch()` in `src/lib/utils/media.ts` → toast `media.validation.*` (`tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected`, `invalidExtension` when `uploadAllowedExtensions` is set).
 - **API upload/delete failures**: `toastApiError(useTranslations("errors.codes"), error)` — codes `2003`–`2009`, `9010`–`9018`, etc.
 - **API errors** use `errors.codes.{code}` only (`2003`–`2009`, `9010`–`9018`, etc.) via `toastApiError`.
 - **Client pre-submit** uses `media.validation.*` (`tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected`).
@@ -119,7 +119,7 @@ Namespaces in `src/messages/en.ts` and `vi.ts`:
 | Namespace | Notable keys |
 |-----------|----------------|
 | `media.collection.*` | `title`, `description` (sr-only dialog), `tabs.*`, `sort.*`, `add.*`, pagination, delete confirm |
-| `media.validation.*` | Client upload limits (`tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected`) |
+| `media.validation.*` | Client upload limits (`tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected`, `invalidExtension`) |
 | `media.upload.*` | `title.*`, `description` (sr-only dialog), `dropHint`, `limits`, `success` |
 | `media.item.*` | `untitled`, `noPreview`, `rename`, `delete` |
 | `media.picker.*` | `browse`, `clear` (taxonomy cover field) |
