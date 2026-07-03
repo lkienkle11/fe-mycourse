@@ -8,6 +8,7 @@ import type {
 } from "@/types/instructor";
 
 export type FormState = {
+  bio: string;
   years_of_experience: YearsExperienceCode;
   current_job_title: string;
   current_job_title_id: string;
@@ -44,6 +45,7 @@ export function applyCompanyFreeText(
 }
 
 export const EMPTY_FORM: FormState = {
+  bio: "",
   years_of_experience: "UNDER_1_YEAR",
   current_job_title: "",
   current_job_title_id: "",
@@ -70,6 +72,7 @@ export function formFromApplication(
   const profile = application.latest_submission?.profile;
   if (!profile) return { ...EMPTY_FORM };
   return {
+    bio: profile.bio ?? "",
     years_of_experience:
       (profile.years_of_experience as YearsExperienceCode) || "UNDER_1_YEAR",
     current_job_title: profile.current_job_title ?? "",
@@ -107,7 +110,7 @@ export function toSubmitPayload(
 ): SubmitInstructorApplicationPayload {
   return {
     headline: "",
-    bio: "",
+    bio: form.bio.trim(),
     years_of_experience: form.years_of_experience,
     current_job_title: form.current_job_title.trim(),
     current_job_title_id:

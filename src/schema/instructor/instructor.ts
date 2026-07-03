@@ -25,7 +25,11 @@ const instructorCertificateSchema = z
 
 export const instructorApplicationSubmitSchema = z.object({
   headline: z.string().trim().max(100).optional().default(""),
-  bio: z.string().trim().max(2000).optional().default(""),
+  bio: z
+    .string({ message: "validation.bio" })
+    .trim()
+    .min(100, { message: "validation.bioMin" })
+    .max(2000, { message: "validation.bioMax" }),
   years_of_experience: yearsExperienceCodeSchema,
   current_job_title: z
     .string({ message: "validation.currentJobTitle" })

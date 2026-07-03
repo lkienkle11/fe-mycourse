@@ -181,7 +181,7 @@ export function TaxonomySection({
 
   return (
     <section className="rounded-md border p-5">
-      <h2 className="mb-4 text-lg font-semibold">{t("section5Title")}</h2>
+      <h2 className="mb-4 text-lg font-semibold">{t("section6Title")}</h2>
       <div className="space-y-6">
         <div data-form-field="topic_ids">
           <Label className={cn(fieldErrors.topic_ids && "text-destructive")}>

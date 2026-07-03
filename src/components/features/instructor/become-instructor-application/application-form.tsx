@@ -4,6 +4,7 @@ import { Plus, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { YEAR_EXPERIENCE_BUCKETS } from "@/constants/instructor-application";
 import { fetchJobTitleSuggestions } from "@/lib/instructor-application/combobox";
 import type { FormState } from "@/lib/instructor-application/form-state";
@@ -132,6 +133,31 @@ export function ApplicationForm({
 
       <section className="rounded-md border p-5">
         <h2 className="mb-4 text-lg font-semibold">{t("section2Title")}</h2>
+        <Field
+          label={t("bio")}
+          required
+          fieldKey="bio"
+          errorMessage={fieldMessage("bio", "bio")}
+        >
+          <Textarea
+            value={form.bio}
+            readOnly={readonly}
+            rows={6}
+            maxLength={2000}
+            aria-invalid={Boolean(fieldErrors.bio) || undefined}
+            onChange={(e) => {
+              clearError("bio");
+              setForm((prev) => ({ ...prev, bio: e.target.value }));
+            }}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            {form.bio.length} / 2000
+          </p>
+        </Field>
+      </section>
+
+      <section className="rounded-md border p-5">
+        <h2 className="mb-4 text-lg font-semibold">{t("section3Title")}</h2>
         <div className="space-y-4">
           <Field
             label={t("cv")}
@@ -260,7 +286,7 @@ export function ApplicationForm({
 
       <CollapsibleSection
         key={hasCertificateErrors ? "certs-open" : "certs"}
-        title={t("section3Title")}
+        title={t("section4Title")}
         optional
         defaultOpen={hasCertificateErrors}
       >
@@ -273,7 +299,7 @@ export function ApplicationForm({
         />
       </CollapsibleSection>
 
-      <CollapsibleSection title={t("section4Title")} optional>
+      <CollapsibleSection title={t("section5Title")} optional>
         <div className="flex items-center gap-3 rounded-md border p-4">
           <span className="text-sm">
             {form.intro_video_name || t("videoEmpty")}
