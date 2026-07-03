@@ -1,6 +1,6 @@
 # Instructor application page (user)
 
-_Last audited: 2026-07-03 — semantic page states; module layout; rawFetch third-party exception; @react-pdf-viewer PreviewPdf; hook under `src/hooks/instructor/`._
+_Last audited: 2026-07-03 — dashboard-style hero breadcrumb; banner copy polish; vi validation “vai trò” wording._
 
 Public authenticated page for learners to submit and manage their **instructor application**. Admin review UX remains in [`instructor-admin.md`](./instructor-admin.md).
 
@@ -71,6 +71,7 @@ Mapped from code-temp `renderPage()`:
 ```
 Navbar (site header)
 Hero (~280px, primary #3dcbb1)
+  └── Breadcrumb (same `Breadcrumb` primitive as dashboard): site home (`home.header.title` → `/`) → current page (`instructor.application.hero.title`). No combined breadcrumb string in i18n.
 TabBar (48px) — "Application info" | "Rejection history" (or "Contact admin" in rejected_contact_admin)
 Content (max-w-[1200px], 2-col desktop)
   ├── main — 6 form sections
@@ -122,6 +123,12 @@ Port from `code-temp/` — HTTP via **`rawFetch`** from `src/api/raw-http.ts` (t
 
 Merge semantics: Wikidata + Cloudflare by domain/alias; fallback id prefix `fallback:` / `local:`; source note by search state.
 
+**Company combobox contract:**
+
+- Free-text typing or clearing the company input resets **all** snapshot fields (`current_company_id`, `current_company_domain`, `current_company_description`, `current_company_location`) via `applyCompanyFreeText()` in `form-state.ts` — only a picked suggestion repopulates metadata.
+- Dropdown items render **title** (bold) + **description** + **location** on separate muted lines (not merged into one string).
+- Source note states: `idle` (hidden) | `searching` | `no_results`. Empty results after remote search + mock datasets show `no_results` only — no separate offline/fallback banner.
+
 **Combobox UX:** do not render internal option ids (`remote:`, `hh:`, `custom:`) to end users; sync inner query via `useEffect` on value prop — no remount `key` on combobox fields.
 
 ---
@@ -134,7 +141,7 @@ List/detail for managed profiles and applications use **`latest_submission.profi
 
 ## PDF preview (`PreviewPdf`)
 
-Admin CV preview uses `src/components/shared/preview-pdf.tsx` — thin wrapper around **`@react-pdf-viewer/core`** + **`@react-pdf-viewer/default-layout`** (toolbar, zoom, sidebar). Worker URL comes from bundled `pdfjs-dist`.
+Admin CV preview uses `src/components/shared/preview-pdf.tsx` — thin wrapper around **`@react-pdf-viewer/core`** + **`@react-pdf-viewer/default-layout`** (toolbar, zoom, sidebar). PDF.js worker is loaded from the bundled **`pdfjs-dist`** package (`pdf.worker.min.js?url` import), not an external CDN.
 
 ---
 
@@ -143,6 +150,13 @@ Admin CV preview uses `src/components/shared/preview-pdf.tsx` — thin wrapper a
 - Confirm dialog before submit (SLA 5-day message).
 - `ready_to_apply` → `POST`; `returned_for_revision` / `rejected_can_resubmit` → `PUT /me`.
 - Success toast + refetch `GET /me`.
+
+### Status banners (`StatusBanner` in `sections.tsx`)
+
+| State | Body copy (i18n) |
+|-------|------------------|
+| `pending_review` | `pending.dateSubmitted` (`Ngày nộp {date}` / `Submitted on {date}`) + `pending.body` (5-day SLA) |
+| `returned_for_revision` | Edit/resubmit prompt only — no “does not count toward rejection limit” clause |
 
 ---
 

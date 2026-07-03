@@ -161,7 +161,7 @@ Implemented upgrades to `instructor-approvals-page.tsx` (prototype: `code-temp/a
 | Task | Component / change |
 |------|-------------------|
 | ADM-01 | `InstructorUserCell` — avatar + `display_name` + `email` on approvals, profiles, and admin tickets lists |
-| ADM-02 | `PreviewPdf` (`src/components/shared/preview-pdf.tsx`, `@react-pdf-viewer/core` + `default-layout`) + `InstructorProfileViewDialog` — company snapshot, topics/skills chips, CV inline, rejection history |
+| ADM-02 | `PreviewPdf` (`src/components/shared/preview-pdf.tsx`, `@react-pdf-viewer/core` + `default-layout`, bundled `pdfjs-dist` worker) + `InstructorProfileViewDialog` — company snapshot, topics/skills chips, CV inline, rejection history |
 | ADM-03 | Filter `returned` status, list refresh after approve/reject, `max-w-3xl` detail modal |
 
 List/detail consume BE identity + snapshot fields from migration **`000029`** contract.
