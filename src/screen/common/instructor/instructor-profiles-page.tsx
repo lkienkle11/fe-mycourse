@@ -18,6 +18,7 @@ import { InstructorUserCell } from "@/components/features/instructor/instructor-
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { PERMISSIONS } from "@/constants/permissions";
 import {
+  mergeInstructorApplicationDetail,
   resolveInstructorApplicationProfile,
   resolveInstructorDisplayName,
 } from "@/lib/instructor-application/helpers";
@@ -48,7 +49,11 @@ export function InstructorProfilesPage() {
     useInstructorProfilesList(filters);
   const { data: detailProfile, isLoading: detailLoading } =
     useInstructorProfileDetail(profileOpen ? viewUserId : null);
-  const displayProfile = detailProfile ?? selected;
+  const displayProfile = useMemo(
+    () => mergeInstructorApplicationDetail(selected, detailProfile),
+    [selected, detailProfile],
+  );
+  const applicantDisplayName = resolveInstructorDisplayName(displayProfile);
   const footerProps = buildInstructorPageFooterFromInfo(
     pageInfo,
     filters.page ?? 1,
@@ -135,12 +140,10 @@ export function InstructorProfilesPage() {
         }}
         profile={resolveInstructorApplicationProfile(displayProfile)}
         application={displayProfile}
-        fullName={resolveInstructorDisplayName(displayProfile)}
+        fullName={applicantDisplayName}
         avatarUrl={displayProfile?.avatar}
         profileTitle={t("profileTitle", {
-          name: displayProfile
-            ? resolveInstructorDisplayName(displayProfile)
-            : "",
+          name: applicantDisplayName,
         })}
         profileLoading={detailLoading}
         deleteOpen={deleteOpen}

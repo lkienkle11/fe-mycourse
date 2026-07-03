@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { INSTRUCTOR_PROFILE_DIALOG_MAX_WIDTH_CLASS } from "@/constants/instructor-admin";
 import { YEAR_EXPERIENCE_BUCKETS } from "@/constants/instructor-application";
+import { resolveInstructorDisplayName } from "@/lib/instructor-application/helpers";
 import type { YearsExperienceLabelKey } from "@/lib/instructor-application/page-state";
 import { cn, formatUnixDateTime, pickCharacter } from "@/lib/utils";
 import type {
@@ -68,7 +69,11 @@ export function InstructorProfileViewDialog({
   const tc = useTranslations("instructor.common");
   const tYears = useTranslations("instructor.application.years");
   const locale = useLocale();
-  const { label, color, backgroundColor } = pickCharacter(fullName || "User");
+  const applicantName =
+    fullName.trim() || resolveInstructorDisplayName(application ?? null);
+  const { label, color, backgroundColor } = pickCharacter(
+    applicantName || "User",
+  );
 
   if (!profile && !isLoading) return null;
 
@@ -90,12 +95,12 @@ export function InstructorProfileViewDialog({
           <p className="text-sm text-muted-foreground">{tc("loading")}</p>
         ) : profile ? (
           <>
-            {fullName ? (
+            {applicantName ? (
               <div className="mb-1 flex items-center gap-3 rounded-md border p-3">
                 {avatarUrl ? (
                   <Image
                     src={avatarUrl}
-                    alt={`${fullName} avatar`}
+                    alt={`${applicantName} avatar`}
                     width={40}
                     height={40}
                     className="size-10 rounded-full object-cover"
@@ -117,13 +122,26 @@ export function InstructorProfileViewDialog({
                   <p className="text-xs text-muted-foreground">
                     {t("userName")}
                   </p>
-                  <p className="font-medium">{fullName}</p>
+                  <p className="font-medium">{applicantName}</p>
                 </div>
               </div>
             ) : null}
             <dl className="grid gap-3 text-sm">
               <Field label={t("headline")} value={profile.headline} />
               <Field label={t("bio")} value={profile.bio} />
+              {cvUrl ? (
+                <div>
+                  <dt className="mb-2 font-medium text-muted-foreground">
+                    {t("cv")}
+                  </dt>
+                  <dd>
+                    <PreviewPdf
+                      url={cvUrl}
+                      title={companyProfile.cv_file?.filename ?? t("cv")}
+                    />
+                  </dd>
+                </div>
+              ) : null}
               <Field
                 label={t("yearsOfExperience")}
                 value={(() => {
@@ -230,19 +248,6 @@ export function InstructorProfileViewDialog({
                         ) : null}
                       </div>
                     ))}
-                  </dd>
-                </div>
-              ) : null}
-              {cvUrl ? (
-                <div>
-                  <dt className="mb-2 font-medium text-muted-foreground">
-                    {t("cv")}
-                  </dt>
-                  <dd>
-                    <PreviewPdf
-                      url={cvUrl}
-                      title={companyProfile.cv_file?.filename ?? t("cv")}
-                    />
                   </dd>
                 </div>
               ) : null}

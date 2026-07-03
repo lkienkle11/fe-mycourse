@@ -16,6 +16,34 @@ export function resolveInstructorApplicationProfile(
   return application.latest_submission?.profile ?? application.profile ?? null;
 }
 
+export function mergeInstructorApplicationDetail(
+  listRow: InstructorApplication | null,
+  detail: InstructorApplication | null | undefined,
+): InstructorApplication | null {
+  if (!detail) return listRow;
+  if (!listRow) return detail;
+  const displayName =
+    detail.display_name?.trim() ||
+    listRow.display_name?.trim() ||
+    detail.full_name?.trim() ||
+    listRow.full_name?.trim() ||
+    "";
+  const fullName =
+    detail.full_name?.trim() ||
+    listRow.full_name?.trim() ||
+    detail.display_name?.trim() ||
+    listRow.display_name?.trim() ||
+    "";
+  return {
+    ...listRow,
+    ...detail,
+    display_name: displayName,
+    full_name: fullName,
+    email: detail.email?.trim() || listRow.email?.trim() || "",
+    avatar: detail.avatar?.trim() || listRow.avatar?.trim() || "",
+  };
+}
+
 export function resolveInstructorDisplayName(
   application:
     | Pick<InstructorApplication, "display_name" | "full_name">

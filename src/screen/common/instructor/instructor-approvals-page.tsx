@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  mergeInstructorApplicationDetail,
   resolveInstructorApplicationProfile,
   resolveInstructorDisplayName,
 } from "@/lib/instructor-application/helpers";
@@ -56,7 +57,11 @@ export function InstructorApprovalsPage() {
     useInstructorApplicationsList(filters);
   const { data: detailApplication, isLoading: detailLoading } =
     useInstructorApplicationDetail(profileOpen ? viewApplicationId : null);
-  const displayApplication = detailApplication ?? selected;
+  const displayApplication = useMemo(
+    () => mergeInstructorApplicationDetail(selected, detailApplication),
+    [selected, detailApplication],
+  );
+  const applicantDisplayName = resolveInstructorDisplayName(displayApplication);
   const footerProps = buildInstructorPageFooterFromInfo(
     pageInfo,
     filters.page ?? 1,
@@ -196,12 +201,10 @@ export function InstructorApprovalsPage() {
         }}
         profile={selectedProfile}
         application={displayApplication}
-        fullName={resolveInstructorDisplayName(displayApplication)}
+        fullName={applicantDisplayName}
         avatarUrl={displayApplication?.avatar}
         profileTitle={t("profileTitle", {
-          name: displayApplication
-            ? resolveInstructorDisplayName(displayApplication)
-            : "",
+          name: applicantDisplayName,
         })}
         profileLoading={detailLoading}
         deleteOpen={deleteOpen}
