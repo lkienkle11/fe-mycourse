@@ -49,7 +49,6 @@ function ComboboxSuggestionOption({
 type AsyncComboboxFieldProps = {
   label: string;
   value: string;
-  selectedId?: string;
   readonly: boolean;
   placeholder: string;
   onSelect: (label: string, id: string) => void;

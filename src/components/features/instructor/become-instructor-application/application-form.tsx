@@ -65,7 +65,6 @@ export function ApplicationForm({
             <AsyncComboboxField
               label={t("jobTitle")}
               value={form.current_job_title}
-              selectedId={form.current_job_title_id}
               readonly={readonly}
               placeholder={t("jobTitlePlaceholder")}
               onSelect={(label, id) =>
