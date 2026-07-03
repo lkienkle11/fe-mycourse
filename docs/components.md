@@ -30,7 +30,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 |-----------|------|------|-------------|
 | `Accordion` | `ui/accordion.tsx` | `radix-ui` | Collapsible sections; open panels use `data-open:overflow-visible` for nested content |
 | `Alert` | `ui/alert.tsx` | — | Inline alert banners (info, warning, error) |
-| `AlertDialog` | `ui/alert-dialog.tsx` | `radix-ui` | Blocking confirm modal (destructive actions) |
+| `AlertDialog` | `ui/alert-dialog.tsx` | `radix-ui` | Blocking confirm modal (destructive actions). Overlay `z-300`, content `z-301` — stacks above sticky `Header` (`z-100`) and mobile sidebar (`z-200`), same band as auth `Dialog` (`LoginSignupPopup`). |
 | `AspectRatio` | `ui/aspect-ratio.tsx` | `radix-ui` | Fixed ratio containers (16:9 media) |
 | `Avatar` | `ui/avatar.tsx` | `@radix-ui/react-avatar` | User avatar with fallback initials |
 | `Badge` | `ui/badge.tsx` | — | Status/label badge |
@@ -211,7 +211,7 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 
 `src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog` (shared Zod schemas, `RequiredLabel`, `FieldError`, `toastApiError`; `useForm`/`useState` initialized from `initialData` on mount — parent remounts via `key`; slug preview uses `slugifyName(name)` with API `slug` fallback until `useWatch` reports name), `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns; `child_render` column opens tree view).
 
-`src/components/features/instructor/` — instructor management + instructor route glue: `InstructorProfileViewDialog` (full application detail — company snapshot, topics/skills chips, CV via `PreviewPdf`, rejection history), `InstructorRosterPickerDialog`, `InstructorApprovalActions`, `InstructorUserCell` (avatar + display name + email). User application UI: `src/components/features/instructor/become-instructor-application/` (`application-form`, `sections`, `panels`, `combobox-fields`, `taxonomy-select`); feature model in `src/lib/instructor-application/`. Shared PDF preview: `src/components/shared/preview-pdf.tsx` (`PreviewPdf`, `@react-pdf-viewer`). See `docs/instructor-admin.md`, `docs/instructor-application.md`.
+`src/components/features/instructor/` — instructor management + instructor route glue: `InstructorProfileViewDialog` (full application detail — company snapshot, topics/skills chips, CV via `PreviewPdf`, rejection history), `InstructorRosterPickerDialog`, `InstructorApprovalActions`, `InstructorUserCell` (avatar + display name + email). User application UI: `src/components/features/instructor/become-instructor-application/` (`application-form`, `sections`, `panels`, `combobox-fields`, `taxonomy-select`, `taxonomy-section`, `certificate-list`); feature model in `src/lib/instructor-application/` (`validate-application-form.ts` for pre-submit Zod + inline field keys). Shared PDF preview: `src/components/shared/preview-pdf.tsx` (`PreviewPdf`, `@react-pdf-viewer`). See `docs/instructor-admin.md`, `docs/instructor-application.md`.
 
 `src/components/features/media/` — media library popup: `MediaCollectionDialog`, `MediaUploadDialog` (`media.validation.*` client checks + `toastApiError` on API fail; sr-only `DialogDescription`; uses shared `formatBytes` from `@/lib/utils`), `MediaItemCard` (overlay select button + menu above + full-filename tooltip; see a11y in `docs/media-collection.md`), `MediaTabPanel`. See `docs/media-collection.md`.
 
