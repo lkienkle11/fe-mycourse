@@ -193,6 +193,22 @@ export async function listInstructorApplicationsService(
   return data.data;
 }
 
+export function getInstructorApplicationDetailKey(id: string): string {
+  const url = buildQueryParams(routes.applicationById, undefined, {
+    id: String(id),
+  });
+  if (!url) throw new Error("Invalid application URL");
+  return url;
+}
+
+export function getInstructorProfileDetailKey(userId: string): string {
+  const url = buildQueryParams(routes.profileByUser, undefined, {
+    id: String(userId),
+  });
+  if (!url) throw new Error("Invalid profile URL");
+  return url;
+}
+
 export async function getInstructorApplicationService(
   id: string,
 ): Promise<InstructorApplication> {

@@ -4,7 +4,10 @@ import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { deleteInstructorApplicationService } from "@/api/callers/instructor";
-import { useInstructorApplicationsList } from "@/api/hooks/instructor";
+import {
+  useInstructorApplicationDetail,
+  useInstructorApplicationsList,
+} from "@/api/hooks/instructor";
 import { InstructorApprovalsRowActions } from "@/components/features/instructor";
 import {
   buildInstructorPageFooterFromInfo,
@@ -41,6 +44,9 @@ export function InstructorApprovalsPage() {
   });
   const [profileOpen, setProfileOpen] = useState(false);
   const [selected, setSelected] = useState<InstructorApplication | null>(null);
+  const [viewApplicationId, setViewApplicationId] = useState<string | null>(
+    null,
+  );
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] =
     useState<InstructorApplication | null>(null);
@@ -48,6 +54,9 @@ export function InstructorApprovalsPage() {
 
   const { rows, pageInfo, isLoading, mutate } =
     useInstructorApplicationsList(filters);
+  const { data: detailApplication, isLoading: detailLoading } =
+    useInstructorApplicationDetail(profileOpen ? viewApplicationId : null);
+  const displayApplication = detailApplication ?? selected;
   const footerProps = buildInstructorPageFooterFromInfo(
     pageInfo,
     filters.page ?? 1,
@@ -131,7 +140,8 @@ export function InstructorApprovalsPage() {
     }
   };
 
-  const selectedProfile = resolveInstructorApplicationProfile(selected);
+  const selectedProfile =
+    resolveInstructorApplicationProfile(displayApplication);
 
   return (
     <div className="flex flex-col gap-4">
@@ -157,6 +167,7 @@ export function InstructorApprovalsPage() {
             application={row}
             onView={() => {
               setSelected(row);
+              setViewApplicationId(row.id);
               setProfileOpen(true);
             }}
             onDelete={() => {
@@ -177,15 +188,22 @@ export function InstructorApprovalsPage() {
       <InstructorProfileDeleteFooter
         {...footerProps}
         profileOpen={profileOpen}
-        onProfileOpenChange={setProfileOpen}
+        onProfileOpenChange={(open) => {
+          setProfileOpen(open);
+          if (!open) {
+            setViewApplicationId(null);
+          }
+        }}
         profile={selectedProfile}
-        application={selected}
-        fullName={resolveInstructorDisplayName(selected)}
-        avatarUrl={selected?.avatar}
+        application={displayApplication}
+        fullName={resolveInstructorDisplayName(displayApplication)}
+        avatarUrl={displayApplication?.avatar}
         profileTitle={t("profileTitle", {
-          name: selected ? resolveInstructorDisplayName(selected) : "",
+          name: displayApplication
+            ? resolveInstructorDisplayName(displayApplication)
+            : "",
         })}
-        profileDialogMaxWidthClassName="max-w-3xl"
+        profileLoading={detailLoading}
         deleteOpen={deleteOpen}
         onDeleteOpenChange={setDeleteOpen}
         onDeleteConfirm={handleDelete}

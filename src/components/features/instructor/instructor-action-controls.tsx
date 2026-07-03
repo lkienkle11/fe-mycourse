@@ -139,6 +139,7 @@ type InstructorProfileAndDeleteDialogsProps = {
   avatarUrl?: string;
   profileTitle?: string;
   profileDialogMaxWidthClassName?: string;
+  profileLoading?: boolean;
   deleteOpen: boolean;
   onDeleteOpenChange: (open: boolean) => void;
   onDeleteConfirm: () => void | Promise<void>;
@@ -156,6 +157,7 @@ export function InstructorProfileAndDeleteDialogs({
   avatarUrl,
   profileTitle,
   profileDialogMaxWidthClassName,
+  profileLoading = false,
   deleteOpen,
   onDeleteOpenChange,
   onDeleteConfirm,
@@ -174,6 +176,7 @@ export function InstructorProfileAndDeleteDialogs({
         avatarUrl={avatarUrl}
         title={profileTitle}
         maxWidthClassName={profileDialogMaxWidthClassName}
+        isLoading={profileLoading}
       />
 
       <ConfirmDeleteDialog
@@ -203,6 +206,7 @@ type InstructorProfileDeleteFooterProps = {
   avatarUrl?: string;
   profileTitle?: string;
   profileDialogMaxWidthClassName?: string;
+  profileLoading?: boolean;
   deleteOpen: boolean;
   onDeleteOpenChange: (open: boolean) => void;
   onDeleteConfirm: () => void | Promise<void>;
@@ -227,6 +231,7 @@ export function InstructorProfileDeleteFooter({
   avatarUrl,
   profileTitle,
   profileDialogMaxWidthClassName,
+  profileLoading = false,
   deleteOpen,
   onDeleteOpenChange,
   onDeleteConfirm,
@@ -254,6 +259,7 @@ export function InstructorProfileDeleteFooter({
         avatarUrl={avatarUrl}
         profileTitle={profileTitle}
         profileDialogMaxWidthClassName={profileDialogMaxWidthClassName}
+        profileLoading={profileLoading}
         deleteOpen={deleteOpen}
         onDeleteOpenChange={onDeleteOpenChange}
         onDeleteConfirm={onDeleteConfirm}

@@ -4,7 +4,10 @@ import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { deleteInstructorProfileService } from "@/api/callers/instructor";
-import { useInstructorProfilesList } from "@/api/hooks/instructor";
+import {
+  useInstructorProfileDetail,
+  useInstructorProfilesList,
+} from "@/api/hooks/instructor";
 import {
   buildInstructorPageFooterFromInfo,
   InstructorProfileDeleteActions,
@@ -34,6 +37,7 @@ export function InstructorProfilesPage() {
   });
   const [profileOpen, setProfileOpen] = useState(false);
   const [selected, setSelected] = useState<InstructorProfile | null>(null);
+  const [viewUserId, setViewUserId] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<InstructorProfile | null>(
     null,
@@ -42,6 +46,9 @@ export function InstructorProfilesPage() {
 
   const { rows, pageInfo, isLoading, mutate } =
     useInstructorProfilesList(filters);
+  const { data: detailProfile, isLoading: detailLoading } =
+    useInstructorProfileDetail(profileOpen ? viewUserId : null);
+  const displayProfile = detailProfile ?? selected;
   const footerProps = buildInstructorPageFooterFromInfo(
     pageInfo,
     filters.page ?? 1,
@@ -104,6 +111,7 @@ export function InstructorProfilesPage() {
             viewLabel={t("view")}
             onView={() => {
               setSelected(row);
+              setViewUserId(row.user_id);
               setProfileOpen(true);
             }}
             deletePermission={PERMISSIONS.InstructorProfileDelete}
@@ -119,13 +127,22 @@ export function InstructorProfilesPage() {
       <InstructorProfileDeleteFooter
         {...footerProps}
         profileOpen={profileOpen}
-        onProfileOpenChange={setProfileOpen}
-        profile={resolveInstructorApplicationProfile(selected)}
-        fullName={selected?.full_name}
-        avatarUrl={selected?.avatar}
+        onProfileOpenChange={(open) => {
+          setProfileOpen(open);
+          if (!open) {
+            setViewUserId(null);
+          }
+        }}
+        profile={resolveInstructorApplicationProfile(displayProfile)}
+        application={displayProfile}
+        fullName={resolveInstructorDisplayName(displayProfile)}
+        avatarUrl={displayProfile?.avatar}
         profileTitle={t("profileTitle", {
-          name: selected ? resolveInstructorDisplayName(selected) : "",
+          name: displayProfile
+            ? resolveInstructorDisplayName(displayProfile)
+            : "",
         })}
+        profileLoading={detailLoading}
         deleteOpen={deleteOpen}
         onDeleteOpenChange={setDeleteOpen}
         onDeleteConfirm={handleDelete}

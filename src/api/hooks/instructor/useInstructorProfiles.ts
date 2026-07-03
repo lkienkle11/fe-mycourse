@@ -1,10 +1,12 @@
 "use client";
 
 import {
+  getInstructorProfileByUserService,
+  getInstructorProfileDetailKey,
   getInstructorProfilesListKey,
   listInstructorProfilesService,
 } from "@/api/callers/instructor";
-import { useApiListQuery } from "@/api/hooks/shared";
+import { useApiDetailQuery, useApiListQuery } from "@/api/hooks/shared";
 import type {
   InstructorListFilters,
   InstructorProfile,
@@ -15,5 +17,13 @@ export function useInstructorProfilesList(filters: InstructorListFilters) {
     getInstructorProfilesListKey(filters),
     () => listInstructorProfilesService(filters),
     { revalidateOnFocus: true },
+  );
+}
+
+export function useInstructorProfileDetail(userId: string | null) {
+  return useApiDetailQuery<InstructorProfile>(
+    userId ? getInstructorProfileDetailKey(userId) : null,
+    () => getInstructorProfileByUserService(userId as string),
+    { revalidateOnFocus: false },
   );
 }
