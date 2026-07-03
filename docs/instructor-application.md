@@ -1,6 +1,6 @@
 # Instructor application page (user)
 
-_Last audited: 2026-07-02 — become-instructor implemented; semantic page states; module layout; rawFetch + query cache._
+_Last audited: 2026-07-03 — semantic page states; module layout; rawFetch third-party exception; @react-pdf-viewer PreviewPdf; hook under `src/hooks/instructor/`._
 
 Public authenticated page for learners to submit and manage their **instructor application**. Admin review UX remains in [`instructor-admin.md`](./instructor-admin.md).
 
@@ -96,11 +96,11 @@ Content (max-w-[1200px], 2-col desktop)
 | Bootstrap / prefill | GET | `/api/v1/instructor-applications/me` — P45 |
 | First submit (`ready_to_apply`) | POST | `/api/v1/instructor-applications` — P45 |
 | Resubmit (`returned_for_revision` / `rejected_can_resubmit`) | PUT | `/api/v1/instructor-applications/me` — P45 |
-| State H contact | POST | `/api/v1/instructor-applications/contact-admin` — P45 + server `rejection_count >= 5` |
+| State H contact | POST | `/api/v1/instructor-applications/contact-admin` — P45 + server `rejection_count >= 5`; response `{ ticket_id, status }` |
 | Permission gate | GET | `/api/v1/me/permissions` |
 | Taxonomy pickers | GET | `/api/v1/taxonomy/topics`, `/api/v1/taxonomy/skills` |
 
-**FE files:** `src/api/callers/instructor/instructor.ts`, `useMyInstructorApplication.ts`, `src/types/instructor.ts`, `src/schema/instructor/instructor.ts`, i18n `instructor.application.*`.
+**FE files:** `src/api/callers/instructor/instructor.ts`, `src/hooks/instructor/use-my-instructor-application.ts`, `src/types/instructor.ts`, `src/schema/instructor/instructor.ts`, i18n `instructor.application.*`.
 
 ---
 
@@ -134,7 +134,7 @@ List/detail for managed profiles and applications use **`latest_submission.profi
 
 ## PDF preview (`PreviewPdf`)
 
-Admin CV preview uses `src/components/shared/preview-pdf.tsx` — **iframe** embed (no `@react-pdf-viewer` dependency). Toolbar/zoom from the spec prototype are deferred; iframe matches current `package.json` and is documented here as the shipped approach.
+Admin CV preview uses `src/components/shared/preview-pdf.tsx` — thin wrapper around **`@react-pdf-viewer/core`** + **`@react-pdf-viewer/default-layout`** (toolbar, zoom, sidebar). Worker URL comes from bundled `pdfjs-dist`.
 
 ---
 

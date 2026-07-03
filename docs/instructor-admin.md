@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-07-02 — become-instructor page implemented; admin ADM-01–03 implemented; expertise searchable dropdowns via shared `SearchableSelect`._
+_Last audited: 2026-07-03 — admin profiles/tickets use InstructorUserCell; PreviewPdf via @react-pdf-viewer; contact-admin response typed._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -135,9 +135,11 @@ Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `Searchable
 ## Identity rendering
 
 - Roster table includes an `Avatar` column.
+- **Approvals, profiles, and admin tickets** use `InstructorUserCell` — avatar + `display_name` + `email` (no raw `id` / `user_id` columns).
 - Avatar rendering rule is shared across instructor screens:
   - use API `avatar` URL when present
-  - otherwise fallback to generated initials via `pickCharacter(full_name)`.
+  - otherwise fallback to generated initials via `pickCharacter(full_name | display_name)`.
+- Ticket message dialog shows `author_full_name` + `author_email` from BE (not `author_user_id`).
 
 ## Tickets UX
 
@@ -158,8 +160,8 @@ Implemented upgrades to `instructor-approvals-page.tsx` (prototype: `code-temp/a
 
 | Task | Component / change |
 |------|-------------------|
-| ADM-01 | `InstructorUserCell` — avatar + `display_name` + `email` column on approvals list (also used on roster, profiles, expertise, tickets where applicable) |
-| ADM-02 | `PreviewPdf` (`src/components/shared/preview-pdf.tsx`, iframe fallback) + `InstructorProfileViewDialog` — company snapshot, topics/skills chips, CV inline, rejection history |
+| ADM-01 | `InstructorUserCell` — avatar + `display_name` + `email` on approvals, profiles, and admin tickets lists |
+| ADM-02 | `PreviewPdf` (`src/components/shared/preview-pdf.tsx`, `@react-pdf-viewer/core` + `default-layout`) + `InstructorProfileViewDialog` — company snapshot, topics/skills chips, CV inline, rejection history |
 | ADM-03 | Filter `returned` status, list refresh after approve/reject, `max-w-3xl` detail modal |
 
 List/detail consume BE identity + snapshot fields from migration **`000029`** contract.

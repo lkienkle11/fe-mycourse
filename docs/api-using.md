@@ -442,7 +442,7 @@ import {
 |---------|--------|
 | Direct `axios` calls | Bypasses interceptors — use `apiFetch`/`apiPost`/etc. |
 | Hard-coded API paths | Use constants from `src/constants/api-route.ts` |
-| `rawPost`/`rawFetch` outside `instance.ts` | Reserved for token refresh only |
+| `rawPost`/`rawFetch` outside `instance.ts` | Reserved for token refresh **and** instructor-application third-party combobox sources (`src/lib/instructor-application/remote-data.ts`, `wikidata-company.ts`) — never for private API routes |
 | Manual `Authorization` header | Set automatically by the request interceptor |
 | Showing `response.message` in UI | Use `toastApiError` / `translateApiErrorCode` with `errors.codes.{code}` |
 | Semantic error keys per module (`auth.errors.*` for API) | API errors use numeric `errors.codes.*` only |
