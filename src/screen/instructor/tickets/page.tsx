@@ -237,7 +237,15 @@ export function InstructorTicketsPage() {
           <ul className="mb-4 max-h-48 space-y-2 overflow-y-auto">
             {messages.map((message) => (
               <li key={message.id} className="rounded-md border p-2 text-sm">
-                {message.body}
+                <p className="text-xs text-muted-foreground">
+                  {t("messageMeta", {
+                    name: message.author_full_name || "—",
+                  })}
+                  {message.author_email ? (
+                    <span>{` · ${message.author_email}`}</span>
+                  ) : null}
+                </p>
+                <p className="mt-1 whitespace-pre-wrap">{message.body}</p>
               </li>
             ))}
           </ul>
