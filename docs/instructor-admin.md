@@ -102,6 +102,8 @@ Course authoring / review reuses the same dashboard and API patterns:
 
 Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalsRowActions` reject dialog.
 
+**Audit list (Nhóm B):** Application and profile list/detail responses include `is_disabled` and `email_confirmed` from the joined `users` row. `InstructorUserCell` shows destructive **Disabled** and secondary **Email unconfirmed** badges when applicable. Lists are **not** filtered by picker eligibility — BE sorts **eligible users first** (active, not banned, email confirmed), then by newest submit (`submitted_at DESC` for applications, `updated_at DESC` for profiles); ineligible users appear after eligible rows in the same recency order.
+
 ## Validation and API errors
 
 - **Schemas**: `src/schema/instructor/instructor.ts` — email, rejection reason, expertise topic/skill, ticket subject/message.
