@@ -694,7 +694,7 @@ const messages = {
       deleteDescription: "Xóa hồ sơ giảng viên này?",
       columns: {
         user: "Người dùng",
-        headline: "Tiêu đề",
+        currentJobTitle: "Vai trò",
       },
     },
     expertise: {

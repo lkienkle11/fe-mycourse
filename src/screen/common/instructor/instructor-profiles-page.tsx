@@ -77,10 +77,10 @@ export function InstructorProfilesPage() {
         cell: (row) => <InstructorUserCell user={row} />,
       },
       {
-        id: "headline",
-        header: t("columns.headline"),
+        id: "current_job_title",
+        header: t("columns.currentJobTitle"),
         cell: (row) =>
-          resolveInstructorApplicationProfile(row)?.headline || "—",
+          resolveInstructorApplicationProfile(row)?.current_job_title || "—",
       },
     ],
     [t],

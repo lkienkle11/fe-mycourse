@@ -693,7 +693,7 @@ const messages = {
       deleteDescription: "Remove this instructor profile?",
       columns: {
         user: "User",
-        headline: "Headline",
+        currentJobTitle: "Role",
       },
     },
     expertise: {
