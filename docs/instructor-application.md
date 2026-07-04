@@ -29,6 +29,7 @@ Feature logic lives under one namespace; components only render UI.
 | `page-state.ts` | `InstructorApplicationPageState` type + re-export `INSTRUCTOR_PAGE_STATE` |
 | `form-state.ts` | Form model, prefill from `GET /me`, submit payload mapper |
 | `validate-application-form.ts` | Zod validate + map issues → inline field error keys |
+| `url-validation.ts` | Shared HTTP URL helpers + LinkedIn/GitHub host checks (used by Zod schema) |
 | `helpers.ts` | `resolveInstructorApplicationProfile`, `resolveInstructorDisplayName`, taxonomy chip labels |
 | `types.ts` | Combobox / company-search UI types only |
 | `remote-data.ts` | Cloudflare JSON datasets + session cache |
@@ -82,7 +83,7 @@ Content (max-w-[1200px], 2-col desktop) — page shell `min-h-[calc(100svh-4rem)
 
 1. Professional summary — `current_job_title` / `current_company` comboboxes, `years_of_experience` segmented control. **No `headline` field** (not collected on become-instructor; API receives empty `headline` for backward compatibility).
 2. About you — **`bio` required** (`Textarea`, 100–2000 characters, live counter). Prefilled from `latest_submission.profile.bio` on resubmit.
-3. Documents & links — `cv_file_id` **PDF only**; `linkedin_url`, `github_url`, `portfolio_links` ≤5
+3. Documents & links — `cv_file_id` **PDF only**; optional `linkedin_url` (valid **http(s) URL** on **linkedin.com**), `github_url` (valid **http(s) URL** on **github.com**), `portfolio_links` ≤5 (each non-empty entry must be a valid **http(s) URL**). Validated on FE (`instructorApplicationSubmitSchema` + `src/lib/instructor-application/url-validation.ts`) and BE (`validateSubmitInput` / `internal/shared/utils/http_url.go`).
 4. Certificates (≤10) — optional collapsible; each row: title, issuer, year, credential URL **or** (label `hoặc` + line break + **Chứng chỉ PDF**) `certificate_file_id` via `MediaCollectionDialog` (`uploadAllowedExtensions` PDF). BE requires **either** non-empty `credential_url` **or** `certificate_file_id` (`application/pdf`, **READY**) per saved certificate row.
 5. Intro video (`intro_video_file_id`, `visibleTabs={["video"]}`) — optional collapsible
 6. Expertise (`topic_ids` 1–5, `skill_ids` 1–15) — `TaxonomySelect` in `taxonomy-select.tsx` wraps shared `SearchableSelect` with `grid w-full` + `triggerClassName="w-full min-w-0"` so pickers span the section width. Section title has **no trailing question mark** (e.g. Vietnamese: 「Bạn có thể dạy gì」). Selected topic/skill chips show the **taxonomy name**, never the raw UUID: labels are cached when the user picks from the dropdown (`taxonomy-section.tsx`) and prefilled from `application.topics` / `application.skills` via `resolveApplicationTaxonomyLabels()` in `helpers.ts`. **Do not** change `src/components/shared/searchable-select.tsx` (also used by `instructor-expertise-page.tsx` with fixed `w-[280px]` / `max-w-md`).
@@ -167,7 +168,9 @@ Admin CV / certificate preview uses `src/components/shared/preview-pdf.tsx` — 
 4. Confirm → `POST` (`ready_to_apply`) or `PUT /me` (resubmit states).
 5. Success toast + refetch `GET /me`.
 
-**Inline error field keys** (Zod path → UI anchor): `current_job_title` (includes `current_job_title_id`), `current_company`, `bio`, `cv_file_id`, `linkedin_url`, `github_url`, `portfolio_links`, `topic_ids`, `skill_ids`, `certificates.{index}` (certificate rows). Certificate section auto-expands when a certificate row has an error.
+**Inline error field keys** (Zod path → UI anchor): `current_job_title` (includes `current_job_title_id`), `current_company`, `bio`, `cv_file_id`, `linkedin_url` (`validation.url` or `validation.linkedinUrl`), `github_url` (`validation.url` or `validation.githubUrl`), `portfolio_links` (`validation.url`), `topic_ids`, `skill_ids`, `certificates.{index}` (certificate rows). Certificate section auto-expands when a certificate row has an error.
+
+**Link validation rules:** empty optional fields pass. Non-empty values must parse as `http:`/`https:` URLs. LinkedIn/GitHub fields additionally require host `linkedin.com` (incl. subdomains) or `github.com` (incl. subdomains) respectively. Portfolio array rejects invalid URLs on any non-blank row.
 
 **i18n:** messages resolved from `instructor.validation.*` (Zod stores `validation.{key}` in issue messages).
 
