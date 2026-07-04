@@ -30,6 +30,7 @@ Feature logic lives under one namespace; components only render UI.
 | `form-state.ts` | Form model, prefill from `GET /me`, submit payload mapper |
 | `validate-application-form.ts` | Zod validate + map issues → inline field error keys |
 | `url-validation.ts` | Shared HTTP URL helpers + LinkedIn/GitHub host checks (used by Zod schema) |
+| `search-text.ts` | Shared normalize/search/slug helpers for combobox + remote datasets |
 | `helpers.ts` | `resolveInstructorApplicationProfile`, `resolveInstructorDisplayName`, taxonomy chip labels |
 | `types.ts` | Combobox / company-search UI types only |
 | `remote-data.ts` | Cloudflare JSON datasets + session cache |
@@ -90,6 +91,12 @@ Content (max-w-[1200px], 2-col desktop) — page shell `min-h-[calc(100svh-4rem)
 
 **Sidebar required checklist (no headline):** bio (≥100 chars), job title + company, years of experience, CV (PDF), ≥1 topic, ≥1 skill.
 
+**Admin profiles list:** columns `user`, `current_job_title` (from `latest_submission.profile`; column label **Role** / **Vai trò** — `instructor.profiles.columns.currentJobTitle`) — **no headline column** (field not collected on new applications).
+
+**Certificate form errors:** deleting a certificate row re-runs client validation for certificate rows only (`refreshCertificateFieldErrors` in `validate-application-form.ts`) so remaining invalid rows keep their inline errors; editing any certificate field clears that row's error (same as other cert fields).
+
+**Remote lookup helpers:** shared normalize/search utilities in `src/lib/instructor-application/search-text.ts` (used by `combobox.ts`, `remote-data.ts`, `wikidata-company.ts`). Unused `getRemoteDatasetSources` removed.
+
 **`SearchableSelect` consumers (do not break):**
 
 | File | Usage | Width |
@@ -112,7 +119,7 @@ Content (max-w-[1200px], 2-col desktop) — page shell `min-h-[calc(100svh-4rem)
 
 **FE files:** `src/api/callers/instructor/instructor.ts`, `src/hooks/instructor/use-my-instructor-application.ts`, `src/types/instructor.ts`, `src/schema/instructor/instructor.ts`, i18n `instructor.application.*`.
 
-**Vietnamese copy (`vi.ts` → `instructor.application`):** job-title field labels use **「Vai trò」** (not 「Chức danh」) — `form.jobTitle`, `form.jobTitlePlaceholder`, `sidebar.req2`. Validation messages under `instructor.validation` already use 「vai trò」. Admin `instructor.profileView.currentJobTitle` keeps 「Chức danh」 (separate screen).
+**Vietnamese copy (`vi.ts` → `instructor.application`):** job-title field labels use **「Vai trò hiện tại」** — `form.jobTitle`, `form.jobTitlePlaceholder`, `sidebar.req2`. Validation messages under `instructor.validation` use 「vai trò」. **Admin profiles list** column: **「Vai trò」** (`profiles.columns.currentJobTitle`). **Admin profile view dialog** field: **「Chức danh hiện tại」** (`profileView.currentJobTitle`) — avoids confusion with system role/permission.
 
 ---
 

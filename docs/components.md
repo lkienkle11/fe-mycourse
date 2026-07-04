@@ -211,7 +211,7 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 
 `src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog` (shared Zod schemas, `RequiredLabel`, `FieldError`, `toastApiError`; `useForm`/`useState` initialized from `initialData` on mount — parent remounts via `key`; slug preview uses `slugifyName(name)` with API `slug` fallback until `useWatch` reports name), `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns; `child_render` column opens tree view).
 
-`src/components/features/instructor/` — … `InstructorProfileViewDialog` (… certificates via `InstructorCertificateCarousel`), … feature model in `src/lib/instructor-application/` (`mergeInstructorApplicationDetail`, `url-validation.ts`, `validate-application-form.ts` …). Shared carousel: `src/components/ui/carousel.tsx` (Embla). …
+`src/components/features/instructor/` — … `InstructorProfileViewDialog` (… certificates via `InstructorCertificateCarousel`), … feature model in `src/lib/instructor-application/` (`mergeInstructorApplicationDetail`, `url-validation.ts`, `search-text.ts`, `validate-application-form.ts` incl. `refreshCertificateFieldErrors` on certificate row delete …). Shared carousel: `src/components/ui/carousel.tsx` (Embla). …
 
 `src/components/features/media/` — media library popup: `MediaCollectionDialog`, `MediaUploadDialog` (`media.validation.*` client checks + `toastApiError` on API fail; sr-only `DialogDescription`; uses shared `formatBytes` from `@/lib/utils`), `MediaItemCard` (overlay select button + menu above + full-filename tooltip; see a11y in `docs/media-collection.md`), `MediaTabPanel`. See `docs/media-collection.md`.
 
