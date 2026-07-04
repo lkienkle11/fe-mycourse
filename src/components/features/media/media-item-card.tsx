@@ -3,6 +3,7 @@
 import { FileText, MoreVertical, Pencil, Trash2, Video } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -54,6 +55,8 @@ export function MediaItemCard({
   const previewUrl = isImage ? file.url : file.thumbnail_url;
   const selectable = selectionMode === "single";
   const label = file.filename ?? t("untitled");
+  const publicOwnerName =
+    file.visibility === "public" ? file.display_name?.trim() : "";
 
   const handleSelect = () => {
     if (selectable && onSelect) {
@@ -139,6 +142,18 @@ export function MediaItemCard({
             {label}
           </TooltipContent>
         </Tooltip>
+        {file.visibility === "public" ? (
+          <div className="space-y-0.5">
+            <Badge variant="secondary" className="text-[10px]">
+              {t("publicBadge")}
+            </Badge>
+            {publicOwnerName ? (
+              <p className="truncate text-xs text-muted-foreground">
+                {publicOwnerName}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         <p className="text-xs text-muted-foreground">
           {formatMediaDate(file.created_at)}
         </p>

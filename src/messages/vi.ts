@@ -354,6 +354,7 @@ const messages = {
     item: {
       untitled: "Không tên",
       noPreview: "Không có xem trước",
+      publicBadge: "Công khai",
       rename: "Đổi tên",
       renameComingSoon: "Sắp có",
       delete: "Xóa",

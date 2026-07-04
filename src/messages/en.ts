@@ -355,6 +355,7 @@ const messages = {
     item: {
       untitled: "Untitled",
       noPreview: "No preview",
+      publicBadge: "Public",
       rename: "Rename",
       renameComingSoon: "Coming soon",
       delete: "Delete",
