@@ -19,12 +19,14 @@ export function CertificateList({
   setForm,
   readonly,
   onClearFieldError,
+  onRefreshCertificateFieldErrors,
   fieldMessage,
 }: {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
   readonly: boolean;
   onClearFieldError?: (key: string) => void;
+  onRefreshCertificateFieldErrors?: (nextForm: FormState) => void;
   fieldMessage: (key: string, fallback: string) => string | undefined;
 }) {
   const t = useTranslations("instructor.application.form");
@@ -53,14 +55,18 @@ export function CertificateList({
                 size="sm"
                 variant="ghost"
                 className="mb-2"
-                onClick={() =>
-                  setForm((prev) => ({
-                    ...prev,
-                    certificates: prev.certificates.filter(
-                      (_, i) => i !== index,
-                    ),
-                  }))
-                }
+                onClick={() => {
+                  setForm((prev) => {
+                    const nextForm = {
+                      ...prev,
+                      certificates: prev.certificates.filter(
+                        (_, i) => i !== index,
+                      ),
+                    };
+                    onRefreshCertificateFieldErrors?.(nextForm);
+                    return nextForm;
+                  });
+                }}
               >
                 <Trash2 className="mr-1 size-4" />
                 {t("removeCert")}
@@ -98,7 +104,8 @@ export function CertificateList({
                 placeholder={t("certYear")}
                 value={cert.issued_year || ""}
                 readOnly={readonly}
-                onChange={(e) =>
+                onChange={(e) => {
+                  onClearFieldError?.(certFieldKey);
                   setForm((prev) => {
                     const next = [...prev.certificates];
                     next[index] = {
@@ -106,8 +113,8 @@ export function CertificateList({
                       issued_year: Number(e.target.value) || 0,
                     };
                     return { ...prev, certificates: next };
-                  })
-                }
+                  });
+                }}
               />
             </div>
             <Input

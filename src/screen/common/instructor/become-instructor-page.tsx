@@ -41,6 +41,7 @@ import { preloadRemoteDatasets } from "@/lib/instructor-application/remote-data"
 import {
   type ApplicationFormErrors,
   firstApplicationFormErrorKey,
+  refreshCertificateFieldErrors,
   validateApplicationForm,
 } from "@/lib/instructor-application/validate-application-form";
 import { cn } from "@/lib/utils";
@@ -125,6 +126,10 @@ export function BecomeInstructorPage() {
       delete next[key];
       return next;
     });
+  }, []);
+
+  const refreshCertificateErrors = useCallback((nextForm: FormState) => {
+    setFieldErrors((prev) => refreshCertificateFieldErrors(prev, nextForm));
   }, []);
 
   const scrollToFirstFieldError = useCallback(
@@ -316,6 +321,7 @@ export function BecomeInstructorPage() {
                       pageState={pageState}
                       fieldErrors={fieldErrors}
                       onClearFieldError={clearFieldError}
+                      onRefreshCertificateFieldErrors={refreshCertificateErrors}
                       initialTopicLabels={taxonomyLabels.topics}
                       initialSkillLabels={taxonomyLabels.skills}
                     />

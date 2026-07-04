@@ -31,6 +31,7 @@ export function ApplicationForm({
   pageState,
   fieldErrors = {},
   onClearFieldError,
+  onRefreshCertificateFieldErrors,
   initialTopicLabels = {},
   initialSkillLabels = {},
 }: {
@@ -44,6 +45,7 @@ export function ApplicationForm({
   pageState: InstructorApplicationPageState;
   fieldErrors?: ApplicationFormErrors;
   onClearFieldError?: (key: string) => void;
+  onRefreshCertificateFieldErrors?: (nextForm: FormState) => void;
   initialTopicLabels?: Record<string, string>;
   initialSkillLabels?: Record<string, string>;
 }) {
@@ -295,6 +297,7 @@ export function ApplicationForm({
           setForm={setForm}
           readonly={readonly}
           onClearFieldError={onClearFieldError}
+          onRefreshCertificateFieldErrors={onRefreshCertificateFieldErrors}
           fieldMessage={fieldMessage}
         />
       </CollapsibleSection>

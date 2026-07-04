@@ -67,6 +67,42 @@ export function validateApplicationForm(form: FormState):
   return { ok: false, errors: mapZodIssuesToFieldErrors(parsed.error.issues) };
 }
 
+export function clearFieldErrorsByPrefix(
+  errors: ApplicationFormErrors,
+  prefix: string,
+): ApplicationFormErrors {
+  const next = { ...errors };
+  let changed = false;
+  for (const key of Object.keys(next)) {
+    if (key.startsWith(prefix)) {
+      delete next[key];
+      changed = true;
+    }
+  }
+  return changed ? next : errors;
+}
+
+/** Re-validate certificate rows after delete so remaining invalid rows keep errors. */
+export function refreshCertificateFieldErrors(
+  errors: ApplicationFormErrors,
+  form: FormState,
+): ApplicationFormErrors {
+  const withoutCerts = clearFieldErrorsByPrefix(errors, "certificates.");
+  const result = validateApplicationForm(form);
+  if (!result.ok) {
+    const certErrors: ApplicationFormErrors = {};
+    for (const [key, value] of Object.entries(result.errors)) {
+      if (key.startsWith("certificates.")) {
+        certErrors[key] = value;
+      }
+    }
+    if (Object.keys(certErrors).length > 0) {
+      return { ...withoutCerts, ...certErrors };
+    }
+  }
+  return withoutCerts;
+}
+
 export function firstApplicationFormErrorKey(
   errors: ApplicationFormErrors,
 ): ApplicationFormFieldKey | null {
