@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  optionalCredentialUrlSchema,
+  optionalGitHubUrlSchema,
+  optionalLinkedInUrlSchema,
+  portfolioLinkItemSchema,
+} from "@/lib/instructor-application/url-validation";
 
 const yearsExperienceCodeSchema = z.enum([
   "UNDER_1_YEAR",
@@ -13,7 +19,7 @@ const instructorCertificateSchema = z
     title: z.string().trim().min(1).max(120),
     issuer: z.string().trim().min(1).max(80),
     issued_year: z.number().int().min(1950).max(2100),
-    credential_url: z.union([z.string().url(), z.literal("")]).optional(),
+    credential_url: optionalCredentialUrlSchema.optional(),
     certificate_file_id: z.union([z.string().uuid(), z.literal("")]).optional(),
   })
   .refine(
@@ -52,16 +58,10 @@ export const instructorApplicationSubmitSchema = z.object({
     .trim()
     .min(1, { message: "validation.cvFile" })
     .uuid({ message: "validation.cvFile" }),
-  linkedin_url: z
-    .union([z.string().url({ message: "validation.url" }), z.literal("")])
-    .optional(),
-  github_url: z
-    .union([z.string().url({ message: "validation.url" }), z.literal("")])
-    .optional(),
+  linkedin_url: optionalLinkedInUrlSchema.optional(),
+  github_url: optionalGitHubUrlSchema.optional(),
   portfolio_links: z
-    .array(
-      z.union([z.string().url({ message: "validation.url" }), z.literal("")]),
-    )
+    .array(portfolioLinkItemSchema)
     .max(5, { message: "validation.portfolioMax" })
     .optional()
     .default([]),

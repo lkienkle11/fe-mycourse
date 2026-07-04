@@ -29,6 +29,7 @@ function issuePathToFieldKey(
   if (path.length === 0) return null;
   const head = String(path[0]);
   if (head === "current_job_title_id") return "current_job_title";
+  if (head === "portfolio_links") return "portfolio_links";
   if (head === "certificates" && typeof path[1] === "number") {
     return `certificates.${path[1]}`;
   }

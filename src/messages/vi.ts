@@ -391,6 +391,8 @@ const messages = {
       currentCompany: "Vui lòng nhập tên công ty.",
       cvFile: "Vui lòng chọn CV (PDF).",
       url: "Vui lòng nhập URL hợp lệ.",
+      linkedinUrl: "Vui lòng nhập URL LinkedIn hợp lệ.",
+      githubUrl: "Vui lòng nhập URL GitHub hợp lệ.",
       portfolioMax: "Tối đa 5 liên kết portfolio.",
       certificatesMax: "Tối đa 10 chứng chỉ.",
       certProof:

@@ -392,6 +392,8 @@ const messages = {
       currentCompany: "Please enter your current company.",
       cvFile: "Please select a CV (PDF).",
       url: "Please enter a valid URL.",
+      linkedinUrl: "Please enter a valid LinkedIn URL.",
+      githubUrl: "Please enter a valid GitHub URL.",
       portfolioMax: "You can add at most 5 portfolio links.",
       certificatesMax: "You can add at most 10 certificates.",
       certProof: "Provide a credential URL or upload a certificate PDF.",

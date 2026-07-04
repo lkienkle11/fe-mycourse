@@ -191,7 +191,7 @@ export function ApplicationForm({
             <Field
               label={t("linkedin")}
               fieldKey="linkedin_url"
-              errorMessage={fieldMessage("linkedin_url", "url")}
+              errorMessage={fieldMessage("linkedin_url", "linkedinUrl")}
             >
               <Input
                 value={form.linkedin_url}
@@ -209,7 +209,7 @@ export function ApplicationForm({
             <Field
               label={t("github")}
               fieldKey="github_url"
-              errorMessage={fieldMessage("github_url", "url")}
+              errorMessage={fieldMessage("github_url", "githubUrl")}
             >
               <Input
                 value={form.github_url}
@@ -225,7 +225,7 @@ export function ApplicationForm({
           <Field
             label={t("portfolio")}
             fieldKey="portfolio_links"
-            errorMessage={fieldMessage("portfolio_links", "portfolioMax")}
+            errorMessage={fieldMessage("portfolio_links", "url")}
           >
             <div className="space-y-2">
               {form.portfolio_links.map((link, index) => (
