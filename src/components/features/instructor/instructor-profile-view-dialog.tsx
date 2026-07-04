@@ -23,6 +23,7 @@ import type {
   InstructorTaxonomyChip,
   YearsExperienceCode,
 } from "@/types/instructor";
+import { InstructorCertificateCarousel } from "./instructor-certificate-carousel";
 
 export type InstructorProfileViewDialogProps = {
   open: boolean;
@@ -222,32 +223,13 @@ export function InstructorProfileViewDialog({
               ) : null}
               {profile.certificates?.length ? (
                 <div>
-                  <dt className="font-medium text-muted-foreground">
+                  <dt className="mb-2 font-medium text-muted-foreground">
                     {t("certificates")}
                   </dt>
-                  <dd className="mt-1 space-y-2">
-                    {profile.certificates.map((cert) => (
-                      <div
-                        key={`${cert.title}-${cert.issuer}-${cert.issued_year}-${cert.credential_url ?? ""}`}
-                        className="rounded-md border p-2"
-                      >
-                        <p className="font-medium">{cert.title}</p>
-                        <p className="text-muted-foreground">
-                          {cert.issuer} · {cert.issued_year}
-                        </p>
-                        {cert.credential_url ? (
-                          <p className="truncate text-xs">
-                            {cert.credential_url}
-                          </p>
-                        ) : null}
-                        {cert.certificate_file?.url ? (
-                          <PreviewPdf
-                            url={cert.certificate_file.url}
-                            title={cert.certificate_file.filename ?? cert.title}
-                          />
-                        ) : null}
-                      </div>
-                    ))}
+                  <dd>
+                    <InstructorCertificateCarousel
+                      certificates={profile.certificates}
+                    />
                   </dd>
                 </div>
               ) : null}
