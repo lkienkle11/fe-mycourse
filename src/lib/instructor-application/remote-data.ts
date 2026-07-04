@@ -1,6 +1,11 @@
 import { rawFetch } from "@/api/raw-http";
 import { MOCK_COMPANIES } from "./mock-companies";
 import { MOCK_JOB_TITLES } from "./mock-job-titles";
+import {
+  normalizeDedupeKey,
+  normalizeDomainKey,
+  normalizeSearchText,
+} from "./search-text";
 
 export const REMOTE_JOB_TITLES_URL =
   "https://du-lieu-ho-so.pages.dev/chuc-danh.json";
@@ -23,26 +28,10 @@ export interface RemoteCompany {
   location?: string;
 }
 
-export type RemoteDatasetSource = "remote" | "fallback";
-
 let jobTitlesCache: RemoteJobTitle[] | null = null;
 let companiesCache: RemoteCompany[] | null = null;
-let jobTitlesSource: RemoteDatasetSource | null = null;
-let companiesSource: RemoteDatasetSource | null = null;
 let jobTitlesPromise: Promise<RemoteJobTitle[]> | null = null;
 let companiesPromise: Promise<RemoteCompany[]> | null = null;
-
-function removeDiacritics(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D");
-}
-
-function normalizeSearchText(value: string): string {
-  return removeDiacritics(value.toLowerCase().trim());
-}
 
 function toFallbackJobTitles(): RemoteJobTitle[] {
   return MOCK_JOB_TITLES.map((item) => ({
@@ -71,16 +60,6 @@ async function fetchRemoteJson<T>(url: string): Promise<T[]> {
   return Array.isArray(data) ? data : [];
 }
 
-export function getRemoteDatasetSources(): {
-  jobTitles: RemoteDatasetSource;
-  companies: RemoteDatasetSource;
-} {
-  return {
-    jobTitles: jobTitlesSource ?? "remote",
-    companies: companiesSource ?? "remote",
-  };
-}
-
 export async function loadRemoteJobTitles(): Promise<RemoteJobTitle[]> {
   if (jobTitlesCache) return jobTitlesCache;
   if (!jobTitlesPromise) {
@@ -89,13 +68,11 @@ export async function loadRemoteJobTitles(): Promise<RemoteJobTitle[]> {
         jobTitlesCache = await fetchRemoteJson<RemoteJobTitle>(
           REMOTE_JOB_TITLES_URL,
         );
-        jobTitlesSource = "remote";
         if (jobTitlesCache.length === 0) {
           throw new Error("Empty remote job titles");
         }
       } catch {
         jobTitlesCache = toFallbackJobTitles();
-        jobTitlesSource = "fallback";
       }
       return jobTitlesCache;
     })();
@@ -110,13 +87,11 @@ export async function loadRemoteCompanies(): Promise<RemoteCompany[]> {
       try {
         companiesCache =
           await fetchRemoteJson<RemoteCompany>(REMOTE_COMPANIES_URL);
-        companiesSource = "remote";
         if (companiesCache.length === 0) {
           throw new Error("Empty remote companies");
         }
       } catch {
         companiesCache = toFallbackCompanies();
-        companiesSource = "fallback";
       }
       return companiesCache;
     })();
@@ -167,22 +142,17 @@ export function findRemoteCompanyByName(
   dataset: RemoteCompany[],
   companyName: string,
 ): RemoteCompany | undefined {
-  const key = normalizeSearchText(companyName).replace(/[.,-]/g, "");
-  return dataset.find(
-    (item) => normalizeSearchText(item.name).replace(/[.,-]/g, "") === key,
-  );
+  const key = normalizeDedupeKey(companyName);
+  return dataset.find((item) => normalizeDedupeKey(item.name) === key);
 }
 
 export function findRemoteCompanyByDomain(
   dataset: RemoteCompany[],
   domain: string,
 ): RemoteCompany | undefined {
-  const key = normalizeSearchText(domain).replace(/^www\./, "");
+  const key = normalizeDomainKey(domain);
   return dataset.find((item) => {
-    const itemDomain = normalizeSearchText(item.domain ?? "").replace(
-      /^www\./,
-      "",
-    );
+    const itemDomain = normalizeDomainKey(item.domain ?? "");
     return itemDomain && itemDomain === key;
   });
 }

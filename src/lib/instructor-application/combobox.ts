@@ -9,6 +9,7 @@ import {
   searchRemoteCompanies,
   searchRemoteJobTitles,
 } from "./remote-data";
+import { normalizeDedupeKey, slugifyKey } from "./search-text";
 import type { ComboboxSuggestion, CompanySearchState } from "./types";
 import { searchWikidataCompanies } from "./wikidata-company";
 
@@ -30,24 +31,6 @@ function setQueryCache(
     if (first) cache.delete(first);
   }
   cache.set(key, value);
-}
-
-function normalizeLabel(value: string): string {
-  return value.toLowerCase().trim().replace(/[.,-]/g, "");
-}
-
-function slugifyKey(text: string): string {
-  return (
-    text
-      .toLowerCase()
-      .trim()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "") || "untitled"
-  );
 }
 
 export function deriveRemoteJobTitleId(remoteId: string): string {
@@ -83,7 +66,7 @@ export function deriveCompanySuggestionId(input: {
 function dedupeByLabel<T extends { label: string }>(items: T[]): T[] {
   const seen = new Set<string>();
   return items.filter((item) => {
-    const key = normalizeLabel(item.label);
+    const key = normalizeDedupeKey(item.label);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -95,10 +78,10 @@ function mergeSuggestionsByLabel(
   secondary: ComboboxSuggestion[],
   limit = 8,
 ): ComboboxSuggestion[] {
-  const seen = new Set(primary.map((item) => normalizeLabel(item.label)));
+  const seen = new Set(primary.map((item) => normalizeDedupeKey(item.label)));
   const merged = [...primary];
   for (const item of secondary) {
-    const key = normalizeLabel(item.label);
+    const key = normalizeDedupeKey(item.label);
     if (seen.has(key)) continue;
     seen.add(key);
     merged.push(item);

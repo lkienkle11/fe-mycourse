@@ -1,4 +1,5 @@
 import { rawFetch } from "@/api/raw-http";
+import { normalizeDedupeKey } from "./search-text";
 
 const WIKIDATA_API = "https://www.wikidata.org/w/api.php";
 const SPARQL_ENDPOINT = "https://query.wikidata.org/sparql";
@@ -25,10 +26,6 @@ interface FilteredCompanyRow {
   qid: string;
   label: string;
   description?: string;
-}
-
-function normalizeLabel(value: string): string {
-  return value.toLowerCase().trim().replace(/[.,-]/g, "");
 }
 
 function extractDomain(rawUrl?: string): string {
@@ -196,8 +193,8 @@ function scoreCompany(
   if (enrichment?.location) score += 2;
   if (company.description) score += 1;
 
-  const normalizedQuery = normalizeLabel(query);
-  const normalizedLabel = normalizeLabel(company.label);
+  const normalizedQuery = normalizeDedupeKey(query);
+  const normalizedLabel = normalizeDedupeKey(company.label);
   if (normalizedLabel === normalizedQuery) score += 4;
   else if (
     normalizedLabel.includes(normalizedQuery) ||
