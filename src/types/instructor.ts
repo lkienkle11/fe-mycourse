@@ -148,6 +148,8 @@ export type InstructorUserIdentity = {
   avatar: string;
   display_name?: string;
   email?: string;
+  is_disabled?: boolean;
+  email_confirmed?: boolean;
 };
 
 export type InstructorRosterMember = {

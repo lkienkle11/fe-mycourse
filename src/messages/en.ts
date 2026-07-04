@@ -431,6 +431,8 @@ const messages = {
       pageOf: "Page {page} of {totalPages}",
       deleteSuccess: "Deleted successfully.",
       errorGeneric: "Something went wrong. Please try again.",
+      badgeDisabled: "Disabled",
+      badgeEmailUnconfirmed: "Email unconfirmed",
     },
     profileView: {
       title: "Instructor profile",

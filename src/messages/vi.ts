@@ -431,6 +431,8 @@ const messages = {
       pageOf: "Trang {page} / {totalPages}",
       deleteSuccess: "Đã xóa thành công.",
       errorGeneric: "Đã xảy ra lỗi. Vui lòng thử lại.",
+      badgeDisabled: "Đã vô hiệu",
+      badgeEmailUnconfirmed: "Chưa xác nhận email",
     },
     profileView: {
       title: "Hồ sơ giảng viên",
