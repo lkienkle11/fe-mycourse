@@ -1,8 +1,8 @@
 # Media collection (FE)
 
-_Last audited: 2026-06-08 (code-based API errors + `media.validation.*` client checks)._
+_Last audited: 2026-07-04 — backend-scoped list (own + public only; legacy NULL owner excluded); `visibility` on upload/response; R2 keys `{user_code}/…`; uploader `display_name` only (no email in API)._
 
-Reusable media library popup for browsing, uploading, and selecting files. Wired into taxonomy topic/outcome forms for cover images.
+Reusable media library popup for browsing, uploading, and selecting files. Wired into taxonomy topic/outcome forms, course editor, instructor application (CV/certificate/video), and Quill embeds.
 
 ## Components
 
@@ -10,7 +10,7 @@ Reusable media library popup for browsing, uploading, and selecting files. Wired
 |------|------|
 | `src/components/features/media/media-collection-dialog.tsx` | Main dialog: tabs, filename search, sort, pagination, upload entry; optional `uploadAllowedExtensions` narrows upload `accept` + client validation (e.g. PDF-only CV picker) |
 | `src/components/features/media/media-upload-dialog.tsx` | Nested upload (max 5 files, 2 GiB total) |
-| `src/components/features/media/media-item-card.tsx` | Grid card: preview, overflow menu, single-select via full-card overlay `button` (menu stays clickable above overlay), filename tooltip with full text |
+| `src/components/features/media/media-item-card.tsx` | Grid card: preview, **public badge + uploader `display_name`**, overflow menu, single-select via full-card overlay `button` |
 | `src/components/features/media/media-tab-panel.tsx` | Grid + loading skeleton + empty state |
 
 Dialog width: `MediaCollectionDialog` uses `max-w-5xl` for a wider browsing surface.
@@ -19,19 +19,24 @@ Dialog width: `MediaCollectionDialog` uses `max-w-5xl` for a wider browsing surf
 
 | File | Role |
 |------|------|
-| `src/api/callers/media/media.ts` | `listMediaFiles`, `uploadMediaFiles`, `deleteMediaFile` |
+| `src/api/callers/media/media.ts` | `listMediaFiles`, `uploadMediaFiles` (sends `visibility=private` by default), `deleteMediaFile` |
 | `src/api/hooks/media/useMediaFiles.ts` | SWR list + `mutate` |
 | `src/constants/api-route.ts` | `media.files`, `media.fileById` |
-| `src/types/media/index.ts` | `MediaFile`, filters, tab types |
+| `src/types/media/index.ts` | `MediaFile`, filters, tab types; `visibility?: "private" \| "public"`; uploader `display_name?` only |
 | `src/constants/media/file-rules.ts` | Accept rules, size limits, extension lists, `MEDIA_COLLECTION_ALL_TABS` |
-| `src/lib/utils/media.ts` | `isImageFilename`, `getMediaTabExtensions`, `isExecutableExtension`, `validateMediaUploadBatch`, `getMediaDeleteKey`, `isImageMedia` (uses shared `apiListQueryToRecord`) |
+| `src/lib/utils/media.ts` | `isImageFilename`, `getMediaTabExtensions`, `validateMediaUploadBatch`, `getMediaDeleteKey`, `isImageMedia` |
 | `src/lib/utils/api-error.ts` | `toastApiError` — delete/upload API failures map to `errors.codes.{code}` |
-| `src/lib/utils/list-query.ts` | `apiListQueryToRecord()` — `page`, `per_page`, `search`, `sort_by`, `sort_order`, `category` |
-| `src/lib/utils/format-bytes.ts` | `formatBytes()` — per-file and total size labels in upload dialog |
+| `src/lib/utils/list-query.ts` | `apiListQueryToRecord()` — pagination/search/sort/category (no client-side visibility filter) |
+| `src/lib/utils/format-bytes.ts` | `formatBytes()` — upload dialog size labels |
 
-## List filters (FE)
+## Backend list scoping (no FE filter param)
 
-`MediaListFilters` extends `ApiListQueryParams` (`src/types/media/index.ts`) with `category` and `sort_order`. Query strings are built with `apiListQueryToRecord()` — same helper as taxonomy (`src/lib/utils/list-query.ts`), not a duplicate `mediaListFiltersToRecord`. The popup applies filename search via `search`.
+`GET /api/v1/media/files` returns only rows the caller may pick:
+
+- Own files (any visibility)
+- Other users' **`public`** files
+
+Legacy rows with NULL `user_id` (pre-owner backfill) **do not appear** in the popup. Private files owned by someone else **never** appear. FE does not filter client-side — it displays whatever the API returns.
 
 ## BE list query params
 
@@ -47,80 +52,52 @@ Dialog width: `MediaCollectionDialog` uses `max-w-5xl` for a wider browsing surf
 
 Delete uses **object key**: `DELETE /api/v1/media/files/:object_key`.
 
+## Upload defaults
+
+`POST /api/v1/media/files` multipart:
+
+- `files` — 1–5 parts
+- `visibility` — optional; FE sends **`private`** when omitted. **`public`** makes the file selectable by all users in the media popup.
+
+New R2 objects use object keys `{user_code}/{8digits}-{filename}` (server-side from JWT).
+
+## Permissions
+
+| Permission | ID | Used in UI |
+|------------|-----|------------|
+| `media_file:read` | P26 | Browse library (callers open dialog when user has read) |
+| `media_file:create` | P27 | Upload button, delta-editor paste/drop |
+| `media_file:update` | P28 | Reserved (rename / visibility toggle not wired yet) |
+| `media_file:delete` | P29 | Card overflow delete |
+
+**Instructor** and **learner** roles receive P26–P29 via `roles_permission.go` (sync on BE — no migration). Until sync, upload/browse may 403.
+
 ## Visible tabs
 
-`visibleTabs?: readonly MediaTab[]` — subset of `image` | `document` | `video`. Omitted = all three tabs. Tabs not in the list are hidden (no switcher when only one tab remains).
-
-Helpers: `resolveVisibleMediaTabs()`, `resolveMediaCollectionDefaultTab()` in `src/lib/utils/media.ts`. Canonical tab order: `MEDIA_COLLECTION_ALL_TABS` in `src/constants/media/file-rules.ts`.
-
-```tsx
-// Full library (default)
-<MediaCollectionDialog open={open} onOpenChange={setOpen} />
-
-// Taxonomy cover image — images only
-<MediaCollectionDialog
-  open={open}
-  onOpenChange={setOpen}
-  visibleTabs={["image"]}
-  defaultTab="image"
-  selectionMode="single"
-/>
-```
-
-## Taxonomy integration
-
-`taxonomy-form-dialog.tsx` passes `visibleTabs={["image"]}` so document/video tabs never appear. `selectionMode="single"`; picker callback receives `type` from active tab and guards `type === "image"` before setting form state. Stored value is `image_file_id` (media row UUID).
-
-Permissions: `media_file:read` (browse), `media_file:create` (upload), `media_file:delete` (card menu).
-
-## Search behavior
-
-- Search input and button are in `MediaCollectionDialog` toolbar.
-- Search value is sent as `search` query param to `GET /api/v1/media/files`.
-- Search is filename-based and respects active tab category (`image` / `document` / `video`).
-- Applying search resets pagination to page 1.
+`visibleTabs?: readonly MediaTab[]` — subset of `image` | `document` | `video`. Omitted = all three tabs.
 
 ## Display behavior
 
-- Media items in the popup show `file.filename` as the visible label.
-- Hovering truncated filename shows a tooltip with the full filename.
-- Selection still stores `file.id` (`image_file_id` in taxonomy forms); selection callback also emits tab `type` (`image`/`document`/`video`).
-
-## Accessibility
-
-Radix `DialogContent` requires a description for screen readers:
-
-- `MediaCollectionDialog` and `MediaUploadDialog` render `DialogDescription` with `className="sr-only"` and copy from `media.collection.description` / `media.upload.description`.
-
-`MediaItemCard` with `selectionMode="single"` must not wrap the overflow menu `Button` in the same outer `<button>` (invalid HTML and React hydration error). Pattern:
-
-1. Card root is a `relative` `div`.
-2. Full-card `button` (`absolute inset-0 z-0`) handles select + keyboard.
-3. Visual content uses `pointer-events-none` so clicks reach the overlay.
-4. Menu wrapper uses `pointer-events-auto z-20` so the ⋮ trigger stays interactive.
-
-## Known gaps
-
-- Rename: menu item disabled (“Coming soon”); no BE rename API.
-- Edit form preview: existing `image_file_id` shows truncated UUID until user re-picks from library (no GET-by-UUID on FE).
+- Media items show `file.filename` as the label.
+- **`visibility === "public"`** shows a small **Public** badge (`media.item.publicBadge`) and the uploader **`display_name`** on the card (muted text below the badge; omitted when BE returns an empty name).
+- Selection stores `file.id`; delete uses `file.object_key`.
 
 ## Validation and API errors
 
-- **Client upload checks**: `validateMediaUploadBatch()` in `src/lib/utils/media.ts` → toast `media.validation.*` (`tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected`, `invalidExtension` when `uploadAllowedExtensions` is set).
-- **API upload/delete failures**: `toastApiError(useTranslations("errors.codes"), error)` — codes `2003`–`2009`, `9010`–`9018`, etc.
-- **API errors** use `errors.codes.{code}` only (`2003`–`2009`, `9010`–`9018`, etc.) via `toastApiError`.
-- **Client pre-submit** uses `media.validation.*` (`tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected`).
-- `media.upload.errors.*` is legacy UI copy — not used for API responses.
+- **Client upload checks**: `validateMediaUploadBatch()` → toast `media.validation.*`
+- **API failures**: `toastApiError` → `errors.codes.*` (including `3003` Forbidden when accessing another user's private file)
 
 ## i18n
 
-Namespaces in `src/messages/en.ts` and `vi.ts`:
-
 | Namespace | Notable keys |
 |-----------|----------------|
-| `media.collection.*` | `title`, `description` (sr-only dialog), `tabs.*`, `sort.*`, `add.*`, pagination, delete confirm |
-| `media.validation.*` | Client upload limits (`tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected`, `invalidExtension`) |
-| `media.upload.*` | `title.*`, `description` (sr-only dialog), `dropHint`, `limits`, `success` |
-| `media.item.*` | `untitled`, `noPreview`, `rename`, `delete` |
-| `media.picker.*` | `browse`, `clear` (taxonomy cover field) |
-| `errors.codes.*` | All API failures (shared across modules) |
+| `media.collection.*` | Dialog chrome, tabs, sort, pagination |
+| `media.item.*` | `publicBadge`, `untitled`, `delete` |
+| `media.validation.*` | Client upload limits |
+| `media.upload.*` | Upload dialog copy |
+
+## Known gaps
+
+- Rename menu item disabled; no BE rename API.
+- Visibility toggle in UI (public ↔ private after upload) not implemented — upload defaults to private only.
+- Legacy R2 key repath / `user_id` backfill on old rows — planned separately on BE.
