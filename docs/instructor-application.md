@@ -1,6 +1,6 @@
 # Instructor application page (user)
 
-_Last audited: 2026-07-05 — certificate section UX + inline duplicate errors; BE submit validates PDF media via `GetByID` on `media_files`._
+_Last audited: 2026-07-05 — SWR focus/reload UX fix + global 3-minute error retry; certificate section UX + inline duplicate errors; BE submit validates PDF media via `GetByID` on `media_files`._
 
 Public authenticated page for learners to submit and manage their **instructor application**. Admin review UX remains in [`instructor-admin.md`](./instructor-admin.md).
 
@@ -118,6 +118,20 @@ Content (max-w-[1200px], 2-col desktop) — page shell `min-h-[calc(100svh-4rem)
 | Taxonomy pickers | GET | `/api/v1/taxonomy/topics`, `/api/v1/taxonomy/skills` |
 
 **FE files:** `src/api/callers/instructor/instructor.ts`, `src/hooks/instructor/use-my-instructor-application.ts`, `src/types/instructor.ts`, `src/schema/instructor/instructor.ts`, i18n `instructor.application.*`.
+
+### Data fetching (`useMyInstructorApplication`)
+
+Hook: `src/hooks/instructor/use-my-instructor-application.ts`.
+
+| Concern | Behaviour |
+|---------|-----------|
+| SWR key | `GET /api/v1/instructor-applications/me` when logged in; `null` when logged out |
+| Focus revalidation | **Off** — inherits global `revalidateOnFocus: false` from `AppProviders` (do not opt into focus refetch; it caused full-page spinner flashes when returning to the tab) |
+| Error retry | `shouldRetryOnError: false` — no automatic retry loop on BE failure |
+| `isLoading` | **Bootstrap only** — `true` while auth is still resolving **or** while the first application fetch has not settled (`application === undefined` and no `error`). Background revalidation must **not** flip `isLoading` back to `true` when cached data exists |
+| Page shell | `BecomeInstructorPage` shows the centered spinner only when hook `isLoading` is `true` (initial load). After bootstrap, the form stays mounted during silent refetch |
+
+Manual refresh: call `mutate()` after submit, resubmit, or contact-admin — not on tab focus.
 
 **Vietnamese copy (`vi.ts` → `instructor.application`):** job-title field labels use **「Vai trò hiện tại」** — `form.jobTitle`, `form.jobTitlePlaceholder`, `sidebar.req2`. Validation messages under `instructor.validation` use 「vai trò」. **Admin profiles list** column: **「Vai trò」** (`profiles.columns.currentJobTitle`). **Admin profile view dialog** field: **「Chức danh hiện tại」** (`profileView.currentJobTitle`) — avoids confusion with system role/permission.
 
