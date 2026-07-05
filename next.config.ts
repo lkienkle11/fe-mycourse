@@ -5,10 +5,12 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 /** Lock Turbopack to this app root (avoids watching sibling monorepo / multi-root workspaces). */
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
-
 const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
+    resolveAlias: {
+      canvas: "./src/lib/stubs/canvas.ts",
+    },
   },
   logging: {
     /** Stop forwarding browser console to the terminal (reduces dev-server overhead). */
