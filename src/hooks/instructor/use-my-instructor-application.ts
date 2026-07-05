@@ -25,13 +25,14 @@ export function useMyInstructorApplication() {
   const {
     data: application,
     error,
-    isLoading: isApplicationLoading,
     mutate,
   } = useSWR<MyInstructorApplication | null>(
     isLoggedIn ? getMyInstructorApplicationKey() : null,
     getMyInstructorApplicationService,
-    { revalidateOnFocus: true, shouldRetryOnError: false },
+    { shouldRetryOnError: false },
   );
+
+  const hasResolvedApplication = application !== undefined || error != null;
 
   const pageState: InstructorApplicationPageState = getPageState({
     isLoggedIn,
@@ -64,7 +65,7 @@ export function useMyInstructorApplication() {
     application,
     pageState,
     permissions: mePermissions,
-    isLoading: isAuthLoading || (isLoggedIn && isApplicationLoading),
+    isLoading: isAuthLoading || (isLoggedIn && !hasResolvedApplication),
     error,
     mutate,
     submit,
