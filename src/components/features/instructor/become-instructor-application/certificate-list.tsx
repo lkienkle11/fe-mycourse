@@ -37,6 +37,17 @@ export function CertificateList({
       {form.certificates.map((cert, index) => {
         const certFieldKey = `certificates.${index}`;
         const certError = fieldMessage(certFieldKey, "certProof");
+        // Any edit to a certificate row can resolve OR create a duplicate
+        // collision on a sibling row, so revalidate the whole certificate
+        // section instead of only clearing this row's error. Falls back to
+        // clearing just this row when the section revalidator is not wired.
+        const notifyCertChange = (nextForm: FormState) => {
+          if (onRefreshCertificateFieldErrors) {
+            onRefreshCertificateFieldErrors(nextForm);
+          } else {
+            onClearFieldError?.(certFieldKey);
+          }
+        };
         return (
           <div
             key={
@@ -78,11 +89,12 @@ export function CertificateList({
                 value={cert.title}
                 readOnly={readonly}
                 onChange={(e) => {
-                  onClearFieldError?.(certFieldKey);
                   setForm((prev) => {
                     const next = [...prev.certificates];
                     next[index] = { ...next[index], title: e.target.value };
-                    return { ...prev, certificates: next };
+                    const nextForm = { ...prev, certificates: next };
+                    notifyCertChange(nextForm);
+                    return nextForm;
                   });
                 }}
               />
@@ -91,11 +103,12 @@ export function CertificateList({
                 value={cert.issuer}
                 readOnly={readonly}
                 onChange={(e) => {
-                  onClearFieldError?.(certFieldKey);
                   setForm((prev) => {
                     const next = [...prev.certificates];
                     next[index] = { ...next[index], issuer: e.target.value };
-                    return { ...prev, certificates: next };
+                    const nextForm = { ...prev, certificates: next };
+                    notifyCertChange(nextForm);
+                    return nextForm;
                   });
                 }}
               />
@@ -105,14 +118,15 @@ export function CertificateList({
                 value={cert.issued_year || ""}
                 readOnly={readonly}
                 onChange={(e) => {
-                  onClearFieldError?.(certFieldKey);
                   setForm((prev) => {
                     const next = [...prev.certificates];
                     next[index] = {
                       ...next[index],
                       issued_year: Number(e.target.value) || 0,
                     };
-                    return { ...prev, certificates: next };
+                    const nextForm = { ...prev, certificates: next };
+                    notifyCertChange(nextForm);
+                    return nextForm;
                   });
                 }}
               />
@@ -123,14 +137,15 @@ export function CertificateList({
               value={cert.credential_url ?? ""}
               readOnly={readonly}
               onChange={(e) => {
-                onClearFieldError?.(certFieldKey);
                 setForm((prev) => {
                   const next = [...prev.certificates];
                   next[index] = {
                     ...next[index],
                     credential_url: e.target.value,
                   };
-                  return { ...prev, certificates: next };
+                  const nextForm = { ...prev, certificates: next };
+                  notifyCertChange(nextForm);
+                  return nextForm;
                 });
               }}
             />
@@ -227,9 +242,14 @@ export function CertificateList({
                 mime_type: file.mime_type,
               },
             };
-            return { ...prev, certificates: next };
+            const nextForm = { ...prev, certificates: next };
+            if (onRefreshCertificateFieldErrors) {
+              onRefreshCertificateFieldErrors(nextForm);
+            } else {
+              onClearFieldError?.(`certificates.${pdfDialogIndex}`);
+            }
+            return nextForm;
           });
-          onClearFieldError?.(`certificates.${pdfDialogIndex}`);
           setPdfDialogIndex(null);
         }}
       />

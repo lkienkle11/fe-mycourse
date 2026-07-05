@@ -16,6 +16,7 @@ export const ApiErrorCode = {
   MediaFilesRequired: 2007,
   MediaBatchDeleteTooManyIDs: 2008,
   MediaDuplicateKeysInBatchDelete: 2009,
+  DuplicateCertificate: 2010,
 
   // Client / HTTP-shaped (3xxx)
   BadRequest: 3001,

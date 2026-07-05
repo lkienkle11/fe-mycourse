@@ -398,6 +398,8 @@ const messages = {
       certificatesMax: "Tối đa 10 chứng chỉ.",
       certProof:
         "Vui lòng nhập đường dẫn chứng chỉ hoặc tải lên chứng chỉ PDF.",
+      certDuplicate:
+        "Chứng chỉ này đã trùng với một chứng chỉ khác trong danh sách.",
       topicIds: "Vui lòng chọn chủ đề hợp lệ.",
       topicIdsMin: "Chọn ít nhất 1 lĩnh vực giảng dạy.",
       topicIdsMax: "Chọn tối đa 5 lĩnh vực.",

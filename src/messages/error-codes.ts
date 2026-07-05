@@ -7,7 +7,7 @@
  *
  * Typical mapping:
  * - Media upload/delete: 2003–2009, 9010–9018
- * - Taxonomy / course / instructor CRUD: 2001–2002, 3003–3006
+ * - Taxonomy / course / instructor CRUD: 2001–2002, 2010, 3003–3006
  * - Auth flows: 4001–4012
  */
 export const errorCodesEn = {
@@ -27,6 +27,8 @@ export const errorCodesEn = {
   "2007": "At least one file is required.",
   "2008": "Too many items selected for batch delete (maximum 10).",
   "2009": "Duplicate items in the batch delete request.",
+  "2010":
+    "A certificate in the list duplicates another certificate. Please remove or change the duplicate.",
 
   // Client / HTTP-shaped (3xxx)
   "3001": "Bad request.",
@@ -83,6 +85,8 @@ export const errorCodesVi = {
   "2007": "Cần ít nhất một tệp.",
   "2008": "Quá nhiều mục được chọn để xóa hàng loạt (tối đa 10).",
   "2009": "Có mục trùng lặp trong yêu cầu xóa hàng loạt.",
+  "2010":
+    "Một chứng chỉ trong danh sách bị trùng với chứng chỉ khác. Vui lòng xóa hoặc sửa chứng chỉ trùng.",
 
   // Client / HTTP-shaped (3xxx)
   "3001": "Yêu cầu không hợp lệ.",

@@ -15,6 +15,18 @@ export function normalizeDedupeKey(value: string): string {
   return normalizeSearchText(value).replace(/[.,-]/g, "");
 }
 
+/**
+ * Normalize a free-text dedup key: trim, lowercase, and collapse internal
+ * whitespace runs (incl. tabs/newlines) to a single space. Mirrors BE
+ * `sharedutils.NormalizeDedupeKey` so certificate composite keys compare
+ * equal across FE validation and BE enforcement ("AWS" matches "aws",
+ * "AWS  Certified" matches "AWS Certified"). Intentionally keeps diacritics
+ * and punctuation — only case and whitespace are normalized.
+ */
+export function normalizeCompositeKey(value: string): string {
+  return value.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
 export function normalizeDomainKey(value: string): string {
   return normalizeSearchText(value).replace(/^www\./, "");
 }

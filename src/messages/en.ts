@@ -398,6 +398,8 @@ const messages = {
       portfolioMax: "You can add at most 5 portfolio links.",
       certificatesMax: "You can add at most 10 certificates.",
       certProof: "Provide a credential URL or upload a certificate PDF.",
+      certDuplicate:
+        "This certificate duplicates another certificate in the list.",
       topicIds: "Please select valid topics.",
       topicIdsMin: "Select at least one teaching topic.",
       topicIdsMax: "Select at most 5 topics.",

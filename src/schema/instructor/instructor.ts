@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeCompositeKey } from "@/lib/instructor-application/search-text";
 import {
   optionalCredentialUrlSchema,
   optionalGitHubUrlSchema,
@@ -68,6 +69,46 @@ export const instructorApplicationSubmitSchema = z.object({
   certificates: z
     .array(instructorCertificateSchema)
     .max(10, { message: "validation.certificatesMax" })
+    .superRefine((certs, ctx) => {
+      const compositeCount = new Map<string, number>();
+      const urlCount = new Map<string, number>();
+      const fileIdCount = new Map<string, number>();
+      const rowKeys: Array<{
+        composite: string;
+        url: string;
+        fileId: string;
+      }> = [];
+      certs.forEach((cert) => {
+        const title = cert.title?.trim() ?? "";
+        if (!title) {
+          rowKeys.push({ composite: "", url: "", fileId: "" });
+          return;
+        }
+        const url = cert.credential_url?.trim() ?? "";
+        const fileId = cert.certificate_file_id?.trim() ?? "";
+        const composite = `${normalizeCompositeKey(title)}|${normalizeCompositeKey(cert.issuer ?? "")}|${cert.issued_year}`;
+        rowKeys.push({ composite, url, fileId });
+        compositeCount.set(composite, (compositeCount.get(composite) ?? 0) + 1);
+        if (url !== "") urlCount.set(url, (urlCount.get(url) ?? 0) + 1);
+        if (fileId !== "")
+          fileIdCount.set(fileId, (fileIdCount.get(fileId) ?? 0) + 1);
+      });
+      certs.forEach((_, index) => {
+        const keys = rowKeys[index];
+        if (!keys.composite) return;
+        const isDuplicate =
+          (compositeCount.get(keys.composite) ?? 0) > 1 ||
+          (keys.url !== "" && (urlCount.get(keys.url) ?? 0) > 1) ||
+          (keys.fileId !== "" && (fileIdCount.get(keys.fileId) ?? 0) > 1);
+        if (isDuplicate) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["certificates", index],
+            message: "validation.certDuplicate",
+          });
+        }
+      });
+    })
     .optional()
     .default([]),
   intro_video_file_id: z
