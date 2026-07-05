@@ -103,7 +103,7 @@ export const instructorApplicationSubmitSchema = z.object({
         if (isDuplicate) {
           ctx.addIssue({
             code: "custom",
-            path: ["certificates", index],
+            path: [index],
             message: "validation.certDuplicate",
           });
         }

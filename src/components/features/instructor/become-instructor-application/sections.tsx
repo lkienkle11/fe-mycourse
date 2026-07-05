@@ -253,18 +253,23 @@ export function CollapsibleSection({
   title,
   optional,
   defaultOpen,
+  expandOnError,
   children,
 }: {
   title: string;
   optional?: boolean;
   defaultOpen?: boolean;
+  /** When true, opens the section once; does not auto-close when it becomes false. */
+  expandOnError?: boolean;
   children: React.ReactNode;
 }) {
   const t = useTranslations("instructor.application.form");
   const [open, setOpen] = useState(defaultOpen ?? false);
+  const resolvedOpen = open || Boolean(expandOnError);
+
   return (
     <Collapsible
-      open={open}
+      open={resolvedOpen}
       onOpenChange={setOpen}
       className="rounded-md border"
     >
@@ -275,7 +280,7 @@ export function CollapsibleSection({
             <p className="text-xs text-muted-foreground">{t("optional")}</p>
           ) : null}
         </div>
-        <span>{open ? "▴" : "▾"}</span>
+        <span>{resolvedOpen ? "▴" : "▾"}</span>
       </CollapsibleTrigger>
       <CollapsibleContent className="px-5 pb-5">{children}</CollapsibleContent>
     </Collapsible>

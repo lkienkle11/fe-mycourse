@@ -287,10 +287,9 @@ export function ApplicationForm({
       </section>
 
       <CollapsibleSection
-        key={hasCertificateErrors ? "certs-open" : "certs"}
         title={t("section4Title")}
         optional
-        defaultOpen={hasCertificateErrors}
+        expandOnError={hasCertificateErrors}
       >
         <CertificateList
           form={form}
