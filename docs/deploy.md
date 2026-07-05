@@ -742,6 +742,16 @@ jobs:
 
 ## Appendix H — Troubleshooting
 
+### `next build` fails: `Can't resolve 'canvas'` (pdfjs-dist)
+
+`pdfjs-dist` optionally `require`s Node package `canvas` for server-side PDF rendering. Turbopack resolves that import during `next build` even though the browser viewer does not use it.
+
+**Fix (already in repo):**
+1. `next.config.ts` → `turbopack.resolveAlias.canvas` → `src/lib/stubs/canvas.ts`
+2. `PreviewPdf` loads `preview-pdf-viewer.tsx` via `next/dynamic` with `{ ssr: false }`
+
+After changing either file, run `npm run build` locally before pushing to `dev`.
+
 ### Next.js app is not reachable
 
 ```bash

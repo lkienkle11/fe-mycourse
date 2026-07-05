@@ -379,6 +379,7 @@ Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i
 | Setting | Value | Why |
 |---------|-------|-----|
 | `turbopack.root` | App directory (`import.meta.url` dirname) | Prevents Turbopack from tracing sibling repos in a multi-root workspace |
+| `turbopack.resolveAlias.canvas` | `src/lib/stubs/canvas.ts` | Stubs optional Node `canvas` import from `pdfjs-dist` so production Turbopack builds succeed |
 | `experimental.turbopackMemoryLimit` | 4 GiB | Caps RAM during long dev sessions |
 | `experimental.turbopackFileSystemCacheForDev` | `false` | Avoids unbounded `.next/dev/cache/turbopack` growth (multi-GB disk + heavy I/O) |
 | `logging.browserToTerminal` | `false` | Stops forwarding browser console to the terminal (less dev-server overhead) |

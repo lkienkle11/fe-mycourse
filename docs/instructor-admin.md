@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-07-03 — PreviewPdf worker CDN URL from `package.json` via `src/lib/pdf-worker-url.ts`; optional `NEXT_PUBLIC_PDF_WORKER_URL`._
+_Last audited: 2026-07-06 — PreviewPdf client-only dynamic import + Turbopack `canvas` stub for CI `next build`._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 

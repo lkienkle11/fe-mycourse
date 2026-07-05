@@ -175,7 +175,7 @@ src/components/
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
 │                           #   DeltaEditor, DeltaEditorLinkDialog, DeltaViewer, SortableList (TouchSensor mobile),
-│                           #   SortableTreeEditor,
+│                           #   SortableTreeEditor, PreviewPdf (dynamic client-only) + preview-pdf-viewer,
 │                           #   SearchBar (stub), ImageFileField
 ├── providers/
 │   └── app-providers.tsx   # SWRConfig + EventsStreamProvider
