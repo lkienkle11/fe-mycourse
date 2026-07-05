@@ -102,7 +102,11 @@ Course authoring / review reuses the same dashboard and API patterns:
 
 Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalsRowActions` reject dialog.
 
-**Audit list (Nhóm B):** Application and profile list/detail responses include `is_disabled` and `email_confirmed` from the joined `users` row. `InstructorUserCell` shows destructive **Disabled** and secondary **Email unconfirmed** badges when applicable. Lists are **not** filtered by picker eligibility — BE sorts **eligible users first** (active, not banned, email confirmed), then by newest submit (`submitted_at DESC` for applications, `updated_at DESC` for profiles); ineligible users appear after eligible rows in the same recency order.
+**Audit list (Nhóm B):** Application and profile list/detail responses include `is_disabled`, `email_confirmed`, `banned_until`, and `is_banned` (server-computed at query time) from the joined `users` row. Lists are **not** filtered by picker eligibility (#2 + #3) — BE sorts **eligible users first** (active, not banned, email confirmed), then by newest submit (`submitted_at DESC` for applications, `updated_at DESC` for profiles); ineligible users appear after eligible rows in the same recency order.
+
+**Approvals status filter:** `InstructorApprovalsPage` status dropdown **All statuses** (`ALL`) omits `status` on `GET /instructor-applications`; BE **excludes `approved`** in that default case. Select **Approved** to pass `status=approved` and list approved applications only. Already-approved rows never show Approve / Reject (only View application and Delete).
+
+**Approvals table columns:** Applicant column shows `display_name` + email via `InstructorUserCell` (never raw `user_id`). A dedicated **User account status** column (`InstructorApplicantUserStatusCell`) shows **Active**, **Disabled**, **Banned until …**, and/or **Email unconfirmed** badges from the list row fields. **Email unconfirmed** uses an amber/yellow badge (`border-amber-200 bg-amber-50 text-amber-950`). `InstructorApprovalsRowActions` shows Approve / Reject only when `review_status` is actionable (`pending` or `returned`) **and** the applicant passes the same #2 + #3 eligibility check used by BE (`isInstructorApplicantEligibleForReview` in `src/lib/instructor-application/applicant-eligibility.ts`). View application and Delete remain available regardless of account status.
 
 ## Validation and API errors
 
