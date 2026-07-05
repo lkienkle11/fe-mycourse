@@ -129,9 +129,11 @@ export function MediaItemCard({
               )}
             </EmptyMedia>
             <EmptyTitle className="text-xs">{t("noPreview")}</EmptyTitle>
-            <EmptyDescription className="text-xs">
-              {file.filename}
-            </EmptyDescription>
+            {file.kind === "VIDEO" || isImage ? (
+              <EmptyDescription className="line-clamp-2 text-xs">
+                {label}
+              </EmptyDescription>
+            ) : null}
           </Empty>
         )}
       </div>
