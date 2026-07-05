@@ -70,6 +70,16 @@ Envelope validation uses existing **`zod`** (see `src/events/core/normalize-inbo
 
 > **Note:** We use **Quill directly** with a thin React wrapper (`DeltaEditor` in `src/components/shared/delta-editor.tsx`), not `react-quill`, because `react-quill@2.0.0` peer-depends on React ≤18 and breaks `npm ci` on React 19 without workarounds. Quill is **not** imported at module top level — `ensureQuillLoaded()` in `src/lib/quill/delta-editor-quill.ts` dynamic-imports Quill + CSS inside `useEffect` so SSR and shared barrel imports (e.g. header `SearchBar` from `@/components/shared`) do not throw `document is not defined`.
 
+### PDF preview (instructor admin)
+
+| Package | Version | Role |
+|---------|---------|------|
+| `@react-pdf-viewer/core` | 3.12.0 | PDF viewer shell — `PreviewPdfViewer` in `src/components/shared/preview-pdf-viewer.tsx` |
+| `@react-pdf-viewer/default-layout` | 3.12.0 | Toolbar, sidebar, zoom plugins for admin CV/certificate preview |
+| `pdfjs-dist` | 3.4.120 | PDF.js runtime (version pinned; worker URL from `src/lib/pdf-worker-url.ts`) |
+
+> **Build note:** `pdfjs-dist` lists optional Node dep `canvas`. Turbopack production builds alias it to `src/lib/stubs/canvas.ts`; `PreviewPdf` uses `next/dynamic` `{ ssr: false }`. Do not import `@react-pdf-viewer/*` or `pdfjs-dist` at module top level outside the viewer file.
+
 ---
 
 ### Internationalization

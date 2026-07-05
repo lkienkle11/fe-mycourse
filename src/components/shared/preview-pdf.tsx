@@ -1,48 +1,29 @@
 "use client";
 
-import { SpecialZoomLevel, Viewer, Worker } from "@react-pdf-viewer/core";
-import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
+import dynamic from "next/dynamic";
 
-import { resolvePdfWorkerUrl } from "@/lib/pdf-worker-url";
-import "@react-pdf-viewer/core/lib/styles/index.css";
-import "@react-pdf-viewer/default-layout/lib/styles/index.css";
+import type { PreviewPdfViewerProps } from "@/components/shared/preview-pdf-viewer";
 
-const PDF_WORKER_URL = resolvePdfWorkerUrl();
+const PreviewPdfViewer = dynamic(
+  () =>
+    import("@/components/shared/preview-pdf-viewer").then(
+      (mod) => mod.PreviewPdfViewer,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[480px] w-full items-center justify-center rounded-md border bg-muted text-sm text-muted-foreground">
+        Loading PDF…
+      </div>
+    ),
+  },
+);
 
-type PreviewPdfProps = {
-  url: string;
-  title?: string;
-  className?: string;
-};
-
-function PreviewPdfViewer({
-  url,
-  title = "PDF preview",
-  className,
-}: PreviewPdfProps) {
-  const defaultLayoutPluginInstance = defaultLayoutPlugin();
-
-  return (
-    <section
-      aria-label={title}
-      className={
-        className ??
-        "h-[480px] w-full overflow-hidden rounded-md border bg-muted"
-      }
-    >
-      <Worker workerUrl={PDF_WORKER_URL}>
-        <Viewer
-          fileUrl={url}
-          plugins={[defaultLayoutPluginInstance]}
-          defaultScale={SpecialZoomLevel.PageWidth}
-        />
-      </Worker>
-    </section>
-  );
-}
+type PreviewPdfProps = PreviewPdfViewerProps;
 
 /**
  * Inline PDF preview via @react-pdf-viewer (toolbar, zoom, sidebar).
+ * Loaded client-only — pdfjs-dist must not run during SSR/Turbopack bundling.
  */
 export function PreviewPdf({ url, ...rest }: PreviewPdfProps) {
   if (!url) return null;

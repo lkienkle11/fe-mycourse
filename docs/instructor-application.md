@@ -1,6 +1,6 @@
 # Instructor application page (user)
 
-_Last audited: 2026-07-05 — SWR focus/reload UX fix + global 3-minute error retry; certificate section UX + inline duplicate errors; BE submit validates PDF media via `GetByID` on `media_files`._
+_Last audited: 2026-07-06 — PreviewPdf client-only dynamic import + Turbopack `canvas` stub for CI `next build`._
 
 Public authenticated page for learners to submit and manage their **instructor application**. Admin review UX remains in [`instructor-admin.md`](./instructor-admin.md).
 
@@ -173,7 +173,9 @@ List/detail for managed profiles and applications use **`latest_submission.profi
 
 ## PDF preview (`PreviewPdf`)
 
-Admin CV / certificate preview uses `src/components/shared/preview-pdf.tsx` — thin wrapper around **`@react-pdf-viewer/core`** + **`@react-pdf-viewer/default-layout`** (toolbar, zoom, sidebar).
+Admin CV / certificate preview uses `src/components/shared/preview-pdf.tsx` — thin wrapper around **`@react-pdf-viewer/core`** + **`@react-pdf-viewer/default-layout`** (toolbar, zoom, sidebar). The heavy viewer lives in `src/components/shared/preview-pdf-viewer.tsx` and is loaded with **`next/dynamic` + `ssr: false`** so `pdfjs-dist` is not evaluated during Turbopack SSR/production bundling.
+
+**Build stub:** `next.config.ts` maps optional Node dependency `canvas` (pulled in by `pdfjs-dist` for server-side rendering paths) to `src/lib/stubs/canvas.ts`. The browser viewer uses the PDF.js worker + DOM canvas only; the stub is never called at runtime.
 
 **Worker URL:** No `public/` copy and no `postinstall` script. Default: **jsDelivr CDN** — `resolvePdfWorkerUrl()` in `src/lib/pdf-worker-url.ts` reads the installed **`pdfjs-dist` version from root `package.json`** (`dependencies.pdfjs-dist`) and builds `https://cdn.jsdelivr.net/npm/pdfjs-dist@{version}/build/pdf.worker.min.js`. Optional override: `NEXT_PUBLIC_PDF_WORKER_URL` (your cloud URL; HTTPS, CORS). Do **not** use Turbopack `?url` imports for the worker — they resolve to `[object Object]` under locale-prefixed routes.
 
