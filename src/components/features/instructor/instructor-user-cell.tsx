@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useTranslations } from "next-intl";
-import { Badge } from "@/components/ui/badge";
+import { InstructorAccountStatusBadges } from "@/components/features/instructor/instructor-account-status-badges";
 import { resolveInstructorDisplayName } from "@/lib/instructor-application/helpers";
 import { pickCharacter } from "@/lib/utils";
 import type { InstructorUserIdentity } from "@/types/instructor";
@@ -26,15 +25,12 @@ export function InstructorUserCell({
   user,
   showAccountBadges = true,
 }: InstructorUserCellProps) {
-  const t = useTranslations("instructor.common");
   const displayName = resolveInstructorDisplayName(user);
   const email = user.email ?? "";
   const avatarUrl = user.avatar ?? "";
   const { label, color, backgroundColor } = pickCharacter(
     displayName || "User",
   );
-  const showDisabled = showAccountBadges && user.is_disabled === true;
-  const showUnconfirmed = showAccountBadges && user.email_confirmed === false;
 
   return (
     <div className="flex min-w-0 items-center gap-3">
@@ -62,15 +58,8 @@ export function InstructorUserCell({
       <div className="min-w-0">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <p className="truncate font-medium">{displayName || "—"}</p>
-          {showDisabled ? (
-            <Badge variant="destructive" className="shrink-0 text-[10px]">
-              {t("badgeDisabled")}
-            </Badge>
-          ) : null}
-          {showUnconfirmed ? (
-            <Badge variant="secondary" className="shrink-0 text-[10px]">
-              {t("badgeEmailUnconfirmed")}
-            </Badge>
+          {showAccountBadges ? (
+            <InstructorAccountStatusBadges user={user} mode="inline" />
           ) : null}
         </div>
         {email ? (
