@@ -19,9 +19,13 @@ export type InstructorUserCellProps = {
       | "email_confirmed"
     >
   >;
+  showAccountBadges?: boolean;
 };
 
-export function InstructorUserCell({ user }: InstructorUserCellProps) {
+export function InstructorUserCell({
+  user,
+  showAccountBadges = true,
+}: InstructorUserCellProps) {
   const t = useTranslations("instructor.common");
   const displayName = resolveInstructorDisplayName(user);
   const email = user.email ?? "";
@@ -29,8 +33,8 @@ export function InstructorUserCell({ user }: InstructorUserCellProps) {
   const { label, color, backgroundColor } = pickCharacter(
     displayName || "User",
   );
-  const showDisabled = user.is_disabled === true;
-  const showUnconfirmed = user.email_confirmed === false;
+  const showDisabled = showAccountBadges && user.is_disabled === true;
+  const showUnconfirmed = showAccountBadges && user.email_confirmed === false;
 
   return (
     <div className="flex min-w-0 items-center gap-3">

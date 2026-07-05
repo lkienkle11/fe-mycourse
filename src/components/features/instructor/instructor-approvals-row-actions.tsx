@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { PERMISSIONS } from "@/constants/permissions";
+import { isInstructorApplicantEligibleForReview } from "@/lib/instructor-application/applicant-eligibility";
 import { toastApiError } from "@/lib/utils/api-error";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import { instructorRejectionReasonSchema } from "@/schema/instructor";
@@ -57,6 +58,8 @@ export function InstructorApprovalsRowActions({
   const isActionable =
     application.review_status === "pending" ||
     application.review_status === "returned";
+  const canReview =
+    isActionable && isInstructorApplicantEligibleForReview(application);
   const reasonLength = reason.trim().length;
   const reasonValid =
     reasonLength >= REJECTION_MIN && reasonLength <= REJECTION_MAX;
@@ -109,7 +112,7 @@ export function InstructorApprovalsRowActions({
         <DeferredDropdownMenuItem onAction={onView}>
           {t("viewProfile")}
         </DeferredDropdownMenuItem>
-        {isActionable ? (
+        {canReview ? (
           <PermissionGate
             permissions={[PERMISSIONS.InstructorApplicationApprove]}
           >
@@ -118,7 +121,7 @@ export function InstructorApprovalsRowActions({
             </DeferredDropdownMenuItem>
           </PermissionGate>
         ) : null}
-        {isActionable ? (
+        {canReview ? (
           <PermissionGate
             permissions={[PERMISSIONS.InstructorApplicationReject]}
           >

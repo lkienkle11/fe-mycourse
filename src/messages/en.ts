@@ -435,6 +435,8 @@ const messages = {
       errorGeneric: "Something went wrong. Please try again.",
       badgeDisabled: "Disabled",
       badgeEmailUnconfirmed: "Email unconfirmed",
+      badgeBannedUntil: "Banned until {date}",
+      userStatusActive: "Active",
     },
     profileView: {
       title: "Instructor profile",
@@ -524,6 +526,7 @@ const messages = {
         id: "ID",
         userId: "User ID",
         user: "Applicant",
+        userStatus: "User status",
         status: "Status",
         submittedAt: "Submitted",
       },

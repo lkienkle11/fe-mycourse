@@ -435,6 +435,8 @@ const messages = {
       errorGeneric: "Đã xảy ra lỗi. Vui lòng thử lại.",
       badgeDisabled: "Đã vô hiệu",
       badgeEmailUnconfirmed: "Chưa xác nhận email",
+      badgeBannedUntil: "Bị cấm đến {date}",
+      userStatusActive: "Hoạt động",
     },
     profileView: {
       title: "Hồ sơ giảng viên",
@@ -524,6 +526,7 @@ const messages = {
         id: "ID",
         userId: "ID người dùng",
         user: "Người nộp đơn",
+        userStatus: "Trạng thái người dùng",
         status: "Trạng thái",
         submittedAt: "Ngày nộp",
       },

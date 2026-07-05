@@ -150,6 +150,8 @@ export type InstructorUserIdentity = {
   email?: string;
   is_disabled?: boolean;
   email_confirmed?: boolean;
+  banned_until?: number | null;
+  is_banned?: boolean;
 };
 
 export type InstructorRosterMember = {

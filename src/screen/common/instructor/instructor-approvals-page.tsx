@@ -14,6 +14,7 @@ import {
   InstructorProfileDeleteFooter,
   InstructorTableSection,
 } from "@/components/features/instructor/instructor-action-controls";
+import { InstructorApplicantUserStatusCell } from "@/components/features/instructor/instructor-applicant-user-status-cell";
 import { InstructorUserCell } from "@/components/features/instructor/instructor-user-cell";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import {
@@ -82,7 +83,14 @@ export function InstructorApprovalsPage() {
       {
         id: "user",
         header: t("columns.user"),
-        cell: (row) => <InstructorUserCell user={row} />,
+        cell: (row) => (
+          <InstructorUserCell user={row} showAccountBadges={false} />
+        ),
+      },
+      {
+        id: "user_status",
+        header: t("columns.userStatus"),
+        cell: (row) => <InstructorApplicantUserStatusCell user={row} />,
       },
       {
         id: "review_status",
