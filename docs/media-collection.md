@@ -78,7 +78,11 @@ New R2 objects use object keys `{user_code}/{8digits}-{filename}` (server-side f
 
 ## Display behavior
 
-- Media items show `file.filename` as the label.
+- Every card uses `file.filename` as the primary label and keeps it emphasized.
+- Image and video cards show the normal preview surface when available.
+- If preview is unavailable for a non-image and non-video file, the card shows the no-preview state without duplicating the filename below it with lighter styling.
+- If preview is unavailable for an image or video file, the card shows the no-preview title together with the filename underneath.
+- The no-preview filename is clamped to **2 lines**; longer text is truncated with an ellipsis and remains visible.
 - **`visibility === "public"`** shows a small **Public** badge (`media.item.publicBadge`) and the uploader **`display_name`** on the card (muted text below the badge; omitted when BE returns an empty name).
 - Selection stores `file.id`; delete uses `file.object_key`.
 
