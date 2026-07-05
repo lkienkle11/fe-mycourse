@@ -7,3 +7,4 @@ export * from "./permission-ids";
 export * from "./permissions";
 export * from "./roles";
 export * from "./route";
+export * from "./swr";

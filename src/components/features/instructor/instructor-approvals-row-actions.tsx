@@ -7,6 +7,8 @@ import {
   approveInstructorApplicationService,
   rejectInstructorApplicationService,
 } from "@/api/callers/instructor";
+import { CourseAdminTableActionsMenu } from "@/components/features/course/course-admin-table-actions-menu";
+import { DeferredDropdownMenuItem } from "@/components/shared/deferred-dropdown-menu-item";
 import { PermissionGate } from "@/components/shared/permission-gate";
 import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { PERMISSIONS } from "@/constants/permissions";
+import { isInstructorApplicantEligibleForReview } from "@/lib/instructor-application/applicant-eligibility";
 import { toastApiError } from "@/lib/utils/api-error";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import { instructorRejectionReasonSchema } from "@/schema/instructor";
@@ -28,18 +31,23 @@ import type { InstructorApplication } from "@/types/instructor";
 const REJECTION_MIN = 1;
 const REJECTION_MAX = 2000;
 
-export type InstructorApprovalActionsProps = {
+export type InstructorApprovalsRowActionsProps = {
   application: InstructorApplication;
+  disabled?: boolean;
+  onView: () => void;
+  onDelete: () => void;
   onSuccess?: () => void | Promise<void>;
-  compact?: boolean;
 };
 
-export function InstructorApprovalActions({
+export function InstructorApprovalsRowActions({
   application,
+  disabled = false,
+  onView,
+  onDelete,
   onSuccess,
-  compact = false,
-}: InstructorApprovalActionsProps) {
+}: InstructorApprovalsRowActionsProps) {
   const t = useTranslations("instructor.approvals");
+  const tc = useTranslations("instructor.common");
   const tValidation = useTranslations("instructor.validation");
   const tErrors = useTranslations("errors.codes");
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -47,7 +55,11 @@ export function InstructorApprovalActions({
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
 
-  const isPending = application.review_status === "pending";
+  const isActionable =
+    application.review_status === "pending" ||
+    application.review_status === "returned";
+  const canReview =
+    isActionable && isInstructorApplicantEligibleForReview(application);
   const reasonLength = reason.trim().length;
   const reasonValid =
     reasonLength >= REJECTION_MIN && reasonLength <= REJECTION_MAX;
@@ -89,37 +101,44 @@ export function InstructorApprovalActions({
     }
   };
 
-  if (!isPending) return null;
-
-  const buttonSize = compact ? "sm" : "default";
+  const busy = disabled || isApproving || isRejecting;
 
   return (
     <>
-      <div className="flex flex-wrap gap-2">
-        <PermissionGate
-          permissions={[PERMISSIONS.InstructorApplicationApprove]}
-        >
-          <Button
-            type="button"
-            size={buttonSize}
-            disabled={isApproving}
-            onClick={() => void handleApprove()}
+      <CourseAdminTableActionsMenu
+        menuLabel={tc("actionsMenu")}
+        disabled={busy}
+      >
+        <DeferredDropdownMenuItem onAction={onView}>
+          {t("viewProfile")}
+        </DeferredDropdownMenuItem>
+        {canReview ? (
+          <PermissionGate
+            permissions={[PERMISSIONS.InstructorApplicationApprove]}
           >
-            {isApproving ? t("approving") : t("approve")}
-          </Button>
-        </PermissionGate>
-        <PermissionGate permissions={[PERMISSIONS.InstructorApplicationReject]}>
-          <Button
-            type="button"
-            size={buttonSize}
-            variant="destructive"
-            disabled={isRejecting}
-            onClick={() => setRejectOpen(true)}
+            <DeferredDropdownMenuItem onAction={() => void handleApprove()}>
+              {isApproving ? t("approving") : t("approve")}
+            </DeferredDropdownMenuItem>
+          </PermissionGate>
+        ) : null}
+        {canReview ? (
+          <PermissionGate
+            permissions={[PERMISSIONS.InstructorApplicationReject]}
           >
-            {t("reject")}
-          </Button>
+            <DeferredDropdownMenuItem
+              variant="destructive"
+              onAction={() => setRejectOpen(true)}
+            >
+              {t("reject")}
+            </DeferredDropdownMenuItem>
+          </PermissionGate>
+        ) : null}
+        <PermissionGate permissions={[PERMISSIONS.InstructorApplicationDelete]}>
+          <DeferredDropdownMenuItem variant="destructive" onAction={onDelete}>
+            {tc("delete")}
+          </DeferredDropdownMenuItem>
         </PermissionGate>
-      </div>
+      </CourseAdminTableActionsMenu>
 
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent>

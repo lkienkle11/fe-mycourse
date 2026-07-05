@@ -1,7 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-06-15 (OUTLINE tab mobile drag reorder fix in shared `SortableList`; no new routes)._
-
+_Last audited: 2026-07-02 (`/{locale}/become-instructor` documented). Prior: OUTLINE tab mobile drag reorder fix._
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
 
@@ -71,6 +70,7 @@ export const config = {
 /[locale]/              → src/app/[locale]/layout.tsx     NextIntlClientProvider + AppProviders
 /[locale]/              → src/app/[locale]/(web)/layout.tsx  Header + main + Footer
 /[locale]/              → src/app/[locale]/(web)/page.tsx    HomePage
+/[locale]/become-instructor → src/app/[locale]/(web)/become-instructor/page.tsx  BecomeInstructorPage
 /[locale]/confirm-email → src/app/[locale]/(web)/confirm-email/page.tsx  Email confirm
 /[locale]/logout        → src/app/[locale]/(web)/logout/page.tsx         Logout
 /[locale]/admin         → src/app/[locale]/admin/layout.tsx   DashboardLayout (admin items)
@@ -147,7 +147,7 @@ src/app/[locale]/
 
 Temporary classification for app navigation:
 
-- **Public routes (no login required):** `PUBLIC_ROUTES.home`, `PUBLIC_ROUTES.forgotPassword`, `PUBLIC_ROUTES.confirmEmail`, `PUBLIC_ROUTES.logout`.
+- **Public routes (no login required):** `PUBLIC_ROUTES.home`, `PUBLIC_ROUTES.forgotPassword`, `PUBLIC_ROUTES.confirmEmail`, `PUBLIC_ROUTES.logout`, `PUBLIC_ROUTES.becomeInstructor` (page requires login at runtime — State A shows login CTA).
 - **Private routes (login required):** all entries under `PRIVATE_ROUTES` (`admin`, `instructor`, `sysadmin`, `account` groups).
 - **Resource routes (dynamic params `:param`):**
   - `PUBLIC_RESOURCE_ROUTES` for public dynamic routes.

@@ -26,6 +26,8 @@ export const MEDIA_VIDEO_EXTENSIONS = [
   ".webm",
 ] as const;
 
+export const MEDIA_PDF_EXTENSIONS = [".pdf"] as const;
+
 export const MEDIA_DOCUMENT_EXTENSIONS = [
   ".pdf",
   ".doc",

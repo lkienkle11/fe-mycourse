@@ -67,4 +67,5 @@ export const PERMISSION_IDS = {
   CourseTrashRestore: "P65",
   CourseTrashDelete: "P66",
   CourseCollaboratorCandidateRead: "P67",
+  InstructorApplicationSubmitBlocked: "P68",
 } as const;

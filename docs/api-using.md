@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-06-17 (course detail `include_outline` + taxonomy `include_images` query params)._
+_Last audited: 2026-07-05 (global SWR error retry interval + become-instructor bootstrap loading). Prior: 2026-06-17 (course detail `include_outline` + taxonomy `include_images` query params)._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -196,6 +196,22 @@ if (!result.success) { /* show error */ }
 ---
 
 ## SWR Hooks Pattern
+
+### Global SWR defaults (`AppProviders`)
+
+`src/components/providers/app-providers.tsx` wraps the app in `SWRConfig` with shared defaults from `src/constants/swr.ts`:
+
+| Option | Value | Purpose |
+|--------|-------|---------|
+| `revalidateOnFocus` | `false` | Avoid refetch storms when the user switches browser tabs |
+| `dedupingInterval` | `30_000` ms | Dedupe identical in-flight keys within 30 s |
+| `errorRetryInterval` | `180_000` ms (3 min) | When SWR retries after a fetch error, wait 3 minutes between attempts (SWR default is 5 s) |
+
+Hooks may override these per subscription. Examples:
+
+- `useAuth` — `revalidateOnFocus: true`, `shouldRetryOnError: false` (session refresh on tab focus; no error retry loop).
+- `useMyInstructorApplication` — inherits global `revalidateOnFocus: false`, `shouldRetryOnError: false`; exposes **bootstrap-only** `isLoading` (see `docs/instructor-application.md`).
+- Hooks that omit `shouldRetryOnError: false` inherit SWR’s default retry-on-error behaviour but use the **3-minute** `errorRetryInterval` instead of 5 seconds.
 
 Use SWR hooks for data that needs to be reactive (e.g. current user state).
 
@@ -442,7 +458,7 @@ import {
 |---------|--------|
 | Direct `axios` calls | Bypasses interceptors — use `apiFetch`/`apiPost`/etc. |
 | Hard-coded API paths | Use constants from `src/constants/api-route.ts` |
-| `rawPost`/`rawFetch` outside `instance.ts` | Reserved for token refresh only |
+| `rawPost`/`rawFetch` outside `instance.ts` | Reserved for token refresh **and** instructor-application third-party combobox sources (`src/lib/instructor-application/remote-data.ts`, `wikidata-company.ts`) — never for private API routes |
 | Manual `Authorization` header | Set automatically by the request interceptor |
 | Showing `response.message` in UI | Use `toastApiError` / `translateApiErrorCode` with `errors.codes.{code}` |
 | Semantic error keys per module (`auth.errors.*` for API) | API errors use numeric `errors.codes.*` only |

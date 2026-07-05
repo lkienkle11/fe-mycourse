@@ -9,7 +9,11 @@ import type {
 import { DataTable } from "@/components/shared/data-table";
 import { PermissionGate } from "@/components/shared/permission-gate";
 import { Button } from "@/components/ui/button";
-import type { InstructorProfilePayload } from "@/types/instructor";
+import type {
+  InstructorApplication,
+  InstructorApplicationProfile,
+  InstructorProfilePayload,
+} from "@/types/instructor";
 import type { PermissionName } from "@/types/permissions";
 import { InstructorListPagination } from "./instructor-list-pagination";
 import { InstructorProfileViewDialog } from "./instructor-profile-view-dialog";
@@ -129,10 +133,13 @@ export function InstructorProfileDeleteActions({
 type InstructorProfileAndDeleteDialogsProps = {
   profileOpen: boolean;
   onProfileOpenChange: (open: boolean) => void;
-  profile: InstructorProfilePayload | null;
+  profile: InstructorApplicationProfile | InstructorProfilePayload | null;
+  application?: InstructorApplication | null;
   fullName?: string;
   avatarUrl?: string;
   profileTitle?: string;
+  profileDialogMaxWidthClassName?: string;
+  profileLoading?: boolean;
   deleteOpen: boolean;
   onDeleteOpenChange: (open: boolean) => void;
   onDeleteConfirm: () => void | Promise<void>;
@@ -145,9 +152,12 @@ export function InstructorProfileAndDeleteDialogs({
   profileOpen,
   onProfileOpenChange,
   profile,
+  application,
   fullName,
   avatarUrl,
   profileTitle,
+  profileDialogMaxWidthClassName,
+  profileLoading = false,
   deleteOpen,
   onDeleteOpenChange,
   onDeleteConfirm,
@@ -161,9 +171,12 @@ export function InstructorProfileAndDeleteDialogs({
         open={profileOpen}
         onOpenChange={onProfileOpenChange}
         profile={profile}
+        application={application}
         fullName={fullName}
         avatarUrl={avatarUrl}
         title={profileTitle}
+        maxWidthClassName={profileDialogMaxWidthClassName}
+        isLoading={profileLoading}
       />
 
       <ConfirmDeleteDialog
@@ -187,10 +200,13 @@ type InstructorProfileDeleteFooterProps = {
   pageOfLabel: string;
   profileOpen: boolean;
   onProfileOpenChange: (open: boolean) => void;
-  profile: InstructorProfilePayload | null;
+  profile: InstructorApplicationProfile | InstructorProfilePayload | null;
+  application?: InstructorApplication | null;
   fullName?: string;
   avatarUrl?: string;
   profileTitle?: string;
+  profileDialogMaxWidthClassName?: string;
+  profileLoading?: boolean;
   deleteOpen: boolean;
   onDeleteOpenChange: (open: boolean) => void;
   onDeleteConfirm: () => void | Promise<void>;
@@ -210,9 +226,12 @@ export function InstructorProfileDeleteFooter({
   profileOpen,
   onProfileOpenChange,
   profile,
+  application,
   fullName,
   avatarUrl,
   profileTitle,
+  profileDialogMaxWidthClassName,
+  profileLoading = false,
   deleteOpen,
   onDeleteOpenChange,
   onDeleteConfirm,
@@ -235,9 +254,12 @@ export function InstructorProfileDeleteFooter({
         profileOpen={profileOpen}
         onProfileOpenChange={onProfileOpenChange}
         profile={profile}
+        application={application}
         fullName={fullName}
         avatarUrl={avatarUrl}
         profileTitle={profileTitle}
+        profileDialogMaxWidthClassName={profileDialogMaxWidthClassName}
+        profileLoading={profileLoading}
         deleteOpen={deleteOpen}
         onDeleteOpenChange={onDeleteOpenChange}
         onDeleteConfirm={onDeleteConfirm}

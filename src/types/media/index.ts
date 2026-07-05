@@ -34,6 +34,9 @@ export type MediaFileMetadata = {
 /** Mirrors BE `UploadFileResponse`. */
 export type MediaFile = {
   id?: string;
+  user_id?: string;
+  display_name?: string;
+  visibility?: "private" | "public";
   kind?: string;
   filename?: string;
   mime_type?: string;

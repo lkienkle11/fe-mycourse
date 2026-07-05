@@ -1,14 +1,17 @@
 # Instructor management (FE)
 
-_Last audited: 2026-06-29 (instructor expertise searchable infinite-scroll dropdowns via shared `SearchableSelect`). Prior: course info tab `include_outline` / `include_images`; shared `DeferredDropdownMenuItem` + outline `modal={false}` for menu→dialog pointer-events fix._
+_Last audited: 2026-07-03 — PreviewPdf worker CDN URL from `package.json` via `src/lib/pdf-worker-url.ts`; optional `NEXT_PUBLIC_PDF_WORKER_URL`._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
+**User application page:** [`instructor-application.md`](./instructor-application.md)
+
 ## Routes
 
-| Screen | Admin | Sysadmin | Instructor role |
-|--------|-------|----------|-----------------|
-| Roster | `/admin/instructors/roster` | `/sysadmin/instructors/roster` | — |
+| Screen | Admin | Sysadmin | Instructor role | Learner (public web) |
+|--------|-------|----------|-----------------|----------------------|
+| **Become instructor** | — | — | — | `/{locale}/become-instructor` |
+| Roster | `/admin/instructors/roster` | `/sysadmin/instructors/roster` | — | — |
 | Applications (approvals) | `/admin/instructors/approvals` | `/sysadmin/instructors/approvals` | — |
 | Profiles | `/admin/instructors/profiles` | `/sysadmin/instructors/profiles` | — |
 | Expertise (topics + skills) | `/admin/instructors/expertise` | `/sysadmin/instructors/expertise` | — |
@@ -20,7 +23,7 @@ Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `
 | Review preview | — | `/sysadmin/courses/reviewing/{courseId}/preview` | — |
 | Course catalog (all / trash) | `/admin/courses/all`, `/admin/courses/trash` | `/sysadmin/courses/all`, `/sysadmin/courses/trash` | — |
 
-Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages). Course review queues are implemented for admin/sysadmin; instructor course authoring is implemented under the instructor dashboard. **Review queue** (`CourseReviewPage`): table columns are course, owner, and version (no status column — the queue only lists pending submissions). Each row uses shared `CourseReviewRowActions` (⋮ menu — sysadmin: Preview / Approve / Reject; admin: Approve / Reject). All/Trash catalog rows use shared `CourseAdminTableActionsMenu` (`modal={false}`); dialog-opening actions use shared `DeferredDropdownMenuItem` + `deferDropdownAction` so the page stays clickable after confirm/approve flows.
+Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages). Course review queues are implemented for admin/sysadmin; instructor course authoring is implemented under the instructor dashboard. **Review queue** (`CourseReviewPage`): table columns are course, owner, and version (no status column — the queue only lists pending submissions). Each row uses shared `CourseReviewRowActions` (⋮ menu — sysadmin: Preview / Approve / Reject; admin: Approve / Reject). All/Trash catalog rows use shared `CourseAdminTableActionsMenu` (`modal={false}`); dialog-opening actions use shared `DeferredDropdownMenuItem` + `deferDropdownAction` so the page stays clickable after confirm/approve flows. **Instructor approvals** (`InstructorApprovalsPage`): each row uses `InstructorApprovalsRowActions` — same ⋮ menu pattern (View application, Approve, Reject, Delete) with `DeferredDropdownMenuItem` for dialog flows; reject reason dialog stays in the row-actions component.
 
 ## Screen layer
 
@@ -54,7 +57,7 @@ Instructor group on **admin** and **sysadmin** (`ADMIN_DASHBOARD_ITEMS` / `SYSAD
 
 Instructor layout authorization now accepts either `instructor:modify` or `course_instructor:read`, so course collaborators are not blocked by the dashboard shell.
 
-## Permissions (P41–P58)
+## Permissions (P41–P58, P68)
 
 Mirror BE `AllPermissions` in `src/constants/permissions.ts` and `PERMISSION_IDS` in `permission-ids.ts`:
 
@@ -62,6 +65,7 @@ Mirror BE `AllPermissions` in `src/constants/permissions.ts` and `PERMISSION_IDS
 |------|-----------------------------|
 | Roster | `instructor_roster:read`, `:create`, `:delete` |
 | Applications | `instructor_application:read`, `:create`, `:update`, `:delete`, `:approve`, `:reject` |
+| Submit block | `instructor_application:submit_blocked` (P68) — State B on become-instructor page **after** G/H ruled out (see [`instructor-application.md`](./instructor-application.md)) |
 | Profiles | `instructor_profile:read`, `:create`, `:update`, `:delete` |
 | Expertise | `instructor_expertise:read`, `:create`, `:delete` |
 | Ticket close | `instructor_ticket:close` (instructor role on `/instructor/tickets`) |
@@ -96,13 +100,19 @@ Course authoring / review reuses the same dashboard and API patterns:
 
 **Submit for review** (`handleSubmitReview`): **only rendered for `OWNER`** (`canManageReviewWorkflow` in `editor-page.tsx`). Clicking **Submit for review** opens `ConfirmActionDialog` (`course.editor.submitConfirm`) explaining that editing is locked until approval or rejection; on confirm, calls `validateCourseSubmitReadiness` (from `src/lib/utils/course.ts`) before the API. Returns `boolean` — dialog closes when POST submit succeeds even if a follow-up `refreshDetail()` fails (refresh is best-effort; failure toasts `course.editor.toast.refreshAfterSubmitFailed`). Validation checks (in order): draft version present, basic info schema passes (`courseBasicInfoSchema`), ≥1 collaborator, ≥1 section, each section ≥1 lesson, each lesson ≥1 sub-lesson, and each sub-lesson content valid. Sub-lesson rules: VIDEO must have `media_file_id`, TEXT must have ≥1 non-whitespace character, QUIZ must not be `is_preview`, must have prompt, ≥1 option, ≥1 correct answer, and single-choice quizzes must not mark more than one option correct. All failures surface as i18n keys in `course.validation.*`; see `src/messages/{en,vi}.ts`. QUIZ content rules are schema-backed via `courseQuizOptionSchema` in `src/schema/course/course.ts`. BE also enforces owner-only on `POST …/submit-review` (`403` / code `3003` for `EDITOR`). Detailed flow in [`docs/logic-flow.md` §11](./logic-flow.md).
 
-Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalActions`.
+Reject application requires `rejection_reason` (1–2000 chars) via `InstructorApprovalsRowActions` reject dialog.
+
+**Audit list (Nhóm B):** Application and profile list/detail responses include `is_disabled`, `email_confirmed`, `banned_until`, and `is_banned` (server-computed at query time) from the joined `users` row. Lists are **not** filtered by picker eligibility (#2 + #3) — BE sorts **eligible users first** (active, not banned, email confirmed), then by newest submit (`submitted_at DESC` for applications, `updated_at DESC` for profiles); ineligible users appear after eligible rows in the same recency order.
+
+**Approvals status filter:** `InstructorApprovalsPage` status dropdown **All statuses** (`ALL`) omits `status` on `GET /instructor-applications`; BE **excludes `approved`** in that default case. Select **Approved** to pass `status=approved` and list approved applications only. Already-approved rows never show Approve / Reject (only View application and Delete).
+
+**Approvals table columns:** Applicant column shows `display_name` + email via `InstructorUserCell` (never raw `user_id`). A dedicated **User account status** column (`InstructorApplicantUserStatusCell`) shows **Active**, **Disabled**, **Banned until …**, and/or **Email unconfirmed** badges from the list row fields via shared `InstructorAccountStatusBadges` (same badge renderer as inline badges on `InstructorUserCell` when `showAccountBadges` is enabled). **Email unconfirmed** uses an amber/yellow badge (`border-amber-200 bg-amber-50 text-amber-950`) on the status column; inline user-cell badges use the secondary variant. `InstructorApprovalsRowActions` shows Approve / Reject only when `review_status` is actionable (`pending` or `returned`) **and** the applicant passes the same #2 + #3 eligibility check used by BE (`isInstructorApplicantEligibleForReview` in `src/lib/instructor-application/applicant-eligibility.ts`). View application and Delete remain available regardless of account status.
 
 ## Validation and API errors
 
 - **Schemas**: `src/schema/instructor/instructor.ts` — email, rejection reason, expertise topic/skill, ticket subject/message.
 - **Validation namespace**: `instructor.validation.*` in `src/messages/{en,vi}.ts`.
-- **Required fields UI**: `RequiredLabel` on rejection reason (`InstructorApprovalActions`), expertise topic/skill pickers (`InstructorExpertisePage`), ticket subject/message (`InstructorTicketsPage`).
+- **Required fields UI**: `RequiredLabel` on rejection reason (`InstructorApprovalsRowActions`), expertise topic/skill pickers (`InstructorExpertisePage`), ticket subject/message (`InstructorTicketsPage`).
 - **Pre-submit validation**: Zod `safeParse` + `toastValidationError` before API (email, rejection reason, topic_id, skill_id, ticket subject/body).
 - **Pre-submit**: `instructorEmailSchema`, `instructorRejectionReasonSchema`, `instructorTicketSchema` — toast `instructor.validation.*` on failure.
 - **API failures**: all roster/approvals/expertise/tickets/profiles catches → `toastApiError(tErrors, error)`; do not use `instructor.common.errorGeneric` for API responses.
@@ -113,9 +123,9 @@ Reject application requires `rejection_reason` (1–2000 chars) via `InstructorA
 
 | Component | Purpose |
 |-----------|---------|
-| `InstructorProfileViewDialog` | Read-only profile popup (approvals / roster / profiles) with identity block (`full_name`, `avatar` + fallback) |
+| `InstructorProfileViewDialog` | Read-only profile popup (approvals / roster / profiles). Title uses applicant `display_name` (merge list row + detail via `mergeInstructorApplicationDetail`). **Field order:** bio → **CV** (`PreviewPdf`, when `cv_file.url` present) → years of experience → current job title → current company → optional Wikidata company fields (domain, description, location) → LinkedIn → GitHub → topic chips → skill chips → portfolio link list → **certificates** (`InstructorCertificateCarousel`: one certificate per slide; prev/next when more than one; credential URL centered under issuer/year; optional PDF via `PreviewPdf`) → intro video filename → rejection history (applications only). **No `headline` field** in dialog (not collected on apply). **Profiles list** column `current_job_title` label: **Role** / **Vai trò** (`instructor.profiles.columns.currentJobTitle`). **Profile view dialog** label: **Current job title** / **Chức danh hiện tại** (`instructor.profileView.currentJobTitle`) — distinct from system role/permission wording. |
 | `InstructorRosterPickerDialog` | Multi-select roster add dialog (search, pagination, responsive overflow) backed by `GET /instructors/roster-candidates` |
-| `InstructorApprovalActions` | Approve / reject (reason required) / delete application |
+| `InstructorApprovalsRowActions` | Approvals table ⋮ menu: view profile, approve, reject (dialog), delete — reuses `CourseAdminTableActionsMenu` + `DeferredDropdownMenuItem` |
 
 Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `SearchableSelect` + `useSearchablePaginatedOptions` for expertise pickers.
 
@@ -131,16 +141,18 @@ Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `Searchable
 ## Identity rendering
 
 - Roster table includes an `Avatar` column.
+- **Approvals, profiles, and admin tickets** use `InstructorUserCell` — avatar + `display_name` + `email` (no raw `id` / `user_id` columns).
 - Avatar rendering rule is shared across instructor screens:
   - use API `avatar` URL when present
-  - otherwise fallback to generated initials via `pickCharacter(full_name)`.
+  - otherwise fallback to generated initials via `pickCharacter(full_name | display_name)`.
+- Ticket message thread (admin **and** instructor dialogs) shows `author_full_name` + optional `author_email` per message from BE — not `author_user_id`.
 
 ## Tickets UX
 
-| Actor | Page | Close ticket | Post message when closed |
-|-------|------|--------------|---------------------------|
-| Admin / sysadmin | `InstructorTicketsAdminPage` | No | No |
-| Instructor | `InstructorTicketsPage` | Yes (`instructor_ticket:close`) | Composer disabled when `status === "closed"` |
+| Actor | Page | Thread message meta | Close ticket | Post message when closed |
+|-------|------|---------------------|--------------|---------------------------|
+| Admin / sysadmin | `InstructorTicketsAdminPage` | `author_full_name` + `author_email` (`instructor.tickets.messageMeta`) | No | No |
+| Instructor | `InstructorTicketsPage` | Same as admin thread pattern | Yes (`instructor_ticket:close`) | Composer disabled when `status === "closed"` |
 
 ## i18n
 
@@ -148,14 +160,30 @@ Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `Searchable
 - API errors: global `errors.codes.*` (not under `instructor.*`).
 - Sidebar labels: `dashboard.instructor.menu.*` (same keys as taxonomy uses `dashboard.taxonomy.menu.*`).
 
+## Admin enhancements (ADM-01–03)
+
+Implemented upgrades to `instructor-approvals-page.tsx` (prototype: `code-temp/admin.ts`):
+
+| Task | Component / change |
+|------|-------------------|
+| ADM-01 | `InstructorUserCell` — avatar + `display_name` + `email` on approvals, profiles, and admin tickets lists |
+| ADM-02 | `PreviewPdf` + `InstructorProfileViewDialog` — read-only popup on approvals, roster, and profiles. Dialog title: `Profile — {name}` from merged list row + detail identity. **Field order:** bio (Giới thiệu) → **CV** (`PreviewPdf`, after bio, before years of experience) → years of experience → current job title → current company → optional company domain / description / location → LinkedIn → GitHub → topic chips → skill chips → portfolio links → **certificates** horizontal carousel (`InstructorCertificateCarousel`: one certificate per slide; navigation when multiple; credential URL link centered) → intro video → rejection history on application view only. **No `headline` field** in dialog or profiles list (field not collected on new applications). **Profiles table** column `current_job_title` label **Role** / **Vai trò**; dialog field label **Current job title** / **Chức danh hiện tại**. |
+| ADM-03 | Filter `returned` status, list refresh after approve/reject |
+
+**Approve → expertise:** On successful approve, BE copies application junction `topic_ids` / `skill_ids` into `instructor_expertise_*` for the applicant `user_id`. Admin expertise page uses roster picker `id` (= user UUID) with `GET /instructors/:id/expertise/topics|skills`.
+
+**Profile view APIs:** `GET /api/v1/instructor-applications/:id`; `GET /api/v1/instructor-profiles/:userId`. FE: `useInstructorApplicationDetail`, `useInstructorProfileDetail`.
+
+List/detail consume BE identity + snapshot fields from migration **`000029`** contract.
+
 ## Out of scope (FE)
 
-- Public “become instructor” page (BE submit API exists; no marketing route).
-- Assignments / activity log (BE stubs → toast “coming soon” when wired).
+- Assignments / activity log (BE stubs → toast "coming soon" when wired).
 - Public learner course storefront and learner lesson player UI.
 
 ## Related docs
 
 - BE contract: `be-mycourse/docs/modules/instructor.md`
+- User application page: [`instructor-application.md`](./instructor-application.md)
 - FE routes: [`router.md`](./router.md), [`pages.md`](./pages.md), [`screens.md`](./screens.md)
-- Quality gate: [`quality.md`](./quality.md), `temporary-docs/tieu-chuan-check-be-fe/fe-mycourse.md`
+- Quality gate: [`quality.md`](./quality.md)
