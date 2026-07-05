@@ -124,8 +124,12 @@ Me mutation callers (ready for account-settings UI):
 ```
 
 **SWR revalidation triggers:**
-- Window focus (automatic)
+- Window focus — **`useAuth` only** (`revalidateOnFocus: true` in `useAuth.ts`). Global `SWRConfig` sets `revalidateOnFocus: false` for all other hooks unless a hook opts in.
 - `mutateMe()` called explicitly after login/logout
+
+**SWR error retry (global):** `AppProviders` sets `errorRetryInterval: 180_000ms` (3 min). Hooks with `shouldRetryOnError: false` (e.g. `useAuth`, `useMyInstructorApplication`) do not auto-retry. Other hooks inherit the 3-minute interval instead of SWR’s default 5-second retry.
+
+**Become-instructor:** `useMyInstructorApplication` does not revalidate on focus and returns bootstrap-only `isLoading` so `BecomeInstructorPage` keeps the form mounted when the user returns to the tab.
 
 ---
 

@@ -1,5 +1,6 @@
 export const PUBLIC_ROUTES = {
   home: "/",
+  becomeInstructor: "/become-instructor",
   forgotPassword: "/forgot-password",
   confirmEmail: "/confirm-email",
   logout: "/logout",

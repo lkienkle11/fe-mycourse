@@ -168,7 +168,7 @@ src/components/
 │   │                       # CourseOutlineTab, CourseOutlineRowActions, CourseCollaboratorsTab,
 │   │                       # Course*Dialog helpers; grouped tab prop objects (`state` / `data|taxonomyRows` / `actions`)
 │   ├── taxonomy/           # TaxonomyFormDialog (mount init from initialData; persistedSlug slug preview), tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
-│   ├── instructor/         # InstructorProfileViewDialog, ConfirmAddInstructorDialog, InstructorApprovalActions,
+│   ├── instructor/         # InstructorProfileViewDialog, InstructorApprovalsRowActions,
 │   │                       # InstructorListPagination, instructor action/footer helpers,
 │   │                       # shared instructor course editor route adapter for app pages
 │   └── media/              # MediaCollectionDialog, MediaUploadDialog, MediaItemCard, MediaTabPanel
@@ -208,7 +208,7 @@ src/api/
 │                           #   Response: token refresh mutex, error reporting
 ├── axios-helpers.ts        # normalizeHeaders, parseSetCookies, buildAxiosConfigWithCookies (methods + raw-http)
 ├── methods.ts              # apiFetch / apiPost / apiPut / apiPatch / apiDelete / apiOptions → ApiResult<T>
-├── raw-http.ts             # rawFetch / rawPost / … plain Axios (used by doTokenRefresh only)
+├── raw-http.ts             # rawFetch / rawPost / … plain Axios (token refresh + instructor-application third-party fetches)
 ├── cache.ts                # Dual-layer cache (IndexedDB + Map) — implemented but currently not wired in methods.ts
 ├── callers/
 │   ├── auth/

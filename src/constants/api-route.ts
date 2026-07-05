@@ -41,6 +41,8 @@ export const API_PRIVATE_ROUTES = {
     expertiseSkills: "/api/v1/instructors/:id/expertise/skills",
     expertiseSkillByRow: "/api/v1/instructors/:id/expertise/skills/:skillRowId",
     applications: "/api/v1/instructor-applications",
+    applicationMe: "/api/v1/instructor-applications/me",
+    applicationContactAdmin: "/api/v1/instructor-applications/contact-admin",
     applicationById: "/api/v1/instructor-applications/:id",
     applicationApprove: "/api/v1/instructor-applications/:id/approve",
     applicationReject: "/api/v1/instructor-applications/:id/reject",

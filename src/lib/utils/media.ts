@@ -6,6 +6,7 @@ import {
   MEDIA_MAX_BYTES_PER_FILE,
   MEDIA_MAX_BYTES_PER_REQUEST,
   MEDIA_MAX_FILES_PER_REQUEST,
+  MEDIA_PDF_EXTENSIONS,
   MEDIA_VIDEO_EXTENSIONS,
 } from "@/constants/media/file-rules";
 import type {
@@ -36,6 +37,23 @@ export function getMediaTabExtensions(tab: MediaTab): readonly string[] {
 export function isExecutableExtension(filename: string): boolean {
   const lower = filename.toLowerCase();
   return MEDIA_EXECUTABLE_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+export function isPdfMedia(
+  file: Pick<MediaFile, "mime_type" | "filename">,
+): boolean {
+  const mime = (file.mime_type ?? "").toLowerCase();
+  if (mime === "application/pdf") return true;
+  const lower = (file.filename ?? "").toLowerCase();
+  return MEDIA_PDF_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+export function fileMatchesExtensions(
+  filename: string,
+  allowedExtensions: readonly string[],
+): boolean {
+  const lower = filename.toLowerCase();
+  return allowedExtensions.some((ext) => lower.endsWith(ext));
 }
 
 export function mediaTabToCategory(tab: MediaTab): MediaCategory {
@@ -95,18 +113,25 @@ export function parseMediaSortOption(
 }
 
 export type MediaUploadValidationIssue = {
-  code: "too_many" | "file_too_large" | "total_too_large" | "executable";
+  code:
+    | "too_many"
+    | "file_too_large"
+    | "total_too_large"
+    | "executable"
+    | "invalid_extension";
   /** i18n key under `media.validation` namespace. */
   messageKey:
     | "tooMany"
     | "fileTooLarge"
     | "totalTooLarge"
-    | "executableRejected";
+    | "executableRejected"
+    | "invalidExtension";
 };
 
 export function validateMediaUploadBatch(
   files: File[],
   tab: MediaTab,
+  allowedExtensions?: readonly string[],
 ): MediaUploadValidationIssue | null {
   if (files.length > MEDIA_MAX_FILES_PER_REQUEST) {
     return { code: "too_many", messageKey: "tooMany" };
@@ -117,6 +142,14 @@ export function validateMediaUploadBatch(
       return { code: "file_too_large", messageKey: "fileTooLarge" };
     }
     total += file.size;
+    if (allowedExtensions?.length) {
+      if (!fileMatchesExtensions(file.name, allowedExtensions)) {
+        return {
+          code: "invalid_extension",
+          messageKey: "invalidExtension",
+        };
+      }
+    }
     if (tab === "document" && isExecutableExtension(file.name)) {
       return { code: "executable", messageKey: "executableRejected" };
     }

@@ -22,7 +22,7 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Legacy tree pkg | @nosferatu500/react-sortable-tree | 5.x | Installed; taxonomy form uses `SortableTreeEditor` (@dnd-kit) instead |
 | Forms | react-hook-form + zod | 7.x / 4.x | `@hookform/resolvers` bridges the two |
 | i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` |
-| Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup) for hooks under the provider; `useAuth` sets its own SWR options |
+| Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup, **3 min** `errorRetryInterval`) for hooks under the provider; `useAuth` sets its own SWR options |
 | HTTP client | Axios | 1.x | Shared instance with request/response interceptors |
 | Global state | Zustand | 5.x | Provider-free stores (auth, me, stream event log) |
 | Realtime (client) | BroadcastChannel, SSE, WebSocket, NDJSON fetch | — | See [`docs/delivery.md`](./delivery.md) |
@@ -315,7 +315,9 @@ When multiple concurrent client requests are **eligible for silent refresh** (ex
 
 ### 5. SWR for Current User
 
-`useAuth` uses SWR to cache the `GET /api/v1/me` response with options defined in `src/api/hooks/auth/useAuth.ts` (including `shouldRetryOnError: false` and hook-level `revalidateOnFocus`). `AppProviders` wraps the app in `SWRConfig` with `revalidateOnFocus: false` and a 30-second dedup interval; `MeSwrSync` (a null-render child) calls `useSyncMeFromAuth` **inside** that provider so the internal `useAuth` shares the same client SWR context as the rest of the subtree. After a successful login, `login-content.tsx` invokes **`mutateMe()`** from `useGetMe()` to refresh the Zustand `/me` slice immediately.
+`useAuth` uses SWR to cache the `GET /api/v1/me` response with options defined in `src/api/hooks/auth/useAuth.ts` (including `shouldRetryOnError: false` and hook-level `revalidateOnFocus: true`). `AppProviders` wraps the app in `SWRConfig` with `revalidateOnFocus: false`, a 30-second dedup interval, and a **3-minute** `errorRetryInterval` (constants in `src/constants/swr.ts`) so hooks that allow error retry do not hammer the BE every 5 seconds. `MeSwrSync` (a null-render child) calls `useSyncMeFromAuth` **inside** that provider so the internal `useAuth` shares the same client SWR context as the rest of the subtree. After a successful login, `login-content.tsx` invokes **`mutateMe()`** from `useGetMe()` to refresh the Zustand `/me` slice immediately.
+
+`useMyInstructorApplication` intentionally does **not** revalidate on focus and exposes bootstrap-only `isLoading` so `BecomeInstructorPage` does not unmount the form when the user returns to the tab. See `docs/instructor-application.md`.
 
 ### 6. Zustand for UI State
 

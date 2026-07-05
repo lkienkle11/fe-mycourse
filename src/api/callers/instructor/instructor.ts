@@ -1,4 +1,5 @@
-import { apiDelete, apiFetch, apiPatch, apiPost } from "@/api/methods";
+import type { AxiosError } from "axios";
+import { apiDelete, apiFetch, apiPatch, apiPost, apiPut } from "@/api/methods";
 import { API_PRIVATE_ROUTES } from "@/constants/api-route";
 import { apiListQueryToRecord, buildQueryParams } from "@/lib/utils";
 import type {
@@ -12,6 +13,8 @@ import type {
   AddRosterBulkPayload,
   AddRosterBulkResult,
   AddTicketMessagePayload,
+  ContactInstructorAdminPayload,
+  ContactInstructorAdminResponse,
   CreateTicketPayload,
   InstructorApplication,
   InstructorExpertiseSkill,
@@ -23,7 +26,9 @@ import type {
   InstructorTicket,
   InstructorTicketListFilters,
   InstructorTicketMessage,
+  MyInstructorApplication,
   RejectApplicationPayload,
+  SubmitInstructorApplicationPayload,
   UpsertProfileResponse,
 } from "@/types/instructor";
 import type {
@@ -118,6 +123,64 @@ export function getInstructorApplicationsListKey(
   return buildQueryParams(routes.applications, listQueryToRecord(filters));
 }
 
+export function getMyInstructorApplicationKey(): string {
+  return routes.applicationMe;
+}
+
+export async function getMyInstructorApplicationService(): Promise<MyInstructorApplication | null> {
+  try {
+    const { data } = await apiFetch<ApiResponse<MyInstructorApplication>>(
+      routes.applicationMe,
+    );
+    return data.data ?? null;
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiResponse<unknown>>;
+    if (axiosError.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export async function submitInstructorApplicationService(
+  payload: SubmitInstructorApplicationPayload,
+): Promise<MyInstructorApplication> {
+  const { data } = await apiPost<
+    ApiResponse<MyInstructorApplication>,
+    SubmitInstructorApplicationPayload
+  >(routes.applications, payload);
+  if (!data.data) {
+    throw new Error(data.message || "Failed to submit application");
+  }
+  return data.data;
+}
+
+export async function resubmitInstructorApplicationService(
+  payload: SubmitInstructorApplicationPayload,
+): Promise<MyInstructorApplication> {
+  const { data } = await apiPut<
+    ApiResponse<MyInstructorApplication>,
+    SubmitInstructorApplicationPayload
+  >(routes.applicationMe, payload);
+  if (!data.data) {
+    throw new Error(data.message || "Failed to resubmit application");
+  }
+  return data.data;
+}
+
+export async function contactInstructorAdminService(
+  payload: ContactInstructorAdminPayload,
+): Promise<ContactInstructorAdminResponse> {
+  const { data } = await apiPost<
+    ApiResponse<ContactInstructorAdminResponse>,
+    ContactInstructorAdminPayload
+  >(routes.applicationContactAdmin, payload);
+  if (!data.data) {
+    throw new Error(data.message || "Failed to contact admin");
+  }
+  return data.data;
+}
+
 export async function listInstructorApplicationsService(
   filters: InstructorListFilters = {},
 ): Promise<ApiPaginatedData<InstructorApplication[]>> {
@@ -128,6 +191,22 @@ export async function listInstructorApplicationsService(
   if (!data.data)
     throw new Error(data.message || "Failed to load applications");
   return data.data;
+}
+
+export function getInstructorApplicationDetailKey(id: string): string {
+  const url = buildQueryParams(routes.applicationById, undefined, {
+    id: String(id),
+  });
+  if (!url) throw new Error("Invalid application URL");
+  return url;
+}
+
+export function getInstructorProfileDetailKey(userId: string): string {
+  const url = buildQueryParams(routes.profileByUser, undefined, {
+    id: String(userId),
+  });
+  if (!url) throw new Error("Invalid profile URL");
+  return url;
 }
 
 export async function getInstructorApplicationService(

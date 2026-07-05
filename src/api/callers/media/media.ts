@@ -30,11 +30,15 @@ export async function listMediaFiles(
   return data.data;
 }
 
-export async function uploadMediaFiles(files: File[]): Promise<MediaFile[]> {
+export async function uploadMediaFiles(
+  files: File[],
+  options?: { visibility?: "private" | "public" },
+): Promise<MediaFile[]> {
   const form = new FormData();
   for (const file of files) {
     form.append("files", file);
   }
+  form.append("visibility", options?.visibility ?? "private");
   const { data } = await apiInstance.post<ApiResponse<MediaFile[]>>(
     API_PRIVATE_ROUTES.media.files,
     form,

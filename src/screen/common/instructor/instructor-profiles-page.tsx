@@ -4,15 +4,24 @@ import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { deleteInstructorProfileService } from "@/api/callers/instructor";
-import { useInstructorProfilesList } from "@/api/hooks/instructor";
+import {
+  useInstructorProfileDetail,
+  useInstructorProfilesList,
+} from "@/api/hooks/instructor";
 import {
   buildInstructorPageFooterFromInfo,
   InstructorProfileDeleteActions,
   InstructorProfileDeleteFooter,
   InstructorTableSection,
 } from "@/components/features/instructor/instructor-action-controls";
+import { InstructorUserCell } from "@/components/features/instructor/instructor-user-cell";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { PERMISSIONS } from "@/constants/permissions";
+import {
+  mergeInstructorApplicationDetail,
+  resolveInstructorApplicationProfile,
+  resolveInstructorDisplayName,
+} from "@/lib/instructor-application/helpers";
 import { toastApiError } from "@/lib/utils/api-error";
 import type {
   InstructorListFilters,
@@ -29,6 +38,7 @@ export function InstructorProfilesPage() {
   });
   const [profileOpen, setProfileOpen] = useState(false);
   const [selected, setSelected] = useState<InstructorProfile | null>(null);
+  const [viewUserId, setViewUserId] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<InstructorProfile | null>(
     null,
@@ -37,6 +47,13 @@ export function InstructorProfilesPage() {
 
   const { rows, pageInfo, isLoading, mutate } =
     useInstructorProfilesList(filters);
+  const { data: detailProfile, isLoading: detailLoading } =
+    useInstructorProfileDetail(profileOpen ? viewUserId : null);
+  const displayProfile = useMemo(
+    () => mergeInstructorApplicationDetail(selected, detailProfile),
+    [selected, detailProfile],
+  );
+  const applicantDisplayName = resolveInstructorDisplayName(displayProfile);
   const footerProps = buildInstructorPageFooterFromInfo(
     pageInfo,
     filters.page ?? 1,
@@ -54,16 +71,16 @@ export function InstructorProfilesPage() {
 
   const columns = useMemo<DataTableColumn<InstructorProfile>[]>(
     () => [
-      { id: "id", header: t("columns.id"), cell: (row) => row.id },
       {
-        id: "user_id",
-        header: t("columns.userId"),
-        cell: (row) => row.user_id,
+        id: "user",
+        header: t("columns.user"),
+        cell: (row) => <InstructorUserCell user={row} />,
       },
       {
-        id: "headline",
-        header: t("columns.headline"),
-        cell: (row) => row.profile.headline || "—",
+        id: "current_job_title",
+        header: t("columns.currentJobTitle"),
+        cell: (row) =>
+          resolveInstructorApplicationProfile(row)?.current_job_title || "—",
       },
     ],
     [t],
@@ -99,6 +116,7 @@ export function InstructorProfilesPage() {
             viewLabel={t("view")}
             onView={() => {
               setSelected(row);
+              setViewUserId(row.user_id);
               setProfileOpen(true);
             }}
             deletePermission={PERMISSIONS.InstructorProfileDelete}
@@ -114,13 +132,20 @@ export function InstructorProfilesPage() {
       <InstructorProfileDeleteFooter
         {...footerProps}
         profileOpen={profileOpen}
-        onProfileOpenChange={setProfileOpen}
-        profile={selected?.profile ?? null}
-        fullName={selected?.full_name}
-        avatarUrl={selected?.avatar}
+        onProfileOpenChange={(open) => {
+          setProfileOpen(open);
+          if (!open) {
+            setViewUserId(null);
+          }
+        }}
+        profile={resolveInstructorApplicationProfile(displayProfile)}
+        application={displayProfile}
+        fullName={applicantDisplayName}
+        avatarUrl={displayProfile?.avatar}
         profileTitle={t("profileTitle", {
-          id: String(selected?.user_id ?? ""),
+          name: applicantDisplayName,
         })}
+        profileLoading={detailLoading}
         deleteOpen={deleteOpen}
         onDeleteOpenChange={setDeleteOpen}
         onDeleteConfirm={handleDelete}

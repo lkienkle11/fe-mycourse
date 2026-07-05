@@ -62,6 +62,7 @@ export {
   getMediaEmbedFilesFromDataTransfer,
   hasMediaEmbedFilesInDataTransfer,
   isImageMedia,
+  isPdfMedia,
   mediaTabToCategory,
   parseMediaSortOption,
   resolveMediaCollectionDefaultTab,

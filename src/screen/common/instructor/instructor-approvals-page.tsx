@@ -4,14 +4,18 @@ import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { deleteInstructorApplicationService } from "@/api/callers/instructor";
-import { useInstructorApplicationsList } from "@/api/hooks/instructor";
-import { InstructorApprovalActions } from "@/components/features/instructor";
+import {
+  useInstructorApplicationDetail,
+  useInstructorApplicationsList,
+} from "@/api/hooks/instructor";
+import { InstructorApprovalsRowActions } from "@/components/features/instructor";
 import {
   buildInstructorPageFooterFromInfo,
-  InstructorProfileDeleteActions,
   InstructorProfileDeleteFooter,
   InstructorTableSection,
 } from "@/components/features/instructor/instructor-action-controls";
+import { InstructorApplicantUserStatusCell } from "@/components/features/instructor/instructor-applicant-user-status-cell";
+import { InstructorUserCell } from "@/components/features/instructor/instructor-user-cell";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import {
   Select,
@@ -20,7 +24,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PERMISSIONS } from "@/constants/permissions";
+import {
+  mergeInstructorApplicationDetail,
+  resolveInstructorApplicationProfile,
+  resolveInstructorDisplayName,
+} from "@/lib/instructor-application/helpers";
 import { toastApiError } from "@/lib/utils/api-error";
 import type {
   InstructorApplication,
@@ -38,6 +46,9 @@ export function InstructorApprovalsPage() {
   });
   const [profileOpen, setProfileOpen] = useState(false);
   const [selected, setSelected] = useState<InstructorApplication | null>(null);
+  const [viewApplicationId, setViewApplicationId] = useState<string | null>(
+    null,
+  );
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] =
     useState<InstructorApplication | null>(null);
@@ -45,6 +56,13 @@ export function InstructorApprovalsPage() {
 
   const { rows, pageInfo, isLoading, mutate } =
     useInstructorApplicationsList(filters);
+  const { data: detailApplication, isLoading: detailLoading } =
+    useInstructorApplicationDetail(profileOpen ? viewApplicationId : null);
+  const displayApplication = useMemo(
+    () => mergeInstructorApplicationDetail(selected, detailApplication),
+    [selected, detailApplication],
+  );
+  const applicantDisplayName = resolveInstructorDisplayName(displayApplication);
   const footerProps = buildInstructorPageFooterFromInfo(
     pageInfo,
     filters.page ?? 1,
@@ -62,11 +80,17 @@ export function InstructorApprovalsPage() {
 
   const columns = useMemo<DataTableColumn<InstructorApplication>[]>(
     () => [
-      { id: "id", header: t("columns.id"), cell: (row) => row.id },
       {
-        id: "user_id",
-        header: t("columns.userId"),
-        cell: (row) => row.user_id,
+        id: "user",
+        header: t("columns.user"),
+        cell: (row) => (
+          <InstructorUserCell user={row} showAccountBadges={false} />
+        ),
+      },
+      {
+        id: "user_status",
+        header: t("columns.userStatus"),
+        cell: (row) => <InstructorApplicantUserStatusCell user={row} />,
       },
       {
         id: "review_status",
@@ -75,6 +99,14 @@ export function InstructorApprovalsPage() {
           const key = row.review_status as InstructorReviewStatus;
           return t(`status.${key}`);
         },
+      },
+      {
+        id: "submitted_at",
+        header: t("columns.submittedAt"),
+        cell: (row) =>
+          row.submitted_at
+            ? new Date(row.submitted_at * 1000).toLocaleDateString()
+            : "—",
       },
     ],
     [t],
@@ -98,6 +130,7 @@ export function InstructorApprovalsPage() {
       <SelectContent>
         <SelectItem value="ALL">{t("statusAll")}</SelectItem>
         <SelectItem value="pending">{t("status.pending")}</SelectItem>
+        <SelectItem value="returned">{t("status.returned")}</SelectItem>
         <SelectItem value="approved">{t("status.approved")}</SelectItem>
         <SelectItem value="rejected">{t("status.rejected")}</SelectItem>
       </SelectContent>
@@ -120,6 +153,9 @@ export function InstructorApprovalsPage() {
     }
   };
 
+  const selectedProfile =
+    resolveInstructorApplicationProfile(displayApplication);
+
   return (
     <div className="flex flex-col gap-4">
       <InstructorTableSection
@@ -140,39 +176,45 @@ export function InstructorApprovalsPage() {
         onFilterByChange={() => {}}
         filterByLabel={tc("filterBy")}
         renderActions={(row) => (
-          <InstructorProfileDeleteActions
-            direction="column"
-            viewLabel={t("viewProfile")}
+          <InstructorApprovalsRowActions
+            application={row}
             onView={() => {
               setSelected(row);
+              setViewApplicationId(row.id);
               setProfileOpen(true);
             }}
-            deletePermission={PERMISSIONS.InstructorApplicationDelete}
-            deleteLabel={tc("delete")}
             onDelete={() => {
               setDeleteTarget(row);
               setDeleteOpen(true);
             }}
-          >
-            <InstructorApprovalActions
-              application={row}
-              compact
-              onSuccess={async () => {
-                await mutate();
-              }}
-            />
-          </InstructorProfileDeleteActions>
+            onSuccess={async () => {
+              await mutate();
+              if (selected?.id === row.id) {
+                setProfileOpen(false);
+                setSelected(null);
+              }
+            }}
+          />
         )}
       />
 
       <InstructorProfileDeleteFooter
         {...footerProps}
         profileOpen={profileOpen}
-        onProfileOpenChange={setProfileOpen}
-        profile={selected?.profile ?? null}
-        fullName={selected?.full_name}
-        avatarUrl={selected?.avatar}
-        profileTitle={t("profileTitle", { id: String(selected?.id ?? "") })}
+        onProfileOpenChange={(open) => {
+          setProfileOpen(open);
+          if (!open) {
+            setViewApplicationId(null);
+          }
+        }}
+        profile={selectedProfile}
+        application={displayApplication}
+        fullName={applicantDisplayName}
+        avatarUrl={displayApplication?.avatar}
+        profileTitle={t("profileTitle", {
+          name: applicantDisplayName,
+        })}
+        profileLoading={detailLoading}
         deleteOpen={deleteOpen}
         onDeleteOpenChange={setDeleteOpen}
         onDeleteConfirm={handleDelete}

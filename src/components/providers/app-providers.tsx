@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { SWRConfig } from "swr";
 import { AuthConfirmTabSync } from "@/components/providers/auth-confirm-tab-sync";
 import { AuthLogoutTabSync } from "@/components/providers/auth-logout-tab-sync";
+import { DEFAULT_SWR_CONFIG } from "@/constants/swr";
 import { EventsStreamProvider } from "@/events";
 import { useSyncMeFromAuth } from "@/hooks/auth";
 import { useSyncLanguageFromLocale } from "@/hooks/language";
@@ -24,12 +25,7 @@ function LanguageLocaleSync() {
 
 export function AppProviders({ children }: AppProvidersProps) {
   return (
-    <SWRConfig
-      value={{
-        revalidateOnFocus: false,
-        dedupingInterval: 30 * 1000,
-      }}
-    >
+    <SWRConfig value={DEFAULT_SWR_CONFIG}>
       <EventsStreamProvider>
         <MeSwrSync />
         <LanguageLocaleSync />
