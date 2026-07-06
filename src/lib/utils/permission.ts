@@ -54,6 +54,23 @@ export function hasAnyPermission(
   return names.some((name) => set.has(name));
 }
 
+const ELEVATED_ROLE_MODIFY_PERMISSIONS: readonly PermissionName[] = [
+  PERMISSIONS.SysadminModify,
+  PERMISSIONS.AdminModify,
+  PERMISSIONS.InstructorModify,
+];
+
+/**
+ * Learner-only surface: may apply to become instructor (P45) without elevated
+ * role-modify permissions (P38/P39/P40). Does not use role names from `/me`.
+ */
+export function isLearnerUser(set: ReadonlySet<string>): boolean {
+  if (!hasPermission(set, PERMISSIONS.InstructorApplicationCreate)) {
+    return false;
+  }
+  return !hasAnyPermission(set, ...ELEVATED_ROLE_MODIFY_PERMISSIONS);
+}
+
 /**
  * Config-driven check: empty/omitted permissions => visible.
  * `permissionMode` defaults to `"all"` (mirrors BE `RequirePermission`).

@@ -71,6 +71,11 @@ const messages = {
       writing: "Viết lách",
       writingDesc: "Viết nội dung và Viết quảng cáo",
     },
+    promoBanner: {
+      message: "Bạn muốn trở thành giảng viên ?",
+      cta: "Đăng ký ngay",
+      close: "Đóng banner",
+    },
   },
   commonFooter: {
     brand: "MyCourse.io",

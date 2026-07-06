@@ -70,6 +70,11 @@ const messages = {
       writing: "Writing",
       writingDesc: "Content Writing and Copywriting",
     },
+    promoBanner: {
+      message: "Want to become an instructor?",
+      cta: "Apply now",
+      close: "Close banner",
+    },
   },
   commonFooter: {
     brand: "MyCourse.io",

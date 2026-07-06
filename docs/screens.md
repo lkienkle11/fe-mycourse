@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-07-02 (become-instructor page implemented). Prior: course version badges, reject-fork draft._
+_Last audited: 2026-07-06 (BecomeInstructorPromoBanner in web layout). Prior: become-instructor page implemented (2026-07-02)._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -90,7 +90,7 @@ src/app/layout.tsx                          Root layout
     │   <AppProviders>                      → `SWRConfig` + `MeSwrSync` + `LanguageLocaleSync` + stream/auth tab sync + `children`
     │
     ├── src/app/[locale]/(web)/layout.tsx   Web shell layout
-    │     <Header /> + <main> + <Footer /> → HomePage, confirm-email, logout
+    │     <BecomeInstructorPromoBanner /> + <Header /> + <main> + <Footer /> → HomePage, become-instructor, confirm-email, logout
     ├── src/app/[locale]/admin/layout.tsx   DashboardLayout (admin items, `admin:modify`)
     ├── src/app/[locale]/instructor/layout.tsx
     └── src/app/[locale]/sysadmin/layout.tsx
@@ -99,7 +99,7 @@ src/app/layout.tsx                          Root layout
 Each layout layer adds a concern without re-rendering the parent:
 - **Root:** HTML scaffold, fonts, toast notifications.
 - **Locale:** i18n provider, global SWR configuration.
-- **Web shell:** Site chrome (`Header`), page body (`<main>{children}</main>`), site footer (`Footer`).
+- **Web shell:** Site chrome (`BecomeInstructorPromoBanner` when learner + not dismissed, then `Header`), page body (`<main>{children}</main>`), site footer (`Footer`).
 - **Dashboard shells:** `DashboardLayout` (sidebar + `HeaderDashboard`), no site `Footer`.
 
 ---
@@ -165,12 +165,23 @@ NotFoundPage (server)
 
 ## Global Chrome
 
+### BecomeInstructorPromoBanner
+
+**File:** `src/components/common/header/become-instructor-promo-banner.tsx` — client component mounted in `(web)/layout.tsx` **above** `Header`.
+
+- **Who sees it:** logged-in learner-only users (`isLearnerUser`: **P45**, not **P38**/**P39**/**P40**).
+- **Route hide:** not rendered on `PUBLIC_ROUTES.becomeInstructor` (learner apply page has its own hero).
+- **Layout:** `fixed top-0 z-20` visual layer + in-flow spacer (`40px`) so `Header` and `<main>` content start below the banner without changing banner `fixed`/`top` or header `sticky`/`top` classes. Sets `--site-promo-banner-height` for header stick offset.
+
 ### Header
 
 **File:** `src/components/common/header/header.tsx` — async Server Component.
 
 ```
-Header (src/components/common/header/header.tsx)
+(web)/layout.tsx
+├── BecomeInstructorPromoBanner (client, learner-only, optional)
+└── Header (src/components/common/header/header.tsx)
+    sticky top-[var(--site-promo-banner-height,0px)] z-20
 ├── Desktop row (lg+): hidden below lg via `lg:flex`
 │     Logo + site title (getTranslations("home") → t("header.title"))
 │     HeaderBrowseNav (browse-nav.tsx) — NavigationMenu flyout, N-column hover cascade
