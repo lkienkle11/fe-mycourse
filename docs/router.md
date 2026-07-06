@@ -128,8 +128,11 @@ src/app/[locale]/
 | `/vi/admin/courses/all` | `[locale]/admin/courses/all/page.tsx` | `CourseAdminAllPage` | ✅ Implemented |
 | `/vi/admin/courses/reviewing` | `[locale]/admin/courses/reviewing/page.tsx` | `CourseReviewPage` (`scope="admin"`) | ✅ Implemented |
 | `/vi/admin/courses/trash` | `[locale]/admin/courses/trash/page.tsx` | `CourseAdminTrashPage` | ✅ Implemented |
-| `/vi/admin/instructors/{roster,approvals,profiles,expertise,tickets}` | `admin/instructors/*/page.tsx` | Shared instructor screens | ✅ Implemented |
+| `/vi/admin/instructors/{roster,approvals,expertise,tickets}` | `admin/instructors/*/page.tsx` | Shared instructor screens | ✅ Implemented |
+| `/vi/admin/instructors/roster?portfolioId={userId}` | same (`InstructorRosterPage`) | Deep link — auto-opens profile modal when profile exists | ✅ Implemented |
+| `/vi/admin/instructors/profiles` | `admin/instructors/profiles/page.tsx` | Redirect → roster (preserves `portfolioId`) | ✅ Implemented |
 | `/vi/sysadmin/instructors/*` | `sysadmin/instructors/*/page.tsx` | Shared instructor screens | ✅ Implemented |
+| `/vi/sysadmin/instructors/roster?portfolioId={userId}` | same | Same deep link as admin roster | ✅ Implemented |
 | `/vi/sysadmin` | `[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` | ✅ Shell + placeholder |
 | `/vi/sysadmin/courses` | `[locale]/sysadmin/courses/page.tsx` | Redirect → `/sysadmin/courses/all` | ✅ Implemented |
 | `/vi/sysadmin/courses/all` | `[locale]/sysadmin/courses/all/page.tsx` | `CourseAdminAllPage` | ✅ Implemented |

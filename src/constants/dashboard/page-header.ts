@@ -4,7 +4,6 @@ import {
   adminCoursesTrashHref,
   adminInstructorsApprovalsHref,
   adminInstructorsExpertiseHref,
-  adminInstructorsProfilesHref,
   adminInstructorsRosterHref,
   adminInstructorsTicketsHref,
   adminRootHref,
@@ -21,7 +20,6 @@ import {
   sysadminCoursesTrashHref,
   sysadminInstructorsApprovalsHref,
   sysadminInstructorsExpertiseHref,
-  sysadminInstructorsProfilesHref,
   sysadminInstructorsRosterHref,
   sysadminInstructorsTicketsHref,
   sysadminRootHref,
@@ -176,10 +174,6 @@ export const DASHBOARD_PAGE_HEADER_ROUTES: DashboardHeaderRouteEntry[] = [
     titleKey: "instructor.approvals.title",
   },
   {
-    match: adminInstructorsProfilesHref,
-    titleKey: "instructor.profiles.title",
-  },
-  {
     match: adminInstructorsExpertiseHref,
     titleKey: "instructor.expertise.title",
     descriptionKey: "instructor.expertise.description",
@@ -195,10 +189,6 @@ export const DASHBOARD_PAGE_HEADER_ROUTES: DashboardHeaderRouteEntry[] = [
   {
     match: sysadminInstructorsApprovalsHref,
     titleKey: "instructor.approvals.title",
-  },
-  {
-    match: sysadminInstructorsProfilesHref,
-    titleKey: "instructor.profiles.title",
   },
   {
     match: sysadminInstructorsExpertiseHref,
