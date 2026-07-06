@@ -20,10 +20,13 @@ export function useInstructorProfilesList(filters: InstructorListFilters) {
   );
 }
 
-export function useInstructorProfileDetail(userId: string | null) {
+export function useInstructorProfileDetail(
+  userId: string | null,
+  options?: Parameters<typeof useApiDetailQuery<InstructorProfile>>[2],
+) {
   return useApiDetailQuery<InstructorProfile>(
     userId ? getInstructorProfileDetailKey(userId) : null,
     () => getInstructorProfileByUserService(userId as string),
-    { revalidateOnFocus: false },
+    { revalidateOnFocus: false, ...options },
   );
 }

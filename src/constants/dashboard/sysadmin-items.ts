@@ -11,7 +11,6 @@ import {
   sysadminCoursesTrashHref,
   sysadminInstructorsApprovalsHref,
   sysadminInstructorsExpertiseHref,
-  sysadminInstructorsProfilesHref,
   sysadminInstructorsRosterHref,
   sysadminInstructorsTicketsHref,
   sysadminRolesHref,
@@ -162,14 +161,6 @@ export const SYSADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         href: sysadminInstructorsApprovalsHref,
         icon: INSTRUCTOR_MENU_ICONS.approvals,
         permissions: [PERMISSIONS.InstructorApplicationRead],
-      },
-      {
-        id: "sysadmin-instructors-profiles",
-        title: "Profiles",
-        titleKey: "instructor.menu.profiles",
-        href: sysadminInstructorsProfilesHref,
-        icon: INSTRUCTOR_MENU_ICONS.profiles,
-        permissions: [PERMISSIONS.InstructorProfileRead],
       },
       {
         id: "sysadmin-instructors-expertise",

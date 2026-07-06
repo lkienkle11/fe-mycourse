@@ -11,7 +11,6 @@ import {
   adminCoursesTrashHref,
   adminInstructorsApprovalsHref,
   adminInstructorsExpertiseHref,
-  adminInstructorsProfilesHref,
   adminInstructorsRosterHref,
   adminInstructorsTicketsHref,
   adminRootHref,
@@ -154,14 +153,6 @@ export const ADMIN_DASHBOARD_ITEMS: DashboardItem[] = [
         href: adminInstructorsApprovalsHref,
         icon: INSTRUCTOR_MENU_ICONS.approvals,
         permissions: [PERMISSIONS.InstructorApplicationRead],
-      },
-      {
-        id: "admin-instructors-profiles",
-        title: "Profiles",
-        titleKey: "instructor.menu.profiles",
-        href: adminInstructorsProfilesHref,
-        icon: INSTRUCTOR_MENU_ICONS.profiles,
-        permissions: [PERMISSIONS.InstructorProfileRead],
       },
       {
         id: "admin-instructors-expertise",

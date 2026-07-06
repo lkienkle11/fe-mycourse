@@ -474,6 +474,7 @@ const messages = {
       searchPlaceholder: "Search by name or email…",
       viewProfile: "View profile",
       profileNotFound: "No profile found for this instructor.",
+      profileTitle: "Profile — {name}",
       columns: {
         avatar: "Avatar",
         name: "Name",
@@ -700,7 +701,8 @@ const messages = {
     },
     profiles: {
       title: "Instructor profiles",
-      view: "View",
+      view: "View profile",
+      profileNotFound: "Instructor profile not found.",
       profileTitle: "Profile — {name}",
       deleteTitle: "Delete profile?",
       deleteDescription: "Remove this instructor profile?",
