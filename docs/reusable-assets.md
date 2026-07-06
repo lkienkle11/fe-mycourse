@@ -265,10 +265,10 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `PermissionRequirement` from `src/types/permissions/`.
 
 ### Asset: Permission utils (`hasPermission`, `hasAllPermissions`, …)
-- **Name**: `toPermissionSet`, `hasPermission`, `hasAllPermissions`, `hasAnyPermission`, `satisfiesPermissions`, `canShowWithPermissions`, `filterPermissionNavTree`, `filterUserMenuItems`, `filterUserMenuGroups`, `parsePermissionName`, `permissionNameFromId`, `permissionIdFromName`, `PERMISSION_NAME_TO_ID`, …
+- **Name**: `toPermissionSet`, `hasPermission`, `hasAllPermissions`, `hasAnyPermission`, `satisfiesPermissions`, `isLearnerUser`, `canShowWithPermissions`, `filterPermissionNavTree`, `filterUserMenuItems`, `filterUserMenuGroups`, `parsePermissionName`, `permissionNameFromId`, `permissionIdFromName`, `PERMISSION_NAME_TO_ID`, …
 - **Type**: Pure functions
 - **Path**: `src/lib/utils/permission.ts` (barrel: `@/lib/utils`)
-- **Purpose**: Client-safe permission checks; `PERMISSION_NAME_TO_ID` is the bidirectional name ↔ id map for admin UI. `hasAllPermissions` / default `satisfiesPermissions` mode mirror BE `RequirePermission` (AND). Empty/omitted `permissions` on a requirement ⇒ allow. `filterPermissionNavTree` bottom-up filters nested nav: recurse children first; leaves with `href` require `satisfiesPermissions`; branch nodes without `href` stay when any permitted descendant remains. `filterUserMenuGroups` deep-filters items per group and drops empty groups (no group pre-gate).
+- **Purpose**: Client-safe permission checks; `PERMISSION_NAME_TO_ID` is the bidirectional name ↔ id map for admin UI. `hasAllPermissions` / default `satisfiesPermissions` mode mirror BE `RequirePermission` (AND). Empty/omitted `permissions` on a requirement ⇒ allow. `isLearnerUser` — logged-in learner surface: has **P45** (`instructor_application:create`), lacks **P38**/**P39**/**P40** (`*:modify` role permissions); does not use `ROLES` or `/me` role fields. `filterPermissionNavTree` bottom-up filters nested nav: recurse children first; leaves with `href` require `satisfiesPermissions`; branch nodes without `href` stay when any permitted descendant remains. `filterUserMenuGroups` deep-filters items per group and drops empty groups (no group pre-gate).
 - **Scope**: Hooks, menu filtering, server/client guards, admin tooling.
 - **Dependencies**: `PERMISSIONS`, `PERMISSION_IDS`, permission types, `UserMenuGroup` from `src/types/user-menu.ts`.
 
@@ -829,6 +829,11 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Path**: `src/lib/auth/pending-tab-auth-sync.ts`, `src/hooks/auth/use-auth-confirm-tab-sync.ts`
 - **Purpose**: Defer page reload on background tabs until `visibilitychange` → `visible` after `confirm_success` broadcast.
 - **Scope**: `AuthConfirmTabSync` in `AppProviders`.
+
+### Asset: become-instructor-banner dismiss storage
+- **Path**: `src/lib/become-instructor-banner/dismiss-storage.ts`
+- **Purpose**: `localStorage` helpers for site-wide learner promo banner (`mycourse:become_instructor_banner_dismissed`); `useSyncExternalStore` subscribe/getSnapshot/serverSnapshot pair + `dismissBecomeInstructorBanner`, exported `BECOME_INSTRUCTOR_PROMO_BANNER_HEIGHT_PX`.
+- **Scope**: `BecomeInstructorPromoBanner` in `(web)` layout.
 
 ### Asset: setAuthSessionCookies
 - **Name**: `setAuthSessionCookies(input: SetAuthSessionCookiesInput): Promise<void>`

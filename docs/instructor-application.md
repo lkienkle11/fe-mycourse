@@ -1,6 +1,6 @@
 # Instructor application page (user)
 
-_Last audited: 2026-07-06 — PreviewPdf client-only dynamic import + Turbopack `canvas` stub for CI `next build`._
+_Last audited: 2026-07-06 — Site-wide learner promo banner above Header + `isLearnerUser` permission helper. Prior: PreviewPdf client-only dynamic import + Turbopack `canvas` stub for CI `next build`._
 
 Public authenticated page for learners to submit and manage their **instructor application**. Admin review UX remains in [`instructor-admin.md`](./instructor-admin.md).
 
@@ -16,6 +16,17 @@ Public authenticated page for learners to submit and manage their **instructor a
 
 - Layout: `(web)` — site `Header` + `Footer` (same as home).
 - Route constant: `PUBLIC_ROUTES.becomeInstructor` → `"/become-instructor"` in `src/constants/route.ts`.
+
+### Site-wide promo banner (learner users)
+
+`BecomeInstructorPromoBanner` (`src/components/common/header/become-instructor-promo-banner.tsx`) mounts in `(web)/layout.tsx` **above** `Header`.
+
+| Concern | Behaviour |
+|---------|-----------|
+| Visibility | Logged-in **learner-only** users (`isLearnerUser` in `src/lib/utils/permission.ts`: **P45** present, **P38**/**P39**/**P40** absent). Hidden for guests and elevated roles. **Not shown on `PUBLIC_ROUTES.becomeInstructor`** — learner is already on the apply page. |
+| Layout | `fixed top-0 z-20` promo layer unchanged; adds an in-flow **spacer** (`BECOME_INSTRUCTOR_PROMO_BANNER_HEIGHT_PX`) so `Header` and page `<main>` shift down in document flow. Sets `--site-promo-banner-height` so `Header` `sticky top-[var(--site-promo-banner-height,0px)]` sticks below the banner when scrolling. |
+| CTA | Link to `PUBLIC_ROUTES.becomeInstructor` — i18n `commonHeader.promoBanner.message` / `commonHeader.promoBanner.cta`. |
+| Dismiss | `localStorage` key `mycourse:become_instructor_banner_dismissed` via `src/lib/become-instructor-banner/dismiss-storage.ts`; per-browser until key removed. |
 
 ---
 
