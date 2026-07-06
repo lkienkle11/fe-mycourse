@@ -77,6 +77,7 @@ export {
   hasAllPermissions,
   hasAnyPermission,
   hasPermission,
+  isLearnerUser,
   isPermissionAction,
   isReadPermission,
   isWritePermission,
