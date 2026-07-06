@@ -1,6 +1,6 @@
 # Instructor application page (user)
 
-_Last audited: 2026-07-06 — Site-wide learner promo banner above Header + `isLearnerUser` permission helper. Prior: PreviewPdf client-only dynamic import + Turbopack `canvas` stub for CI `next build`._
+_Last audited: 2026-07-06 — Wikidata filter: allow video-game **companies** (developer/publisher/studio); block game **titles** only; `allSettled` vi/en fetch; merge prefers description-passing locale (Riot Games). Prior: prefix-match + token suffix for Samsung/PayPal._
 
 Public authenticated page for learners to submit and manage their **instructor application**. Admin review UX remains in [`instructor-admin.md`](./instructor-admin.md).
 
@@ -159,12 +159,21 @@ Port from `code-temp/` — HTTP via **`rawFetch`** from `src/api/raw-http.ts` (t
 | Live job search | `https://api.hh.ru/suggests/vacancy_search_keyword?text=` | merge + dedupe |
 | Live company | Wikidata `wbsearchentities` + SPARQL | `wikidata-company.ts` |
 
+**Wikidata company search filtering** (`wikidata-company.ts`):
+
+1. `wbsearchentities` (vi + en via `Promise.allSettled` — one locale failing does not abort the other; merged, deduped by QID).
+2. **Pre-SPARQL text filter** on each hit (before type SPARQL):
+   - **Description denylist** — drop persons, disambiguation, music/songs/albums, Wikinews, software libraries, stadiums, communes, bands, YouTubers, documentaries, awards, payment-method products, informal groups, browser extensions, etc. **Video games:** block descriptions that name a **game title** (e.g. `2016 video game`); **allow** game **companies** (`video game developer`, `publisher`, `studio`, `company` — e.g. **Riot Games**).
+   - **Label relevance** — `normalizeDedupeKey` compare: exact label = best; label **starts with** query allowed unless a **remainder token** hits the suffix denylist (`mafia`, `park`, `honey`, `holdings`, `galaxy`, `branch`, `sdk`, `credit`, …) — matched by whole tokens, not substring (avoids blocking `Samsung Electronics`). Weak substring-only labels rejected. **Prefix matches are kept** even when an exact label also exists (e.g. query `samsung` → Samsung Electronics, Samsung Group). **Merged vi/en hits:** when the same QID appears in both locales, prefer the variant that passes the description filter, then higher label relevance (`Samsung Group` over `Tập đoàn Samsung`; English `Riot Games` when vi search fails).
+   - **Alias matches** (`match.type === "alias"`) — kept only when the **label** also has strong relevance (exact label match). Alias-only hits like “Bill Me Later” (alias “PayPal Credit”) are dropped for query `paypal`.
+3. **SPARQL type filter** — instance-of / subclass-of company-like types (business, enterprise, corporation, university, …).
+4. **Enrichment SPARQL** — official website (domain) + headquarters label.
+5. **Score + sort** — exact label, domain, location, description, search rank; **dedupe by normalized label** (keep highest score).
+
 **Session caches:**
 
 - Dataset load cache in `remote-data.ts` (full JSON once per session).
 - **Query cache** in `combobox.ts` — keyed by normalized query string; repeated focus/type with same query does not re-hit third-party APIs.
-
-Merge semantics: Wikidata + Cloudflare by domain/alias; fallback id prefix `fallback:` / `local:`; source note by search state.
 
 **Company combobox contract:**
 
