@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
-import { Footer, Header } from "@/components/common";
+import {
+  BecomeInstructorPromoBanner,
+  Footer,
+  Header,
+} from "@/components/common";
 
 type WebLayoutProps = {
   children: ReactNode;
@@ -9,6 +13,7 @@ type WebLayoutProps = {
 export default async function WebLayout({ children }: WebLayoutProps) {
   return (
     <>
+      <BecomeInstructorPromoBanner />
       <Header />
       <main>{children}</main>
       <Footer />

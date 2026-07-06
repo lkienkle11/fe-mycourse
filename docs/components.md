@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-06-29 (SearchableSelect + useSearchablePaginatedOptions for expertise dropdowns)._
+_Last audited: 2026-07-06 (BecomeInstructorPromoBanner above site Header for learner users)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -110,7 +110,8 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 | Component | File | Type | Description |
 |-----------|------|------|-------------|
-| `Header` | `header.tsx` | Server | Sticky `z-20` (same band as `HeaderDashboard`). Desktop row (`lg+`) + `HeaderMobileBar`. Brand logo/title navigates home via shared `homeHref` helper. `LoginSignupPopup` mounted after `</header>`. |
+| `BecomeInstructorPromoBanner` | `become-instructor-promo-banner.tsx` | Client | Fixed `top-0 z-20` promo strip **above** the site `Header` on `(web)` routes only. Visible when the user is logged in and permission checks resolve to **learner-only** (`isLearnerUser` in `src/lib/utils/permission.ts`: has **P45** `instructor_application:create`, lacks **P38**/**P39**/**P40** role-modify permissions). **Hidden on `PUBLIC_ROUTES.becomeInstructor`** (learner is already on the apply page). Hidden for guests, instructors, admins, and sysadmins. Centered message with link to `PUBLIC_ROUTES.becomeInstructor`; close (`X`) on the right persists dismiss in `localStorage` key `mycourse:become_instructor_banner_dismissed` (`src/lib/become-instructor-banner/dismiss-storage.ts`). When visible, renders a **flow spacer** (`height: BECOME_INSTRUCTOR_PROMO_BANNER_HEIGHT_PX`) after the fixed layer so `Header` and page content shift down in document flow; also sets CSS variable `--site-promo-banner-height` on `document.documentElement` so `Header` sticks below the banner (`sticky top-[var(--site-promo-banner-height,0px)]`). i18n: `commonHeader.promoBanner.*`. |
+| `Header` | `header.tsx` | Server | Sticky `top-[var(--site-promo-banner-height,0px)] z-20` (same band as `HeaderDashboard` when no promo banner). Desktop row (`lg+`) + `HeaderMobileBar`. Brand logo/title navigates home via shared `homeHref` helper. `LoginSignupPopup` mounted after `</header>`. |
 | `HeaderBrowseNav` | `browse-nav.tsx` | Client | Desktop-only (`lg+`) browse flyout (`NavigationMenu`). N-column hover via `activeStack`; private helper `MenuColumn`. |
 | `HeaderMobileBar` | `header-mobile-bar.tsx` | Client | Below `lg`: logo + burger opening `HeaderMobileSidebar`. Logo `Link` uses shared `homeHref`. |
 | `HeaderMobileSidebar` | `header-mobile-sidebar.tsx` | Client | Portal overlay `z-200`, panel `z-202`, `h-dvh`, slides from **right** (no Radix Sheet). Body: `overflow-y-auto` + `SearchBar` (`visibility="sidebar"`) + `BrowseSidebarMenu` + footer (`LocaleSwitcher`, `SidebarAuthFooter`). Locks `document.body` overflow while open; `Escape` closes. |
@@ -118,7 +119,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `SidebarAuthFooter` | `sidebar-auth-footer.tsx` | Client | Guest `AuthButton` or avatar + `UserMenuDropdownItems`. |
 | `LocaleSwitcher` | `locale-switcher.tsx` | Client | `usePathname()` + `Link` from `@/i18n/navigation` — switches locale **on the current path** (not hard-coded `/`). `useCustomLanguage()` for trigger label; props: `useCodeLabelLanguage`, `fullWidth`, `onNavigate`, optional `currentLabel`. Not re-exported from `header/index.ts`. |
 
-**`header/index.ts` barrel:** `HeaderBrowseNav`, `Header`, `HeaderDashboard`, `HeaderMobileBar`, `HeaderMobileSidebar`, `SidebarAuthFooter`.
+**`header/index.ts` barrel:** `BecomeInstructorPromoBanner`, `HeaderBrowseNav`, `Header`, `HeaderDashboard`, `HeaderMobileBar`, `HeaderMobileSidebar`, `SidebarAuthFooter`.
 
 | `HeaderDashboard` | `header-dashboard.tsx` | Client | Dashboard top bar (`h-16`, `z-20`): optional `leading` (e.g. mobile burger) + logo/title (`md+`) + optional `trailing` (locale slot from `DashboardLayout`) + `AuthLayout`. Logo/title uses shared `navigateToHome(router)` helper. Does **not** embed `LocaleSwitcher` itself. |
 
