@@ -93,14 +93,6 @@ export function InstructorApprovalsPage() {
         cell: (row) => <InstructorApplicantUserStatusCell user={row} />,
       },
       {
-        id: "review_status",
-        header: t("columns.status"),
-        cell: (row) => {
-          const key = row.review_status as InstructorReviewStatus;
-          return t(`status.${key}`);
-        },
-      },
-      {
         id: "submitted_at",
         header: t("columns.submittedAt"),
         cell: (row) =>
@@ -131,7 +123,6 @@ export function InstructorApprovalsPage() {
         <SelectItem value="ALL">{t("statusAll")}</SelectItem>
         <SelectItem value="pending">{t("status.pending")}</SelectItem>
         <SelectItem value="returned">{t("status.returned")}</SelectItem>
-        <SelectItem value="approved">{t("status.approved")}</SelectItem>
         <SelectItem value="rejected">{t("status.rejected")}</SelectItem>
       </SelectContent>
     </Select>
@@ -168,7 +159,7 @@ export function InstructorApprovalsPage() {
         filterByOptions={[
           {
             value: "status",
-            label: t("columns.status"),
+            label: t("statusAll"),
             customInputComponent: statusFilter,
           },
         ]}
