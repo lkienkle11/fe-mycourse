@@ -2,19 +2,24 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   addInstructorRosterBulkService,
   deleteInstructorRosterService,
-  getInstructorProfileByUserService,
 } from "@/api/callers/instructor";
-import { useInstructorRosterList } from "@/api/hooks/instructor";
-import { InstructorRosterPickerDialog } from "@/components/features/instructor";
+import {
+  useInstructorProfileDetail,
+  useInstructorRosterList,
+} from "@/api/hooks/instructor";
+import {
+  InstructorRosterPickerDialog,
+  InstructorRosterRowActions,
+} from "@/components/features/instructor";
 import {
   buildInstructorPageFooterFromInfo,
-  InstructorProfileDeleteActions,
-  InstructorProfileDeleteFooter,
+  InstructorPageFooter,
+  InstructorProfileAndDeleteDialogs,
   InstructorTableSection,
 } from "@/components/features/instructor/instructor-action-controls";
 import type { DataTableColumn } from "@/components/shared/data-table";
@@ -22,12 +27,17 @@ import { PermissionGate } from "@/components/shared/permission-gate";
 import { Button } from "@/components/ui/button";
 import { PERMISSIONS } from "@/constants/permissions";
 import { useRegisterDashboardPageHeader } from "@/hooks/dashboard";
+import { useInstructorRosterPortfolioQuery } from "@/hooks/instructor/use-instructor-roster-portfolio-query";
+import {
+  mergeInstructorApplicationDetail,
+  resolveInstructorApplicationProfile,
+  resolveInstructorDisplayName,
+} from "@/lib/instructor-application/helpers";
 import { pickCharacter } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
 import { finalizeBulkUserPickerSubmit } from "@/lib/utils/user-picker-bulk-submit";
 import type {
   InstructorListFilters,
-  InstructorProfile,
   InstructorRosterMember,
 } from "@/types/instructor";
 
@@ -35,6 +45,8 @@ export function InstructorRosterPage() {
   const t = useTranslations("instructor.roster");
   const tc = useTranslations("instructor.common");
   const tErrors = useTranslations("errors.codes");
+  const { portfolioId, rawPortfolioId, setPortfolioId } =
+    useInstructorRosterPortfolioQuery();
   const [filters, setFilters] = useState<InstructorListFilters>({
     page: 1,
     per_page: 20,
@@ -46,11 +58,40 @@ export function InstructorRosterPage() {
   const [deleteTarget, setDeleteTarget] =
     useState<InstructorRosterMember | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [selectedProfile, setSelectedProfile] =
-    useState<InstructorProfile | null>(null);
-  const [profileTitle, setProfileTitle] = useState("");
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const handledInvalidPortfolioRef = useRef<string | null>(null);
+  const handledFetchErrorRef = useRef<string | null>(null);
+
+  const { rows, pageInfo, isLoading, mutate } =
+    useInstructorRosterList(filters);
+  const selectedMember = useMemo(
+    () =>
+      portfolioId ? (rows.find((row) => row.id === portfolioId) ?? null) : null,
+    [portfolioId, rows],
+  );
+  const {
+    data: detailProfile,
+    isLoading: detailLoading,
+    error,
+  } = useInstructorProfileDetail(portfolioId, {
+    onError: (fetchError) => {
+      if (!portfolioId || handledFetchErrorRef.current === portfolioId) {
+        return;
+      }
+      handledFetchErrorRef.current = portfolioId;
+      toastApiError(tErrors, fetchError);
+      setPortfolioId(null);
+    },
+  });
+  const displayProfile = useMemo(
+    () => mergeInstructorApplicationDetail(null, detailProfile),
+    [detailProfile],
+  );
+  const applicantDisplayName =
+    resolveInstructorDisplayName(displayProfile) ||
+    selectedMember?.full_name ||
+    "";
+  const profileOpen = Boolean(portfolioId);
+
   const headerActions = useMemo(
     () => (
       <PermissionGate permissions={[PERMISSIONS.InstructorRosterCreate]}>
@@ -67,9 +108,6 @@ export function InstructorRosterPage() {
     }),
     [headerActions],
   );
-
-  const { rows, pageInfo, isLoading, mutate } =
-    useInstructorRosterList(filters);
   const footerProps = buildInstructorPageFooterFromInfo(
     pageInfo,
     filters.page ?? 1,
@@ -84,6 +122,19 @@ export function InstructorRosterPage() {
         }),
     },
   );
+
+  useEffect(() => {
+    if (!portfolioId) {
+      handledFetchErrorRef.current = null;
+    }
+  }, [portfolioId]);
+
+  useEffect(() => {
+    if (!rawPortfolioId || portfolioId) return;
+    if (handledInvalidPortfolioRef.current === rawPortfolioId) return;
+    handledInvalidPortfolioRef.current = rawPortfolioId;
+    toast.error(t("profileNotFound"));
+  }, [portfolioId, rawPortfolioId, t]);
 
   const columns = useMemo<DataTableColumn<InstructorRosterMember>[]>(
     () => [
@@ -156,25 +207,11 @@ export function InstructorRosterPage() {
                 failed: String(failed),
               }),
             ),
-          onApiError: (error) => toastApiError(tErrors, error),
+          onApiError: (fetchError) => toastApiError(tErrors, fetchError),
         },
       });
     } finally {
       setIsAdding(false);
-    }
-  };
-
-  const openProfile = async (row: InstructorRosterMember) => {
-    setIsLoadingProfile(true);
-    try {
-      const profile = await getInstructorProfileByUserService(row.id);
-      setSelectedProfile(profile);
-      setProfileTitle(row.full_name);
-      setProfileOpen(true);
-    } catch {
-      toast.error(t("profileNotFound"));
-    } finally {
-      setIsLoadingProfile(false);
     }
   };
 
@@ -185,10 +222,13 @@ export function InstructorRosterPage() {
       await deleteInstructorRosterService(deleteTarget.id);
       toast.success(tc("deleteSuccess"));
       setDeleteOpen(false);
+      if (portfolioId === deleteTarget.id) {
+        setPortfolioId(null);
+      }
       setDeleteTarget(null);
       await mutate();
-    } catch (error) {
-      toastApiError(tErrors, error);
+    } catch (fetchError) {
+      toastApiError(tErrors, fetchError);
     } finally {
       setIsDeleting(false);
     }
@@ -211,12 +251,8 @@ export function InstructorRosterPage() {
         onSearchValueChange={setSearchInput}
         onSearchSubmit={applySearch}
         renderActions={(row) => (
-          <InstructorProfileDeleteActions
-            viewLabel={t("viewProfile")}
-            viewDisabled={isLoadingProfile}
-            onView={() => void openProfile(row)}
-            deletePermission={PERMISSIONS.InstructorRosterDelete}
-            deleteLabel={tc("delete")}
+          <InstructorRosterRowActions
+            onViewProfile={() => setPortfolioId(row.id)}
             onDelete={() => {
               setDeleteTarget(row);
               setDeleteOpen(true);
@@ -225,30 +261,38 @@ export function InstructorRosterPage() {
         )}
       />
 
-      <InstructorProfileDeleteFooter
-        {...footerProps}
-        profileOpen={profileOpen}
-        onProfileOpenChange={setProfileOpen}
-        profile={selectedProfile?.profile ?? null}
-        fullName={selectedProfile?.full_name}
-        avatarUrl={selectedProfile?.avatar}
-        profileTitle={profileTitle}
-        deleteOpen={deleteOpen}
-        onDeleteOpenChange={setDeleteOpen}
-        onDeleteConfirm={handleDelete}
-        isDeleting={isDeleting}
-        deleteTitle={t("deleteTitle")}
-        deleteDescription={t("deleteDescription", {
-          name: deleteTarget?.full_name ?? "",
-        })}
-      >
+      <InstructorPageFooter {...footerProps}>
+        <InstructorProfileAndDeleteDialogs
+          profileOpen={profileOpen}
+          onProfileOpenChange={(open) => {
+            if (!open) {
+              setPortfolioId(null);
+            }
+          }}
+          profile={resolveInstructorApplicationProfile(displayProfile)}
+          application={displayProfile}
+          fullName={applicantDisplayName}
+          avatarUrl={displayProfile?.avatar ?? selectedMember?.avatar}
+          profileTitle={t("profileTitle", {
+            name: applicantDisplayName,
+          })}
+          profileLoading={detailLoading && !error}
+          deleteOpen={deleteOpen}
+          onDeleteOpenChange={setDeleteOpen}
+          onDeleteConfirm={handleDelete}
+          isDeleting={isDeleting}
+          deleteTitle={t("deleteTitle")}
+          deleteDescription={t("deleteDescription", {
+            name: deleteTarget?.full_name ?? "",
+          })}
+        />
         <InstructorRosterPickerDialog
           open={addOpen}
           onOpenChange={setAddOpen}
           onConfirm={handleAddInstructors}
           isSubmitting={isAdding}
         />
-      </InstructorProfileDeleteFooter>
+      </InstructorPageFooter>
     </div>
   );
 }

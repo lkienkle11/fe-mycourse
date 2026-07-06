@@ -60,6 +60,7 @@ export function InstructorApprovalsRowActions({
     application.review_status === "returned";
   const canReview =
     isActionable && isInstructorApplicantEligibleForReview(application);
+  const canDelete = !isInstructorApplicantEligibleForReview(application);
   const reasonLength = reason.trim().length;
   const reasonValid =
     reasonLength >= REJECTION_MIN && reasonLength <= REJECTION_MAX;
@@ -133,11 +134,15 @@ export function InstructorApprovalsRowActions({
             </DeferredDropdownMenuItem>
           </PermissionGate>
         ) : null}
-        <PermissionGate permissions={[PERMISSIONS.InstructorApplicationDelete]}>
-          <DeferredDropdownMenuItem variant="destructive" onAction={onDelete}>
-            {tc("delete")}
-          </DeferredDropdownMenuItem>
-        </PermissionGate>
+        {canDelete ? (
+          <PermissionGate
+            permissions={[PERMISSIONS.InstructorApplicationDelete]}
+          >
+            <DeferredDropdownMenuItem variant="destructive" onAction={onDelete}>
+              {tc("delete")}
+            </DeferredDropdownMenuItem>
+          </PermissionGate>
+        ) : null}
       </CourseAdminTableActionsMenu>
 
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>

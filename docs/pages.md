@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-07-02 (become-instructor route documented). Prior: course version badges, reorder nested merge._
+_Last audited: 2026-07-06 — Roster `?portfolioId=` modal; Profiles screen removed. Prior: become-instructor route._
 
 ## Current pages
 
@@ -24,12 +24,11 @@ _Last audited: 2026-07-02 (become-instructor route documented). Prior: course ve
 | `/{locale}/admin/courses/all` | `src/app/[locale]/admin/courses/all/page.tsx` | `CourseAdminAllPage` | Implemented |
 | `/{locale}/admin/courses/reviewing` | `src/app/[locale]/admin/courses/reviewing/page.tsx` | `CourseReviewPage` (`scope="admin"`) | Implemented |
 | `/{locale}/admin/courses/trash` | `src/app/[locale]/admin/courses/trash/page.tsx` | `CourseAdminTrashPage` | Implemented |
-| `/{locale}/admin/instructors/roster` | `src/app/[locale]/admin/instructors/roster/page.tsx` | `InstructorRosterPage` | Implemented |
+| `/{locale}/admin/instructors/roster` | `src/app/[locale]/admin/instructors/roster/page.tsx` | `InstructorRosterPage` — optional `?portfolioId={userId}` opens profile modal | Implemented |
 | `/{locale}/admin/instructors/approvals` | `…/approvals/page.tsx` | `InstructorApprovalsPage` | Implemented |
-| `/{locale}/admin/instructors/profiles` | `…/profiles/page.tsx` | `InstructorProfilesPage` | Implemented |
 | `/{locale}/admin/instructors/expertise` | `…/expertise/page.tsx` | `InstructorExpertisePage` | Implemented |
 | `/{locale}/admin/instructors/tickets` | `…/tickets/page.tsx` | `InstructorTicketsAdminPage` | Implemented |
-| `/{locale}/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}` | `src/app/[locale]/sysadmin/instructors/*/page.tsx` | Same shared instructor screens as admin | Implemented |
+| `/{locale}/sysadmin/instructors/{roster,approvals,expertise,tickets}` | `src/app/[locale]/sysadmin/instructors/*/page.tsx` | Same shared instructor screens as admin | Implemented |
 | `/{locale}/sysadmin` | `src/app/[locale]/sysadmin/page.tsx` | `SysadminDashboardPage` (placeholder) | Implemented |
 | `/{locale}/sysadmin/courses` | `src/app/[locale]/sysadmin/courses/page.tsx` | Redirect → `/sysadmin/courses/all` | Implemented |
 | `/{locale}/sysadmin/courses/all` | `src/app/[locale]/sysadmin/courses/all/page.tsx` | `CourseAdminAllPage` | Implemented |

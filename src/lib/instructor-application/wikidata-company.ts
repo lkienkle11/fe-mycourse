@@ -7,6 +7,68 @@ const SPARQL_ENDPOINT = "https://query.wikidata.org/sparql";
 const SEARCH_TIMEOUT_MS = 5000;
 const SPARQL_TIMEOUT_MS = 12000;
 
+const EXACT_LABEL_RELEVANCE = 100;
+const PREFIX_LABEL_RELEVANCE = 70;
+
+const BLOCKED_LABEL_SUFFIXES = [
+  "mafia",
+  "park",
+  "honey",
+  "holdings",
+  "galaxy",
+  "lions",
+  "sdk",
+  "branch",
+  "program",
+  "award",
+  "article",
+  "stadium",
+  "arena",
+  "extension",
+  "credit",
+  "licence",
+  "license",
+];
+
+const BAD_DESCRIPTION_TERMS = [
+  "family name",
+  "given name",
+  "human",
+  "day of the week",
+  "disambiguation",
+  "creative work",
+  "film",
+  "music by",
+  "song",
+  "album",
+  "single by",
+  "wikinews",
+  "python library",
+  "javascript library",
+  "software library",
+  "browser extension",
+  "soccer-specific",
+  "stadium",
+  "sports venue",
+  "term used to indicate",
+  "group of former",
+  "award given",
+  "bug bounty",
+  "honorable mention",
+  "payment method",
+  "proprietary payment",
+  "wikimedia",
+  "heavy metal band",
+  "youtuber",
+  "documentary",
+  "violent public disturbance",
+  "commune in",
+  "ep by",
+];
+
+const VIDEO_GAME_COMPANY_DESCRIPTION =
+  /\bvideo game (developer|development|publisher|publishing|studio|company|holding|holding company)\b/;
+
 export interface WikidataCompanyResult {
   qid: string;
   label: string;
@@ -20,6 +82,8 @@ interface WikidataSearchHit {
   id: string;
   label: string;
   description?: string;
+  matchType?: "label" | "alias" | "description";
+  matchText?: string;
 }
 
 interface FilteredCompanyRow {
@@ -42,6 +106,98 @@ function qidFromUri(uri: string): string {
   return uri.split("/").pop() ?? "";
 }
 
+function isVideoGameTitleDescription(description: string): boolean {
+  const desc = description.toLowerCase();
+  if (VIDEO_GAME_COMPANY_DESCRIPTION.test(desc)) {
+    return false;
+  }
+  return /\bvideo game\b/.test(desc);
+}
+
+function isBadSearchDescription(description?: string): boolean {
+  const desc = (description ?? "").toLowerCase();
+  if (!desc) return false;
+  if (isVideoGameTitleDescription(desc)) return true;
+  return BAD_DESCRIPTION_TERMS.some((term) => desc.includes(term));
+}
+
+function isRelevantCompanySearchHit(
+  hit: WikidataSearchHit,
+  query: string,
+): boolean {
+  if (isBadSearchDescription(hit.description)) {
+    return false;
+  }
+
+  const labelRelevance = getLabelRelevanceScore(hit.label, query);
+  if (labelRelevance < PREFIX_LABEL_RELEVANCE) {
+    return false;
+  }
+
+  if (hit.matchType === "alias") {
+    return labelRelevance >= EXACT_LABEL_RELEVANCE;
+  }
+
+  return true;
+}
+
+function pickBetterSearchHit(
+  existing: WikidataSearchHit,
+  next: WikidataSearchHit,
+  query: string,
+): WikidataSearchHit {
+  const existingRelevant = isRelevantCompanySearchHit(existing, query);
+  const nextRelevant = isRelevantCompanySearchHit(next, query);
+  if (existingRelevant && !nextRelevant) return existing;
+  if (!existingRelevant && nextRelevant) return next;
+
+  const existingScore = getLabelRelevanceScore(existing.label, query);
+  const nextScore = getLabelRelevanceScore(next.label, query);
+  return nextScore > existingScore ? next : existing;
+}
+
+function hasBlockedLabelSuffix(remainder: string): boolean {
+  const tokens = remainder.split(/[^a-z0-9]+/).filter(Boolean);
+  return tokens.some((token) => BLOCKED_LABEL_SUFFIXES.includes(token));
+}
+
+function getLabelRelevanceScore(label: string, query: string): number {
+  const normalizedQuery = normalizeDedupeKey(query);
+  const normalizedLabel = normalizeDedupeKey(label);
+  if (!normalizedQuery || !normalizedLabel) return -1;
+
+  if (normalizedLabel === normalizedQuery) {
+    return EXACT_LABEL_RELEVANCE;
+  }
+
+  if (normalizedLabel.startsWith(normalizedQuery)) {
+    const remainder = normalizedLabel.slice(normalizedQuery.length);
+    if (!remainder) {
+      return EXACT_LABEL_RELEVANCE;
+    }
+    if (hasBlockedLabelSuffix(remainder)) {
+      return -1;
+    }
+    return PREFIX_LABEL_RELEVANCE;
+  }
+
+  if (
+    normalizedQuery.length >= 4 &&
+    normalizedLabel.includes(normalizedQuery)
+  ) {
+    return 30;
+  }
+
+  return -1;
+}
+
+function filterSearchHits(
+  hits: WikidataSearchHit[],
+  query: string,
+): WikidataSearchHit[] {
+  return hits.filter((hit) => isRelevantCompanySearchHit(hit, query));
+}
+
 async function wbSearchEntities(
   query: string,
   language: string,
@@ -58,33 +214,42 @@ async function wbSearchEntities(
     limit: "12",
   }).toString();
 
-  const result = await rawFetch<{ search?: WikidataSearchHit[] }>(
-    url.toString(),
-    {
-      timeout: SEARCH_TIMEOUT_MS,
-      signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
-    },
-  );
+  const result = await rawFetch<{
+    search?: Array<{
+      id: string;
+      label: string;
+      description?: string;
+      match?: { type?: string; text?: string };
+    }>;
+  }>(url.toString(), {
+    timeout: SEARCH_TIMEOUT_MS,
+    signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
+  });
 
   return (result.data?.search ?? []).map((item) => ({
     id: item.id,
     label: item.label,
     description: item.description,
+    matchType: item.match?.type as WikidataSearchHit["matchType"],
+    matchText: item.match?.text,
   }));
 }
 
 function mergeSearchHits(
   primary: WikidataSearchHit[],
   secondary: WikidataSearchHit[],
+  query: string,
 ): WikidataSearchHit[] {
-  const seen = new Set<string>();
-  const merged: WikidataSearchHit[] = [];
+  const byId = new Map<string, WikidataSearchHit>();
   for (const hit of [...primary, ...secondary]) {
-    if (seen.has(hit.id)) continue;
-    seen.add(hit.id);
-    merged.push(hit);
+    const existing = byId.get(hit.id);
+    if (!existing) {
+      byId.set(hit.id, hit);
+      continue;
+    }
+    byId.set(hit.id, pickBetterSearchHit(existing, hit, query));
   }
-  return merged;
+  return [...byId.values()];
 }
 
 function buildTypeFilterQuery(qids: string[]): string {
@@ -193,32 +358,26 @@ function scoreCompany(
   if (enrichment?.location) score += 2;
   if (company.description) score += 1;
 
-  const normalizedQuery = normalizeDedupeKey(query);
-  const normalizedLabel = normalizeDedupeKey(company.label);
-  if (normalizedLabel === normalizedQuery) score += 4;
-  else if (
-    normalizedLabel.includes(normalizedQuery) ||
-    normalizedQuery.includes(normalizedLabel)
-  ) {
-    score += 2;
-  }
+  const labelRelevance = getLabelRelevanceScore(company.label, query);
+  if (labelRelevance >= EXACT_LABEL_RELEVANCE) score += 4;
+  else if (labelRelevance >= PREFIX_LABEL_RELEVANCE) score += 2;
 
   score += Math.max(0, 6 - searchRank);
   return score;
 }
 
-function isBadSearchDescription(description?: string): boolean {
-  const desc = (description ?? "").toLowerCase();
-  return [
-    "family name",
-    "given name",
-    "human",
-    "day of the week",
-    "disambiguation",
-    "creative work",
-    "video game",
-    "film",
-  ].some((term) => desc.includes(term));
+function dedupeByLabel(
+  results: WikidataCompanyResult[],
+): WikidataCompanyResult[] {
+  const byLabel = new Map<string, WikidataCompanyResult>();
+  for (const result of results) {
+    const key = normalizeDedupeKey(result.label);
+    const existing = byLabel.get(key);
+    if (!existing || result.score > existing.score) {
+      byLabel.set(key, result);
+    }
+  }
+  return [...byLabel.values()];
 }
 
 export async function searchWikidataCompanies(
@@ -229,13 +388,16 @@ export async function searchWikidataCompanies(
     const trimmed = query.trim();
     if (trimmed.length < 2) return [];
 
-    const [viHits, enHits] = await Promise.all([
+    const [viResult, enResult] = await Promise.allSettled([
       wbSearchEntities(trimmed, "vi"),
       wbSearchEntities(trimmed, "en"),
     ]);
-    const mergedHits = mergeSearchHits(viHits, enHits)
-      .filter((hit) => !isBadSearchDescription(hit.description))
-      .slice(0, 20);
+    const viHits = viResult.status === "fulfilled" ? viResult.value : [];
+    const enHits = enResult.status === "fulfilled" ? enResult.value : [];
+    const mergedHits = filterSearchHits(
+      mergeSearchHits(viHits, enHits, trimmed),
+      trimmed,
+    ).slice(0, 20);
     if (mergedHits.length === 0) return [];
 
     const rankByQid = new Map(mergedHits.map((hit, index) => [hit.id, index]));
@@ -250,29 +412,31 @@ export async function searchWikidataCompanies(
     );
     const enrichmentByQid = parseEnrichment(enrichmentBindings);
 
-    const ranked = filteredCompanies
-      .map((company) => {
-        const enrichment = enrichmentByQid.get(company.qid);
-        const searchHit = mergedHits.find((hit) => hit.id === company.qid);
-        return {
-          qid: company.qid,
-          label: company.label,
-          description: company.description || searchHit?.description,
-          domain: enrichment?.domain,
-          location: enrichment?.location,
-          score: scoreCompany(
-            company,
-            trimmed,
-            rankByQid.get(company.qid) ?? 99,
-            enrichment,
-          ),
-        };
-      })
-      .sort(
-        (a, b) =>
-          b.score - a.score ||
-          (rankByQid.get(a.qid) ?? 99) - (rankByQid.get(b.qid) ?? 99),
-      );
+    const ranked = dedupeByLabel(
+      filteredCompanies
+        .map((company) => {
+          const enrichment = enrichmentByQid.get(company.qid);
+          const searchHit = mergedHits.find((hit) => hit.id === company.qid);
+          return {
+            qid: company.qid,
+            label: company.label,
+            description: company.description || searchHit?.description,
+            domain: enrichment?.domain,
+            location: enrichment?.location,
+            score: scoreCompany(
+              company,
+              trimmed,
+              rankByQid.get(company.qid) ?? 99,
+              enrichment,
+            ),
+          };
+        })
+        .sort(
+          (a, b) =>
+            b.score - a.score ||
+            (rankByQid.get(a.qid) ?? 99) - (rankByQid.get(b.qid) ?? 99),
+        ),
+    );
 
     return ranked.slice(0, limit);
   } catch {

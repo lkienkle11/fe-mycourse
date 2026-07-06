@@ -474,6 +474,7 @@ const messages = {
       searchPlaceholder: "Tìm theo tên hoặc email…",
       viewProfile: "Xem hồ sơ",
       profileNotFound: "Không tìm thấy hồ sơ cho giảng viên này.",
+      profileTitle: "Hồ sơ — {name}",
       columns: {
         avatar: "Ảnh đại diện",
         name: "Họ tên",
@@ -701,7 +702,8 @@ const messages = {
     },
     profiles: {
       title: "Hồ sơ giảng viên",
-      view: "Xem",
+      view: "Xem hồ sơ",
+      profileNotFound: "Không tìm thấy hồ sơ giảng viên.",
       profileTitle: "Hồ sơ — {name}",
       deleteTitle: "Xóa hồ sơ?",
       deleteDescription: "Xóa hồ sơ giảng viên này?",
