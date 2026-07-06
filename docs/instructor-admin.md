@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-07-06 — PreviewPdf client-only dynamic import + Turbopack `canvas` stub for CI `next build`._
+_Last audited: 2026-07-06 — Approvals list: no review-status column; no Approved filter; approved instructors live in Profiles (Hồ sơ)._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -104,9 +104,9 @@ Reject application requires `rejection_reason` (1–2000 chars) via `InstructorA
 
 **Audit list (Nhóm B):** Application and profile list/detail responses include `is_disabled`, `email_confirmed`, `banned_until`, and `is_banned` (server-computed at query time) from the joined `users` row. Lists are **not** filtered by picker eligibility (#2 + #3) — BE sorts **eligible users first** (active, not banned, email confirmed), then by newest submit (`submitted_at DESC` for applications, `updated_at DESC` for profiles); ineligible users appear after eligible rows in the same recency order.
 
-**Approvals status filter:** `InstructorApprovalsPage` status dropdown **All statuses** (`ALL`) omits `status` on `GET /instructor-applications`; BE **excludes `approved`** in that default case. Select **Approved** to pass `status=approved` and list approved applications only. Already-approved rows never show Approve / Reject (only View application and Delete).
+**Approvals status filter:** `InstructorApprovalsPage` status dropdown options: **All statuses** (`ALL`), **Pending**, **Needs editing** (`returned`), **Rejected**. There is **no Approved option** — approved applications are managed in **Profiles** (`/admin|sysadmin/instructors/profiles`, sidebar **Hồ sơ**). `ALL` omits `status` on `GET /instructor-applications`; BE **always excludes `approved`** rows from this list (including when a client sends `status=approved`, which returns HTTP 400). Filter values map to `?status=pending|returned|rejected`.
 
-**Approvals table columns:** Applicant column shows `display_name` + email via `InstructorUserCell` (never raw `user_id`). A dedicated **User account status** column (`InstructorApplicantUserStatusCell`) shows **Active**, **Disabled**, **Banned until …**, and/or **Email unconfirmed** badges from the list row fields via shared `InstructorAccountStatusBadges` (same badge renderer as inline badges on `InstructorUserCell` when `showAccountBadges` is enabled). **Email unconfirmed** uses an amber/yellow badge (`border-amber-200 bg-amber-50 text-amber-950`) on the status column; inline user-cell badges use the secondary variant. `InstructorApprovalsRowActions` shows Approve / Reject only when `review_status` is actionable (`pending` or `returned`) **and** the applicant passes the same #2 + #3 eligibility check used by BE (`isInstructorApplicantEligibleForReview` in `src/lib/instructor-application/applicant-eligibility.ts`). View application and Delete remain available regardless of account status.
+**Approvals table columns:** Applicant (`InstructorUserCell` — `display_name` + email, never raw `user_id`), **User account status** (`InstructorApplicantUserStatusCell` — Active / Disabled / Banned until … / Email unconfirmed via `InstructorAccountStatusBadges`), **Submission date** (`submitted_at`). There is **no application review-status column** — the list only contains actionable applications (`pending`, `returned`, `rejected`). **Email unconfirmed** uses an amber/yellow badge on the user-account-status column. `InstructorApprovalsRowActions` shows Approve / Reject only when `review_status` is `pending` or `returned` **and** the applicant passes the same #2 + #3 eligibility check (`isInstructorApplicantEligibleForReview`). View application and Delete remain available regardless of account status.
 
 ## Validation and API errors
 
