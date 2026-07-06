@@ -102,7 +102,7 @@ Content (max-w-[1200px], 2-col desktop) — page shell `min-h-[calc(100svh-4rem)
 
 **Sidebar required checklist (no headline):** bio (≥100 chars), job title + company, years of experience, CV (PDF), ≥1 topic, ≥1 skill.
 
-**Admin profiles list:** columns `user`, `current_job_title` (from `latest_submission.profile`; column label **Role** / **Vai trò** — `instructor.profiles.columns.currentJobTitle`) — **no headline column** (field not collected on new applications).
+**Admin profiles list:** removed — approved instructor profiles are viewed from **Roster** via **Xem hồ sơ** modal (`portfolioId` on roster URL). **Profile view dialog** field label: **Current job title** / **Chức danh hiện tại** (`instructor.profileView.currentJobTitle`).
 
 **Certificate form errors:** deleting a certificate row re-runs client validation for certificate rows only (`refreshCertificateFieldErrors` in `validate-application-form.ts`) so remaining invalid rows keep their inline errors; editing any certificate field re-runs validation for the whole certificate section via `refreshCertificateFieldErrors`. Certificate section auto-expands via `expandOnError` when any `certificates.{index}` key is present in `fieldErrors` and remains expanded after errors are resolved.
 
@@ -144,7 +144,7 @@ Hook: `src/hooks/instructor/use-my-instructor-application.ts`.
 
 Manual refresh: call `mutate()` after submit, resubmit, or contact-admin — not on tab focus.
 
-**Vietnamese copy (`vi.ts` → `instructor.application`):** job-title field labels use **「Vai trò hiện tại」** — `form.jobTitle`, `form.jobTitlePlaceholder`, `sidebar.req2`. Validation messages under `instructor.validation` use 「vai trò」. **Admin profiles list** column: **「Vai trò」** (`profiles.columns.currentJobTitle`). **Admin profile view dialog** field: **「Chức danh hiện tại」** (`profileView.currentJobTitle`) — avoids confusion with system role/permission.
+**Vietnamese copy (`vi.ts` → `instructor.application`):** job-title field labels use **「Vai trò hiện tại」** — `form.jobTitle`, `form.jobTitlePlaceholder`, `sidebar.req2`. Validation messages under `instructor.validation` use 「vai trò」. **Profile view dialog** field: **「Chức danh hiện tại」** (`profileView.currentJobTitle`) — avoids confusion with system role/permission.
 
 ---
 

@@ -111,7 +111,6 @@ src/screen/
 │   │   ├── index.ts
 │   │   ├── instructor-roster-page.tsx
 │   │   ├── instructor-approvals-page.tsx
-│   │   ├── instructor-profiles-page.tsx
 │   │   ├── instructor-expertise-page.tsx
 │   │   └── instructor-tickets-admin-page.tsx
 │   ├── home/

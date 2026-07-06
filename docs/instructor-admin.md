@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-07-06 — Approvals list: no review-status column; no Approved filter; approved instructors live in Profiles (Hồ sơ)._
+_Last audited: 2026-07-06 — Approvals ⋮ menu: **Delete** only when applicant account is ineligible (disabled / banned / email unconfirmed); active users get View + Approve + Reject only. Prior: roster profile modal on `portfolioId`; removed Profiles screen._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -13,7 +13,6 @@ Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `
 | **Become instructor** | — | — | — | `/{locale}/become-instructor` |
 | Roster | `/admin/instructors/roster` | `/sysadmin/instructors/roster` | — | — |
 | Applications (approvals) | `/admin/instructors/approvals` | `/sysadmin/instructors/approvals` | — |
-| Profiles | `/admin/instructors/profiles` | `/sysadmin/instructors/profiles` | — |
 | Expertise (topics + skills) | `/admin/instructors/expertise` | `/sysadmin/instructors/expertise` | — |
 | Tickets (admin view, no close) | `/admin/instructors/tickets` | `/sysadmin/instructors/tickets` | — |
 | My tickets | — | — | `/instructor/tickets` |
@@ -23,7 +22,7 @@ Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `
 | Review preview | — | `/sysadmin/courses/reviewing/{courseId}/preview` | — |
 | Course catalog (all / trash) | `/admin/courses/all`, `/admin/courses/trash` | `/sysadmin/courses/all`, `/sysadmin/courses/trash` | — |
 
-Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages). Course review queues are implemented for admin/sysadmin; instructor course authoring is implemented under the instructor dashboard. **Review queue** (`CourseReviewPage`): table columns are course, owner, and version (no status column — the queue only lists pending submissions). Each row uses shared `CourseReviewRowActions` (⋮ menu — sysadmin: Preview / Approve / Reject; admin: Approve / Reject). All/Trash catalog rows use shared `CourseAdminTableActionsMenu` (`modal={false}`); dialog-opening actions use shared `DeferredDropdownMenuItem` + `deferDropdownAction` so the page stays clickable after confirm/approve flows. **Instructor approvals** (`InstructorApprovalsPage`): each row uses `InstructorApprovalsRowActions` — same ⋮ menu pattern (View application, Approve, Reject, Delete) with `DeferredDropdownMenuItem` for dialog flows; reject reason dialog stays in the row-actions component.
+Overview shells remain at `/admin`, `/sysadmin`, and `/instructor` (placeholder dashboard pages). Course review queues are implemented for admin/sysadmin; instructor course authoring is implemented under the instructor dashboard. **Review queue** (`CourseReviewPage`): table columns are course, owner, and version (no status column — the queue only lists pending submissions). Each row uses shared `CourseReviewRowActions` (⋮ menu — sysadmin: Preview / Approve / Reject; admin: Approve / Reject). All/Trash catalog rows use shared `CourseAdminTableActionsMenu` (`modal={false}`); dialog-opening actions use shared `DeferredDropdownMenuItem` + `deferDropdownAction` so the page stays clickable after confirm/approve flows. **Instructor approvals** (`InstructorApprovalsPage`): each row uses `InstructorApprovalsRowActions` — same ⋮ menu pattern with `DeferredDropdownMenuItem` for dialog flows; reject reason dialog stays in the row-actions component. **Active** applicants (pass `isInstructorApplicantEligibleForReview`): **View application**, **Approve**, **Reject** (when `review_status` is `pending` or `returned`). **Ineligible** applicants (disabled, banned, or email unconfirmed): **View application** and **Delete** only — no Approve/Reject.
 
 ## Screen layer
 
@@ -31,11 +30,11 @@ Instructor management now uses **app route → shared screen** for admin and sys
 
 | Layer | Path | Role |
 |-------|------|------|
-| App route | `src/app/[locale]/admin/instructors/{roster,approvals,profiles,expertise,tickets}/page.tsx` | Imports shared instructor screens directly |
+| App route | `src/app/[locale]/admin/instructors/{roster,approvals,expertise,tickets}/page.tsx` | Imports shared instructor screens directly |
 | App route | `src/app/[locale]/sysadmin/instructors/.../page.tsx` | Same shared screens for sysadmin |
 | App route | `src/app/[locale]/instructor/tickets/page.tsx` | Re-exports `InstructorTicketsPage` |
 | Role screen | `src/screen/instructor/tickets/page.tsx` | `InstructorTicketsPage` (instructor-only UX) |
-| Shared screen | `src/screen/common/instructor/*.tsx` | Roster, approvals, profiles, expertise, admin tickets |
+| Shared screen | `src/screen/common/instructor/*.tsx` | Roster, approvals, expertise, admin tickets |
 
 Shared exports: `src/screen/common/instructor/index.ts`.
 
@@ -44,7 +43,7 @@ Shared exports: `src/screen/common/instructor/index.ts`.
 Instructor group on **admin** and **sysadmin** (`ADMIN_DASHBOARD_ITEMS` / `SYSADMIN_DASHBOARD_ITEMS`):
 
 - Parent: `titleKey` → `dashboard.instructor.menu.group` (via `useTranslations("dashboard")` in `DashboardSidebar`)
-- Children: roster, approvals, profiles, expertise, tickets — keys `dashboard.instructor.menu.*`
+- Children: roster, approvals, expertise, tickets — keys `dashboard.instructor.menu.*` (**no Profiles / Hồ sơ** menu item)
 - Icons: `INSTRUCTOR_MENU_ICONS` in `src/constants/dashboard/instructor-icons.ts`
 - Group visibility: `INSTRUCTOR_GROUP_READ_PERMISSIONS` with `permissionMode: "any"` (`src/constants/instructor/resources.ts`)
 
@@ -104,9 +103,11 @@ Reject application requires `rejection_reason` (1–2000 chars) via `InstructorA
 
 **Audit list (Nhóm B):** Application and profile list/detail responses include `is_disabled`, `email_confirmed`, `banned_until`, and `is_banned` (server-computed at query time) from the joined `users` row. Lists are **not** filtered by picker eligibility (#2 + #3) — BE sorts **eligible users first** (active, not banned, email confirmed), then by newest submit (`submitted_at DESC` for applications, `updated_at DESC` for profiles); ineligible users appear after eligible rows in the same recency order.
 
-**Approvals status filter:** `InstructorApprovalsPage` status dropdown options: **All statuses** (`ALL`), **Pending**, **Needs editing** (`returned`), **Rejected**. There is **no Approved option** — approved applications are managed in **Profiles** (`/admin|sysadmin/instructors/profiles`, sidebar **Hồ sơ**). `ALL` omits `status` on `GET /instructor-applications`; BE **always excludes `approved`** rows from this list (including when a client sends `status=approved`, which returns HTTP 400). Filter values map to `?status=pending|returned|rejected`.
+**Approvals status filter:** `InstructorApprovalsPage` status dropdown options: **All statuses** (`ALL`), **Pending**, **Needs editing** (`returned`), **Rejected**. There is **no Approved option** — after approve, the instructor appears on **Roster** (**Danh sách giảng viên**); profile is viewed via **Xem hồ sơ** on that screen. `ALL` omits `status` on `GET /instructor-applications`; BE **always excludes `approved`** rows from this list (including when a client sends `status=approved`, which returns HTTP 400). Filter values map to `?status=pending|returned|rejected`.
 
-**Approvals table columns:** Applicant (`InstructorUserCell` — `display_name` + email, never raw `user_id`), **User account status** (`InstructorApplicantUserStatusCell` — Active / Disabled / Banned until … / Email unconfirmed via `InstructorAccountStatusBadges`), **Submission date** (`submitted_at`). There is **no application review-status column** — the list only contains actionable applications (`pending`, `returned`, `rejected`). **Email unconfirmed** uses an amber/yellow badge on the user-account-status column. `InstructorApprovalsRowActions` shows Approve / Reject only when `review_status` is `pending` or `returned` **and** the applicant passes the same #2 + #3 eligibility check (`isInstructorApplicantEligibleForReview`). View application and Delete remain available regardless of account status.
+**Approvals table columns:** Applicant (`InstructorUserCell` — `display_name` + email, never raw `user_id`), **User account status** (`InstructorApplicantUserStatusCell` — Active / Disabled / Banned until … / Email unconfirmed via `InstructorAccountStatusBadges`), **Submission date** (`submitted_at`). There is **no application review-status column** — the list only contains actionable applications (`pending`, `returned`, `rejected`). **Email unconfirmed** uses an amber/yellow badge on the user-account-status column. `InstructorApprovalsRowActions` shows **Approve** / **Reject** only when `review_status` is `pending` or `returned` **and** the applicant passes `isInstructorApplicantEligibleForReview` (active, email confirmed, not banned). **View application** is always available. **Delete** is shown only when the applicant **fails** that eligibility check (disabled, banned, or email unconfirmed) — permission-gated via `InstructorApplicationDelete`.
+
+**Roster profile view (`portfolioId` on roster route):** `InstructorRosterPage` (**Danh sách giảng viên**, `/admin|sysadmin/instructors/roster`) is the only admin UI for viewing **approved** instructor managed profiles. Row actions use **`InstructorRosterRowActions`** — ⋮ menu (`CourseAdminTableActionsMenu` + `DeferredDropdownMenuItem`): **View profile** / **Xem hồ sơ**, **Delete** / **Xóa** (permission-gated). **View profile** sets query **`portfolioId`** (= roster member `id`, instructor `user_id` UUID) on the **same roster URL** and opens `InstructorProfileViewDialog` inline (`useInstructorProfileDetail` + `mergeInstructorApplicationDetail` + `resolveInstructorApplicationProfile`). Closing the dialog clears `portfolioId` (`router.replace`, `scroll: false`). Invalid UUID or missing profile → toast + clear param. Legacy `/admin|sysadmin/instructors/profiles` app routes **redirect** to roster (preserving `portfolioId` when present). Shared pieces: `INSTRUCTOR_ROSTER_PORTFOLIO_ID_PARAM` (`src/constants/instructor-admin.ts`), `instructorRosterPortfolioHref()` (`src/lib/navigation/instructor-roster.ts`), `useInstructorRosterPortfolioQuery()` (`src/hooks/instructor/use-instructor-roster-portfolio-query.ts`). Roster app routes wrap the screen in `Suspense` for `useSearchParams`. There is **no** `InstructorProfilesPage` screen or sidebar **Hồ sơ** entry.
 
 ## Validation and API errors
 
@@ -123,9 +124,10 @@ Reject application requires `rejection_reason` (1–2000 chars) via `InstructorA
 
 | Component | Purpose |
 |-----------|---------|
-| `InstructorProfileViewDialog` | Read-only profile popup (approvals / roster / profiles). Title uses applicant `display_name` (merge list row + detail via `mergeInstructorApplicationDetail`). **Field order:** bio → **CV** (`PreviewPdf`, when `cv_file.url` present) → years of experience → current job title → current company → optional Wikidata company fields (domain, description, location) → LinkedIn → GitHub → topic chips → skill chips → portfolio link list → **certificates** (`InstructorCertificateCarousel`: one certificate per slide; prev/next when more than one; credential URL centered under issuer/year; optional PDF via `PreviewPdf`) → intro video filename → rejection history (applications only). **No `headline` field** in dialog (not collected on apply). **Profiles list** column `current_job_title` label: **Role** / **Vai trò** (`instructor.profiles.columns.currentJobTitle`). **Profile view dialog** label: **Current job title** / **Chức danh hiện tại** (`instructor.profileView.currentJobTitle`) — distinct from system role/permission wording. |
+| `InstructorProfileViewDialog` | Read-only profile popup on **approvals** (application) and **roster** (approved managed profile). Title uses applicant `display_name` (merge list row + detail via `mergeInstructorApplicationDetail`). **Field order:** bio → **CV** (`PreviewPdf`, when `cv_file.url` present) → years of experience → current job title → current company → optional Wikidata company fields (domain, description, location) → LinkedIn → GitHub → topic chips → skill chips → portfolio link list → **certificates** (`InstructorCertificateCarousel`: one certificate per slide; prev/next when more than one; credential URL centered under issuer/year; optional PDF via `PreviewPdf`) → intro video filename → rejection history (applications only). **No `headline` field** in dialog (not collected on apply). **Profile view dialog** label: **Current job title** / **Chức danh hiện tại** (`instructor.profileView.currentJobTitle`) — distinct from system role/permission wording. |
 | `InstructorRosterPickerDialog` | Multi-select roster add dialog (search, pagination, responsive overflow) backed by `GET /instructors/roster-candidates` |
-| `InstructorApprovalsRowActions` | Approvals table ⋮ menu: view profile, approve, reject (dialog), delete — reuses `CourseAdminTableActionsMenu` + `DeferredDropdownMenuItem` |
+| `InstructorRosterRowActions` | Roster table ⋮ menu: view profile (sets `portfolioId` on roster URL), delete — reuses `CourseAdminTableActionsMenu` + `DeferredDropdownMenuItem` |
+| `InstructorApprovalsRowActions` | Approvals table ⋮ menu: view application (always); approve / reject (dialog) when pending/returned **and** eligible account; **delete** only when account is ineligible (disabled / banned / email unconfirmed) — reuses `CourseAdminTableActionsMenu` + `DeferredDropdownMenuItem` |
 
 Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `SearchableSelect` + `useSearchablePaginatedOptions` for expertise pickers.
 
@@ -141,7 +143,7 @@ Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `Searchable
 ## Identity rendering
 
 - Roster table includes an `Avatar` column.
-- **Approvals, profiles, and admin tickets** use `InstructorUserCell` — avatar + `display_name` + `email` (no raw `id` / `user_id` columns).
+- **Approvals and admin tickets** use `InstructorUserCell` — avatar + `display_name` + `email` (no raw `id` / `user_id` columns). **Roster** uses avatar + name/email columns directly (not `InstructorUserCell`).
 - Avatar rendering rule is shared across instructor screens:
   - use API `avatar` URL when present
   - otherwise fallback to generated initials via `pickCharacter(full_name | display_name)`.
@@ -166,8 +168,8 @@ Implemented upgrades to `instructor-approvals-page.tsx` (prototype: `code-temp/a
 
 | Task | Component / change |
 |------|-------------------|
-| ADM-01 | `InstructorUserCell` — avatar + `display_name` + `email` on approvals, profiles, and admin tickets lists |
-| ADM-02 | `PreviewPdf` + `InstructorProfileViewDialog` — read-only popup on approvals, roster, and profiles. Dialog title: `Profile — {name}` from merged list row + detail identity. **Field order:** bio (Giới thiệu) → **CV** (`PreviewPdf`, after bio, before years of experience) → years of experience → current job title → current company → optional company domain / description / location → LinkedIn → GitHub → topic chips → skill chips → portfolio links → **certificates** horizontal carousel (`InstructorCertificateCarousel`: one certificate per slide; navigation when multiple; credential URL link centered) → intro video → rejection history on application view only. **No `headline` field** in dialog or profiles list (field not collected on new applications). **Profiles table** column `current_job_title` label **Role** / **Vai trò**; dialog field label **Current job title** / **Chức danh hiện tại**. |
+| ADM-01 | `InstructorUserCell` — avatar + `display_name` + `email` on approvals and admin tickets lists |
+| ADM-02 | `PreviewPdf` + `InstructorProfileViewDialog` — read-only popup on **approvals** (application) and **roster** (`portfolioId` deep link). Dialog title: `Profile — {name}` from merged list row + detail identity. **Field order:** bio (Giới thiệu) → **CV** (`PreviewPdf`, after bio, before years of experience) → years of experience → current job title → current company → optional company domain / description / location → LinkedIn → GitHub → topic chips → skill chips → portfolio links → **certificates** horizontal carousel (`InstructorCertificateCarousel`: one certificate per slide; navigation when multiple; credential URL link centered) → intro video → rejection history on application view only. **No `headline` field** in dialog or profiles list (field not collected on new applications). **Profiles table** column `current_job_title` label **Role** / **Vai trò**; dialog field label **Current job title** / **Chức danh hiện tại**. |
 | ADM-03 | Filter `returned` status, list refresh after approve/reject |
 
 **Approve → expertise:** On successful approve, BE copies application junction `topic_ids` / `skill_ids` into `instructor_expertise_*` for the applicant `user_id`. Admin expertise page uses roster picker `id` (= user UUID) with `GET /instructors/:id/expertise/topics|skills`.
