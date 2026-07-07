@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-07-06 (BecomeInstructorPromoBanner above site Header for learner users)._
+_Last audited: 2026-07-08 (AuthSocialLogin wired with Google/X handlers; GoogleOneTapHost; auth OAuth hooks). Prior: 2026-07-06 (BecomeInstructorPromoBanner above site Header for learner users)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -168,7 +168,9 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `AuthFullNameField` | `auth/auth-form-fields.tsx` | Shared UI | Full name (signup); same validation translation pattern. |
 | `AuthConfirmTabSync` | `providers/auth-confirm-tab-sync.tsx` | Client | Reload tabs after email confirm elsewhere. |
 | `AuthLogoutTabSync` | `providers/auth-logout-tab-sync.tsx` | Client | Cross-tab logout via `broadcast:logout`. |
-| `auth-social-login/` | `auth/auth-social-login/` | Client | Social auth buttons (UI stub). |
+| `AuthSocialLogin` | `auth/auth-social-login/auth-social-login.tsx` | Client | Google + X (Twitter) social auth buttons. Props: `type` (`"login"` \| `"signup"`), `onGoogleClick` / `googleLoading`, `onXClick` / `xLoading` (buttons disable while loading or when no handler). Labels from `auth.socialLogin.*` (`xLogin`/`xSignup`, `googleLogin`/`googleSignup`). Icons `GoogleIcon` / `XIcon` from `@public/assets/icons/social-icons`. `LoginContent` wires it via `useGoogleLogin` + `useXLogin` (`entrypoint="login"`); `SignupContent` wires the same hooks with `entrypoint="signup"`. |
+
+**Google One Tap:** `GoogleOneTapHost` (`src/components/providers/google-one-tap-host.tsx`) is mounted in `(web)/layout.tsx`; it runs `useGoogleOneTap` and toasts `auth.socialLogin.googleSuccess` + `mutateMe()` on success (renders `null`). The GSI client script loads in `(web)/layout.tsx` (not root `layout.tsx`), so dashboard and `/auth/x/callback` do not fetch third-party Google scripts.
 
 ---
 
@@ -231,6 +233,15 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | `useIsMobile` | `hooks/use-mobile.ts` | Viewport &lt; 768px |
 | `useSearchablePaginatedOptions` | `hooks/searchable-select/use-searchable-paginated-options.ts` | Popover UX + wiring for `SearchableSelect`: debounced search, pinned `selectedLabel`, `excludeValues`, `onOptionSelect`. Data via `useApiInfiniteListQuery` with `getRowKey` dedupe on `mapToOption(item).value`. See `docs/patterns.md` §4 SearchableSelect. |
 
+### Auth OAuth hooks (`src/hooks/auth/`)
+
+| Hook | File | Description |
+|------|------|-------------|
+| `useGoogleLogin` | `use-google-login.ts` | Opens the Google Identity Services code client popup (`ux_mode: "popup"`, scope `openid email profile`), then calls `googleLoginAction({ code, remember_me })`. Uses refs so the latest `rememberMe` value is always sent even when the GSI client is reused. Returns `{ startGoogleLogin, isPending }`; invokes `onSuccess` / `onCancel` / `onError` callbacks. Missing client id / GSI → FE-local code `4020`. |
+| `useGoogleOneTap` | `use-google-one-tap.ts` | Initializes and prompts Google One Tap for guests only (`me == null` and not loading); on credential runs `googleOneTapAction({ credential })`. Cancels the prompt on cleanup. Used by `GoogleOneTapHost`. |
+| `useXLogin` | `use-x-login.ts` | Starts X (Twitter) OAuth: `startXLoginAction` (builds PKCE authorize URL) → opens popup → listens for the callback `postMessage` (`X_OAUTH_MESSAGE_TYPE`, same-origin only) → `xLoginAction({ code, state })`. Polls popup `closed` for cancel. Returns `{ startXLogin, isPending }`. Exports `X_OAUTH_MESSAGE_TYPE` (consumed by the callback page). |
+| `useOAuthPostAuth` | `use-oauth-post-auth.ts` | Shared post-auth side effect: `mutateMe()` + `closeAllModals()` + `router.push(nextLink)` when set. Reused by `LoginContent` and `SignupContent` OAuth `onSuccess`. |
+
 Server/RSC: `resolveCustomLanguage(locale)` in `src/lib/language/resolve-language.ts` (no Context).
 
 ---
@@ -243,6 +254,7 @@ Server/RSC: `resolveCustomLanguage(locale)` in `src/lib/language/resolve-languag
 |-----------|------|-------------|
 | `AppProviders` | `app-providers.tsx` | `SWRConfig` + `EventsStreamProvider` + `MeSwrSync` + `LanguageLocaleSync` + auth tab sync + `children`. Placed in `[locale]/layout.tsx`. |
 | `EventsStreamProvider` | `src/events/providers/events-stream-provider.tsx` | Client-only; `useEffect` → `startStreamEventTransports()`. Re-exported from `@/events`. |
+| `GoogleOneTapHost` | `google-one-tap-host.tsx` | Client; runs `useGoogleOneTap` and shows the Google One Tap prompt for guests. On success toasts `auth.socialLogin.googleSuccess` + `mutateMe()`. Renders `null`. Mounted in `(web)/layout.tsx` (not in `AppProviders`). |
 
 Null-render sync components in `app-providers.tsx`: `MeSwrSync` (SWR `useAuth` → `useMeStore`), `LanguageLocaleSync` (`useLocale()` → `useLanguageStore`). No Context providers for language.
 
