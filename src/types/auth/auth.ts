@@ -1,5 +1,14 @@
 export type AuthActions = "none" | "login" | "signup" | "logout";
 
+/** Result shape returned by auth server actions (login, confirm, OAuth, logout). */
+export interface AuthActionResult {
+  success: boolean;
+  message: string;
+  code: number;
+  /** Seconds until retry when register is rate-limited (4010). */
+  retryAfterSeconds?: number;
+}
+
 /**
  * Mirrors be/dto/auth.go → MeResponse.
  * Trả về từ GET /api/v1/me sau khi xác thực thành công.

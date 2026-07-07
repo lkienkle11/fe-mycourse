@@ -4,9 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { handleAuthSubmit } from "@/actions/auth/auth-client";
 import { Button, Spinner } from "@/components/ui";
 import { useAuthStore } from "@/hooks";
+import { useGoogleLogin } from "@/hooks/auth/use-google-login";
+import { useOAuthPostAuth } from "@/hooks/auth/use-oauth-post-auth";
+import { useXLogin } from "@/hooks/auth/use-x-login";
 import { cn } from "@/lib/utils";
 import { translateApiErrorCode } from "@/lib/utils/api-error";
 import { type SignupFormValues, signupSchema } from "@/schema/auth";
@@ -53,6 +57,31 @@ export function SignupContent({ className }: { className?: string }) {
     return () => window.clearInterval(id);
   }, [retryAfterSeconds]);
 
+  const handleOAuthSuccess = useOAuthPostAuth();
+
+  const { startGoogleLogin, isPending: googleLoading } = useGoogleLogin({
+    rememberMe: false,
+    onSuccess: () => {
+      toast.success(t("socialLogin.googleSuccess"));
+      handleOAuthSuccess();
+    },
+    onCancel: () => toast.message(t("socialLogin.googleCancelled")),
+    onError: (result) =>
+      setServerError(translateApiErrorCode(tErrors, result.code)),
+  });
+
+  const { startXLogin, isPending: xLoading } = useXLogin({
+    entrypoint: "signup",
+    rememberMe: false,
+    onSuccess: () => {
+      toast.success(t("socialLogin.xSuccess"));
+      handleOAuthSuccess();
+    },
+    onCancel: () => toast.message(t("socialLogin.xCancelled")),
+    onError: (result) =>
+      setServerError(translateApiErrorCode(tErrors, result.code)),
+  });
+
   const onSubmit = async (values: SignupFormValues) => {
     setServerError(null);
     setRetryAfterSeconds(null);
@@ -91,7 +120,13 @@ export function SignupContent({ className }: { className?: string }) {
 
   return (
     <div className={cn("space-y-3", className)}>
-      <AuthSocialLogin type="signup" />
+      <AuthSocialLogin
+        type="signup"
+        onGoogleClick={() => startGoogleLogin()}
+        googleLoading={googleLoading}
+        onXClick={() => void startXLogin()}
+        xLoading={xLoading}
+      />
       <span className="flex justify-center items-center text-sm leading-[18px] font-normal text-black">
         {t("socialLogin.title")}
       </span>

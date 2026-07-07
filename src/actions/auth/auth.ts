@@ -13,19 +13,11 @@ import {
   registerService,
 } from "@/api/callers/auth";
 import { ApiErrorCode } from "@/constants/api-error-code";
-import {
-  clearAuthSessionCookies,
-  refreshMaxAgeFromBeSetCookie,
-  setAuthSessionCookies,
-} from "@/lib/utils/auth-session";
+import { finalizeAuthLoginAction } from "@/lib/utils/auth-action";
+import { clearAuthSessionCookies } from "@/lib/utils/auth-session";
+import type { AuthActionResult } from "@/types/auth/auth";
 
-export interface AuthActionResult {
-  success: boolean;
-  message: string;
-  code: number;
-  /** Seconds until retry when register is rate-limited (4010). */
-  retryAfterSeconds?: number;
-}
+export type { AuthActionResult };
 
 function parseRetryAfterSeconds(
   headers?: Record<string, string>,
@@ -63,22 +55,7 @@ function mapAxiosAuthError(error: unknown): AuthActionResult {
 export async function loginAction(
   payload: LoginPayload,
 ): Promise<AuthActionResult> {
-  try {
-    const { data: response, setCookieHeaders } = await loginService(payload);
-
-    if (response.code === ApiErrorCode.Success && response.data) {
-      const { access_token, refresh_token, session_id } = response.data;
-      await setAuthSessionCookies({
-        tokens: { access_token, refresh_token, session_id },
-        refreshMaxAge: refreshMaxAgeFromBeSetCookie(setCookieHeaders),
-      });
-      return { success: true, message: response.message, code: response.code };
-    }
-
-    return { success: false, message: response.message, code: response.code };
-  } catch (error: unknown) {
-    return mapAxiosAuthError(error);
-  }
+  return finalizeAuthLoginAction(() => loginService(payload));
 }
 
 /**
@@ -109,22 +86,7 @@ export const signupAction = registerAction;
 export async function confirmAction(
   payload: ConfirmPayload,
 ): Promise<AuthActionResult> {
-  try {
-    const { data: response, setCookieHeaders } = await confirmService(payload);
-
-    if (response.code === ApiErrorCode.Success && response.data) {
-      const { access_token, refresh_token, session_id } = response.data;
-      await setAuthSessionCookies({
-        tokens: { access_token, refresh_token, session_id },
-        refreshMaxAge: refreshMaxAgeFromBeSetCookie(setCookieHeaders),
-      });
-      return { success: true, message: response.message, code: response.code };
-    }
-
-    return { success: false, message: response.message, code: response.code };
-  } catch (error: unknown) {
-    return mapAxiosAuthError(error);
-  }
+  return finalizeAuthLoginAction(() => confirmService(payload));
 }
 
 /**

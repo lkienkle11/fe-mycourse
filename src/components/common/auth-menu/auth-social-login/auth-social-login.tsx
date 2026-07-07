@@ -8,9 +8,20 @@ import { cn } from "@/lib/utils";
 interface AuthSocialLoginProps {
   type: "login" | "signup";
   className?: string;
+  onGoogleClick?: () => void;
+  googleLoading?: boolean;
+  onXClick?: () => void;
+  xLoading?: boolean;
 }
 
-export function AuthSocialLogin({ type, className }: AuthSocialLoginProps) {
+export function AuthSocialLogin({
+  type,
+  className,
+  onGoogleClick,
+  googleLoading = false,
+  onXClick,
+  xLoading = false,
+}: AuthSocialLoginProps) {
   const t = useTranslations("auth.socialLogin");
 
   return (
@@ -18,7 +29,9 @@ export function AuthSocialLogin({ type, className }: AuthSocialLoginProps) {
       <Button
         type="button"
         variant="ghost"
-        className="w-full h-11 flex items-center justify-center gap-3 rounded-full bg-black hover:bg-black/90 text-white hover:text-white text-sm font-medium hover:cursor-pointer"
+        className="w-full h-11 flex items-center justify-center gap-3 rounded-full bg-black hover:bg-black/90 text-white hover:text-white text-sm font-medium hover:cursor-pointer disabled:opacity-60"
+        onClick={onXClick}
+        disabled={xLoading || !onXClick}
       >
         <XIcon color="#ffffff" width={18} height={18} />
         <span>{t(type === "login" ? "xLogin" : "xSignup")}</span>
@@ -27,7 +40,9 @@ export function AuthSocialLogin({ type, className }: AuthSocialLoginProps) {
       <Button
         type="button"
         variant="outline"
-        className="w-full h-11 flex items-center justify-center gap-3 rounded-full border border-gray-300 bg-white hover:bg-gray-50 text-black hover:text-black text-sm font-medium hover:cursor-pointer"
+        className="w-full h-11 flex items-center justify-center gap-3 rounded-full border border-gray-300 bg-white hover:bg-gray-50 text-black hover:text-black text-sm font-medium hover:cursor-pointer disabled:opacity-60"
+        onClick={onGoogleClick}
+        disabled={googleLoading || !onGoogleClick}
       >
         <GoogleIcon width={18} height={18} />
         <span>{t(type === "login" ? "googleLogin" : "googleSignup")}</span>
