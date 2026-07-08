@@ -116,6 +116,57 @@ export async function confirmService(payload: ConfirmPayload): Promise<{
   return { data, setCookieHeaders };
 }
 
+export interface GoogleLoginPayload {
+  code: string;
+  remember_me: boolean;
+}
+
+export interface GoogleOneTapPayload {
+  credential: string;
+}
+
+export interface XLoginPayload {
+  code: string;
+  code_verifier: string;
+  remember_me: boolean;
+  entrypoint: "login" | "signup";
+}
+
+export async function googleLoginService(payload: GoogleLoginPayload): Promise<{
+  data: ApiResponse<LoginResponse>;
+  setCookieHeaders: string | string[] | undefined;
+}> {
+  const { data, setCookieHeaders } = await apiPost<
+    ApiResponse<LoginResponse>,
+    GoogleLoginPayload
+  >(API_PUBLIC_ROUTES.auth.google, payload);
+  return { data, setCookieHeaders };
+}
+
+export async function googleOneTapService(
+  payload: GoogleOneTapPayload,
+): Promise<{
+  data: ApiResponse<LoginResponse>;
+  setCookieHeaders: string | string[] | undefined;
+}> {
+  const { data, setCookieHeaders } = await apiPost<
+    ApiResponse<LoginResponse>,
+    GoogleOneTapPayload
+  >(API_PUBLIC_ROUTES.auth.googleOnetap, payload);
+  return { data, setCookieHeaders };
+}
+
+export async function xLoginService(payload: XLoginPayload): Promise<{
+  data: ApiResponse<LoginResponse>;
+  setCookieHeaders: string | string[] | undefined;
+}> {
+  const { data, setCookieHeaders } = await apiPost<
+    ApiResponse<LoginResponse>,
+    XLoginPayload
+  >(API_PUBLIC_ROUTES.auth.x, payload);
+  return { data, setCookieHeaders };
+}
+
 /**
  * Gọi API refresh token.
  *

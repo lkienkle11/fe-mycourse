@@ -6,6 +6,9 @@ export const API_PUBLIC_ROUTES = {
     confirm: "/api/v1/auth/confirm",
     refresh: "/api/v1/auth/refresh",
     logout: "/api/v1/auth/logout",
+    google: "/api/v1/auth/google",
+    googleOnetap: "/api/v1/auth/google/onetap",
+    x: "/api/v1/auth/x",
   },
 } as const;
 

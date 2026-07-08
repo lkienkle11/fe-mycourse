@@ -51,6 +51,17 @@ export const errorCodesEn = {
   "4010": "Too many confirmation emails were sent. Please try again later.",
   "4011": "Could not send the confirmation email. Please try again.",
   "4012": "Your account is temporarily banned.",
+  "4013": "Google sign-in failed. Please try again.",
+  "4014": "Your Google account email is not verified.",
+  "4015": "Could not link this social account. Please try again.",
+  "4016": "X sign-in failed. Please try again.",
+  "4017": "Your X account has no email available for sign-in.",
+  "4018": "Sign-in session expired. Please try again.",
+  "4019":
+    "An account with this email already exists. Sign in with email first.",
+  "4020": "Google sign-in is not available. Please try email sign-in.",
+  "4021": "Your browser blocked the sign-in popup. Allow popups and try again.",
+  "4022": "Could not start X sign-in. Please try again later.",
 
   // Server (9xxx)
   "9001": "Something went wrong on our side. Please try again.",
@@ -109,6 +120,17 @@ export const errorCodesVi = {
   "4010": "Đã gửi quá nhiều email xác nhận. Vui lòng thử lại sau.",
   "4011": "Không thể gửi email xác nhận. Vui lòng thử lại.",
   "4012": "Tài khoản của bạn tạm thời bị khóa.",
+  "4013": "Đăng nhập Google thất bại. Vui lòng thử lại.",
+  "4014": "Email Google của bạn chưa được xác minh.",
+  "4015": "Không thể liên kết tài khoản mạng xã hội. Vui lòng thử lại.",
+  "4016": "Đăng nhập X thất bại. Vui lòng thử lại.",
+  "4017": "Tài khoản X không có email để đăng nhập.",
+  "4018": "Phiên đăng nhập đã hết hạn. Vui lòng thử lại.",
+  "4019": "Email này đã có tài khoản. Hãy đăng nhập bằng email trước.",
+  "4020": "Đăng nhập Google không khả dụng. Vui lòng đăng nhập bằng email.",
+  "4021":
+    "Trình duyệt đã chặn cửa sổ đăng nhập. Hãy cho phép popup và thử lại.",
+  "4022": "Không thể bắt đầu đăng nhập X. Vui lòng thử lại sau.",
 
   // Server (9xxx)
   "9001": "Đã xảy ra lỗi phía máy chủ. Vui lòng thử lại.",

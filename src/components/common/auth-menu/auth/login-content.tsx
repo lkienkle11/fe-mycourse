@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 import { registerAction } from "@/actions/auth";
 import { handleAuthSubmit } from "@/actions/auth/auth-client";
 import { Button, Spinner } from "@/components/ui";
@@ -12,6 +13,9 @@ import { Field } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { useAuthStore, useGetMe } from "@/hooks";
+import { useGoogleLogin } from "@/hooks/auth/use-google-login";
+import { useOAuthPostAuth } from "@/hooks/auth/use-oauth-post-auth";
+import { useXLogin } from "@/hooks/auth/use-x-login";
 import { Link, useRouter } from "@/i18n/navigation";
 import { forgotPasswordHref } from "@/lib/navigation/routes";
 import { cn } from "@/lib/utils";
@@ -53,6 +57,31 @@ export function LoginContent({ className }: { className?: string }) {
     control,
     name: "rememberMe",
     defaultValue: false,
+  });
+
+  const handleOAuthSuccess = useOAuthPostAuth();
+
+  const { startGoogleLogin, isPending: googleLoading } = useGoogleLogin({
+    rememberMe: rememberMe ?? false,
+    onSuccess: () => {
+      toast.success(t("socialLogin.googleSuccess"));
+      handleOAuthSuccess();
+    },
+    onCancel: () => toast.message(t("socialLogin.googleCancelled")),
+    onError: (result) =>
+      setServerError(translateApiErrorCode(tErrors, result.code)),
+  });
+
+  const { startXLogin, isPending: xLoading } = useXLogin({
+    entrypoint: "login",
+    rememberMe: rememberMe ?? false,
+    onSuccess: () => {
+      toast.success(t("socialLogin.xSuccess"));
+      handleOAuthSuccess();
+    },
+    onCancel: () => toast.message(t("socialLogin.xCancelled")),
+    onError: (result) =>
+      setServerError(translateApiErrorCode(tErrors, result.code)),
   });
 
   const onSubmit = async (values: LoginFormValues) => {
@@ -181,7 +210,13 @@ export function LoginContent({ className }: { className?: string }) {
       <span className="flex justify-center items-center text-sm leading-[18px] font-normal text-black mt-2">
         {t("socialLogin.title")}
       </span>
-      <AuthSocialLogin type="login" />
+      <AuthSocialLogin
+        type="login"
+        onGoogleClick={() => startGoogleLogin()}
+        googleLoading={googleLoading}
+        onXClick={() => void startXLogin()}
+        xLoading={xLoading}
+      />
       <span className="flex justify-center items-center text-sm leading-[18px] font-normal text-black">
         {t("noAccount")}
         <Button

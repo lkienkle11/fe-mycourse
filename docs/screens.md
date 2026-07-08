@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-07-06 (BecomeInstructorPromoBanner in web layout). Prior: become-instructor page implemented (2026-07-02)._
+_Last audited: 2026-07-08 (Google/X OAuth social login, GoogleOneTapHost, locale-less X callback). Prior: 2026-07-06 (BecomeInstructorPromoBanner in web layout)._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -25,6 +25,7 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | URL pattern | Source file | What the user sees |
 |-------------|------------|---------------------|
 | `/` | `src/app/page.tsx` | **Locale redirect** → `/vi` (308 Permanent Redirect via `next-intl` navigation) |
+| `/auth/x/callback` | `src/app/auth/x/callback/page.tsx` | **X OAuth popup callback** (locale-less) — `XOAuthCallbackPage` posts `code`/`state`/`error` to `window.opener` then closes; fallback text + Back-to-home link when no opener |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | **Home page** — renders `HomePage` |
 | `/{locale}/become-instructor` | `src/app/[locale]/(web)/become-instructor/page.tsx` | **Active** — `BecomeInstructorPage` (instructor application states A–H); see [`instructor-application.md`](./instructor-application.md) |
 | `/{locale}/confirm-email` | Active | Email confirmation page (`ConfirmEmailContent` → `confirmAction`) |
@@ -82,7 +83,10 @@ This split is intentionally centralized in `src/constants/route.ts` so UI config
 ```
 src/app/layout.tsx                          Root layout
 │   HTML lang="vi", font variables (Roboto, Gilroy, GeistMono)
+│   Google Identity Services script (accounts.google.com/gsi/client, afterInteractive)
 │   Sonner <Toaster position="top-right" richColors closeButton />
+│
+├── src/app/auth/x/callback/page.tsx        X OAuth popup callback (locale-less; no locale/(web) chrome)
 │
 └── src/app/[locale]/layout.tsx             Locale layout
     │   Validates locale (404 if unknown)
@@ -90,16 +94,16 @@ src/app/layout.tsx                          Root layout
     │   <AppProviders>                      → `SWRConfig` + `MeSwrSync` + `LanguageLocaleSync` + stream/auth tab sync + `children`
     │
     ├── src/app/[locale]/(web)/layout.tsx   Web shell layout
-    │     <BecomeInstructorPromoBanner /> + <Header /> + <main> + <Footer /> → HomePage, become-instructor, confirm-email, logout
+    │     <BecomeInstructorPromoBanner /> + <Header /> + <GoogleOneTapHost /> + <main> + <Footer /> → HomePage, become-instructor, confirm-email, logout
     ├── src/app/[locale]/admin/layout.tsx   DashboardLayout (admin items, `admin:modify`)
     ├── src/app/[locale]/instructor/layout.tsx
     └── src/app/[locale]/sysadmin/layout.tsx
 ```
 
 Each layout layer adds a concern without re-rendering the parent:
-- **Root:** HTML scaffold, fonts, toast notifications.
+- **Root:** HTML scaffold, fonts, toast notifications (no third-party auth scripts).
 - **Locale:** i18n provider, global SWR configuration.
-- **Web shell:** Site chrome (`BecomeInstructorPromoBanner` when learner + not dismissed, then `Header`), page body (`<main>{children}</main>`), site footer (`Footer`).
+- **Web shell:** Site chrome (`BecomeInstructorPromoBanner` when learner + not dismissed, then `Header`), Google One Tap host (`GoogleOneTapHost` — prompts guests), page body (`<main>{children}</main>`), site footer (`Footer`).
 - **Dashboard shells:** `DashboardLayout` (sidebar + `HeaderDashboard`), no site `Footer`.
 
 ---
@@ -289,14 +293,21 @@ Header
       ├── LoginSignupLayout
       │     "login"  → LoginContent
       │     "signup" → SignupContent
-      │     └── AuthSocialLogin [stub]
+      │     └── AuthSocialLogin (Google + X buttons, wired via onGoogleClick / onXClick)
       ├── LoginContent → handleAuthSubmit("login") → loginAction → mutateMe()
-      │     └── !success → translateApiErrorCode(tErrors, result.code) — never result.message
+      │     ├── !success → translateApiErrorCode(tErrors, result.code) — never result.message
+      │     └── AuthSocialLogin → useGoogleLogin / useXLogin (entrypoint="login") → useOAuthPostAuth
       └── SignupContent → handleAuthSubmit("signup", …, locale) → registerAction({ locale })
-            └── !success → translateApiErrorCode(tErrors, result.code); 4010 rate-limit shows countdown
+            ├── !success → translateApiErrorCode(tErrors, result.code); 4010 rate-limit shows countdown
+            └── AuthSocialLogin → useGoogleLogin / useXLogin (entrypoint="signup") → useOAuthPostAuth
 ```
 
-**Dedicated auth pages:** `ConfirmEmailContent` (`/confirm-email`), `LogoutContent` (`/logout`).
+**Social login behavior (login + signup modals):**
+- **Google:** `useGoogleLogin` opens the GSI code-client popup and calls `googleLoginAction({ code, remember_me })`. `onSuccess` toasts `auth.socialLogin.googleSuccess` and runs `useOAuthPostAuth` (`mutateMe` + close modal + push `nextLink`); `onCancel` toasts `auth.socialLogin.googleCancelled`; `onError` shows the inline `translateApiErrorCode` message.
+- **X (Twitter):** `useXLogin` opens the OAuth popup (`startXLoginAction` → authorize URL with PKCE) and waits for the callback `postMessage`, then calls `xLoginAction({ code, state })`. Success toasts `auth.socialLogin.xSuccess`; cancel toasts `auth.socialLogin.xCancelled`; errors resolve via `errors.codes.*` (OAuth codes 4013–4019; 4018 `InvalidOAuthState` is FE-local when the PKCE/state cookies are missing or mismatched).
+- **Google One Tap:** shown outside the modal by `GoogleOneTapHost` for guests only.
+
+**Dedicated auth pages:** `ConfirmEmailContent` (`/confirm-email`), `LogoutContent` (`/logout`), plus the locale-less `XOAuthCallbackPage` (`/auth/x/callback`) popup relay.
 
 ### Component tree (authenticated)
 
@@ -381,6 +392,7 @@ _No `src/components/demo/` folder — removed 2026-06-17 (unused demo `RegisterF
 | `"commonHeader"` | Mobile menu (`menu.open`, `browse.categoriesTitle`, `menu.language`, `menu.account`) |
 | `"commonFooter"` | Footer brand, copyright, course link labels |
 | `"auth"` | Auth forms; Zod keys resolved via `useTranslations("auth")` |
+| `"auth.socialLogin"` | Social login buttons + toasts: `googleLogin`/`xLogin`, `googleSignup`/`xSignup`, `googleSuccess`/`googleCancelled`, `xSuccess`/`xCancelled`, `title` |
 | `"errors.codes"` | **All API failures** — numeric code keys from `src/messages/error-codes.ts` |
 | `"taxonomy.form.validation"` / `"media.validation"` / `"instructor.validation"` / `"course.validation"` | Pre-submit / Zod validation only (never mixed with API codes) |
 
@@ -440,11 +452,15 @@ Use with `@/i18n/navigation` `Link` / `router.push` — locale prefix is applied
 `src/constants/api-route.ts`:
 
 ```ts
-API_PUBLIC_ROUTES.auth.login     // POST /api/v1/auth/login
-API_PUBLIC_ROUTES.auth.register  // POST /api/v1/auth/register
-API_PUBLIC_ROUTES.auth.confirm   // POST /api/v1/auth/confirm
-API_PUBLIC_ROUTES.auth.refresh   // POST /api/v1/auth/refresh
-API_PUBLIC_ROUTES.auth.logout    // POST /api/v1/auth/logout
+API_PUBLIC_ROUTES.auth.login        // POST /api/v1/auth/login
+API_PUBLIC_ROUTES.auth.register     // POST /api/v1/auth/register
+API_PUBLIC_ROUTES.auth.confirm      // POST /api/v1/auth/confirm
+API_PUBLIC_ROUTES.auth.refresh      // POST /api/v1/auth/refresh
+API_PUBLIC_ROUTES.auth.logout       // POST /api/v1/auth/logout
+API_PUBLIC_ROUTES.auth.google       // POST /api/v1/auth/google         (Google auth-code login)
+API_PUBLIC_ROUTES.auth.googleOnetap // POST /api/v1/auth/google/onetap  (Google One Tap ID credential)
+API_PUBLIC_ROUTES.auth.x            // POST /api/v1/auth/x              (X/Twitter OAuth code + PKCE verifier)
+// /api/v1/auth/google/mobile is a BE-only native-mobile contract — not present in the web FE route map.
 
 API_PRIVATE_ROUTES.user.getMe           // GET    /api/v1/me
 API_PRIVATE_ROUTES.user.patchMe         // PATCH  /api/v1/me
@@ -466,7 +482,7 @@ Symbol and edge counts change as the codebase grows. Refresh the local graph wit
 | Cluster | Component surface |
 |---------|------------------|
 | **Ui** | `src/components/ui/*`, home sections, `SearchBar`, `LocaleSwitcher`, `Header`, `HeaderDashboard`, `DashboardLayout`, `Footer`, `FooterSocial` |
-| **Auth** | `AuthLayout`, `AuthButton`, `LoginSignupPopup`, `LoginContent`, `SignupContent`, `UserMenu`, `handleAuthSubmit`, auth stores and hooks |
+| **Auth** | `AuthLayout`, `AuthButton`, `LoginSignupPopup`, `LoginContent`, `SignupContent`, `AuthSocialLogin`, `GoogleOneTapHost`, `UserMenu`, `handleAuthSubmit`, OAuth actions (`googleLoginAction`, `googleOneTapAction`, `startXLoginAction`, `xLoginAction`), OAuth hooks (`useGoogleLogin`, `useGoogleOneTap`, `useXLogin`, `useOAuthPostAuth`), auth stores and hooks |
 | **Api** | `useAuth` SWR hook, `getMeService`, `createApiInstance`, `apiInstance`, `raw-http` helpers, `src/api/index.ts` barrel, callers and `methods` |
 
 ---
