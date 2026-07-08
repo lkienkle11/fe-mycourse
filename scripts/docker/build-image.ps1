@@ -13,6 +13,8 @@ $grpc = if ($env:NEXT_PUBLIC_STREAM_GRPC_BASE_URL) { $env:NEXT_PUBLIC_STREAM_GRP
 $googleClientId = if ($env:NEXT_PUBLIC_GOOGLE_CLIENT_ID) { $env:NEXT_PUBLIC_GOOGLE_CLIENT_ID } else { '' }
 $xClientId = if ($env:NEXT_PUBLIC_X_CLIENT_ID) { $env:NEXT_PUBLIC_X_CLIENT_ID } else { '' }
 $xCallbackUrl = if ($env:NEXT_PUBLIC_X_CALLBACK_URL) { $env:NEXT_PUBLIC_X_CALLBACK_URL } else { '' }
+$discordClientId = if ($env:NEXT_PUBLIC_DISCORD_CLIENT_ID) { $env:NEXT_PUBLIC_DISCORD_CLIENT_ID } else { '' }
+$discordCallbackUrl = if ($env:NEXT_PUBLIC_DISCORD_CALLBACK_URL) { $env:NEXT_PUBLIC_DISCORD_CALLBACK_URL } else { '' }
 $imageTag = "mycourse-fe:$EnvName"
 Write-Host "docker: building image $imageTag..."
 & docker build `
@@ -23,6 +25,8 @@ Write-Host "docker: building image $imageTag..."
     --build-arg "NEXT_PUBLIC_GOOGLE_CLIENT_ID=$googleClientId" `
     --build-arg "NEXT_PUBLIC_X_CLIENT_ID=$xClientId" `
     --build-arg "NEXT_PUBLIC_X_CALLBACK_URL=$xCallbackUrl" `
+    --build-arg "NEXT_PUBLIC_DISCORD_CLIENT_ID=$discordClientId" `
+    --build-arg "NEXT_PUBLIC_DISCORD_CALLBACK_URL=$discordCallbackUrl" `
     -t $imageTag `
     -f (Join-Path $script:RepoRoot 'Dockerfile') `
     $script:RepoRoot
