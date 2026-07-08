@@ -194,7 +194,7 @@ Functions marked `"use server"` — execute on the server, called from client co
 ```
 src/actions/
 └── auth/
-    ├── auth.ts             # loginAction, registerAction, confirmAction, logoutAction; AuthActionResult type
+    ├── auth.ts             # loginAction, registerAction, confirmAction, logoutAction (AuthActionResult type lives in src/types/auth/auth.ts)
     │                       # signupAction: deprecated alias of registerAction
     ├── auth-client.ts      # handleAuthSubmit() for client forms; delegates to server actions
     ├── google-oauth.ts     # googleLoginAction (auth-code), googleOneTapAction (ID credential) → finalizeAuthLoginAction
