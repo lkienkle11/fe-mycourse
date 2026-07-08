@@ -1,13 +1,16 @@
 "use client";
 
-import { startXLoginAction, xLoginAction } from "@/actions/auth/x-oauth";
+import {
+  discordLoginAction,
+  startDiscordLoginAction,
+} from "@/actions/auth/discord-oauth";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import type { AuthActionResult } from "@/types/auth/auth";
 import { useOAuthPopupLogin } from "./use-oauth-popup-login";
 
-export const X_OAUTH_MESSAGE_TYPE = "x-oauth-callback";
+export const DISCORD_OAUTH_MESSAGE_TYPE = "discord-oauth-callback";
 
-interface UseXLoginOptions {
+interface UseDiscordLoginOptions {
   entrypoint: "login" | "signup";
   rememberMe: boolean;
   onSuccess?: (result: AuthActionResult) => void;
@@ -15,25 +18,25 @@ interface UseXLoginOptions {
   onError?: (result: AuthActionResult) => void;
 }
 
-export function useXLogin({
+export function useDiscordLogin({
   entrypoint,
   rememberMe,
   onSuccess,
   onCancel,
   onError,
-}: UseXLoginOptions) {
+}: UseDiscordLoginOptions) {
   const { startLogin, isPending } = useOAuthPopupLogin({
     entrypoint,
     rememberMe,
-    messageType: X_OAUTH_MESSAGE_TYPE,
-    popupName: "x-oauth",
-    startFailedCode: ApiErrorCode.XOAuthStartFailed,
-    startAction: startXLoginAction,
-    completeAction: xLoginAction,
+    messageType: DISCORD_OAUTH_MESSAGE_TYPE,
+    popupName: "discord-oauth",
+    startFailedCode: ApiErrorCode.DiscordOAuthStartFailed,
+    startAction: startDiscordLoginAction,
+    completeAction: discordLoginAction,
     onSuccess,
     onCancel,
     onError,
   });
 
-  return { startXLogin: startLogin, isPending };
+  return { startDiscordLogin: startLogin, isPending };
 }

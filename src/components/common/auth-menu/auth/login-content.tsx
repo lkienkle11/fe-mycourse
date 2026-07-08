@@ -13,9 +13,9 @@ import { Field } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { useAuthStore, useGetMe } from "@/hooks";
+import { useDiscordLogin } from "@/hooks/auth/use-discord-login";
 import { useGoogleLogin } from "@/hooks/auth/use-google-login";
 import { useOAuthPostAuth } from "@/hooks/auth/use-oauth-post-auth";
-import { useXLogin } from "@/hooks/auth/use-x-login";
 import { Link, useRouter } from "@/i18n/navigation";
 import { forgotPasswordHref } from "@/lib/navigation/routes";
 import { cn } from "@/lib/utils";
@@ -72,14 +72,14 @@ export function LoginContent({ className }: { className?: string }) {
       setServerError(translateApiErrorCode(tErrors, result.code)),
   });
 
-  const { startXLogin, isPending: xLoading } = useXLogin({
+  const { startDiscordLogin, isPending: discordLoading } = useDiscordLogin({
     entrypoint: "login",
     rememberMe: rememberMe ?? false,
     onSuccess: () => {
-      toast.success(t("socialLogin.xSuccess"));
+      toast.success(t("socialLogin.discordSuccess"));
       handleOAuthSuccess();
     },
-    onCancel: () => toast.message(t("socialLogin.xCancelled")),
+    onCancel: () => toast.message(t("socialLogin.discordCancelled")),
     onError: (result) =>
       setServerError(translateApiErrorCode(tErrors, result.code)),
   });
@@ -214,8 +214,8 @@ export function LoginContent({ className }: { className?: string }) {
         type="login"
         onGoogleClick={() => startGoogleLogin()}
         googleLoading={googleLoading}
-        onXClick={() => void startXLogin()}
-        xLoading={xLoading}
+        onDiscordClick={() => void startDiscordLogin()}
+        discordLoading={discordLoading}
       />
       <span className="flex justify-center items-center text-sm leading-[18px] font-normal text-black">
         {t("noAccount")}

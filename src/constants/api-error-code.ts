@@ -54,6 +54,12 @@ export const ApiErrorCode = {
   OAuthPopupBlocked: 4021,
   /** FE-local only — could not start X OAuth (missing callback URL or authorize URL). */
   XOAuthStartFailed: 4022,
+  /** FE-local only — could not start Discord OAuth (missing client id or callback URL). */
+  DiscordOAuthStartFailed: 4026,
+
+  InvalidDiscordCode: 4023,
+  DiscordEmailNotVerified: 4024,
+  DiscordEmailUnavailable: 4025,
 
   // Server (9xxx)
   InternalError: 9001,

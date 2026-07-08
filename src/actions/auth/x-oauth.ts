@@ -5,14 +5,25 @@ import { cookies } from "next/headers";
 import { xLoginService } from "@/api/callers/auth";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { finalizeAuthLoginAction } from "@/lib/utils/auth-action";
-import { buildAuthCookieOptions, getCookieDomain } from "@/lib/utils/cookie";
+import {
+  clearOAuthFlowCookies,
+  OAUTH_FLOW_COOKIE_TTL,
+  oauthFlowCookieOptions,
+  randomOAuthState,
+  readOAuthFlowContext,
+} from "@/lib/utils/oauth-popup-cookies";
 import type { AuthActionResult } from "@/types/auth/auth";
 
 const X_OAUTH_STATE = "x_oauth_state";
 const X_OAUTH_VERIFIER = "x_oauth_verifier";
 const X_OAUTH_ENTRYPOINT = "x_oauth_entrypoint";
 const X_OAUTH_REMEMBER_ME = "x_oauth_remember_me";
-const X_OAUTH_COOKIE_TTL = 600;
+const X_OAUTH_COOKIE_NAMES = [
+  X_OAUTH_STATE,
+  X_OAUTH_VERIFIER,
+  X_OAUTH_ENTRYPOINT,
+  X_OAUTH_REMEMBER_ME,
+] as const;
 const X_AUTHORIZE_URL = "https://twitter.com/i/oauth2/authorize";
 const X_OAUTH_SCOPE = "users.read users.email";
 
@@ -31,37 +42,9 @@ function pkceChallenge(verifier: string): string {
   return createHash("sha256").update(verifier).digest("base64url");
 }
 
-function randomState(): string {
-  return randomBytes(16).toString("base64url");
-}
-
 function resolveXCallbackUrl(): string | null {
   const callbackUrl = process.env.NEXT_PUBLIC_X_CALLBACK_URL?.trim();
   return callbackUrl || null;
-}
-
-function oauthFlowCookieOptions(maxAge: number) {
-  const isProduction = process.env.NODE_ENV === "production";
-  return buildAuthCookieOptions({
-    sameSite: "lax",
-    isProduction,
-    maxAge,
-    domain: getCookieDomain(process.env.AUTH_COOKIE_DOMAIN),
-  });
-}
-
-async function clearXOAuthCookies(
-  cookieStore: Awaited<ReturnType<typeof cookies>>,
-) {
-  const opts = oauthFlowCookieOptions(0);
-  for (const name of [
-    X_OAUTH_STATE,
-    X_OAUTH_VERIFIER,
-    X_OAUTH_ENTRYPOINT,
-    X_OAUTH_REMEMBER_ME,
-  ]) {
-    cookieStore.set(name, "", { ...opts, maxAge: 0 });
-  }
 }
 
 export async function startXLoginAction(payload: {
@@ -86,11 +69,11 @@ export async function startXLoginAction(payload: {
     };
   }
 
-  const state = randomState();
+  const state = randomOAuthState();
   const verifier = pkceVerifier();
   const challenge = pkceChallenge(verifier);
   const cookieStore = await cookies();
-  const opts = oauthFlowCookieOptions(X_OAUTH_COOKIE_TTL);
+  const opts = oauthFlowCookieOptions(OAUTH_FLOW_COOKIE_TTL);
 
   cookieStore.set(X_OAUTH_STATE, state, opts);
   cookieStore.set(X_OAUTH_VERIFIER, verifier, opts);
@@ -120,13 +103,13 @@ export async function xLoginAction(payload: {
   const cookieStore = await cookies();
   const storedState = cookieStore.get(X_OAUTH_STATE)?.value;
   const verifier = cookieStore.get(X_OAUTH_VERIFIER)?.value;
-  const entrypoint =
-    (cookieStore.get(X_OAUTH_ENTRYPOINT)?.value as "login" | "signup") ??
-    "login";
-  const rememberRaw = cookieStore.get(X_OAUTH_REMEMBER_ME)?.value === "1";
+  const { entrypoint, rememberMe: rememberRaw } = readOAuthFlowContext(
+    cookieStore,
+    { entrypoint: X_OAUTH_ENTRYPOINT, rememberMe: X_OAUTH_REMEMBER_ME },
+  );
 
   if (!storedState || !verifier || storedState !== payload.state) {
-    await clearXOAuthCookies(cookieStore);
+    await clearOAuthFlowCookies(cookieStore, X_OAUTH_COOKIE_NAMES);
     return {
       success: false,
       message: "invalid_oauth_state",
@@ -134,14 +117,16 @@ export async function xLoginAction(payload: {
     };
   }
 
-  const result = await finalizeAuthLoginAction(() =>
-    xLoginService({
-      code: payload.code,
-      code_verifier: verifier,
-      remember_me: entrypoint === "login" ? rememberRaw : false,
-      entrypoint,
-    }),
-  );
-  await clearXOAuthCookies(cookieStore);
-  return result;
+  try {
+    return await finalizeAuthLoginAction(() =>
+      xLoginService({
+        code: payload.code,
+        code_verifier: verifier,
+        remember_me: entrypoint === "login" ? rememberRaw : false,
+        entrypoint,
+      }),
+    );
+  } finally {
+    await clearOAuthFlowCookies(cookieStore, X_OAUTH_COOKIE_NAMES);
+  }
 }
