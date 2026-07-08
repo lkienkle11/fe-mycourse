@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-07-08 (Google/X OAuth fixes: canonical X callback URL, FE-local error codes 4020–4022, shared finalizeAuthLoginAction for login/confirm/OAuth). Prior: 2026-07-05 (global SWR error retry interval + become-instructor bootstrap loading)._
+_Last audited: 2026-07-08 (Discord OAuth on popup; X code retained; shared finalizeAuthLoginAction). Prior: 2026-07-05 (global SWR error retry interval + become-instructor bootstrap loading)._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -125,7 +125,8 @@ API_PUBLIC_ROUTES.auth.logout       // POST /api/v1/auth/logout
 API_PUBLIC_ROUTES.auth.refresh      // POST /api/v1/auth/refresh
 API_PUBLIC_ROUTES.auth.google       // POST /api/v1/auth/google         (Google auth-code)
 API_PUBLIC_ROUTES.auth.googleOnetap // POST /api/v1/auth/google/onetap  (Google One Tap credential)
-API_PUBLIC_ROUTES.auth.x            // POST /api/v1/auth/x              (X/Twitter code + PKCE verifier)
+API_PUBLIC_ROUTES.auth.discord      // POST /api/v1/auth/discord          (Discord OAuth code)
+API_PUBLIC_ROUTES.auth.x            // POST /api/v1/auth/x              (X/Twitter code + PKCE verifier; retained, not wired to popup)
 // Note: /api/v1/auth/google/mobile exists on the BE for native mobile apps only — it is
 // intentionally NOT surfaced in the web FE route map (no web caller).
 
@@ -200,9 +201,11 @@ if (!result.success) { /* show error */ }
 
 ---
 
-## OAuth Server Actions (Google + X)
+## OAuth Server Actions (Google + Discord + X)
 
-Google and X (Twitter) social login use Server Actions that reuse the same session-cookie handling as email login. All actions return `AuthActionResult` (`{ success, message, code }`).
+Google, Discord, and X (Twitter) social login use Server Actions that reuse the same session-cookie handling as email login. All actions return `AuthActionResult` (`{ success, message, code }`).
+
+> **Popup wiring:** `LoginContent` / `SignupContent` call **`useDiscordLogin`** + **`useGoogleLogin`** only. X actions/hooks remain but are not connected to `AuthSocialLogin`.
 
 ### Callers (`src/api/callers/auth/auth.ts`)
 
@@ -210,6 +213,7 @@ Google and X (Twitter) social login use Server Actions that reuse the same sessi
 |---------|--------|---------------|---------|
 | `googleLoginService` | POST | `API_PUBLIC_ROUTES.auth.google` | `{ code, remember_me }` |
 | `googleOneTapService` | POST | `API_PUBLIC_ROUTES.auth.googleOnetap` | `{ credential }` |
+| `discordLoginService` | POST | `API_PUBLIC_ROUTES.auth.discord` | `{ code, remember_me, entrypoint }` |
 | `xLoginService` | POST | `API_PUBLIC_ROUTES.auth.x` | `{ code, code_verifier, remember_me, entrypoint }` |
 
 Each returns `{ data: ApiResponse<LoginResponse>, setCookieHeaders }` — the same shape as `loginService`, so the shared finalizer can set the session cookies.
@@ -220,8 +224,10 @@ Each returns `{ data: ApiResponse<LoginResponse>, setCookieHeaders }` — the sa
 |--------|------|----------------|
 | `googleLoginAction({ code, remember_me })` | `src/actions/auth/google-oauth.ts` | Exchange the GSI auth code → `finalizeAuthLoginAction(googleLoginService)` |
 | `googleOneTapAction({ credential })` | `src/actions/auth/google-oauth.ts` | Verify the One Tap ID credential → `finalizeAuthLoginAction(googleOneTapService)` |
-| `startXLoginAction({ entrypoint, remember_me })` | `src/actions/auth/x-oauth.ts` | Generate PKCE verifier/challenge + random state, store them in short-lived (`600s`) HttpOnly cookies, and return the X authorize URL. `redirect_uri` is **`NEXT_PUBLIC_X_CALLBACK_URL`** (canonical; must match BE `X_CALLBACK_URL` byte-for-byte). |
-| `xLoginAction({ code, state })` | `src/actions/auth/x-oauth.ts` | Validate `state` against the cookie, then `finalizeAuthLoginAction(xLoginService)` with the stored `code_verifier` / `entrypoint` / `remember_me`; clears OAuth cookies afterward. Mismatched/expired state → `ApiErrorCode.InvalidOAuthState` (4018, FE-local) |
+| `startDiscordLoginAction({ entrypoint, remember_me })` | `src/actions/auth/discord-oauth.ts` | Generate random `state`, store it with `entrypoint` / `remember_me` in short-lived (`600s`) HttpOnly cookies, and return the Discord authorize URL. `redirect_uri` is **`NEXT_PUBLIC_DISCORD_CALLBACK_URL`** (canonical; must match BE `DISCORD_CALLBACK_URL` byte-for-byte). Missing client id or callback URL → `ApiErrorCode.DiscordOAuthStartFailed` (4026, FE-local). |
+| `discordLoginAction({ code, state })` | `src/actions/auth/discord-oauth.ts` | Validate `state` against the cookie, then `finalizeAuthLoginAction(discordLoginService)` with stored `entrypoint` / `remember_me`; clears OAuth cookies afterward. Mismatched/expired state → `ApiErrorCode.InvalidOAuthState` (4018, FE-local) |
+| `startXLoginAction({ entrypoint, remember_me })` | `src/actions/auth/x-oauth.ts` | *(Retained, not wired to popup.)* Generate PKCE verifier/challenge + random state, store them in short-lived (`600s`) HttpOnly cookies, and return the X authorize URL. `redirect_uri` is **`NEXT_PUBLIC_X_CALLBACK_URL`** (canonical; must match BE `X_CALLBACK_URL` byte-for-byte). |
+| `xLoginAction({ code, state })` | `src/actions/auth/x-oauth.ts` | *(Retained, not wired to popup.)* Validate `state` against the cookie, then `finalizeAuthLoginAction(xLoginService)` with the stored `code_verifier` / `entrypoint` / `remember_me`; clears OAuth cookies afterward. Mismatched/expired state → `ApiErrorCode.InvalidOAuthState` (4018, FE-local) |
 
 ### Shared finalizer (`src/lib/utils/auth-action.ts`)
 
@@ -229,7 +235,7 @@ Each returns `{ data: ApiResponse<LoginResponse>, setCookieHeaders }` — the sa
 
 ### Client wiring
 
-Client components never call the actions directly for the popup flows — they use the hooks in `src/hooks/auth/` (`useGoogleLogin`, `useGoogleOneTap`, `useXLogin`, `useOAuthPostAuth`). See `docs/components.md` (Auth OAuth hooks) and `docs/screens.md` (social login behavior). OAuth failures resolve to `errors.codes.*` (BE codes **4013–4017/4019**; FE-local **4018**, **4020–4022**); success/cancel toasts use `auth.socialLogin.*`.
+Client components never call the actions directly for the popup flows — they use the hooks in `src/hooks/auth/` (`useGoogleLogin`, `useGoogleOneTap`, `useDiscordLogin`, `useXLogin`, `useOAuthPostAuth`). See `docs/components.md` (Auth OAuth hooks) and `docs/screens.md` (social login behavior). OAuth failures resolve to `errors.codes.*` (BE codes **4013–4017/4019**, **4023–4025**; FE-local **4018**, **4020–4022**, **4026**); success/cancel toasts use `auth.socialLogin.*`.
 
 ---
 

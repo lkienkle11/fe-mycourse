@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-07-08 (Google/X OAuth social login, GoogleOneTapHost, locale-less X callback). Prior: 2026-07-06 (BecomeInstructorPromoBanner in web layout)._
+_Last audited: 2026-07-08 (Discord + Google on login/signup popup; Discord callback route; X OAuth code retained). Prior: 2026-07-06 (BecomeInstructorPromoBanner in web layout)._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -25,7 +25,8 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | URL pattern | Source file | What the user sees |
 |-------------|------------|---------------------|
 | `/` | `src/app/page.tsx` | **Locale redirect** → `/vi` (308 Permanent Redirect via `next-intl` navigation) |
-| `/auth/x/callback` | `src/app/auth/x/callback/page.tsx` | **X OAuth popup callback** (locale-less) — `XOAuthCallbackPage` posts `code`/`state`/`error` to `window.opener` then closes; fallback text + Back-to-home link when no opener |
+| `/auth/discord/callback` | `src/app/auth/discord/callback/page.tsx` | **Discord OAuth popup callback** (locale-less) — posts `code`/`state`/`error` to `window.opener` then closes; fallback text + Back-to-home link when no opener |
+| `/auth/x/callback` | `src/app/auth/x/callback/page.tsx` | **X OAuth popup callback** (locale-less, retained) — `XOAuthCallbackPage` posts `code`/`state`/`error` to `window.opener` then closes; not wired to login/signup popup |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | **Home page** — renders `HomePage` |
 | `/{locale}/become-instructor` | `src/app/[locale]/(web)/become-instructor/page.tsx` | **Active** — `BecomeInstructorPage` (instructor application states A–H); see [`instructor-application.md`](./instructor-application.md) |
 | `/{locale}/confirm-email` | Active | Email confirmation page (`ConfirmEmailContent` → `confirmAction`) |
@@ -86,7 +87,8 @@ src/app/layout.tsx                          Root layout
 │   Google Identity Services script (accounts.google.com/gsi/client, afterInteractive)
 │   Sonner <Toaster position="top-right" richColors closeButton />
 │
-├── src/app/auth/x/callback/page.tsx        X OAuth popup callback (locale-less; no locale/(web) chrome)
+├── src/app/auth/discord/callback/page.tsx  Discord OAuth popup callback (locale-less; no locale/(web) chrome)
+├── src/app/auth/x/callback/page.tsx        X OAuth popup callback (locale-less; retained, not wired to modal)
 │
 └── src/app/[locale]/layout.tsx             Locale layout
     │   Validates locale (404 if unknown)
@@ -293,21 +295,24 @@ Header
       ├── LoginSignupLayout
       │     "login"  → LoginContent
       │     "signup" → SignupContent
-      │     └── AuthSocialLogin (Google + X buttons, wired via onGoogleClick / onXClick)
+      │     └── AuthSocialLogin (Discord + Google buttons; wired via onDiscordClick / onGoogleClick)
       ├── LoginContent → handleAuthSubmit("login") → loginAction → mutateMe()
       │     ├── !success → translateApiErrorCode(tErrors, result.code) — never result.message
-      │     └── AuthSocialLogin → useGoogleLogin / useXLogin (entrypoint="login") → useOAuthPostAuth
+      │     └── AuthSocialLogin → useDiscordLogin / useGoogleLogin (entrypoint="login") → useOAuthPostAuth
       └── SignupContent → handleAuthSubmit("signup", …, locale) → registerAction({ locale })
             ├── !success → translateApiErrorCode(tErrors, result.code); 4010 rate-limit shows countdown
-            └── AuthSocialLogin → useGoogleLogin / useXLogin (entrypoint="signup") → useOAuthPostAuth
+            └── AuthSocialLogin → useDiscordLogin / useGoogleLogin (entrypoint="signup") → useOAuthPostAuth
 ```
 
 **Social login behavior (login + signup modals):**
+
+> The popup shows **Discord + Google** only. X OAuth actions/hooks and `/auth/x/callback` remain in the codebase but are **not** wired to `AuthSocialLogin`.
+
+- **Discord:** `useDiscordLogin` opens the OAuth popup (`startDiscordLoginAction` → authorize URL with `state`) and waits for the callback `postMessage`, then calls `discordLoginAction({ code, state })`. Success toasts `auth.socialLogin.discordSuccess`; cancel toasts `auth.socialLogin.discordCancelled`; errors resolve via `errors.codes.*` (BE `4023`–`4025`; FE-local `4018` on state mismatch, `4026` when client id or callback URL is missing).
 - **Google:** `useGoogleLogin` opens the GSI code-client popup and calls `googleLoginAction({ code, remember_me })`. `onSuccess` toasts `auth.socialLogin.googleSuccess` and runs `useOAuthPostAuth` (`mutateMe` + close modal + push `nextLink`); `onCancel` toasts `auth.socialLogin.googleCancelled`; `onError` shows the inline `translateApiErrorCode` message.
-- **X (Twitter):** `useXLogin` opens the OAuth popup (`startXLoginAction` → authorize URL with PKCE) and waits for the callback `postMessage`, then calls `xLoginAction({ code, state })`. Success toasts `auth.socialLogin.xSuccess`; cancel toasts `auth.socialLogin.xCancelled`; errors resolve via `errors.codes.*` (OAuth codes 4013–4019; 4018 `InvalidOAuthState` is FE-local when the PKCE/state cookies are missing or mismatched).
 - **Google One Tap:** shown outside the modal by `GoogleOneTapHost` for guests only.
 
-**Dedicated auth pages:** `ConfirmEmailContent` (`/confirm-email`), `LogoutContent` (`/logout`), plus the locale-less `XOAuthCallbackPage` (`/auth/x/callback`) popup relay.
+**Dedicated auth pages:** `ConfirmEmailContent` (`/confirm-email`), `LogoutContent` (`/logout`), plus locale-less OAuth callback relays: `DiscordOAuthCallbackPage` (`/auth/discord/callback`) and retained `XOAuthCallbackPage` (`/auth/x/callback`).
 
 ### Component tree (authenticated)
 
@@ -459,7 +464,8 @@ API_PUBLIC_ROUTES.auth.refresh      // POST /api/v1/auth/refresh
 API_PUBLIC_ROUTES.auth.logout       // POST /api/v1/auth/logout
 API_PUBLIC_ROUTES.auth.google       // POST /api/v1/auth/google         (Google auth-code login)
 API_PUBLIC_ROUTES.auth.googleOnetap // POST /api/v1/auth/google/onetap  (Google One Tap ID credential)
-API_PUBLIC_ROUTES.auth.x            // POST /api/v1/auth/x              (X/Twitter OAuth code + PKCE verifier)
+API_PUBLIC_ROUTES.auth.discord        // POST /api/v1/auth/discord          (Discord OAuth code)
+API_PUBLIC_ROUTES.auth.x            // POST /api/v1/auth/x              (X/Twitter OAuth code + PKCE verifier; retained, not wired to popup)
 // /api/v1/auth/google/mobile is a BE-only native-mobile contract — not present in the web FE route map.
 
 API_PRIVATE_ROUTES.user.getMe           // GET    /api/v1/me
@@ -482,7 +488,7 @@ Symbol and edge counts change as the codebase grows. Refresh the local graph wit
 | Cluster | Component surface |
 |---------|------------------|
 | **Ui** | `src/components/ui/*`, home sections, `SearchBar`, `LocaleSwitcher`, `Header`, `HeaderDashboard`, `DashboardLayout`, `Footer`, `FooterSocial` |
-| **Auth** | `AuthLayout`, `AuthButton`, `LoginSignupPopup`, `LoginContent`, `SignupContent`, `AuthSocialLogin`, `GoogleOneTapHost`, `UserMenu`, `handleAuthSubmit`, OAuth actions (`googleLoginAction`, `googleOneTapAction`, `startXLoginAction`, `xLoginAction`), OAuth hooks (`useGoogleLogin`, `useGoogleOneTap`, `useXLogin`, `useOAuthPostAuth`), auth stores and hooks |
+| **Auth** | `AuthLayout`, `AuthButton`, `LoginSignupPopup`, `LoginContent`, `SignupContent`, `AuthSocialLogin`, `GoogleOneTapHost`, `UserMenu`, `handleAuthSubmit`, OAuth actions (`googleLoginAction`, `googleOneTapAction`, `startDiscordLoginAction`, `discordLoginAction`, `startXLoginAction`, `xLoginAction`), OAuth hooks (`useGoogleLogin`, `useGoogleOneTap`, `useDiscordLogin`, `useXLogin`, `useOAuthPostAuth`), auth stores and hooks |
 | **Api** | `useAuth` SWR hook, `getMeService`, `createApiInstance`, `apiInstance`, `raw-http` helpers, `src/api/index.ts` barrel, callers and `methods` |
 
 ---

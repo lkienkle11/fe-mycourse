@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-07-08 (locale-less `/auth/x/callback` OAuth popup route). Prior: 2026-07-02 (`/{locale}/become-instructor` documented)._
+_Last audited: 2026-07-08 (locale-less `/auth/discord/callback` + retained `/auth/x/callback`). Prior: 2026-07-02 (`/{locale}/become-instructor` documented)._
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
 
@@ -67,7 +67,8 @@ export const config = {
 
 ```
 /                       → src/app/page.tsx               redirect → /vi
-/auth/x/callback        → src/app/auth/x/callback/page.tsx  X OAuth popup callback (locale-less, no prefix)
+/auth/discord/callback  → src/app/auth/discord/callback/page.tsx  Discord OAuth popup callback (locale-less, no prefix)
+/auth/x/callback        → src/app/auth/x/callback/page.tsx  X OAuth popup callback (locale-less; retained, not wired to modal)
 /[locale]/              → src/app/[locale]/layout.tsx     NextIntlClientProvider + AppProviders
 /[locale]/              → src/app/[locale]/(web)/layout.tsx  Header + main + Footer
 /[locale]/              → src/app/[locale]/(web)/page.tsx    HomePage
@@ -93,9 +94,13 @@ export const config = {
 
 `(web)` is a [Next.js route group](https://nextjs.org/docs/app/building-your-application/routing/route-groups) — the parentheses mean it does NOT appear in the URL. It applies the web shell layout (Header/Footer) to all pages inside.
 
-### Locale-less OAuth callback
+### Locale-less OAuth callbacks
 
-`src/app/auth/x/callback/page.tsx` lives **outside** `[locale]/`, so it has no locale prefix. This keeps the X (Twitter) OAuth `redirect_uri` (`<origin>/auth/x/callback`, built in `startXLoginAction`) stable and independent of the active locale. The page runs as a popup: it reads `code` / `state` / `error` from the query string, `postMessage`s them to `window.opener` (origin-scoped), and closes itself. The opener's `useXLogin` listener (`X_OAUTH_MESSAGE_TYPE`) then completes login via `xLoginAction`.
+`src/app/auth/discord/callback/page.tsx` and `src/app/auth/x/callback/page.tsx` live **outside** `[locale]/`, so they have no locale prefix. This keeps OAuth `redirect_uri` values stable and independent of the active locale.
+
+**Discord (wired to popup):** `redirect_uri` is `<origin>/auth/discord/callback`, built in `startDiscordLoginAction` from `NEXT_PUBLIC_DISCORD_CALLBACK_URL`. The page runs as a popup: it reads `code` / `state` / `error` from the query string, `postMessage`s them to `window.opener` (origin-scoped), and closes itself. The opener's `useDiscordLogin` listener (`DISCORD_OAUTH_MESSAGE_TYPE`) then completes login via `discordLoginAction`.
+
+**X (retained, not on popup):** `redirect_uri` is `<origin>/auth/x/callback`, built in `startXLoginAction` from `NEXT_PUBLIC_X_CALLBACK_URL`. Same popup relay pattern via `useXLogin` (`X_OAUTH_MESSAGE_TYPE`) and `xLoginAction`.
 
 Role dashboards use **URL segments** (not route groups) with a dedicated `DashboardLayout` shell:
 
@@ -115,7 +120,8 @@ src/app/[locale]/
 |-----|-----------|--------|--------|
 | `/vi` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
 | `/en` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
-| `/auth/x/callback?code=…&state=…` | `app/auth/x/callback/page.tsx` | `XOAuthCallbackPage` (locale-less) — `postMessage` `code`/`state`/`error` to `window.opener`, then `window.close()`; fallback copy + Back-to-home link when opened without an opener | ✅ Implemented |
+| `/auth/discord/callback?code=…&state=…` | `app/auth/discord/callback/page.tsx` | `DiscordOAuthCallbackPage` (locale-less) — `postMessage` `code`/`state`/`error` to `window.opener`, then `window.close()`; fallback copy + Back-to-home link when opened without an opener | ✅ Implemented |
+| `/auth/x/callback?code=…&state=…` | `app/auth/x/callback/page.tsx` | `XOAuthCallbackPage` (locale-less, retained) — same relay pattern for X OAuth; not wired to login/signup popup | ✅ Implemented |
 | `/vi/confirm-email?token=…` | `[locale]/(web)/confirm-email/page.tsx` | `ConfirmEmailContent` | ✅ Implemented |
 | `/en/confirm-email?token=…` | same | same | ✅ Implemented |
 | `/vi/logout` | `[locale]/(web)/logout/page.tsx` | `LogoutContent` | ✅ Implemented |
