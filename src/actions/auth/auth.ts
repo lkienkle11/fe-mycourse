@@ -17,8 +17,6 @@ import { finalizeAuthLoginAction } from "@/lib/utils/auth-action";
 import { clearAuthSessionCookies } from "@/lib/utils/auth-session";
 import type { AuthActionResult } from "@/types/auth/auth";
 
-export type { AuthActionResult };
-
 function parseRetryAfterSeconds(
   headers?: Record<string, string>,
 ): number | undefined {

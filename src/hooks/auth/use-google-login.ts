@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AuthActionResult } from "@/actions/auth";
 import { googleLoginAction } from "@/actions/auth/google-oauth";
 import { ApiErrorCode } from "@/constants/api-error-code";
+import type { AuthActionResult } from "@/types/auth/auth";
 import type {
   GoogleCodeClient,
   GoogleCodeClientConfig,

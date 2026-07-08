@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AuthActionResult } from "@/actions/auth";
 import { startXLoginAction, xLoginAction } from "@/actions/auth/x-oauth";
 import { ApiErrorCode } from "@/constants/api-error-code";
+import type { AuthActionResult } from "@/types/auth/auth";
 
 const X_OAUTH_MESSAGE_TYPE = "x-oauth-callback";
 
