@@ -10,6 +10,9 @@ $apiUrl = if ($env:NEXT_PUBLIC_API_URL) { $env:NEXT_PUBLIC_API_URL } else { 'htt
 $sse = if ($env:NEXT_PUBLIC_STREAM_SSE_URL) { $env:NEXT_PUBLIC_STREAM_SSE_URL } else { '' }
 $ws = if ($env:NEXT_PUBLIC_STREAM_WS_URL) { $env:NEXT_PUBLIC_STREAM_WS_URL } else { '' }
 $grpc = if ($env:NEXT_PUBLIC_STREAM_GRPC_BASE_URL) { $env:NEXT_PUBLIC_STREAM_GRPC_BASE_URL } else { '' }
+$googleClientId = if ($env:NEXT_PUBLIC_GOOGLE_CLIENT_ID) { $env:NEXT_PUBLIC_GOOGLE_CLIENT_ID } else { '' }
+$xClientId = if ($env:NEXT_PUBLIC_X_CLIENT_ID) { $env:NEXT_PUBLIC_X_CLIENT_ID } else { '' }
+$xCallbackUrl = if ($env:NEXT_PUBLIC_X_CALLBACK_URL) { $env:NEXT_PUBLIC_X_CALLBACK_URL } else { '' }
 $imageTag = "mycourse-fe:$EnvName"
 Write-Host "docker: building image $imageTag..."
 & docker build `
@@ -17,6 +20,9 @@ Write-Host "docker: building image $imageTag..."
     --build-arg "NEXT_PUBLIC_STREAM_SSE_URL=$sse" `
     --build-arg "NEXT_PUBLIC_STREAM_WS_URL=$ws" `
     --build-arg "NEXT_PUBLIC_STREAM_GRPC_BASE_URL=$grpc" `
+    --build-arg "NEXT_PUBLIC_GOOGLE_CLIENT_ID=$googleClientId" `
+    --build-arg "NEXT_PUBLIC_X_CLIENT_ID=$xClientId" `
+    --build-arg "NEXT_PUBLIC_X_CALLBACK_URL=$xCallbackUrl" `
     -t $imageTag `
     -f (Join-Path $script:RepoRoot 'Dockerfile') `
     $script:RepoRoot
