@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
+_Last audited: 2026-07-08 (Google/X OAuth: server actions, hooks, GoogleOneTapHost, locale-less X callback). Prior: 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -47,16 +47,19 @@ Entry point for all routing. Every folder corresponds to a URL segment.
 ```
 src/app/
 ├── layout.tsx              # Root layout: loads fonts (Roboto, Gilroy, GeistMono), mounts Sonner <Toaster>
+│                           # (no third-party auth scripts — GSI loads in (web)/layout.tsx only)
 ├── page.tsx                # Root page: immediately redirects browser to /vi (default locale)
 ├── not-found.tsx           # Global 404: NextIntlClientProvider + AppProviders + NotFoundPage
 ├── globals.css             # Global CSS resets and Tailwind base imports
 ├── utils.css               # Utility CSS classes shared across layouts
 ├── favicon.ico             # Browser tab favicon
+├── auth/                   # Locale-less OAuth callback routes (outside [locale] — no locale prefix)
+│   └── x/callback/page.tsx # X (Twitter) OAuth popup callback: postMessage(code/state/error) to window.opener, then close
 └── [locale]/               # Dynamic locale segment — value: "en" | "vi"
     ├── layout.tsx          # Locale layout: wraps in NextIntlClientProvider + AppProviders
     ├── not-found.tsx       # Locale-level 404 → NotFoundPage (inherits providers from layout)
     ├── (web)/              # Route group: public marketing pages (no prefix in URL)
-    │   ├── layout.tsx      # Web shell: Header + <main> + Footer
+    │   ├── layout.tsx      # Web shell: Header + GoogleOneTapHost + GSI script + <main> + Footer
     │   ├── not-found.tsx   # Web 404 → NotFoundPage showHeader={false}
     │   ├── page.tsx        # Home → HomePage
     │   ├── confirm-email/page.tsx
@@ -157,7 +160,7 @@ src/components/
 │                           #   AuthLayout, AuthButton, LoginSignupPopup, user-menu-dropdown-items,
 │                           #   LoginContent, SignupContent, UserMenu,
 │                           #   auth/auth-form-fields.tsx (Zod i18n validation translate),
-│                           #   auth-social-login/ (social auth buttons)
+│                           #   auth-social-login/ (Google + X social buttons; wired via useGoogleLogin / useXLogin)
 ├── home/                   # Home page section components
 │                           #   HeroSection, SearchSection, TopCoursesSection,
 │                           #   AdvancedPromoSection, TrendingCoursesSection,
@@ -177,10 +180,11 @@ src/components/
 │                           #   SortableTreeEditor, PreviewPdf (dynamic client-only) + preview-pdf-viewer,
 │                           #   SearchBar (stub), ImageFileField
 ├── providers/
-│   └── app-providers.tsx   # SWRConfig + EventsStreamProvider
-│                           # + MeSwrSync (useSyncMeFromAuth)
-│                           # + LanguageLocaleSync (useSyncLanguageFromLocale)
-│                           # + AuthConfirmTabSync / AuthLogoutTabSync + children
+│   ├── app-providers.tsx   # SWRConfig + EventsStreamProvider
+│   │                       # + MeSwrSync (useSyncMeFromAuth)
+│   │                       # + LanguageLocaleSync (useSyncLanguageFromLocale)
+│   │                       # + AuthConfirmTabSync / AuthLogoutTabSync + children
+│   └── google-one-tap-host.tsx  # GoogleOneTapHost — mounts useGoogleOneTap in (web) layout; null render
 ```
 
 ### `src/actions/` — Next.js Server Actions
@@ -190,10 +194,14 @@ Functions marked `"use server"` — execute on the server, called from client co
 ```
 src/actions/
 └── auth/
-    ├── auth.ts             # loginAction, registerAction, confirmAction, logoutAction
+    ├── auth.ts             # loginAction, registerAction, confirmAction, logoutAction (AuthActionResult type lives in src/types/auth/auth.ts)
     │                       # signupAction: deprecated alias of registerAction
-    └── auth-client.ts      # handleAuthSubmit() for client forms; delegates to server actions
+    ├── auth-client.ts      # handleAuthSubmit() for client forms; delegates to server actions
+    ├── google-oauth.ts     # googleLoginAction (auth-code), googleOneTapAction (ID credential) → finalizeAuthLoginAction
+    └── x-oauth.ts          # startXLoginAction (PKCE + state cookies → authorize URL), xLoginAction (verify state → finalize)
 ```
+
+OAuth server actions reuse the shared `finalizeAuthLoginAction` helper in `src/lib/utils/auth-action.ts` (sets session cookies via `setAuthSessionCookies`, maps errors via `mapAuthAxiosError`). `loginAction` and `confirmAction` use the same helper.
 
 ### `src/api/` — HTTP Client Layer
 
@@ -212,6 +220,7 @@ src/api/
 ├── callers/
 │   ├── auth/
 │   │   └── auth.ts         # auth + Me API: getMe/patchMe/deleteMe/getMyPermissions, getMeEndpointKey
+│   │                       # + OAuth: googleLoginService, googleOneTapService, xLoginService
 │   ├── taxonomy/
 │   │   └── taxonomy.ts     # list/create/patch/delete taxonomy services
 │   ├── instructor/
@@ -266,7 +275,11 @@ src/hooks/
 │   ├── use-auth-store.ts   # useAuthStore (re-export), useGetMe, useSyncMeFromAuth
 │   ├── use-permissions.ts  # usePermissionSet, useHas*, useSatisfiesPermissions, useFilteredUserMenuGroups
 │   ├── use-auth-confirm-tab-sync.ts
-│   └── use-auth-logout-tab-sync.ts
+│   ├── use-auth-logout-tab-sync.ts
+│   ├── use-google-login.ts    # GSI code client popup → googleLoginAction (onSuccess/onCancel/onError)
+│   ├── use-google-one-tap.ts  # GSI One Tap prompt for guests → googleOneTapAction (auto-dismiss when logged in)
+│   ├── use-x-login.ts         # X OAuth popup + postMessage listener (X_OAUTH_MESSAGE_TYPE) → xLoginAction
+│   └── use-oauth-post-auth.ts # Shared post-auth: mutateMe + closeAllModals + push(nextLink)
 ├── course/
 │   ├── index.ts            # Barrel: use-course-editor-state, use-course-outline-reorder
 │   ├── use-course-editor-state.ts  # Course editor state, lease handling, translated toasts
@@ -338,7 +351,8 @@ src/types/
 ├── index.ts                # `export type *` barrel (domain types only)
 ├── auth/
 │   ├── index.ts            # `export type * from "./auth"`
-│   └── auth.ts             # MeResponse, LoginResponse, RefreshTokenResponse
+│   ├── auth.ts             # MeResponse, LoginResponse, RefreshTokenResponse
+│   └── google-oauth.ts     # GSI window types: GoogleCodeClient(Config/Response/Error), GoogleIdConfig, GoogleCredentialResponse
 ├── permissions/
 │   └── index.ts            # PermissionName, PermissionId, PermissionRequirement (types only)
 └── events/
@@ -373,8 +387,8 @@ Error messages in schemas use **i18n keys** (not hardcoded strings). Resolve in 
 
 ```
 src/constants/
-├── api-route.ts            # API_PUBLIC_ROUTES + API_PRIVATE_ROUTES (me, taxonomy, media, instructor, …)
-├── api-error-code.ts       # ApiErrorCode — mirrors be/internal/shared/errors/errcode_codes.go
+├── api-route.ts            # API_PUBLIC_ROUTES (auth incl. google/googleOnetap/x) + API_PRIVATE_ROUTES (me, taxonomy, media, instructor, …)
+├── api-error-code.ts       # ApiErrorCode — mirrors be/internal/shared/errors/errcode_codes.go (incl. OAuth 4013–4019; 4018 InvalidOAuthState is FE-local only)
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
 ├── route.ts                # PUBLIC_ROUTES + PRIVATE_ROUTES + PUBLIC_RESOURCE_ROUTES + PRIVATE_RESOURCE_ROUTES (central FE navigation values)
 ├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (user-menu config values incl. permissions/titleKey; roles group first)
@@ -430,6 +444,7 @@ src/lib/
 │   ├── list-query.ts       # apiListQueryToRecord() — BE list filter → query record (taxonomy + media)
 │   ├── api.ts              # isApiSuccess() — ApiResponse success type guard
 │   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractAxiosApiError
+│   ├── auth-action.ts      # finalizeAuthLoginAction, mapAuthAxiosError — shared login-session cookie finalizer
 │   ├── validation-message.ts # resolveValidationMessage, toastValidationError, firstValidationMessageKey
 │   ├── course-delta.ts       # Quill Delta parse/stringify/text helpers + countDeltaNonWhitespace
 │   ├── course.ts             # createCourseBasicInfoState, createCourseSubLessonFormState, buildSubLessonEstimatedDurationPayload, validateSubLessonDurationForm, validateSubLessonFormContent, validateCourseSubmitReadiness, applyQuizAllowMultipleChange, applyQuizOptionCorrectChange, rootOutlineStableId, selectedIdsToMap

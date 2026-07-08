@@ -117,10 +117,10 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ### Asset: AuthActionResult
 - **Name**: `AuthActionResult`
-- **Type**: Interface (`{ success, message, code }`)
-- **Path**: `src/actions/auth/auth.ts`
+- **Type**: Interface (`{ success, message, code, retryAfterSeconds? }`)
+- **Path**: `src/types/auth/auth.ts` (canonical). Import the type from here — **do not** re-export it from `"use server"` action files (a `use server` module may only export async functions; a type re-export there breaks the server-actions loader at runtime).
 - **Purpose**: Standard return type for all auth Server Actions.
-- **Scope**: `loginAction`, `registerAction`, `confirmAction`, `logoutAction` (`signupAction` deprecated alias).
+- **Scope**: `loginAction`, `registerAction`, `confirmAction`, `logoutAction` (`signupAction` deprecated alias), and every OAuth action.
 - **Dependencies**: none.
 
 ### Asset: ApiErrorEntry

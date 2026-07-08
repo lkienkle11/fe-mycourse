@@ -40,6 +40,21 @@ export const ApiErrorCode = {
   ConfirmationEmailSendFailed: 4011,
   UserBanned: 4012,
 
+  InvalidGoogleCode: 4013,
+  GoogleEmailNotVerified: 4014,
+  OAuthIdentityConflict: 4015,
+  InvalidXCode: 4016,
+  XEmailUnavailable: 4017,
+  /** FE-local only — invalid OAuth state / expired PKCE cookies (not returned by BE). */
+  InvalidOAuthState: 4018,
+  XAccountLinkRequired: 4019,
+  /** FE-local only — Google OAuth client id / GSI not available in browser. */
+  GoogleOAuthNotConfigured: 4020,
+  /** FE-local only — browser blocked the OAuth popup window. */
+  OAuthPopupBlocked: 4021,
+  /** FE-local only — could not start X OAuth (missing callback URL or authorize URL). */
+  XOAuthStartFailed: 4022,
+
   // Server (9xxx)
   InternalError: 9001,
   Panic: 9998,

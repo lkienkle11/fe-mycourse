@@ -181,6 +181,9 @@ API_URL=https://api.yourdomain.net
 | `NEXT_PUBLIC_STREAM_SSE_URL` | No | Build + client | SSE stream URL; empty → SSE transport not started |
 | `NEXT_PUBLIC_STREAM_WS_URL` | No | Build + client | WebSocket URL (`wss://…`); empty → WS not started |
 | `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | Build + client | API base for NDJSON stream (path `/v1/events/stream` appended) |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | For Google login | Build + client | Google Identity Services OAuth client id. Empty disables the Google sign-in button + One Tap. |
+| `NEXT_PUBLIC_X_CLIENT_ID` | For X login | Build + client | X (Twitter) OAuth2 client id. Empty disables the X sign-in button. |
+| `NEXT_PUBLIC_X_CALLBACK_URL` | For X login | Build + client | Absolute X OAuth redirect URL (e.g. `https://yourdomain.net/auth/x/callback`). **Must byte-for-byte match the backend `X_CALLBACK_URL`**, otherwise X rejects the exchange (`4016`). |
 
 > **`NEXT_PUBLIC_*` warning:** These values are **baked into the JS bundle** at build time. If you change `NEXT_PUBLIC_API_URL` without rebuilding, old client code will still call the previous URL. Always rebuild after changing any `NEXT_PUBLIC_*` variable.
 

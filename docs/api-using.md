@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-07-05 (global SWR error retry interval + become-instructor bootstrap loading). Prior: 2026-06-17 (course detail `include_outline` + taxonomy `include_images` query params)._
+_Last audited: 2026-07-08 (Google/X OAuth fixes: canonical X callback URL, FE-local error codes 4020–4022, shared finalizeAuthLoginAction for login/confirm/OAuth). Prior: 2026-07-05 (global SWR error retry interval + become-instructor bootstrap loading)._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -118,11 +118,16 @@ Never hard-code API paths. Use the constants from `src/constants/api-route.ts`:
 import { API_PUBLIC_ROUTES, API_PRIVATE_ROUTES } from "@/constants/api-route";
 
 // Public (no auth required)
-API_PUBLIC_ROUTES.auth.login    // POST /api/v1/auth/login
-API_PUBLIC_ROUTES.auth.register  // POST /api/v1/auth/register
-API_PUBLIC_ROUTES.auth.confirm   // POST /api/v1/auth/confirm
-API_PUBLIC_ROUTES.auth.logout    // POST /api/v1/auth/logout
-API_PUBLIC_ROUTES.auth.refresh  // POST /api/v1/auth/refresh
+API_PUBLIC_ROUTES.auth.login        // POST /api/v1/auth/login
+API_PUBLIC_ROUTES.auth.register     // POST /api/v1/auth/register
+API_PUBLIC_ROUTES.auth.confirm      // POST /api/v1/auth/confirm
+API_PUBLIC_ROUTES.auth.logout       // POST /api/v1/auth/logout
+API_PUBLIC_ROUTES.auth.refresh      // POST /api/v1/auth/refresh
+API_PUBLIC_ROUTES.auth.google       // POST /api/v1/auth/google         (Google auth-code)
+API_PUBLIC_ROUTES.auth.googleOnetap // POST /api/v1/auth/google/onetap  (Google One Tap credential)
+API_PUBLIC_ROUTES.auth.x            // POST /api/v1/auth/x              (X/Twitter code + PKCE verifier)
+// Note: /api/v1/auth/google/mobile exists on the BE for native mobile apps only — it is
+// intentionally NOT surfaced in the web FE route map (no web caller).
 
 // Private (requires Authorization header)
 API_PRIVATE_ROUTES.user.getMe   // GET /api/v1/me
@@ -192,6 +197,39 @@ import { loginAction } from "@/actions/auth/auth";
 const result = await loginAction({ email, password, remember_me: rememberMe });
 if (!result.success) { /* show error */ }
 ```
+
+---
+
+## OAuth Server Actions (Google + X)
+
+Google and X (Twitter) social login use Server Actions that reuse the same session-cookie handling as email login. All actions return `AuthActionResult` (`{ success, message, code }`).
+
+### Callers (`src/api/callers/auth/auth.ts`)
+
+| Service | Method | Path constant | Payload |
+|---------|--------|---------------|---------|
+| `googleLoginService` | POST | `API_PUBLIC_ROUTES.auth.google` | `{ code, remember_me }` |
+| `googleOneTapService` | POST | `API_PUBLIC_ROUTES.auth.googleOnetap` | `{ credential }` |
+| `xLoginService` | POST | `API_PUBLIC_ROUTES.auth.x` | `{ code, code_verifier, remember_me, entrypoint }` |
+
+Each returns `{ data: ApiResponse<LoginResponse>, setCookieHeaders }` — the same shape as `loginService`, so the shared finalizer can set the session cookies.
+
+### Actions
+
+| Action | File | Responsibility |
+|--------|------|----------------|
+| `googleLoginAction({ code, remember_me })` | `src/actions/auth/google-oauth.ts` | Exchange the GSI auth code → `finalizeAuthLoginAction(googleLoginService)` |
+| `googleOneTapAction({ credential })` | `src/actions/auth/google-oauth.ts` | Verify the One Tap ID credential → `finalizeAuthLoginAction(googleOneTapService)` |
+| `startXLoginAction({ entrypoint, remember_me })` | `src/actions/auth/x-oauth.ts` | Generate PKCE verifier/challenge + random state, store them in short-lived (`600s`) HttpOnly cookies, and return the X authorize URL. `redirect_uri` is **`NEXT_PUBLIC_X_CALLBACK_URL`** (canonical; must match BE `X_CALLBACK_URL` byte-for-byte). |
+| `xLoginAction({ code, state })` | `src/actions/auth/x-oauth.ts` | Validate `state` against the cookie, then `finalizeAuthLoginAction(xLoginService)` with the stored `code_verifier` / `entrypoint` / `remember_me`; clears OAuth cookies afterward. Mismatched/expired state → `ApiErrorCode.InvalidOAuthState` (4018, FE-local) |
+
+### Shared finalizer (`src/lib/utils/auth-action.ts`)
+
+`loginAction`, `confirmAction`, and all OAuth actions call `finalizeAuthLoginAction(serviceCall)`. On `code === Success` with data it sets session cookies via `setAuthSessionCookies` (using `refreshMaxAgeFromBeSetCookie(setCookieHeaders)`). Errors map through `mapAuthAxiosError` to `AuthActionResult` (`src/types/auth/auth.ts`). Reuse this helper for any new login-like action.
+
+### Client wiring
+
+Client components never call the actions directly for the popup flows — they use the hooks in `src/hooks/auth/` (`useGoogleLogin`, `useGoogleOneTap`, `useXLogin`, `useOAuthPostAuth`). See `docs/components.md` (Auth OAuth hooks) and `docs/screens.md` (social login behavior). OAuth failures resolve to `errors.codes.*` (BE codes **4013–4017/4019**; FE-local **4018**, **4020–4022**); success/cancel toasts use `auth.socialLogin.*`.
 
 ---
 
