@@ -462,6 +462,11 @@ Browser  ──────────────►  │  Nginx (TLS: yourdom
 | `NEXT_PUBLIC_STREAM_SSE_URL` | No | ✅ | ✅ | SSE endpoint; empty disables transport |
 | `NEXT_PUBLIC_STREAM_WS_URL` | No | ✅ | ✅ | WebSocket URL; empty disables transport |
 | `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | ✅ | ✅ | NDJSON stream base URL (appends `/v1/events/stream`) |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | For Google login | ✅ baked into bundle | — | Google Identity Services client id. **Must be present at build time**, otherwise the Google button throws FE-local `4020 (google_not_configured)`. Empty disables the Google button + One Tap. |
+| `NEXT_PUBLIC_X_CLIENT_ID` | For X login | ✅ baked into bundle | — | X (Twitter) OAuth2 client id. Empty disables the X button. |
+| `NEXT_PUBLIC_X_CALLBACK_URL` | For X login | ✅ baked into bundle | — | Absolute X redirect URL; must byte-for-byte match backend `X_CALLBACK_URL`. |
+
+> **Build-time only:** because `NEXT_PUBLIC_*` are inlined during `next build`, setting these in the PM2 / container runtime env file has **no effect** on the browser bundle. They must be provided to whatever runs `next build` — the CI `build` job (via GitHub Secrets/Variables) or the Docker build-args — and you must **rebuild** after changing them.
 
 ---
 
@@ -610,6 +615,9 @@ This workflow now uses a hybrid model: **`build`** creates frontend bundle outpu
 | `SSH_USER` | SSH user |
 | `DEPLOY_PATH_DEV` | Absolute path to the **frontend** git checkout on the server (must match `cwd` for `mycourse-web-dev` in `ecosystem.config.cjs`) |
 | `NEXT_PUBLIC_API_URL_DEV` | Build-time API base URL injected in CI `build` job (mapped to `NEXT_PUBLIC_API_URL`) |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV` | Build-time Google OAuth client id (mapped to `NEXT_PUBLIC_GOOGLE_CLIENT_ID`). If empty, the deployed bundle throws FE-local `4020` on the Google button. |
+| `NEXT_PUBLIC_X_CLIENT_ID_DEV` | Build-time X OAuth client id (mapped to `NEXT_PUBLIC_X_CLIENT_ID`) |
+| `NEXT_PUBLIC_X_CALLBACK_URL_DEV` | Build-time X callback URL (mapped to `NEXT_PUBLIC_X_CALLBACK_URL`); must match backend `X_CALLBACK_URL` |
 | `DEPLOY_PATH_STG` *(optional)* | Path override for `mycourse-web-staging` when staging lives in a separate checkout |
 | `DEPLOY_PATH_MAIN` *(optional)* | Path override for `mycourse-web-prod` when prod lives in a separate checkout |
 
@@ -669,6 +677,9 @@ jobs:
       - name: Install dependencies and build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL_DEV }}
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV }}
+          NEXT_PUBLIC_X_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_X_CLIENT_ID_DEV }}
+          NEXT_PUBLIC_X_CALLBACK_URL: ${{ secrets.NEXT_PUBLIC_X_CALLBACK_URL_DEV }}
         run: |
           npm ci
           npm run build
@@ -731,6 +742,7 @@ jobs:
 
 - **`DEPLOY_PATH_DEV`** — same naming convention as the backend workflow secret (`be/.github/workflows/deploy-dev.yml`); values differ per service (BE vs FE paths). Workflow maps this secret into runtime `DEPLOY_PATH` for PM2.
 - **`NEXT_PUBLIC_API_URL_DEV`** — build-time value for CI artifact build. If it is empty, CI still builds but your deployed client bundle may point to the wrong API URL.
+- **`NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV` / `NEXT_PUBLIC_X_CLIENT_ID_DEV` / `NEXT_PUBLIC_X_CALLBACK_URL_DEV`** — build-time OAuth values baked into the client bundle. If `NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV` is empty, CI still builds but the deployed Google button throws FE-local `4020 (google_not_configured)` even though the runtime env file on the VPS has the value (runtime env cannot fix a `NEXT_PUBLIC_*` that was baked empty).
 - **`DEPLOY_PATH_STG` / `DEPLOY_PATH_MAIN`** — optional for staging/prod entries in `ecosystem.config.cjs`; if omitted, file defaults are used.
 - **Runtime artifact source** — `deploy` uses CI artifact (`frontend-runtime`) for `.next` and `public`; dependency install still runs on VPS via `npm ci`.
 - **Hidden build directory** — `.next` is hidden; `upload-artifact` must set `include-hidden-files: true` or deploy sync fails with missing `frontend-runtime/.next`.
