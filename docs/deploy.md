@@ -1,6 +1,6 @@
 # Deploying MyCourse Frontend on Ubuntu 24.04
 
-_Last audited: 2026-06-17 (CI `test`: `npm run test-all` incl. `deadcode`; local gate: `npm run check-all`)._
+_Last audited: 2026-07-09 (CI secrets: dev implemented + stg/main placeholder names). Prior: 2026-07-09 (GitHub Actions secrets list + workflow YAML snippet). Prior: 2026-06-17._
 
 
 This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.
@@ -23,7 +23,7 @@ This is the **frontend** deployment runbook for the MyCourse Next.js application
 | Optional env var | `AUTH_COOKIE_DOMAIN` (needed when FE and API are on different subdomains) |
 | Optional stream env | `NEXT_PUBLIC_STREAM_SSE_URL`, `NEXT_PUBLIC_STREAM_WS_URL`, `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` (see [Variable reference table](#variable-reference-table)) |
 | Node.js version | 22 LTS (match [backend deploy guide](../../be-mycourse/docs/deploy.md)) |
-| GitHub Actions | Push to **`dev`** → `.github/workflows/deploy-dev.yml` (`test` → `build` in CI, then deploy runs `npm ci` + syncs `.next/public` artifact to VPS — [Appendix G](#appendix-g--cicd-github-actions)) |
+| GitHub Actions | **Dev:** push **`dev`** → `deploy-dev.yml`. **Staging / prod:** placeholder `*_STG` / `*_MAIN` secrets — workflows not in repo ([Appendix G](#appendix-g--cicd-github-actions)) |
 
 > **PM2 process names:** This runbook uses **`mycourse-web`** in examples for a single manual app. The repo’s **`ecosystem.config.cjs`** and **GitHub Actions** use **`mycourse-web-dev`** (and staging/prod siblings). Use the name that matches `pm2 list` on your server (e.g. `pm2 logs mycourse-web-dev`).
 
@@ -182,8 +182,10 @@ API_URL=https://api.yourdomain.net
 | `NEXT_PUBLIC_STREAM_WS_URL` | No | Build + client | WebSocket URL (`wss://…`); empty → WS not started |
 | `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | Build + client | API base for NDJSON stream (path `/v1/events/stream` appended) |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | For Google login | Build + client | Google Identity Services OAuth client id. Empty disables the Google sign-in button + One Tap. |
-| `NEXT_PUBLIC_X_CLIENT_ID` | For X login | Build + client | X (Twitter) OAuth2 client id. Empty disables the X sign-in button. |
-| `NEXT_PUBLIC_X_CALLBACK_URL` | For X login | Build + client | Absolute X OAuth redirect URL (e.g. `https://yourdomain.net/auth/x/callback`). **Must byte-for-byte match the backend `X_CALLBACK_URL`**, otherwise X rejects the exchange (`4016`). |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID` | For Discord login | Build + client | Discord OAuth2 client id. Empty disables the Discord sign-in button on the login/signup popup. |
+| `NEXT_PUBLIC_DISCORD_CALLBACK_URL` | For Discord login | Build + client | Absolute Discord OAuth redirect URL (e.g. `https://yourdomain.net/auth/discord/callback`). **Must byte-for-byte match the backend `DISCORD_CALLBACK_URL`**, otherwise Discord rejects the exchange (`4023`). |
+| `NEXT_PUBLIC_X_CLIENT_ID` | For X login (retained) | Build + client | X (Twitter) OAuth2 client id. X OAuth code remains; not wired to the login/signup popup. |
+| `NEXT_PUBLIC_X_CALLBACK_URL` | For X login (retained) | Build + client | Absolute X OAuth redirect URL (e.g. `https://yourdomain.net/auth/x/callback`). **Must byte-for-byte match the backend `X_CALLBACK_URL`**. |
 
 > **`NEXT_PUBLIC_*` warning:** These values are **baked into the JS bundle** at build time. If you change `NEXT_PUBLIC_API_URL` without rebuilding, old client code will still call the previous URL. Always rebuild after changing any `NEXT_PUBLIC_*` variable.
 
@@ -463,8 +465,10 @@ Browser  ──────────────►  │  Nginx (TLS: yourdom
 | `NEXT_PUBLIC_STREAM_WS_URL` | No | ✅ | ✅ | WebSocket URL; empty disables transport |
 | `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | ✅ | ✅ | NDJSON stream base URL (appends `/v1/events/stream`) |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | For Google login | ✅ baked into bundle | — | Google Identity Services client id. **Must be present at build time**, otherwise the Google button throws FE-local `4020 (google_not_configured)`. Empty disables the Google button + One Tap. |
-| `NEXT_PUBLIC_X_CLIENT_ID` | For X login | ✅ baked into bundle | — | X (Twitter) OAuth2 client id. Empty disables the X button. |
-| `NEXT_PUBLIC_X_CALLBACK_URL` | For X login | ✅ baked into bundle | — | Absolute X redirect URL; must byte-for-byte match backend `X_CALLBACK_URL`. |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID` | For Discord login | ✅ baked into bundle | — | Discord OAuth2 client id. Empty disables the Discord button on the login/signup popup. |
+| `NEXT_PUBLIC_DISCORD_CALLBACK_URL` | For Discord login | ✅ baked into bundle | — | Absolute Discord redirect URL; must byte-for-byte match backend `DISCORD_CALLBACK_URL`. |
+| `NEXT_PUBLIC_X_CLIENT_ID` | For X login (retained) | ✅ baked into bundle | — | X OAuth2 client id. X code retained; not wired to popup. |
+| `NEXT_PUBLIC_X_CALLBACK_URL` | For X login (retained) | ✅ baked into bundle | — | Absolute X redirect URL; must byte-for-byte match backend `X_CALLBACK_URL`. |
 
 > **Build-time only:** because `NEXT_PUBLIC_*` are inlined during `next build`, setting these in the PM2 / container runtime env file has **no effect** on the browser bundle. They must be provided to whatever runs `next build` — the CI `build` job (via GitHub Secrets/Variables) or the Docker build-args — and you must **rebuild** after changing them.
 
@@ -606,20 +610,72 @@ File: **`.github/workflows/deploy-dev.yml`**. Trigger: **push to `dev`**. Concur
 
 This workflow now uses a hybrid model: **`build`** creates frontend bundle outputs on the runner (`.next`, `public`) and uploads them as **`frontend-runtime`** artifact (`include-hidden-files: true` is required so hidden `.next` is included); **`deploy`** downloads that artifact, verifies required paths/files exist, syncs git metadata on VPS, runs `npm ci` on VPS, then `rsync`s `.next` and `public` into `DEPLOY_PATH_DEV` before PM2 reload. CI still runs **`test` → `build` → `deploy`**. Because the deployed bundle is built in CI, ensure `NEXT_PUBLIC_API_URL` (and any other `NEXT_PUBLIC_*`) is available in the CI build environment.
 
-### Required GitHub Secrets (frontend)
+### GitHub Actions secrets by environment
 
-| Secret | Description |
-|--------|-------------|
-| `SSH_PRIVATE_KEY` | Deploy key (same VPS as BE if shared) |
-| `SSH_HOST` | Server IP or hostname |
-| `SSH_USER` | SSH user |
-| `DEPLOY_PATH_DEV` | Absolute path to the **frontend** git checkout on the server (must match `cwd` for `mycourse-web-dev` in `ecosystem.config.cjs`) |
-| `NEXT_PUBLIC_API_URL_DEV` | Build-time API base URL injected in CI `build` job (mapped to `NEXT_PUBLIC_API_URL`) |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV` | Build-time Google OAuth client id (mapped to `NEXT_PUBLIC_GOOGLE_CLIENT_ID`). If empty, the deployed bundle throws FE-local `4020` on the Google button. |
-| `NEXT_PUBLIC_X_CLIENT_ID_DEV` | Build-time X OAuth client id (mapped to `NEXT_PUBLIC_X_CLIENT_ID`) |
-| `NEXT_PUBLIC_X_CALLBACK_URL_DEV` | Build-time X callback URL (mapped to `NEXT_PUBLIC_X_CALLBACK_URL`); must match backend `X_CALLBACK_URL` |
-| `DEPLOY_PATH_STG` *(optional)* | Path override for `mycourse-web-staging` when staging lives in a separate checkout |
-| `DEPLOY_PATH_MAIN` *(optional)* | Path override for `mycourse-web-prod` when prod lives in a separate checkout |
+Configure under **GitHub → Repository → Settings → Secrets and variables → Actions**.
+
+| Environment | Branch trigger | Workflow | PM2 app | In repo today |
+|-------------|----------------|----------|---------|---------------|
+| **Dev** | `push` → **`dev`** | `.github/workflows/deploy-dev.yml` | `mycourse-web-dev` | Yes |
+| **Staging** | `push` → **`staging`** *(planned)* | `.github/workflows/deploy-staging.yml` | `mycourse-web-staging` | No — placeholder secret names only |
+| **Production** | `push` → **`main`** *(planned)* | `.github/workflows/deploy-main.yml` | `mycourse-web-prod` | No — placeholder secret names only |
+
+Each environment uses its own `*_DEV` / `*_STG` / `*_MAIN` secrets. **Only `deploy-dev.yml` exists today** — `_STG` and `_MAIN` names are reserved for future workflows; until then use server env files (`.env.staging`, `.env.prod`) and manual deploy per [Step 8](#step-8--install-dependencies-and-build).
+
+#### Dev — implemented
+
+Workflow: `.github/workflows/deploy-dev.yml` (push to `dev`).
+
+| Secret | Maps to (build job `env`) | Example placeholder |
+|--------|---------------------------|---------------------|
+| `SSH_PRIVATE_KEY` | — | *(deploy key)* |
+| `SSH_HOST` | — | `203.0.113.10` |
+| `SSH_USER` | — | `deploy` |
+| `DEPLOY_PATH_DEV` | — | `/var/www/fe-mycourse` — must match `cwd` for `mycourse-web-dev` in `ecosystem.config.cjs` |
+| `NEXT_PUBLIC_API_URL_DEV` | `NEXT_PUBLIC_API_URL` | `https://api-dev.example.com` |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV` | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | `YOUR_GOOGLE_CLIENT_ID_DEV` — empty → FE-local `4020` on Google button |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID_DEV` | `NEXT_PUBLIC_DISCORD_CLIENT_ID` | `YOUR_DISCORD_CLIENT_ID_DEV` — empty → FE-local `4026` |
+| `NEXT_PUBLIC_DISCORD_CALLBACK_URL_DEV` | `NEXT_PUBLIC_DISCORD_CALLBACK_URL` | `https://dev.example.com/auth/discord/callback` — must match backend `DISCORD_CALLBACK_URL` |
+| `NEXT_PUBLIC_X_CLIENT_ID_DEV` *(optional)* | `NEXT_PUBLIC_X_CLIENT_ID` | `YOUR_X_CLIENT_ID_DEV` |
+| `NEXT_PUBLIC_X_CALLBACK_URL_DEV` *(optional)* | `NEXT_PUBLIC_X_CALLBACK_URL` | `https://dev.example.com/auth/x/callback` |
+
+**Minimum for dev social login:** SSH trio + `DEPLOY_PATH_DEV` + API URL + Google + Discord client/callback (eight secrets through `NEXT_PUBLIC_DISCORD_CALLBACK_URL_DEV`).
+
+#### Staging — placeholder (workflow not in repo)
+
+Planned: `deploy-staging.yml` on push to **`staging`**, reload **`mycourse-web-staging`**, runtime env **`.env.staging`**.
+
+| Secret | Maps to (build job `env`) | Example placeholder |
+|--------|---------------------------|---------------------|
+| `SSH_PRIVATE_KEY` | — | *(reuse or separate key)* |
+| `SSH_HOST_STG` | — | `203.0.113.20` |
+| `SSH_USER_STG` | — | `deploy` |
+| `DEPLOY_PATH_STG` | — | `/var/www/fe-mycourse-staging` |
+| `NEXT_PUBLIC_API_URL_STG` | `NEXT_PUBLIC_API_URL` | `https://api-staging.example.com` |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID_STG` | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | `YOUR_GOOGLE_CLIENT_ID_STG` |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID_STG` | `NEXT_PUBLIC_DISCORD_CLIENT_ID` | `YOUR_DISCORD_CLIENT_ID_STG` |
+| `NEXT_PUBLIC_DISCORD_CALLBACK_URL_STG` | `NEXT_PUBLIC_DISCORD_CALLBACK_URL` | `https://staging.example.com/auth/discord/callback` |
+| `NEXT_PUBLIC_X_CLIENT_ID_STG` *(optional)* | `NEXT_PUBLIC_X_CLIENT_ID` | `YOUR_X_CLIENT_ID_STG` |
+| `NEXT_PUBLIC_X_CALLBACK_URL_STG` *(optional)* | `NEXT_PUBLIC_X_CALLBACK_URL` | `https://staging.example.com/auth/x/callback` |
+
+#### Production (`main`) — placeholder (workflow not in repo)
+
+Planned: `deploy-main.yml` on push to **`main`**, reload **`mycourse-web-prod`**, runtime env **`.env.prod`**.
+
+| Secret | Maps to (build job `env`) | Example placeholder |
+|--------|---------------------------|---------------------|
+| `SSH_PRIVATE_KEY` | — | *(reuse or separate key)* |
+| `SSH_HOST_MAIN` | — | `203.0.113.30` |
+| `SSH_USER_MAIN` | — | `deploy` |
+| `DEPLOY_PATH_MAIN` | — | `/var/www/fe-mycourse-prod` |
+| `NEXT_PUBLIC_API_URL_MAIN` | `NEXT_PUBLIC_API_URL` | `https://api.example.com` |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID_MAIN` | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | `YOUR_GOOGLE_CLIENT_ID_MAIN` |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID_MAIN` | `NEXT_PUBLIC_DISCORD_CLIENT_ID` | `YOUR_DISCORD_CLIENT_ID_MAIN` |
+| `NEXT_PUBLIC_DISCORD_CALLBACK_URL_MAIN` | `NEXT_PUBLIC_DISCORD_CALLBACK_URL` | `https://www.example.com/auth/discord/callback` |
+| `NEXT_PUBLIC_X_CLIENT_ID_MAIN` *(optional)* | `NEXT_PUBLIC_X_CLIENT_ID` | `YOUR_X_CLIENT_ID_MAIN` |
+| `NEXT_PUBLIC_X_CALLBACK_URL_MAIN` *(optional)* | `NEXT_PUBLIC_X_CALLBACK_URL` | `https://www.example.com/auth/x/callback` |
+
+> **SSH naming:** Dev workflow uses `SSH_HOST` / `SSH_USER` (no suffix). Staging/production placeholders use `SSH_HOST_STG` / `SSH_USER_STG` and `SSH_HOST_MAIN` / `SSH_USER_MAIN` when deploy targets differ; on one VPS you may reuse the same `SSH_*` values.
 
 ### Job structure
 
@@ -680,6 +736,8 @@ jobs:
           NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV }}
           NEXT_PUBLIC_X_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_X_CLIENT_ID_DEV }}
           NEXT_PUBLIC_X_CALLBACK_URL: ${{ secrets.NEXT_PUBLIC_X_CALLBACK_URL_DEV }}
+          NEXT_PUBLIC_DISCORD_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_DISCORD_CLIENT_ID_DEV }}
+          NEXT_PUBLIC_DISCORD_CALLBACK_URL: ${{ secrets.NEXT_PUBLIC_DISCORD_CALLBACK_URL_DEV }}
         run: |
           npm ci
           npm run build
@@ -740,10 +798,8 @@ jobs:
 
 ### Notes
 
-- **`DEPLOY_PATH_DEV`** — same naming convention as the backend workflow secret (`be/.github/workflows/deploy-dev.yml`); values differ per service (BE vs FE paths). Workflow maps this secret into runtime `DEPLOY_PATH` for PM2.
-- **`NEXT_PUBLIC_API_URL_DEV`** — build-time value for CI artifact build. If it is empty, CI still builds but your deployed client bundle may point to the wrong API URL.
-- **`NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV` / `NEXT_PUBLIC_X_CLIENT_ID_DEV` / `NEXT_PUBLIC_X_CALLBACK_URL_DEV`** — build-time OAuth values baked into the client bundle. If `NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV` is empty, CI still builds but the deployed Google button throws FE-local `4020 (google_not_configured)` even though the runtime env file on the VPS has the value (runtime env cannot fix a `NEXT_PUBLIC_*` that was baked empty).
-- **`DEPLOY_PATH_STG` / `DEPLOY_PATH_MAIN`** — optional for staging/prod entries in `ecosystem.config.cjs`; if omitted, file defaults are used.
+- **`DEPLOY_PATH_DEV` / `DEPLOY_PATH_STG` / `DEPLOY_PATH_MAIN`** — frontend checkout roots per PM2 app in `ecosystem.config.cjs`. Only `DEPLOY_PATH_DEV` is used by CI today; `_STG` / `_MAIN` are for planned workflows or manual PM2 on the server.
+- **`NEXT_PUBLIC_*_DEV` / `*_STG` / `*_MAIN`** — build-time OAuth/API values baked into the client bundle per environment. Only `*_DEV` secrets are consumed by `deploy-dev.yml` on **`dev`** pushes. Empty Google at dev build → FE-local `4020`; empty Discord → `4026`. Staging/production placeholders follow the same mapping when those workflows are added.
 - **Runtime artifact source** — `deploy` uses CI artifact (`frontend-runtime`) for `.next` and `public`; dependency install still runs on VPS via `npm ci`.
 - **Hidden build directory** — `.next` is hidden; `upload-artifact` must set `include-hidden-files: true` or deploy sync fails with missing `frontend-runtime/.next`.
 - **Dependencies on VPS** — `npm ci` runs after `git pull` on VPS, so `node_modules` is recreated from lockfile on the target host.

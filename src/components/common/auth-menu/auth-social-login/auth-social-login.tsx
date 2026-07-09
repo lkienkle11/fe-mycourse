@@ -1,6 +1,6 @@
 "use client";
 
-import { GoogleIcon, XIcon } from "@public/assets/icons/social-icons";
+import { DiscordIcon, GoogleIcon } from "@public/assets/icons/social-icons";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,8 +10,8 @@ interface AuthSocialLoginProps {
   className?: string;
   onGoogleClick?: () => void;
   googleLoading?: boolean;
-  onXClick?: () => void;
-  xLoading?: boolean;
+  onDiscordClick?: () => void;
+  discordLoading?: boolean;
 }
 
 export function AuthSocialLogin({
@@ -19,8 +19,8 @@ export function AuthSocialLogin({
   className,
   onGoogleClick,
   googleLoading = false,
-  onXClick,
-  xLoading = false,
+  onDiscordClick,
+  discordLoading = false,
 }: AuthSocialLoginProps) {
   const t = useTranslations("auth.socialLogin");
 
@@ -29,12 +29,12 @@ export function AuthSocialLogin({
       <Button
         type="button"
         variant="ghost"
-        className="w-full h-11 flex items-center justify-center gap-3 rounded-full bg-black hover:bg-black/90 text-white hover:text-white text-sm font-medium hover:cursor-pointer disabled:opacity-60"
-        onClick={onXClick}
-        disabled={xLoading || !onXClick}
+        className="w-full h-11 flex items-center justify-center gap-3 rounded-full bg-[#5865F2] hover:bg-[#5865F2]/90 text-white hover:text-white text-sm font-medium hover:cursor-pointer disabled:opacity-60"
+        onClick={onDiscordClick}
+        disabled={discordLoading || !onDiscordClick}
       >
-        <XIcon color="#ffffff" width={18} height={18} />
-        <span>{t(type === "login" ? "xLogin" : "xSignup")}</span>
+        <DiscordIcon color="#fff" width={18} height={18} />
+        <span>{t(type === "login" ? "discordLogin" : "discordSignup")}</span>
       </Button>
 
       <Button

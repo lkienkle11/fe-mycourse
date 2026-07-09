@@ -8,9 +8,9 @@ import { toast } from "sonner";
 import { handleAuthSubmit } from "@/actions/auth/auth-client";
 import { Button, Spinner } from "@/components/ui";
 import { useAuthStore } from "@/hooks";
+import { useDiscordLogin } from "@/hooks/auth/use-discord-login";
 import { useGoogleLogin } from "@/hooks/auth/use-google-login";
 import { useOAuthPostAuth } from "@/hooks/auth/use-oauth-post-auth";
-import { useXLogin } from "@/hooks/auth/use-x-login";
 import { cn } from "@/lib/utils";
 import { translateApiErrorCode } from "@/lib/utils/api-error";
 import { type SignupFormValues, signupSchema } from "@/schema/auth";
@@ -70,14 +70,14 @@ export function SignupContent({ className }: { className?: string }) {
       setServerError(translateApiErrorCode(tErrors, result.code)),
   });
 
-  const { startXLogin, isPending: xLoading } = useXLogin({
+  const { startDiscordLogin, isPending: discordLoading } = useDiscordLogin({
     entrypoint: "signup",
     rememberMe: false,
     onSuccess: () => {
-      toast.success(t("socialLogin.xSuccess"));
+      toast.success(t("socialLogin.discordSuccess"));
       handleOAuthSuccess();
     },
-    onCancel: () => toast.message(t("socialLogin.xCancelled")),
+    onCancel: () => toast.message(t("socialLogin.discordCancelled")),
     onError: (result) =>
       setServerError(translateApiErrorCode(tErrors, result.code)),
   });
@@ -124,8 +124,8 @@ export function SignupContent({ className }: { className?: string }) {
         type="signup"
         onGoogleClick={() => startGoogleLogin()}
         googleLoading={googleLoading}
-        onXClick={() => void startXLogin()}
-        xLoading={xLoading}
+        onDiscordClick={() => void startDiscordLogin()}
+        discordLoading={discordLoading}
       />
       <span className="flex justify-center items-center text-sm leading-[18px] font-normal text-black">
         {t("socialLogin.title")}

@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-07-08 (Google/X OAuth: server actions, hooks, GoogleOneTapHost, locale-less X callback). Prior: 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
+_Last audited: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained). Prior: 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -53,8 +53,9 @@ src/app/
 ├── globals.css             # Global CSS resets and Tailwind base imports
 ├── utils.css               # Utility CSS classes shared across layouts
 ├── favicon.ico             # Browser tab favicon
-├── auth/                   # Locale-less OAuth callback routes (outside [locale] — no locale prefix)
-│   └── x/callback/page.tsx # X (Twitter) OAuth popup callback: postMessage(code/state/error) to window.opener, then close
+├── auth/                   # Locale-less OAuth callback routes (outside [locale] — no locale prefix; English-only relay copy, no i18n)
+│   ├── discord/callback/page.tsx # Discord OAuth popup callback: postMessage(code/state/error) to window.opener, then close
+│   └── x/callback/page.tsx     # X (Twitter) OAuth popup callback (retained, not wired to login/signup modal)
 └── [locale]/               # Dynamic locale segment — value: "en" | "vi"
     ├── layout.tsx          # Locale layout: wraps in NextIntlClientProvider + AppProviders
     ├── not-found.tsx       # Locale-level 404 → NotFoundPage (inherits providers from layout)
@@ -160,7 +161,7 @@ src/components/
 │                           #   AuthLayout, AuthButton, LoginSignupPopup, user-menu-dropdown-items,
 │                           #   LoginContent, SignupContent, UserMenu,
 │                           #   auth/auth-form-fields.tsx (Zod i18n validation translate),
-│                           #   auth-social-login/ (Google + X social buttons; wired via useGoogleLogin / useXLogin)
+│                           #   auth-social-login/ (Discord + Google on popup; wired via useDiscordLogin / useGoogleLogin)
 ├── home/                   # Home page section components
 │                           #   HeroSection, SearchSection, TopCoursesSection,
 │                           #   AdvancedPromoSection, TrendingCoursesSection,
@@ -198,7 +199,12 @@ src/actions/
     │                       # signupAction: deprecated alias of registerAction
     ├── auth-client.ts      # handleAuthSubmit() for client forms; delegates to server actions
     ├── google-oauth.ts     # googleLoginAction (auth-code), googleOneTapAction (ID credential) → finalizeAuthLoginAction
-    └── x-oauth.ts          # startXLoginAction (PKCE + state cookies → authorize URL), xLoginAction (verify state → finalize)
+    ├── discord-oauth.ts    # startDiscordLoginAction (state cookies → authorize URL), discordLoginAction (verify state → finalize)
+    └── x-oauth.ts          # startXLoginAction (PKCE + state cookies → authorize URL), xLoginAction (verify state → finalize); retained, not on popup
+
+src/lib/utils/oauth-popup-cookies.ts   # Shared OAuth popup flow cookie helpers (state/entrypoint/remember_me)
+src/hooks/auth/use-oauth-popup-login.ts # Generic popup OAuth hook (Discord + X compose this)
+src/components/auth/oauth-popup-callback-relay.tsx # Shared /auth/*/callback postMessage relay
 ```
 
 OAuth server actions reuse the shared `finalizeAuthLoginAction` helper in `src/lib/utils/auth-action.ts` (sets session cookies via `setAuthSessionCookies`, maps errors via `mapAuthAxiosError`). `loginAction` and `confirmAction` use the same helper.
@@ -220,7 +226,7 @@ src/api/
 ├── callers/
 │   ├── auth/
 │   │   └── auth.ts         # auth + Me API: getMe/patchMe/deleteMe/getMyPermissions, getMeEndpointKey
-│   │                       # + OAuth: googleLoginService, googleOneTapService, xLoginService
+│   │                       # + OAuth: googleLoginService, googleOneTapService, discordLoginService, xLoginService
 │   ├── taxonomy/
 │   │   └── taxonomy.ts     # list/create/patch/delete taxonomy services
 │   ├── instructor/
@@ -278,7 +284,8 @@ src/hooks/
 │   ├── use-auth-logout-tab-sync.ts
 │   ├── use-google-login.ts    # GSI code client popup → googleLoginAction (onSuccess/onCancel/onError)
 │   ├── use-google-one-tap.ts  # GSI One Tap prompt for guests → googleOneTapAction (auto-dismiss when logged in)
-│   ├── use-x-login.ts         # X OAuth popup + postMessage listener (X_OAUTH_MESSAGE_TYPE) → xLoginAction
+│   ├── use-discord-login.ts   # Discord OAuth popup + postMessage listener (DISCORD_OAUTH_MESSAGE_TYPE) → discordLoginAction
+│   ├── use-x-login.ts         # X OAuth popup + postMessage listener (X_OAUTH_MESSAGE_TYPE) → xLoginAction; retained, not on popup
 │   └── use-oauth-post-auth.ts # Shared post-auth: mutateMe + closeAllModals + push(nextLink)
 ├── course/
 │   ├── index.ts            # Barrel: use-course-editor-state, use-course-outline-reorder
@@ -387,8 +394,8 @@ Error messages in schemas use **i18n keys** (not hardcoded strings). Resolve in 
 
 ```
 src/constants/
-├── api-route.ts            # API_PUBLIC_ROUTES (auth incl. google/googleOnetap/x) + API_PRIVATE_ROUTES (me, taxonomy, media, instructor, …)
-├── api-error-code.ts       # ApiErrorCode — mirrors be/internal/shared/errors/errcode_codes.go (incl. OAuth 4013–4019; 4018 InvalidOAuthState is FE-local only)
+├── api-route.ts            # API_PUBLIC_ROUTES (auth incl. google/googleOnetap/discord/x) + API_PRIVATE_ROUTES (me, taxonomy, media, instructor, …)
+├── api-error-code.ts       # ApiErrorCode — mirrors be/internal/shared/errors/errcode_codes.go (incl. OAuth 4013–4019, 4023–4025; 4018/4020–4022/4026 FE-local)
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
 ├── route.ts                # PUBLIC_ROUTES + PRIVATE_ROUTES + PUBLIC_RESOURCE_ROUTES + PRIVATE_RESOURCE_ROUTES (central FE navigation values)
 ├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (user-menu config values incl. permissions/titleKey; roles group first)

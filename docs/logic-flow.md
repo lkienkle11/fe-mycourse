@@ -1,6 +1,6 @@
 # Logic Flow
 
-_Last audited: 2026-06-26 (course admin ⋮ menu → dialog: `modal={false}` + deferred `onSelect` so `body` stays clickable after approve/trash flows). Prior: course version numbering §13, reject-fork draft, reorder nested merge._
+_Last audited: 2026-07-08 (Discord + Google OAuth on popup; X code retained). Prior: 2026-06-26 (course admin ⋮ menu → dialog: `modal={false}` + deferred `onSelect` so `body` stays clickable after approve/trash flows). Prior: course version numbering §13, reject-fork draft, reorder nested merge._
 
 
 Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifecycle, data fetching, and form submission patterns.
@@ -42,6 +42,31 @@ Client receives AuthActionResult:
   - success=true  → mutateMe() [invalidate SWR cache] → useAuthStore.closeAllModals()
                     → redirect to nextLink if set
   - success=false → translateApiErrorCode(tErrors, result.code) inline or toast — never result.message
+```
+
+---
+
+## 1b. Social OAuth Login Flow (Discord + Google on popup)
+
+> **Popup:** `AuthSocialLogin` wires **Discord + Google** only. X actions/hooks remain but are not connected to the modal.
+
+```
+User clicks Discord or Google on LoginContent / SignupContent
+  ↓
+useDiscordLogin | useGoogleLogin
+  ↓
+Discord: startDiscordLoginAction → window.open(authorizeUrl)
+         popup /auth/discord/callback → postMessage(code, state)
+         → discordLoginAction → discordLoginService → POST /api/v1/auth/discord
+Google:  GSI code client popup → googleLoginAction → POST /api/v1/auth/google
+  ↓
+finalizeAuthLoginAction (shared with email login)
+  → set session cookies on success
+  ↓
+useOAuthPostAuth onSuccess:
+  mutateMe() + closeAllModals() + router.push(nextLink) when set
+  ↓
+Errors: translateApiErrorCode (BE 4013–4017/4019, 4023–4025; FE-local 4018, 4020–4022, 4026)
 ```
 
 ---

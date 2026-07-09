@@ -1,6 +1,6 @@
 # Execution Flows (`fe`)
 
-_Last audited: 2026-06-08 (code-based API errors on auth + feature modules)._
+_Last audited: 2026-07-08 (Discord + Google OAuth on popup; X code retained)._
 
 
 This document traces the major user-visible and technical flows in the MyCourse frontend. Flows are derived from the **GitNexus** process index for repo **`fe-mycourse`** (12 tracked execution chains across the **Auth** and **Api** clusters) and from direct source inspection. Regenerate the graph after large UI changes with `npx gitnexus analyze --force` from the **fe-mycourse** repo root.
@@ -119,6 +119,46 @@ TTL is **not** hardcoded on FE — it comes from BE `Set-Cookie`. Fallback: `aut
 After a successful login, `login-content.tsx` calls **`mutateMe()`** from `useGetMe()` (Zustand mirror synced from SWR). This forces an immediate `GET /api/v1/me` with the new cookies; `AuthLayout` switches from `AuthButton` to `UserMenu`.
 
 **Errors in UI:** `translateApiErrorCode(useTranslations("errors.codes"), result.code)` — never `result.message`.
+
+---
+
+## 1b. Social OAuth Login Flow (Discord + Google on popup)
+
+**Goal:** Sign in via Discord or Google from the login/signup modal without exposing OAuth token exchange in the browser network panel. X OAuth code remains in the repo but is **not** wired to the popup.
+
+> **Popup UI:** `AuthSocialLogin` shows **Discord + Google** only.
+
+### Discord sequence
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant LC as LoginContent (client)
+  participant HD as useDiscordLogin
+  participant SD as startDiscordLoginAction
+  participant CB as /auth/discord/callback (popup)
+  participant DA as discordLoginAction
+  participant API as Go API POST /auth/discord
+  participant PA as useOAuthPostAuth
+
+  U->>LC: Click Discord button
+  LC->>HD: startDiscordLogin({ remember_me })
+  HD->>SD: startDiscordLoginAction({ entrypoint, remember_me })
+  SD-->>HD: authorizeUrl (state in HttpOnly cookies)
+  HD->>HD: window.open(authorizeUrl)
+  CB->>HD: postMessage({ type, code, state })
+  HD->>DA: discordLoginAction({ code, state })
+  DA->>API: discordLoginService → finalizeAuthLoginAction
+  API-->>DA: tokens + Set-Cookie
+  DA-->>HD: AuthActionResult success
+  HD->>PA: onSuccess → mutateMe + close modal
+```
+
+### Google (popup)
+
+`useGoogleLogin` → GSI code client → `googleLoginAction` → `finalizeAuthLoginAction` → `useOAuthPostAuth` (same post-auth path as Discord).
+
+Detail: [`docs/api-using.md`](./api-using.md), [`docs/screens.md`](./screens.md).
 
 ---
 

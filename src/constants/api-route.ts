@@ -9,6 +9,7 @@ export const API_PUBLIC_ROUTES = {
     google: "/api/v1/auth/google",
     googleOnetap: "/api/v1/auth/google/onetap",
     x: "/api/v1/auth/x",
+    discord: "/api/v1/auth/discord",
   },
 } as const;
 
