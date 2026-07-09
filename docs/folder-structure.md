@@ -53,7 +53,7 @@ src/app/
 ├── globals.css             # Global CSS resets and Tailwind base imports
 ├── utils.css               # Utility CSS classes shared across layouts
 ├── favicon.ico             # Browser tab favicon
-├── auth/                   # Locale-less OAuth callback routes (outside [locale] — no locale prefix)
+├── auth/                   # Locale-less OAuth callback routes (outside [locale] — no locale prefix; English-only relay copy, no i18n)
 │   ├── discord/callback/page.tsx # Discord OAuth popup callback: postMessage(code/state/error) to window.opener, then close
 │   └── x/callback/page.tsx     # X (Twitter) OAuth popup callback (retained, not wired to login/signup modal)
 └── [locale]/               # Dynamic locale segment — value: "en" | "vi"

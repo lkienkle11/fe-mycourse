@@ -123,7 +123,7 @@ _Last audited: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code 
 - **Discord callback URL**: FE `startDiscordLoginAction` uses canonical `NEXT_PUBLIC_DISCORD_CALLBACK_URL` (must match BE `DISCORD_CALLBACK_URL` exactly). Do not derive `redirect_uri` from request headers.
 - **X callback URL**: FE `startXLoginAction` uses canonical `NEXT_PUBLIC_X_CALLBACK_URL` (must match BE `X_CALLBACK_URL` exactly). Retained for X OAuth code path.
 - **FE-local error codes** (not in BE/Swagger): `4018` invalid OAuth state; `4020` Google not configured; `4021` popup blocked; `4022` X start failed; `4026` Discord start failed (missing client id or callback URL).
-- **Callback routes**: `src/app/auth/discord/callback/page.tsx` (popup relay for Discord); `src/app/auth/x/callback/page.tsx` (retained for X).
+- **Callback routes**: `src/app/auth/discord/callback/page.tsx` (popup relay for Discord); `src/app/auth/x/callback/page.tsx` (retained for X). Both are **locale-less** (outside `[locale]/`) and use **English-only** relay copy in `OAuthPopupCallbackRelay` — no `next-intl` on callback pages (modal/toasts/errors stay localized).
 - **Types**: `src/types/auth/google-oauth.ts` (GSI window client types).
 - **Error codes**: `ApiErrorCode` 4013–4019, 4023–4025 (`InvalidGoogleCode`, `GoogleEmailNotVerified`, `OAuthIdentityConflict`, `InvalidXCode`, `XEmailUnavailable`, `InvalidOAuthState` — **4018 FE-local only**, `XAccountLinkRequired`, `InvalidDiscordCode`, `DiscordEmailNotVerified`, `DiscordEmailUnavailable`); resolved via `errors.codes.*`. Success/cancel toasts use `auth.socialLogin.*`.
 

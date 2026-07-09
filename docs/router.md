@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-07-08 (locale-less `/auth/discord/callback` + retained `/auth/x/callback`). Prior: 2026-07-02 (`/{locale}/become-instructor` documented)._
+_Last audited: 2026-07-09 (OAuth callback: locale-less + English-only relay copy). Prior: 2026-07-08 (locale-less `/auth/discord/callback` + retained `/auth/x/callback`). Prior: 2026-07-02 (`/{locale}/become-instructor` documented)._
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
 
@@ -98,6 +98,8 @@ export const config = {
 
 `src/app/auth/discord/callback/page.tsx` and `src/app/auth/x/callback/page.tsx` live **outside** `[locale]/`, so they have no locale prefix. This keeps OAuth `redirect_uri` values stable and independent of the active locale.
 
+**Copy language (intentional):** OAuth callback relay pages use **English-only** hardcoded strings (via `OAuthPopupCallbackRelay` — e.g. “Completing Discord sign-in…”, “Back to home”). They do **not** use `next-intl` / `auth.socialLogin.*`. This is the shared pattern for both Discord and X callbacks: the popup closes almost immediately after `postMessage`, so localized copy adds little UX value; keeping a single English fallback avoids wiring i18n on locale-less routes. **Login/signup modal**, toasts, and OAuth error codes remain fully localized (`en` / `vi`).
+
 **Discord (wired to popup):** `redirect_uri` is `<origin>/auth/discord/callback`, built in `startDiscordLoginAction` from `NEXT_PUBLIC_DISCORD_CALLBACK_URL`. The page runs as a popup: it reads `code` / `state` / `error` from the query string, `postMessage`s them to `window.opener` (origin-scoped), and closes itself. The opener's `useDiscordLogin` listener (`DISCORD_OAUTH_MESSAGE_TYPE`) then completes login via `discordLoginAction`.
 
 **X (retained, not on popup):** `redirect_uri` is `<origin>/auth/x/callback`, built in `startXLoginAction` from `NEXT_PUBLIC_X_CALLBACK_URL`. Same popup relay pattern via `useXLogin` (`X_OAUTH_MESSAGE_TYPE`) and `xLoginAction`.
@@ -120,8 +122,8 @@ src/app/[locale]/
 |-----|-----------|--------|--------|
 | `/vi` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
 | `/en` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
-| `/auth/discord/callback?code=…&state=…` | `app/auth/discord/callback/page.tsx` | `DiscordOAuthCallbackPage` (locale-less) — `postMessage` `code`/`state`/`error` to `window.opener`, then `window.close()`; fallback copy + Back-to-home link when opened without an opener | ✅ Implemented |
-| `/auth/x/callback?code=…&state=…` | `app/auth/x/callback/page.tsx` | `XOAuthCallbackPage` (locale-less, retained) — same relay pattern for X OAuth; not wired to login/signup popup | ✅ Implemented |
+| `/auth/discord/callback?code=…&state=…` | `app/auth/discord/callback/page.tsx` | `DiscordOAuthCallbackPage` (locale-less, English-only) — `postMessage` `code`/`state`/`error` to `window.opener`, then `window.close()`; fallback copy + Back-to-home link when opened without an opener | ✅ Implemented |
+| `/auth/x/callback?code=…&state=…` | `app/auth/x/callback/page.tsx` | `XOAuthCallbackPage` (locale-less, English-only, retained) — same relay pattern for X OAuth; not wired to login/signup popup | ✅ Implemented |
 | `/vi/confirm-email?token=…` | `[locale]/(web)/confirm-email/page.tsx` | `ConfirmEmailContent` | ✅ Implemented |
 | `/en/confirm-email?token=…` | same | same | ✅ Implemented |
 | `/vi/logout` | `[locale]/(web)/logout/page.tsx` | `LogoutContent` | ✅ Implemented |

@@ -172,6 +172,8 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 
 **Google One Tap:** `GoogleOneTapHost` (`src/components/providers/google-one-tap-host.tsx`) is mounted in `(web)/layout.tsx`; it runs `useGoogleOneTap` and toasts `auth.socialLogin.googleSuccess` + `mutateMe()` on success (renders `null`). The GSI client script loads in `(web)/layout.tsx` (not root `layout.tsx`), so dashboard and OAuth callback routes (`/auth/discord/callback`, `/auth/x/callback`) do not fetch third-party Google scripts.
 
+| `OAuthPopupCallbackRelay` | `auth/oauth-popup-callback-relay.tsx` | Client | Shared relay for locale-less OAuth callback pages (`/auth/discord/callback`, `/auth/x/callback`). Reads `code`/`state`/`error` from query, `postMessage`s to `window.opener`, closes popup. **English-only** props (`completingLabel`, `idleLabel`, “Back to home”) — intentionally not wired to `next-intl` (see `docs/router.md` § Locale-less OAuth callbacks). |
+
 ---
 
 ## `home/` — Home Page Sections

@@ -25,8 +25,8 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | URL pattern | Source file | What the user sees |
 |-------------|------------|---------------------|
 | `/` | `src/app/page.tsx` | **Locale redirect** → `/vi` (308 Permanent Redirect via `next-intl` navigation) |
-| `/auth/discord/callback` | `src/app/auth/discord/callback/page.tsx` | **Discord OAuth popup callback** (locale-less) — posts `code`/`state`/`error` to `window.opener` then closes; fallback text + Back-to-home link when no opener |
-| `/auth/x/callback` | `src/app/auth/x/callback/page.tsx` | **X OAuth popup callback** (locale-less, retained) — `XOAuthCallbackPage` posts `code`/`state`/`error` to `window.opener` then closes; not wired to login/signup popup |
+| `/auth/discord/callback` | `src/app/auth/discord/callback/page.tsx` | **Discord OAuth popup callback** (locale-less, **English-only** copy) — posts `code`/`state`/`error` to `window.opener` then closes; fallback text + Back-to-home link when no opener |
+| `/auth/x/callback` | `src/app/auth/x/callback/page.tsx` | **X OAuth popup callback** (locale-less, **English-only** copy, retained) — posts `code`/`state`/`error` to `window.opener` then closes; not wired to login/signup popup |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | **Home page** — renders `HomePage` |
 | `/{locale}/become-instructor` | `src/app/[locale]/(web)/become-instructor/page.tsx` | **Active** — `BecomeInstructorPage` (instructor application states A–H); see [`instructor-application.md`](./instructor-application.md) |
 | `/{locale}/confirm-email` | Active | Email confirmation page (`ConfirmEmailContent` → `confirmAction`) |
@@ -87,8 +87,8 @@ src/app/layout.tsx                          Root layout
 │   Google Identity Services script (accounts.google.com/gsi/client, afterInteractive)
 │   Sonner <Toaster position="top-right" richColors closeButton />
 │
-├── src/app/auth/discord/callback/page.tsx  Discord OAuth popup callback (locale-less; no locale/(web) chrome)
-├── src/app/auth/x/callback/page.tsx        X OAuth popup callback (locale-less; retained, not wired to modal)
+├── src/app/auth/discord/callback/page.tsx  Discord OAuth popup callback (locale-less, English-only copy; no locale/(web) chrome)
+├── src/app/auth/x/callback/page.tsx        X OAuth popup callback (locale-less, English-only copy; retained, not wired to modal)
 │
 └── src/app/[locale]/layout.tsx             Locale layout
     │   Validates locale (404 if unknown)
@@ -312,7 +312,7 @@ Header
 - **Google:** `useGoogleLogin` opens the GSI code-client popup and calls `googleLoginAction({ code, remember_me })`. `onSuccess` toasts `auth.socialLogin.googleSuccess` and runs `useOAuthPostAuth` (`mutateMe` + close modal + push `nextLink`); `onCancel` toasts `auth.socialLogin.googleCancelled`; `onError` shows the inline `translateApiErrorCode` message.
 - **Google One Tap:** shown outside the modal by `GoogleOneTapHost` for guests only.
 
-**Dedicated auth pages:** `ConfirmEmailContent` (`/confirm-email`), `LogoutContent` (`/logout`), plus locale-less OAuth callback relays: `DiscordOAuthCallbackPage` (`/auth/discord/callback`) and retained `XOAuthCallbackPage` (`/auth/x/callback`).
+**Dedicated auth pages:** `ConfirmEmailContent` (`/confirm-email`), `LogoutContent` (`/logout`), plus locale-less OAuth callback relays (English-only copy): `DiscordOAuthCallbackPage` (`/auth/discord/callback`) and retained `XOAuthCallbackPage` (`/auth/x/callback`).
 
 ### Component tree (authenticated)
 
