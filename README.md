@@ -87,7 +87,22 @@ Enforcement is **remote-only** (GitHub Actions): any pull request **into `main`*
 
 ### CI deploy (`dev`)
 
-Pushing to the **`dev`** branch runs [`.github/workflows/deploy-dev.yml`](.github/workflows/deploy-dev.yml): **`test`** (`npm run test-all`: lint, biome, test, deadcode, quality:deps) → **`build`** (`npm ci`, `npm run build`, upload `frontend-runtime` artifact with `include-hidden-files: true` so `.next` is included) on GitHub Actions, then **`deploy`** downloads artifact, verifies runtime files, syncs `.next`/`public` to VPS (`DEPLOY_PATH_DEV`) via `rsync`, runs `npm ci` on VPS, and **`pm2 reload mycourse-web-dev`**. Required secrets: `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_USER`, `DEPLOY_PATH_DEV`, `NEXT_PUBLIC_API_URL_DEV`. Details and operational notes are in [`docs/deploy.md` Appendix G](docs/deploy.md#appendix-g--cicd-github-actions).
+Pushing to the **`dev`** branch runs [`.github/workflows/deploy-dev.yml`](.github/workflows/deploy-dev.yml): **`test`** (`npm run test-all`) → **`build`** (`npm run build` with `NEXT_PUBLIC_*` from secrets, upload `frontend-runtime` artifact) → **`deploy`** (rsync `.next`/`public` to VPS, `pm2 reload mycourse-web-dev`).
+
+**Required GitHub Actions secrets** (Settings → Secrets and variables → Actions):
+
+| Secret | Purpose |
+|--------|---------|
+| `SSH_PRIVATE_KEY` | Deploy SSH key |
+| `SSH_HOST` | VPS hostname/IP |
+| `SSH_USER` | SSH user |
+| `DEPLOY_PATH_DEV` | Frontend checkout path on VPS |
+| `NEXT_PUBLIC_API_URL_DEV` | API URL baked into client bundle |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV` | Google OAuth (popup) |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID_DEV` | Discord OAuth (popup) |
+| `NEXT_PUBLIC_DISCORD_CALLBACK_URL_DEV` | Discord redirect URL (must match BE) |
+
+Optional: `NEXT_PUBLIC_X_CLIENT_ID_DEV`, `NEXT_PUBLIC_X_CALLBACK_URL_DEV` (X code retained). Full mapping and workflow notes: [`docs/deploy.md` Appendix G](docs/deploy.md#appendix-g--cicd-github-actions).
 
 ## Environment Variables
 

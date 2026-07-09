@@ -1,6 +1,6 @@
 # Deploying MyCourse Frontend on Ubuntu 24.04
 
-_Last audited: 2026-06-17 (CI `test`: `npm run test-all` incl. `deadcode`; local gate: `npm run check-all`)._
+_Last audited: 2026-07-09 (GitHub Actions secrets list + workflow YAML snippet synced with `deploy-dev.yml`). Prior: 2026-06-17 (CI `test`: `npm run test-all` incl. `deadcode`; local gate: `npm run check-all`)._
 
 
 This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.
@@ -23,7 +23,7 @@ This is the **frontend** deployment runbook for the MyCourse Next.js application
 | Optional env var | `AUTH_COOKIE_DOMAIN` (needed when FE and API are on different subdomains) |
 | Optional stream env | `NEXT_PUBLIC_STREAM_SSE_URL`, `NEXT_PUBLIC_STREAM_WS_URL`, `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` (see [Variable reference table](#variable-reference-table)) |
 | Node.js version | 22 LTS (match [backend deploy guide](../../be-mycourse/docs/deploy.md)) |
-| GitHub Actions | Push to **`dev`** → `.github/workflows/deploy-dev.yml` (`test` → `build` in CI, then deploy runs `npm ci` + syncs `.next/public` artifact to VPS — [Appendix G](#appendix-g--cicd-github-actions)) |
+| GitHub Actions | Push to **`dev`** → `.github/workflows/deploy-dev.yml` (`test` → `build` → `deploy`); secrets: [Appendix G](#appendix-g--cicd-github-actions) |
 
 > **PM2 process names:** This runbook uses **`mycourse-web`** in examples for a single manual app. The repo’s **`ecosystem.config.cjs`** and **GitHub Actions** use **`mycourse-web-dev`** (and staging/prod siblings). Use the name that matches `pm2 list` on your server (e.g. `pm2 logs mycourse-web-dev`).
 
@@ -610,22 +610,26 @@ File: **`.github/workflows/deploy-dev.yml`**. Trigger: **push to `dev`**. Concur
 
 This workflow now uses a hybrid model: **`build`** creates frontend bundle outputs on the runner (`.next`, `public`) and uploads them as **`frontend-runtime`** artifact (`include-hidden-files: true` is required so hidden `.next` is included); **`deploy`** downloads that artifact, verifies required paths/files exist, syncs git metadata on VPS, runs `npm ci` on VPS, then `rsync`s `.next` and `public` into `DEPLOY_PATH_DEV` before PM2 reload. CI still runs **`test` → `build` → `deploy`**. Because the deployed bundle is built in CI, ensure `NEXT_PUBLIC_API_URL` (and any other `NEXT_PUBLIC_*`) is available in the CI build environment.
 
-### Required GitHub Secrets (frontend)
+### Required GitHub Secrets (frontend, `dev` deploy)
 
-| Secret | Description |
-|--------|-------------|
-| `SSH_PRIVATE_KEY` | Deploy key (same VPS as BE if shared) |
-| `SSH_HOST` | Server IP or hostname |
-| `SSH_USER` | SSH user |
-| `DEPLOY_PATH_DEV` | Absolute path to the **frontend** git checkout on the server (must match `cwd` for `mycourse-web-dev` in `ecosystem.config.cjs`) |
-| `NEXT_PUBLIC_API_URL_DEV` | Build-time API base URL injected in CI `build` job (mapped to `NEXT_PUBLIC_API_URL`) |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV` | Build-time Google OAuth client id (mapped to `NEXT_PUBLIC_GOOGLE_CLIENT_ID`). If empty, the deployed bundle throws FE-local `4020` on the Google button. |
-| `NEXT_PUBLIC_DISCORD_CLIENT_ID_DEV` | Build-time Discord OAuth client id (mapped to `NEXT_PUBLIC_DISCORD_CLIENT_ID`) |
-| `NEXT_PUBLIC_DISCORD_CALLBACK_URL_DEV` | Build-time Discord callback URL (mapped to `NEXT_PUBLIC_DISCORD_CALLBACK_URL`); must match backend `DISCORD_CALLBACK_URL` |
-| `NEXT_PUBLIC_X_CLIENT_ID_DEV` | Build-time X OAuth client id (mapped to `NEXT_PUBLIC_X_CLIENT_ID`; retained, not on popup) |
-| `NEXT_PUBLIC_X_CALLBACK_URL_DEV` | Build-time X callback URL (mapped to `NEXT_PUBLIC_X_CALLBACK_URL`); must match backend `X_CALLBACK_URL` |
-| `DEPLOY_PATH_STG` *(optional)* | Path override for `mycourse-web-staging` when staging lives in a separate checkout |
-| `DEPLOY_PATH_MAIN` *(optional)* | Path override for `mycourse-web-prod` when prod lives in a separate checkout |
+Configure under **GitHub → Repository → Settings → Secrets and variables → Actions**. Workflow: `.github/workflows/deploy-dev.yml` (push to `dev`).
+
+| Secret | Maps to (build job `env`) | Description |
+|--------|---------------------------|-------------|
+| `SSH_PRIVATE_KEY` | — | Deploy key (same VPS as BE if shared) |
+| `SSH_HOST` | — | Server IP or hostname |
+| `SSH_USER` | — | SSH user |
+| `DEPLOY_PATH_DEV` | — | Absolute path to the **frontend** git checkout on the server (must match `cwd` for `mycourse-web-dev` in `ecosystem.config.cjs`) |
+| `NEXT_PUBLIC_API_URL_DEV` | `NEXT_PUBLIC_API_URL` | Build-time API base URL |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV` | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Build-time Google OAuth client id. If empty, deployed Google button throws FE-local `4020`. |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID_DEV` | `NEXT_PUBLIC_DISCORD_CLIENT_ID` | Build-time Discord OAuth client id. If empty, Discord button throws FE-local `4026`. |
+| `NEXT_PUBLIC_DISCORD_CALLBACK_URL_DEV` | `NEXT_PUBLIC_DISCORD_CALLBACK_URL` | Build-time Discord redirect URL; must byte-for-byte match backend `DISCORD_CALLBACK_URL` |
+| `NEXT_PUBLIC_X_CLIENT_ID_DEV` *(optional)* | `NEXT_PUBLIC_X_CLIENT_ID` | X OAuth client id (retained code path; not on popup) |
+| `NEXT_PUBLIC_X_CALLBACK_URL_DEV` *(optional)* | `NEXT_PUBLIC_X_CALLBACK_URL` | X redirect URL; must match backend `X_CALLBACK_URL` |
+| `DEPLOY_PATH_STG` *(optional)* | — | Path override for `mycourse-web-staging` |
+| `DEPLOY_PATH_MAIN` *(optional)* | — | Path override for `mycourse-web-prod` |
+
+**Minimum for social login on dev:** the eight secrets through `NEXT_PUBLIC_DISCORD_CALLBACK_URL_DEV` (SSH trio + `DEPLOY_PATH_DEV` + API URL + Google + Discord client/callback).
 
 ### Job structure
 
@@ -686,6 +690,8 @@ jobs:
           NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV }}
           NEXT_PUBLIC_X_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_X_CLIENT_ID_DEV }}
           NEXT_PUBLIC_X_CALLBACK_URL: ${{ secrets.NEXT_PUBLIC_X_CALLBACK_URL_DEV }}
+          NEXT_PUBLIC_DISCORD_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_DISCORD_CLIENT_ID_DEV }}
+          NEXT_PUBLIC_DISCORD_CALLBACK_URL: ${{ secrets.NEXT_PUBLIC_DISCORD_CALLBACK_URL_DEV }}
         run: |
           npm ci
           npm run build
