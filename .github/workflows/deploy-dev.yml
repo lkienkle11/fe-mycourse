@@ -46,6 +46,8 @@ jobs:
           NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV }}
           NEXT_PUBLIC_X_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_X_CLIENT_ID_DEV }}
           NEXT_PUBLIC_X_CALLBACK_URL: ${{ secrets.NEXT_PUBLIC_X_CALLBACK_URL_DEV }}
+          NEXT_PUBLIC_DISCORD_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_DISCORD_CLIENT_ID_DEV }}
+          NEXT_PUBLIC_DISCORD_CALLBACK_URL: ${{ secrets.NEXT_PUBLIC_DISCORD_CALLBACK_URL_DEV }}
         run: |
           npm ci
           npm run build

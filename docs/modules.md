@@ -1,11 +1,11 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-07-08 (Auth module Google/X OAuth: actions, hooks, shared finalizer, callback route). Prior: 2026-06-17 (course read-path performance: `include_outline`, `include_images`, browser-verified info tab)._
+_Last audited: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code retained). Prior: 2026-06-17 (course read-path performance: `include_outline`, `include_images`, browser-verified info tab)._
 
 
 ## Module map
 - `Ui`: `src/components`, `src/screen`, `src/app/[locale]/(web)`, `src/app/[locale]/{admin,instructor,sysadmin}` (dashboard shells)
-- `Auth`: `src/actions/auth` (incl. `google-oauth.ts`, `x-oauth.ts`), `src/components/common/auth-menu` (incl. `auth-social-login`), `src/components/providers/google-one-tap-host.tsx`, `src/hooks/auth` (incl. `use-google-login`, `use-google-one-tap`, `use-x-login`, `use-oauth-post-auth`), `src/app/auth/x/callback`, `src/lib/utils/auth-action.ts`, `src/schema/auth`, `src/types/auth` (incl. `google-oauth.ts`)
+- `Auth`: `src/actions/auth` (incl. `google-oauth.ts`, `discord-oauth.ts`, `x-oauth.ts`), `src/components/common/auth-menu` (incl. `auth-social-login`), `src/components/providers/google-one-tap-host.tsx`, `src/hooks/auth` (incl. `use-google-login`, `use-google-one-tap`, `use-discord-login`, `use-x-login`, `use-oauth-post-auth`), `src/app/auth/discord/callback`, `src/app/auth/x/callback`, `src/lib/utils/auth-action.ts`, `src/schema/auth`, `src/types/auth` (incl. `google-oauth.ts`)
 - `Api`: `src/api`, `src/constants/api-route.ts`, `src/constants/api-error-code.ts`, `src/types/api.ts`, `src/lib/utils/api.ts`, `src/lib/utils/api-error.ts`
 - `Validation + i18n errors`: `src/schema/**`, `src/messages/error-codes.ts`, `src/components/shared/required-label.tsx`, `src/components/shared/field-error.tsx`, `src/lib/utils/validation-message.ts`
 - `Events`: `src/events`, `src/hooks/events`, `src/store/events`, `src/types/events`, `src/config/events`
@@ -20,7 +20,7 @@ _Last audited: 2026-07-08 (Auth module Google/X OAuth: actions, hooks, shared fi
 
 ## Responsibilities
 - `Ui` renders pages/sections and calls hooks/actions.
-- `Auth` handles login/signup/confirm/logout **and Google/X (Twitter) OAuth** flows plus auth modal behavior; API failures use `errors.codes.{code}` (never BE `message`).
+- `Auth` handles login/signup/confirm/logout **and Google / Discord / X (Twitter) OAuth** flows plus auth modal behavior. The login/signup popup wires **Discord + Google** only; X API/actions/hooks remain for backward compatibility. API failures use `errors.codes.{code}` (never BE `message`).
 - `Api` centralizes HTTP transport, retries, endpoint access, and unified error resolution (`toastApiError`, `translateApiErrorCode`).
 - `Validation + i18n errors` provides shared Zod schemas, form labels (`RequiredLabel`), field errors (`FieldError`), and two i18n namespaces: `errors.codes.*` (API) vs `*.validation.*` (pre-submit).
 - `Events` manages realtime transports (BroadcastChannel, SSE, WebSocket, NDJSON gRPC), normalization, and hook subscriptions.
@@ -111,22 +111,25 @@ _Last audited: 2026-07-08 (Auth module Google/X OAuth: actions, hooks, shared fi
 - **Schema**: `src/schema/me/me.ts` — `updateMeSchema` (`avatar_file_id` optional UUID).
 - **UI**: No dedicated account-settings page yet; callers ready for avatar PATCH via `MediaCollectionDialog`.
 
-## Auth OAuth module (Google + X social login)
+## Auth OAuth module (Google + Discord + X social login)
 
-- **Actions**: `src/actions/auth/google-oauth.ts` (`googleLoginAction`, `googleOneTapAction`), `src/actions/auth/x-oauth.ts` (`startXLoginAction`, `xLoginAction`). All return `AuthActionResult`.
+> **Popup:** `AuthSocialLogin` shows **Discord + Google** on login/signup modals. X OAuth code (`x-oauth.ts`, `use-x-login.ts`, `/auth/x/callback`) is retained but not wired to the popup.
+
+- **Shared popup utilities**: `src/lib/utils/oauth-popup-cookies.ts` (state cookie options/clear/read), `src/hooks/auth/use-oauth-popup-login.ts` (generic popup + `postMessage` relay), `src/components/auth/oauth-popup-callback-relay.tsx` (shared callback page relay). Discord and X provider actions/hooks compose these instead of duplicating cookie/popup logic.
 - **Shared finalizer**: `src/lib/utils/auth-action.ts` — `finalizeAuthLoginAction` (sets session cookies via `setAuthSessionCookies` on success) + `mapAuthAxiosError`. Reused by `loginAction`, `confirmAction`, and every OAuth action.
-- **Callers**: `src/api/callers/auth/auth.ts` — `googleLoginService`, `googleOneTapService`, `xLoginService`; routes in `API_PUBLIC_ROUTES.auth` (`google`, `googleOnetap`, `x`). The BE `/api/v1/auth/google/mobile` endpoint is a native-mobile-only contract and is intentionally not in the web route map.
-- **Hooks**: `src/hooks/auth/use-google-login.ts`, `use-google-one-tap.ts`, `use-x-login.ts`, `use-oauth-post-auth.ts`. Google uses the GSI code-client popup / One Tap prompt; X uses an OAuth popup + `postMessage` relay with PKCE + state stored in short-lived HttpOnly cookies.
-- **UI**: `AuthSocialLogin` (`src/components/common/auth-menu/auth-social-login/`) wired by `LoginContent` (`entrypoint="login"`) and `SignupContent` (`entrypoint="signup"`); `GoogleOneTapHost` (`src/components/providers/google-one-tap-host.tsx`) mounted in `(web)/layout.tsx` for guests; GSI script loaded in `(web)/layout.tsx` only.
-- **X callback URL**: FE `startXLoginAction` uses canonical `NEXT_PUBLIC_X_CALLBACK_URL` (must match BE `X_CALLBACK_URL` exactly). Do not derive `redirect_uri` from request headers.
-- **FE-local error codes** (not in BE/Swagger): `4018` invalid OAuth state; `4020` Google not configured; `4021` popup blocked; `4022` X start failed.
-- **Callback route**: `src/app/auth/x/callback/page.tsx` (locale-less) posts `code`/`state`/`error` to `window.opener` then closes.
+- **Callers**: `src/api/callers/auth/auth.ts` — `googleLoginService`, `googleOneTapService`, `discordLoginService`, `xLoginService`; routes in `API_PUBLIC_ROUTES.auth` (`google`, `googleOnetap`, `discord`, `x`). The BE `/api/v1/auth/google/mobile` endpoint is a native-mobile-only contract and is intentionally not in the web route map.
+- **Hooks**: `src/hooks/auth/use-google-login.ts`, `use-google-one-tap.ts`, `use-discord-login.ts`, `use-x-login.ts`, `use-oauth-post-auth.ts`. Google uses the GSI code-client popup / One Tap prompt; Discord uses an OAuth popup + `postMessage` relay with `state` stored in short-lived HttpOnly cookies (no PKCE); X uses PKCE + state (retained, not on popup).
+- **UI**: `AuthSocialLogin` (`src/components/common/auth-menu/auth-social-login/`) wired by `LoginContent` / `SignupContent` with `useDiscordLogin` + `useGoogleLogin`; `GoogleOneTapHost` (`src/components/providers/google-one-tap-host.tsx`) mounted in `(web)/layout.tsx` for guests; GSI script loaded in `(web)/layout.tsx` only.
+- **Discord callback URL**: FE `startDiscordLoginAction` uses canonical `NEXT_PUBLIC_DISCORD_CALLBACK_URL` (must match BE `DISCORD_CALLBACK_URL` exactly). Do not derive `redirect_uri` from request headers.
+- **X callback URL**: FE `startXLoginAction` uses canonical `NEXT_PUBLIC_X_CALLBACK_URL` (must match BE `X_CALLBACK_URL` exactly). Retained for X OAuth code path.
+- **FE-local error codes** (not in BE/Swagger): `4018` invalid OAuth state; `4020` Google not configured; `4021` popup blocked; `4022` X start failed; `4026` Discord start failed (missing client id or callback URL).
+- **Callback routes**: `src/app/auth/discord/callback/page.tsx` (popup relay for Discord); `src/app/auth/x/callback/page.tsx` (retained for X). Both are **locale-less** (outside `[locale]/`) and use **English-only** relay copy in `OAuthPopupCallbackRelay` — no `next-intl` on callback pages (modal/toasts/errors stay localized).
 - **Types**: `src/types/auth/google-oauth.ts` (GSI window client types).
-- **Error codes**: `ApiErrorCode` 4013–4019 (`InvalidGoogleCode`, `GoogleEmailNotVerified`, `OAuthIdentityConflict`, `InvalidXCode`, `XEmailUnavailable`, `InvalidOAuthState` — **4018 FE-local only**, `XAccountLinkRequired`); resolved via `errors.codes.*`. Success/cancel toasts use `auth.socialLogin.*`.
+- **Error codes**: `ApiErrorCode` 4013–4019, 4023–4025 (`InvalidGoogleCode`, `GoogleEmailNotVerified`, `OAuthIdentityConflict`, `InvalidXCode`, `XEmailUnavailable`, `InvalidOAuthState` — **4018 FE-local only**, `XAccountLinkRequired`, `InvalidDiscordCode`, `DiscordEmailNotVerified`, `DiscordEmailUnavailable`); resolved via `errors.codes.*`. Success/cancel toasts use `auth.socialLogin.*`.
 
 ## Cross-module contracts
 - `Auth UI -> actions/auth/auth-client -> actions/auth -> api/callers` for login/signup submit; UI maps `result.code` via `translateApiErrorCode(tErrors, code)`.
-- `OAuth: AuthSocialLogin / GoogleOneTapHost -> hooks/auth (useGoogleLogin | useGoogleOneTap | useXLogin) -> actions/auth/{google-oauth,x-oauth} -> lib/utils/auth-action (finalizeAuthLoginAction) -> api/callers/auth`; success runs `useOAuthPostAuth` (`mutateMe` + close modal + push `nextLink`).
+- `OAuth: AuthSocialLogin / GoogleOneTapHost -> hooks/auth (useDiscordLogin | useGoogleLogin | useGoogleOneTap [| useXLogin retained]) -> actions/auth/{discord-oauth,google-oauth,x-oauth} -> lib/utils/auth-action (finalizeAuthLoginAction) -> api/callers/auth`; success runs `useOAuthPostAuth` (`mutateMe` + close modal + push `nextLink`).
 - `api/hooks/auth/useAuth -> hooks/auth/use-auth-store` for SWR-to-Zustand sync.
 - All feature `catch` blocks after API calls → `toastApiError(useTranslations("errors.codes"), error)` (Auth, Media, Taxonomy, Instructor, Course).
 - `api/instance` depends on `lib/utils/cookie` for isomorphic token read/write.

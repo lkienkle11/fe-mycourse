@@ -82,12 +82,12 @@ PowerShell:
 - **Build:** `npm run build` with build-args:
   - `NEXT_PUBLIC_API_URL` (required)
   - `NEXT_PUBLIC_STREAM_SSE_URL`, `NEXT_PUBLIC_STREAM_WS_URL`, `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` (optional)
-  - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `NEXT_PUBLIC_X_CLIENT_ID`, `NEXT_PUBLIC_X_CALLBACK_URL` (OAuth — required for the Google / X sign-in buttons)
+  - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `NEXT_PUBLIC_DISCORD_CLIENT_ID`, `NEXT_PUBLIC_DISCORD_CALLBACK_URL`, `NEXT_PUBLIC_X_CLIENT_ID`, `NEXT_PUBLIC_X_CALLBACK_URL` (OAuth — Discord + Google required for popup social login; X build-args retained for legacy code path)
 - **Prune:** `npm prune --omit=dev` after build — drops devDependencies from `node_modules` before the runner stage (same as VPS deploy in [`docs/deploy.md`](deploy.md))
 - **Run:** copy `.next`, `node_modules`, `public`, `package.json`; `npm run start`
 - **No** `output: 'standalone'` — same constraint as [`docs/deploy.md`](deploy.md)
 
-> **OAuth build-args are mandatory to avoid FE-local error `4020`.** All `NEXT_PUBLIC_*` are inlined at `next build`. If `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is absent at build time, the Google button throws `4020 (google_not_configured)` in the browser even when the value exists in the runtime env file. The same rule applies to every build path: `Dockerfile`, `scripts/docker/build-image.{sh,ps1}`, `docker/compose.*.yml`, and the CI `build` job in `.github/workflows/deploy-dev.yml` — keep the build-arg list identical across all of them.
+> **OAuth build-args are mandatory to avoid FE-local errors `4020` / `4026`.** All `NEXT_PUBLIC_*` are inlined at `next build`. If `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is absent at build time, the Google button throws `4020 (google_not_configured)` in the browser even when the value exists in the runtime env file. If `NEXT_PUBLIC_DISCORD_CLIENT_ID` or `NEXT_PUBLIC_DISCORD_CALLBACK_URL` is absent, the Discord button throws `4026`. The same rule applies to every build path: `Dockerfile`, `scripts/docker/build-image.{sh,ps1}`, `docker/compose.*.yml`, and the CI `build` job in `.github/workflows/deploy-dev.yml` — keep the build-arg list identical across all of them.
 
 `AUTH_COOKIE_DOMAIN` is **runtime** only (Server Actions) — set in env file, not build-args.
 

@@ -132,6 +132,12 @@ export interface XLoginPayload {
   entrypoint: "login" | "signup";
 }
 
+export interface DiscordLoginPayload {
+  code: string;
+  remember_me: boolean;
+  entrypoint: "login" | "signup";
+}
+
 export async function googleLoginService(payload: GoogleLoginPayload): Promise<{
   data: ApiResponse<LoginResponse>;
   setCookieHeaders: string | string[] | undefined;
@@ -164,6 +170,19 @@ export async function xLoginService(payload: XLoginPayload): Promise<{
     ApiResponse<LoginResponse>,
     XLoginPayload
   >(API_PUBLIC_ROUTES.auth.x, payload);
+  return { data, setCookieHeaders };
+}
+
+export async function discordLoginService(
+  payload: DiscordLoginPayload,
+): Promise<{
+  data: ApiResponse<LoginResponse>;
+  setCookieHeaders: string | string[] | undefined;
+}> {
+  const { data, setCookieHeaders } = await apiPost<
+    ApiResponse<LoginResponse>,
+    DiscordLoginPayload
+  >(API_PUBLIC_ROUTES.auth.discord, payload);
   return { data, setCookieHeaders };
 }
 

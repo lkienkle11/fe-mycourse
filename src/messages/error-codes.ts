@@ -62,6 +62,10 @@ export const errorCodesEn = {
   "4020": "Google sign-in is not available. Please try email sign-in.",
   "4021": "Your browser blocked the sign-in popup. Allow popups and try again.",
   "4022": "Could not start X sign-in. Please try again later.",
+  "4023": "Discord sign-in failed. Please try again.",
+  "4024": "Your Discord account email is not verified.",
+  "4025": "Your Discord account has no email available for sign-in.",
+  "4026": "Could not start Discord sign-in. Please try again later.",
 
   // Server (9xxx)
   "9001": "Something went wrong on our side. Please try again.",
@@ -131,6 +135,10 @@ export const errorCodesVi = {
   "4021":
     "Trình duyệt đã chặn cửa sổ đăng nhập. Hãy cho phép popup và thử lại.",
   "4022": "Không thể bắt đầu đăng nhập X. Vui lòng thử lại sau.",
+  "4023": "Đăng nhập Discord thất bại. Vui lòng thử lại.",
+  "4024": "Email Discord của bạn chưa được xác minh.",
+  "4025": "Tài khoản Discord không có email để đăng nhập.",
+  "4026": "Không thể bắt đầu đăng nhập Discord. Vui lòng thử lại sau.",
 
   // Server (9xxx)
   "9001": "Đã xảy ra lỗi phía máy chủ. Vui lòng thử lại.",

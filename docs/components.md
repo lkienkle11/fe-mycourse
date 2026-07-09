@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-07-08 (AuthSocialLogin wired with Google/X handlers; GoogleOneTapHost; auth OAuth hooks). Prior: 2026-07-06 (BecomeInstructorPromoBanner above site Header for learner users)._
+_Last audited: 2026-07-08 (AuthSocialLogin: Discord + Google on popup; X OAuth code retained but not wired to modal). Prior: 2026-07-06 (BecomeInstructorPromoBanner above site Header for learner users)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -168,9 +168,11 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `AuthFullNameField` | `auth/auth-form-fields.tsx` | Shared UI | Full name (signup); same validation translation pattern. |
 | `AuthConfirmTabSync` | `providers/auth-confirm-tab-sync.tsx` | Client | Reload tabs after email confirm elsewhere. |
 | `AuthLogoutTabSync` | `providers/auth-logout-tab-sync.tsx` | Client | Cross-tab logout via `broadcast:logout`. |
-| `AuthSocialLogin` | `auth/auth-social-login/auth-social-login.tsx` | Client | Google + X (Twitter) social auth buttons. Props: `type` (`"login"` \| `"signup"`), `onGoogleClick` / `googleLoading`, `onXClick` / `xLoading` (buttons disable while loading or when no handler). Labels from `auth.socialLogin.*` (`xLogin`/`xSignup`, `googleLogin`/`googleSignup`). Icons `GoogleIcon` / `XIcon` from `@public/assets/icons/social-icons`. `LoginContent` wires it via `useGoogleLogin` + `useXLogin` (`entrypoint="login"`); `SignupContent` wires the same hooks with `entrypoint="signup"`. |
+| `AuthSocialLogin` | `auth/auth-social-login/auth-social-login.tsx` | Client | **Discord + Google** social auth buttons on the login/signup popup (X button removed from UI; X OAuth code remains elsewhere). Props: `type` (`"login"` \| `"signup"`), `onDiscordClick` / `discordLoading`, `onGoogleClick` / `googleLoading` (buttons disable while loading or when no handler). Labels from `auth.socialLogin.*` (`discordLogin`/`discordSignup`, `googleLogin`/`googleSignup`). Icons `DiscordIcon` / `GoogleIcon` from `@public/assets/icons/social-icons`. `LoginContent` wires it via `useDiscordLogin` + `useGoogleLogin` (`entrypoint="login"`); `SignupContent` wires the same hooks with `entrypoint="signup"`. |
 
-**Google One Tap:** `GoogleOneTapHost` (`src/components/providers/google-one-tap-host.tsx`) is mounted in `(web)/layout.tsx`; it runs `useGoogleOneTap` and toasts `auth.socialLogin.googleSuccess` + `mutateMe()` on success (renders `null`). The GSI client script loads in `(web)/layout.tsx` (not root `layout.tsx`), so dashboard and `/auth/x/callback` do not fetch third-party Google scripts.
+**Google One Tap:** `GoogleOneTapHost` (`src/components/providers/google-one-tap-host.tsx`) is mounted in `(web)/layout.tsx`; it runs `useGoogleOneTap` and toasts `auth.socialLogin.googleSuccess` + `mutateMe()` on success (renders `null`). The GSI client script loads in `(web)/layout.tsx` (not root `layout.tsx`), so dashboard and OAuth callback routes (`/auth/discord/callback`, `/auth/x/callback`) do not fetch third-party Google scripts.
+
+| `OAuthPopupCallbackRelay` | `auth/oauth-popup-callback-relay.tsx` | Client | Shared relay for locale-less OAuth callback pages (`/auth/discord/callback`, `/auth/x/callback`). Reads `code`/`state`/`error` from query, `postMessage`s to `window.opener`, closes popup. **English-only** props (`completingLabel`, `idleLabel`, “Back to home”) — intentionally not wired to `next-intl` (see `docs/router.md` § Locale-less OAuth callbacks). |
 
 ---
 
@@ -235,11 +237,14 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 
 ### Auth OAuth hooks (`src/hooks/auth/`)
 
+> **Popup wiring:** `LoginContent` / `SignupContent` use **`useDiscordLogin`** + **`useGoogleLogin`** only. **`useXLogin`** and X server actions remain in the codebase but are not connected to `AuthSocialLogin`.
+
 | Hook | File | Description |
 |------|------|-------------|
 | `useGoogleLogin` | `use-google-login.ts` | Opens the Google Identity Services code client popup (`ux_mode: "popup"`, scope `openid email profile`), then calls `googleLoginAction({ code, remember_me })`. Uses refs so the latest `rememberMe` value is always sent even when the GSI client is reused. Returns `{ startGoogleLogin, isPending }`; invokes `onSuccess` / `onCancel` / `onError` callbacks. Missing client id / GSI → FE-local code `4020`. |
 | `useGoogleOneTap` | `use-google-one-tap.ts` | Initializes and prompts Google One Tap for guests only (`me == null` and not loading); on credential runs `googleOneTapAction({ credential })`. Cancels the prompt on cleanup. Used by `GoogleOneTapHost`. |
-| `useXLogin` | `use-x-login.ts` | Starts X (Twitter) OAuth: `startXLoginAction` (builds PKCE authorize URL) → opens popup → listens for the callback `postMessage` (`X_OAUTH_MESSAGE_TYPE`, same-origin only) → `xLoginAction({ code, state })`. Polls popup `closed` for cancel. Returns `{ startXLogin, isPending }`. Exports `X_OAUTH_MESSAGE_TYPE` (consumed by the callback page). |
+| `useDiscordLogin` | `use-discord-login.ts` | Starts Discord OAuth: `startDiscordLoginAction` (builds authorize URL with `state` cookies) → opens popup → listens for the callback `postMessage` (`DISCORD_OAUTH_MESSAGE_TYPE`, same-origin only) → `discordLoginAction({ code, state })`. Polls popup `closed` for cancel. Returns `{ startDiscordLogin, isPending }`. Exports `DISCORD_OAUTH_MESSAGE_TYPE` (consumed by the callback page). Missing client id / callback URL → FE-local code `4026`. |
+| `useXLogin` | `use-x-login.ts` | *(Retained, not wired to popup.)* Starts X (Twitter) OAuth: `startXLoginAction` (builds PKCE authorize URL) → opens popup → listens for the callback `postMessage` (`X_OAUTH_MESSAGE_TYPE`, same-origin only) → `xLoginAction({ code, state })`. Polls popup `closed` for cancel. Returns `{ startXLogin, isPending }`. Exports `X_OAUTH_MESSAGE_TYPE` (consumed by the callback page). |
 | `useOAuthPostAuth` | `use-oauth-post-auth.ts` | Shared post-auth side effect: `mutateMe()` + `closeAllModals()` + `router.push(nextLink)` when set. Reused by `LoginContent` and `SignupContent` OAuth `onSuccess`. |
 
 Server/RSC: `resolveCustomLanguage(locale)` in `src/lib/language/resolve-language.ts` (no Context).
