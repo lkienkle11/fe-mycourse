@@ -397,7 +397,7 @@ Trade-off with filesystem cache disabled: **slightly slower cold compile** after
 
 ## Middleware: Locale Routing
 
-``src/proxy.ts` exports the next-intl locale proxy middleware (`createMiddleware(routing)`) and `config.matcher` used by this project to enforce locale-prefixed routes.
+`src/proxy.ts` exports the next-intl locale proxy middleware (`createMiddleware(routing)`) and `config.matcher` used to enforce locale-prefixed routes. The matcher excludes locale-less OAuth popup callbacks (`/auth/discord/callback`, `/auth/x/callback`) so provider redirects are not rewritten to `/{locale}/auth/...` (which would 404 and break popup login).
 
 ---
 
