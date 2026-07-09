@@ -257,7 +257,8 @@ Re-login required after BE permission matrix changes (JWT cache).
 
 ```
 next-intl middleware (src/proxy.ts)
-  → detects locale from URL prefix (/vi/... or /en/...)
+  → skipped for locale-less OAuth callbacks (/auth/discord/callback, /auth/x/callback)
+  → otherwise detects locale from URL prefix (/vi/... or /en/...)
   → sets locale cookie / header
 
 Server Component or Client Component:
