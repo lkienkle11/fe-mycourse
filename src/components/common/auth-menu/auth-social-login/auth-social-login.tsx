@@ -33,7 +33,7 @@ export function AuthSocialLogin({
         onClick={onDiscordClick}
         disabled={discordLoading || !onDiscordClick}
       >
-        <DiscordIcon width={18} height={18} />
+        <DiscordIcon color="#fff" width={18} height={18} />
         <span>{t(type === "login" ? "discordLogin" : "discordSignup")}</span>
       </Button>
 
