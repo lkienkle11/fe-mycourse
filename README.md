@@ -85,24 +85,70 @@ For **full-stack** VPS setup (Go API + Postgres + Redis + joint Nginx), follow [
 
 Enforcement is **remote-only** (GitHub Actions): any pull request **into `main`** must have **`dev`** as the source branch. The workflow [`.github/workflows/enforce-main-from-dev.yml`](.github/workflows/enforce-main-from-dev.yml) fails otherwise (including feature branches or `release/*` opened directly against `main`). On the repository, protect **`main`**: require this check (or equivalent required status checks) before merge, and restrict direct pushes to `main` so updates go through PRs.
 
-### CI deploy (`dev`)
+### CI/CD — GitHub Actions secrets by environment
 
-Pushing to the **`dev`** branch runs [`.github/workflows/deploy-dev.yml`](.github/workflows/deploy-dev.yml): **`test`** (`npm run test-all`) → **`build`** (`npm run build` with `NEXT_PUBLIC_*` from secrets, upload `frontend-runtime` artifact) → **`deploy`** (rsync `.next`/`public` to VPS, `pm2 reload mycourse-web-dev`).
+| Environment | Branch trigger (planned) | Workflow file | PM2 app | Status |
+|-------------|--------------------------|---------------|---------|--------|
+| **Dev** | `push` → **`dev`** | [`.github/workflows/deploy-dev.yml`](.github/workflows/deploy-dev.yml) | `mycourse-web-dev` | **Implemented** |
+| **Staging** | `push` → **`staging`** *(planned)* | `.github/workflows/deploy-staging.yml` *(not in repo)* | `mycourse-web-staging` | **Placeholder secrets only** — deploy manually or add workflow later |
+| **Production** | `push` → **`main`** *(planned)* | `.github/workflows/deploy-main.yml` *(not in repo)* | `mycourse-web-prod` | **Placeholder secrets only** — deploy manually or add workflow later |
 
-**Required GitHub Actions secrets** (Settings → Secrets and variables → Actions):
+Pushes to feature branches or pull requests **do not** run any deploy workflow today. Only **`dev`** is wired in CI.
 
-| Secret | Purpose |
-|--------|---------|
-| `SSH_PRIVATE_KEY` | Deploy SSH key |
-| `SSH_HOST` | VPS hostname/IP |
-| `SSH_USER` | SSH user |
-| `DEPLOY_PATH_DEV` | Frontend checkout path on VPS |
-| `NEXT_PUBLIC_API_URL_DEV` | API URL baked into client bundle |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV` | Google OAuth (popup) |
-| `NEXT_PUBLIC_DISCORD_CLIENT_ID_DEV` | Discord OAuth (popup) |
-| `NEXT_PUBLIC_DISCORD_CALLBACK_URL_DEV` | Discord redirect URL (must match BE) |
+Secrets are stored under **Repository → Settings → Secrets and variables → Actions**. Names ending in `_DEV`, `_STG`, or `_MAIN` are **per-environment**; each suffix is read only when the matching deploy workflow runs on its branch (today: **`_DEV` only** on `dev` pushes).
 
-Optional: `NEXT_PUBLIC_X_CLIENT_ID_DEV`, `NEXT_PUBLIC_X_CALLBACK_URL_DEV` (X code retained). Full mapping and workflow notes: [`docs/deploy.md` Appendix G](docs/deploy.md#appendix-g--cicd-github-actions).
+#### Dev — implemented (`deploy-dev.yml`, branch `dev`)
+
+| Secret | Injected as (build `env`) | Example placeholder |
+|--------|---------------------------|---------------------|
+| `SSH_PRIVATE_KEY` | — | *(deploy key)* |
+| `SSH_HOST` | — | `203.0.113.10` |
+| `SSH_USER` | — | `deploy` |
+| `DEPLOY_PATH_DEV` | — | `/var/www/fe-mycourse` |
+| `NEXT_PUBLIC_API_URL_DEV` | `NEXT_PUBLIC_API_URL` | `https://api-dev.example.com` |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV` | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | `YOUR_GOOGLE_CLIENT_ID_DEV` |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID_DEV` | `NEXT_PUBLIC_DISCORD_CLIENT_ID` | `YOUR_DISCORD_CLIENT_ID_DEV` |
+| `NEXT_PUBLIC_DISCORD_CALLBACK_URL_DEV` | `NEXT_PUBLIC_DISCORD_CALLBACK_URL` | `https://dev.example.com/auth/discord/callback` |
+| `NEXT_PUBLIC_X_CLIENT_ID_DEV` *(optional)* | `NEXT_PUBLIC_X_CLIENT_ID` | `YOUR_X_CLIENT_ID_DEV` |
+| `NEXT_PUBLIC_X_CALLBACK_URL_DEV` *(optional)* | `NEXT_PUBLIC_X_CALLBACK_URL` | `https://dev.example.com/auth/x/callback` |
+
+#### Staging — placeholder (`deploy-staging.yml` not in repo)
+
+Reserve these secret names for a future **`staging`** branch workflow. Until then, set equivalent values in the server **`.env.staging`** file and deploy manually ([`docs/deploy.md`](docs/deploy.md)).
+
+| Secret | Injected as (build `env`) | Example placeholder |
+|--------|---------------------------|---------------------|
+| `SSH_PRIVATE_KEY` | — | *(reuse or separate key)* |
+| `SSH_HOST_STG` | — | `203.0.113.20` |
+| `SSH_USER_STG` | — | `deploy` |
+| `DEPLOY_PATH_STG` | — | `/var/www/fe-mycourse-staging` |
+| `NEXT_PUBLIC_API_URL_STG` | `NEXT_PUBLIC_API_URL` | `https://api-staging.example.com` |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID_STG` | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | `YOUR_GOOGLE_CLIENT_ID_STG` |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID_STG` | `NEXT_PUBLIC_DISCORD_CLIENT_ID` | `YOUR_DISCORD_CLIENT_ID_STG` |
+| `NEXT_PUBLIC_DISCORD_CALLBACK_URL_STG` | `NEXT_PUBLIC_DISCORD_CALLBACK_URL` | `https://staging.example.com/auth/discord/callback` |
+| `NEXT_PUBLIC_X_CLIENT_ID_STG` *(optional)* | `NEXT_PUBLIC_X_CLIENT_ID` | `YOUR_X_CLIENT_ID_STG` |
+| `NEXT_PUBLIC_X_CALLBACK_URL_STG` *(optional)* | `NEXT_PUBLIC_X_CALLBACK_URL` | `https://staging.example.com/auth/x/callback` |
+
+#### Production (`main`) — placeholder (`deploy-main.yml` not in repo)
+
+Reserve these for a future **`main`** branch workflow. Until then, use **`.env.prod`** on the server and manual deploy.
+
+| Secret | Injected as (build `env`) | Example placeholder |
+|--------|---------------------------|---------------------|
+| `SSH_PRIVATE_KEY` | — | *(reuse or separate key)* |
+| `SSH_HOST_MAIN` | — | `203.0.113.30` |
+| `SSH_USER_MAIN` | — | `deploy` |
+| `DEPLOY_PATH_MAIN` | — | `/var/www/fe-mycourse-prod` |
+| `NEXT_PUBLIC_API_URL_MAIN` | `NEXT_PUBLIC_API_URL` | `https://api.example.com` |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID_MAIN` | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | `YOUR_GOOGLE_CLIENT_ID_MAIN` |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID_MAIN` | `NEXT_PUBLIC_DISCORD_CLIENT_ID` | `YOUR_DISCORD_CLIENT_ID_MAIN` |
+| `NEXT_PUBLIC_DISCORD_CALLBACK_URL_MAIN` | `NEXT_PUBLIC_DISCORD_CALLBACK_URL` | `https://www.example.com/auth/discord/callback` |
+| `NEXT_PUBLIC_X_CLIENT_ID_MAIN` *(optional)* | `NEXT_PUBLIC_X_CLIENT_ID` | `YOUR_X_CLIENT_ID_MAIN` |
+| `NEXT_PUBLIC_X_CALLBACK_URL_MAIN` *(optional)* | `NEXT_PUBLIC_X_CALLBACK_URL` | `https://www.example.com/auth/x/callback` |
+
+> **Dev SSH note:** `deploy-dev.yml` uses shared `SSH_HOST` / `SSH_USER` (no `_DEV` suffix). Staging/production placeholders use `SSH_HOST_STG` / `SSH_USER_STG` and `SSH_HOST_MAIN` / `SSH_USER_MAIN` when hosts differ; on a single VPS you may reuse the same `SSH_*` secrets.
+
+Full mapping, workflow YAML, and VPS steps: [`docs/deploy.md` Appendix G](docs/deploy.md#appendix-g--cicd-github-actions).
 
 ## Environment Variables
 
