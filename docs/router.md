@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-07-09 (OAuth callback: locale-less + English-only relay copy). Prior: 2026-07-08 (locale-less `/auth/discord/callback` + retained `/auth/x/callback`). Prior: 2026-07-02 (`/{locale}/become-instructor` documented)._
+_Last audited: 2026-07-09 (OAuth callback middleware bypass: locale-less `/auth/*/callback` excluded from next-intl redirect). Prior: 2026-07-09 (OAuth callback: locale-less + English-only relay copy). Prior: 2026-07-08 (locale-less `/auth/discord/callback` + retained `/auth/x/callback`). Prior: 2026-07-02 (`/{locale}/become-instructor` documented)._
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
 
@@ -43,21 +43,27 @@ Root `/` automatically redirects to `/vi` (default locale) via `src/app/page.tsx
 
 ## Middleware: Locale Enforcement
 
-`src/proxy.ts` exports the next-intl middleware that enforces locale prefixes on every request.
+`src/proxy.ts` exports the next-intl middleware that enforces locale prefixes on every request **except** locale-less OAuth callback routes.
 
 > `src/proxy.ts` is the active locale proxy entry used in this project.
 
 ```ts
 // src/proxy.ts
 import createMiddleware from "next-intl/middleware";
-import { routing } from "./i18n/routing";
+import { routing } from "@/i18n/routing";
 
 export default createMiddleware(routing);
 
 export const config = {
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  matcher: [
+    "/((?!api|trpc|_next|_vercel|auth/discord/callback|auth/x/callback|.*\\..*).*)",
+  ],
 };
 ```
+
+**Why OAuth callbacks are excluded:** Discord and X redirect to `/auth/discord/callback` and `/auth/x/callback` (no locale prefix). Those pages live at `src/app/auth/*/callback/` — **outside** `[locale]/`. If the middleware runs on those paths, next-intl redirects to `/vi/auth/discord/callback` (or `/en/...`), which has no matching page → **404**, the popup never `postMessage`s to the opener, and closing the popup triggers “login cancelled”. Excluding these paths from the matcher keeps the callback URL stable and lets the relay close the popup and complete login.
+
+**Redirect URIs must stay locale-less:** `NEXT_PUBLIC_DISCORD_CALLBACK_URL` and `NEXT_PUBLIC_X_CALLBACK_URL` must be `<origin>/auth/discord/callback` and `<origin>/auth/x/callback` — never `/vi/auth/...` or `/en/auth/...`. Same rule applies to backend `DISCORD_CALLBACK_URL` / `X_CALLBACK_URL` and provider developer portals.
 
 
 
@@ -96,7 +102,7 @@ export const config = {
 
 ### Locale-less OAuth callbacks
 
-`src/app/auth/discord/callback/page.tsx` and `src/app/auth/x/callback/page.tsx` live **outside** `[locale]/`, so they have no locale prefix. This keeps OAuth `redirect_uri` values stable and independent of the active locale.
+`src/app/auth/discord/callback/page.tsx` and `src/app/auth/x/callback/page.tsx` live **outside** `[locale]/`, so they have no locale prefix. This keeps OAuth `redirect_uri` values stable and independent of the active locale. The next-intl middleware **must not** run on these paths (see matcher exclusions above); otherwise the provider redirect is rewritten to `/{locale}/auth/...` and the popup flow breaks.
 
 **Copy language (intentional):** OAuth callback relay pages use **English-only** hardcoded strings (via `OAuthPopupCallbackRelay` — e.g. “Completing Discord sign-in…”, “Back to home”). They do **not** use `next-intl` / `auth.socialLogin.*`. This is the shared pattern for both Discord and X callbacks: the popup closes almost immediately after `postMessage`, so localized copy adds little UX value; keeping a single English fallback avoids wiring i18n on locale-less routes. **Login/signup modal**, toasts, and OAuth error codes remain fully localized (`en` / `vi`).
 

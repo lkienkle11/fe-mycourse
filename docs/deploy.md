@@ -474,9 +474,9 @@ Browser  ──────────────►  │  Nginx (TLS: yourdom
 
 ---
 
-## Appendix C — Middleware (Locale Routing) Fix
+## Appendix C — Middleware (Locale Routing)
 
-`src/proxy.ts` contains a valid `next-intl` middleware:
+`src/proxy.ts` contains the `next-intl` locale proxy middleware:
 
 ```ts
 // src/proxy.ts
@@ -486,17 +486,27 @@ import { routing } from "@/i18n/routing";
 export default createMiddleware(routing);
 
 export const config = {
-  matcher: ["/((?!api|trpc|_next|_vercel|.*\\..*).*)"],
+  matcher: [
+    "/((?!api|trpc|_next|_vercel|auth/discord/callback|auth/x/callback|.*\\..*).*)",
+  ],
 };
 ```
 
 Project uses `src/proxy.ts` as locale proxy middleware entry. Keep this file in place and ensure matcher remains correct.
 
-After either fix, verify with:
+**OAuth callback exclusion (required):** `/auth/discord/callback` and `/auth/x/callback` are locale-less popup relay routes (`src/app/auth/*/callback/`). They must be excluded from the matcher so next-intl does not redirect them to `/vi/auth/...` (which 404s and breaks Discord/X popup login). `NEXT_PUBLIC_*_CALLBACK_URL` values must remain `<origin>/auth/discord/callback` and `<origin>/auth/x/callback` — not locale-prefixed.
+
+Verify locale redirect and OAuth callback reachability:
 
 ```bash
 curl -sS -o /dev/null -w "%{http_code} %{redirect_url}\n" http://127.0.0.1:3000/
 # Expected: 307  http://127.0.0.1:3000/vi
+
+curl -sS -o /dev/null -w "%{http_code} %{redirect_url}\n" http://127.0.0.1:3000/auth/discord/callback
+# Expected: 200 (no redirect to /vi/auth/discord/callback)
+
+curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/vi/auth/discord/callback
+# Expected: 404 (no locale-prefixed callback page — by design)
 ```
 
 ---

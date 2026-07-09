@@ -520,6 +520,7 @@ Global API error namespace: `errors.codes` (numeric string keys). Module validat
 ```
 src/proxy.ts                # next-intl middleware (createMiddleware(routing)) + config.matcher
                             # Next.js 16 uses src/proxy.ts for request proxy/middleware-style handling.
+                            # Matcher excludes locale-less OAuth callbacks: auth/discord/callback, auth/x/callback
 ```
 
 ---
