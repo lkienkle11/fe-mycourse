@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
+_Last audited: 2026-07-10 (Homepage marketing images under `public/assets/images/home`). Prior: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -38,6 +38,22 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Hero illustration on the custom 404 page.
 - **Scope**: `NotFoundPage` only.
 - **Reuse Rule**: Do not duplicate or rename — import from `@public` alias like other marketing assets.
+
+### Asset: Homepage marketing images (`public/assets/images/home/`)
+
+- **Type**: Static images (WebP)
+- **Path**: `public/assets/images/home/**` (import via `@public/assets/images/home/...` or public URL `/assets/images/home/...`)
+- **Purpose**: Marketing homepage illustrations, social-proof avatars, course card thumbnails, and career promo media.
+- **Scope**: `HeroSection`, `TopCoursesSection`, `AdvancedPromoSection`, `TrendingCoursesSection`, and `CourseCard` when `imageUrl` is set.
+- **Reuse Rule**: Follow the mapping table in [`docs/components.md`](./components.md) § `home/` — do not point homepage slots at ad-hoc paths outside this tree.
+
+| Subfolder | Files | Used by |
+|-----------|-------|---------|
+| `thumbnail/` | `img-thumbnail.webp` | `HeroSection` main illustration |
+| `user/` | `imagecrop-user1.webp` … `imagecrop-user4.webp` | `HeroSection` avatar stack |
+| `course-section/` | `web-development-img.webp`, `ui-ux-design-img.webp`, `data-science-machine-learning-img.webp`, `digital-marketing-img.webp` | `TOP_COURSES[*].imageUrl` |
+| `career-advancement/` | `career-advancement.webp` | `AdvancedPromoSection` |
+| `course-section-trending/` | `gpt-course-img.webp`, `nextjs-course-img.webp`, `finance-course-img.webp` | `TRENDING_COURSES[*].imageUrl` |
 
 ---
 
