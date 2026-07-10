@@ -1,4 +1,5 @@
 import { BarChart, BookOpen, Clock, Star, Users } from "lucide-react";
+import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,9 +34,14 @@ export async function CourseCard({ course }: CourseCardProps) {
   return (
     <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 flex flex-col bg-card border-border/50">
       <div className="relative aspect-video w-full bg-muted overflow-hidden">
-        {/* Replace with actual Next Image when urls are available */}
         {course.imageUrl ? (
-          <div className="w-full h-full bg-slate-200" />
+          <Image
+            src={course.imageUrl}
+            alt={course.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 group-hover:scale-105 transition-transform duration-500">
             <span className="font-medium text-sm">{t("image")}</span>

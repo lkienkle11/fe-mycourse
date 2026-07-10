@@ -17,6 +17,7 @@ const messages = {
     promoDesc:
       "We provide the highest quality learning experience with the world's leading experts. Flexible, engaging, and practical learning that gets you results.",
     promo: {
+      imageAlt: "Career advancement",
       list: {
         item1: "Learn from industry experts and renowned universities",
         item2: "Earn an accredited certificate upon completion",

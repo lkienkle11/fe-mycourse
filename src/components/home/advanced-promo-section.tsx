@@ -1,4 +1,6 @@
+import careerAdvancementImage from "@public/assets/images/home/career-advancement/career-advancement.webp";
 import { BarChart, PlayCircle, TrendingUp, Users } from "lucide-react";
+import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 
@@ -16,12 +18,13 @@ export async function AdvancedPromoSection() {
               <div className="absolute -inset-4 bg-primary/10 rounded-3xl blur-2xl -z-10" />
 
               <div className="relative aspect-[4/3] w-full rounded-2xl bg-slate-100 border overflow-hidden group">
-                {/* Mock Image Placeholder */}
-                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/50">
-                  <span className="font-medium text-lg">
-                    Promo Image Placeholder
-                  </span>
-                </div>
+                <Image
+                  src={careerAdvancementImage}
+                  alt={t("promo.imageAlt")}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
 
                 {/* Play button overlay */}
                 <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">

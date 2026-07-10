@@ -1,6 +1,19 @@
+import heroThumbnail from "@public/assets/images/home/thumbnail/img-thumbnail.webp";
+import userAvatar1 from "@public/assets/images/home/user/imagecrop-user1.webp";
+import userAvatar2 from "@public/assets/images/home/user/imagecrop-user2.webp";
+import userAvatar3 from "@public/assets/images/home/user/imagecrop-user3.webp";
+import userAvatar4 from "@public/assets/images/home/user/imagecrop-user4.webp";
 import { ArrowRight, Play, Star, Users } from "lucide-react";
+import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
+
+const HERO_AVATARS = [
+  userAvatar1,
+  userAvatar2,
+  userAvatar3,
+  userAvatar4,
+] as const;
 
 export async function HeroSection() {
   const t = await getTranslations("homepage.hero");
@@ -45,14 +58,19 @@ export async function HeroSection() {
             <div className="mt-12 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 border-t pt-8">
               <div className="flex items-center gap-4">
                 <div className="flex -space-x-3">
-                  {[1, 2, 3, 4].map((i) => (
+                  {HERO_AVATARS.map((avatar) => (
                     <div
-                      key={i}
+                      key={avatar.src}
                       className="inline-block h-10 w-10 rounded-full ring-2 ring-background bg-slate-200 border border-border overflow-hidden"
                     >
-                      <div className="w-full h-full bg-primary/10 flex items-center justify-center text-xs text-primary/50 font-medium">
-                        U{i}
-                      </div>
+                      <Image
+                        src={avatar}
+                        alt=""
+                        width={40}
+                        height={40}
+                        className="h-full w-full object-cover"
+                        aria-hidden
+                      />
                     </div>
                   ))}
                 </div>
@@ -75,9 +93,14 @@ export async function HeroSection() {
           {/* Illustration/Image */}
           <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
             <div className="relative aspect-square md:aspect-[4/3] lg:aspect-square w-full rounded-2xl md:rounded-3xl bg-primary/5 border border-primary/10 shadow-2xl flex items-center justify-center overflow-hidden">
-              <span className="text-xs font-medium text-slate-500">
-                {t("illustration")}
-              </span>
+              <Image
+                src={heroThumbnail}
+                alt={t("illustration")}
+                fill
+                priority
+                className="object-cover"
+                sizes="(max-width: 1024px) 50vw, 33vw"
+              />
 
               {/* Floating elements for visual interest */}
               <div className="absolute top-10 right-10 p-3 bg-background rounded-xl shadow-xl border border-border/50 flex items-center gap-3 animate-bounce shadow-primary/5">

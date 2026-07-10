@@ -18,6 +18,7 @@ const TRENDING_COURSES: CourseType[] = [
     level: "Beginner",
     price: 29.99,
     originalPrice: 89.99,
+    imageUrl: "/assets/images/home/course-section-trending/gpt-course-img.webp",
   },
   {
     id: "t2",
@@ -32,6 +33,8 @@ const TRENDING_COURSES: CourseType[] = [
     level: "Intermediate",
     price: 64.99,
     originalPrice: 129.99,
+    imageUrl:
+      "/assets/images/home/course-section-trending/nextjs-course-img.webp",
   },
   {
     id: "t3",
@@ -46,6 +49,8 @@ const TRENDING_COURSES: CourseType[] = [
     level: "Advanced",
     price: 199.99,
     originalPrice: 299.99,
+    imageUrl:
+      "/assets/images/home/course-section-trending/finance-course-img.webp",
   },
 ];
 
