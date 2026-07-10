@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-07-08 (Discord + Google on login/signup popup; Discord callback route; X OAuth code retained). Prior: 2026-07-06 (BecomeInstructorPromoBanner in web layout)._
+_Last audited: 2026-07-10 (Homepage sections use `public/assets/images/home` static assets). Prior: 2026-07-08 (Discord + Google on login/signup popup; Discord callback route; X OAuth code retained)._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -133,17 +133,19 @@ Assembles the marketing landing page from seven section components, all living u
 
 ```
 HomePage (server)
-├── HeroSection              → Primary hero / call-to-action
-├── SearchSection            → Course search entry point
-├── TopCoursesSection        → Curated / featured courses grid
-├── AdvancedPromoSection     → Secondary promotional banner
-├── TrendingCoursesSection   → Trending courses carousel/grid
-├── UpcomingWebinarsSection  → Upcoming live sessions list
-└── PromoSection             → Bottom promotional strip / CTA
+├── HeroSection              → Primary hero / CTA + illustration + social-proof avatars
+├── SearchSection            → Course search entry point (no image slot)
+├── TopCoursesSection        → Curated courses grid (4 cards with `imageUrl`)
+├── AdvancedPromoSection     → Career promo with left media image
+├── TrendingCoursesSection   → Trending courses grid (3 cards with `imageUrl`)
+├── UpcomingWebinarsSection  → Upcoming live sessions (host initial-letter avatars)
+└── PromoSection             → Bottom promotional strip / CTA (no image slot)
 ```
 
 **Supporting components:**
-- `CourseCard` (`src/components/home/course-card.tsx`) — reusable card used by course-listing sections.
+- `CourseCard` (`src/components/home/course-card.tsx`) — reusable card used by course-listing sections; renders `next/image` when `course.imageUrl` is provided.
+
+**Static images:** Mapped assets live in `public/assets/images/home/` (see [`docs/components.md`](./components.md) § `home/` for the full asset → component table). Hero and advanced promo import WebP files via `@public`; course sections pass `/assets/images/home/...` URLs on mock data until real API thumbnails exist.
 
 ---
 
