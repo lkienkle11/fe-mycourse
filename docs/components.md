@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-07-10 (Homepage sections wired to `public/assets/images/home` static assets). Prior: 2026-07-08 (AuthSocialLogin: Discord + Google on popup; X OAuth code retained but not wired to modal)._
+_Last audited: 2026-07-10 (AdvancedPromoSection promo image: subtle hover brightness). Prior: 2026-07-10 (AdvancedPromoSection: static promo image only, no hover play overlay)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -187,7 +187,7 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 | `HeroSection` | Full-width hero banner with headline, sub-copy, primary CTA, social-proof avatars, and hero illustration (`next/image`) |
 | `SearchSection` | Search bar area prompting course discovery (no image slot) |
 | `TopCoursesSection` | Grid of top-rated courses; mock `TOP_COURSES` items pass `imageUrl` into `CourseCard` |
-| `AdvancedPromoSection` | Career-advancement promo block with left media image (`next/image`) |
+| `AdvancedPromoSection` | Career-advancement promo block with left static media image (`next/image`); subtle `group-hover:brightness-110` on promo image; headline highlights `home.promoTitle2` in `text-primary` only — no underline; no video/play overlay |
 | `TrendingCoursesSection` | Trending courses grid; mock `TRENDING_COURSES` items pass `imageUrl` into `CourseCard` |
 | `UpcomingWebinarsSection` | Scheduled upcoming webinar previews (host avatar remains initial-letter fallback — no dedicated asset) |
 | `PromoSection` | General promotional banner or offer block (no image slot) |
