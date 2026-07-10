@@ -18,6 +18,7 @@ const messages = {
     promoDesc:
       "Chúng tôi cung cấp trải nghiệm học tập chất lượng cao với các chuyên gia hàng đầu. Linh hoạt, hấp dẫn và thực tế - mang lại kết quả như mong đợi.",
     promo: {
+      imageAlt: "Thăng tiến sự nghiệp",
       list: {
         item1: "Học từ các chuyên gia trong ngành và các trường đại học uy tín",
         item2: "Nhận chứng chỉ được công nhận sau khi hoàn thành khóa học",

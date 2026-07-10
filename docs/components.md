@@ -1,6 +1,6 @@
 # Components (`fe-mycourse`)
 
-_Last audited: 2026-07-08 (AuthSocialLogin: Discord + Google on popup; X OAuth code retained but not wired to modal). Prior: 2026-07-06 (BecomeInstructorPromoBanner above site Header for learner users)._
+_Last audited: 2026-07-10 (AdvancedPromoSection promo image: subtle hover brightness). Prior: 2026-07-10 (AdvancedPromoSection: static promo image only, no hover play overlay)._
 
 
 Inventory of all React components, their responsibilities, and where they live. Keep this updated as new components are added.
@@ -184,14 +184,33 @@ All assembled by `HomePage` screen (`src/screen/common/home/page.tsx`).
 
 | Component | Description |
 |-----------|-------------|
-| `HeroSection` | Full-width hero banner with headline, sub-copy, and primary CTA |
-| `SearchSection` | Search bar area prompting course discovery |
-| `TopCoursesSection` | Horizontally scrollable list of top-ranked courses |
-| `AdvancedPromoSection` | Feature highlight / promotional block for advanced content |
-| `TrendingCoursesSection` | Trending courses carousel/grid |
-| `UpcomingWebinarsSection` | Scheduled upcoming webinar previews |
-| `PromoSection` | General promotional banner or offer block |
-| `CourseCard` | Reusable card component used inside course listing sections |
+| `HeroSection` | Full-width hero banner with headline, sub-copy, primary CTA, social-proof avatars, and hero illustration (`next/image`) |
+| `SearchSection` | Search bar area prompting course discovery (no image slot) |
+| `TopCoursesSection` | Grid of top-rated courses; mock `TOP_COURSES` items pass `imageUrl` into `CourseCard` |
+| `AdvancedPromoSection` | Career-advancement promo block with left static media image (`next/image`); subtle `group-hover:brightness-110` on promo image; headline highlights `home.promoTitle2` in `text-primary` only — no underline; no video/play overlay |
+| `TrendingCoursesSection` | Trending courses grid; mock `TRENDING_COURSES` items pass `imageUrl` into `CourseCard` |
+| `UpcomingWebinarsSection` | Scheduled upcoming webinar previews (host avatar remains initial-letter fallback — no dedicated asset) |
+| `PromoSection` | General promotional banner or offer block (no image slot) |
+| `CourseCard` | Reusable card; renders `next/image` when `course.imageUrl` is set, otherwise placeholder |
+
+### Homepage static image mapping
+
+Assets live under `public/assets/images/home/`. Import via `@public/assets/images/home/...` (hero, promo) or pass public URL strings on mock course data (`/assets/images/home/...`).
+
+| Asset path (under `public/`) | Component | Slot |
+|------------------------------|-----------|------|
+| `assets/images/home/thumbnail/img-thumbnail.webp` | `HeroSection` | Main hero illustration (right column) |
+| `assets/images/home/user/imagecrop-user1.webp` … `imagecrop-user4.webp` | `HeroSection` | Social-proof avatar stack (positions 1–4) |
+| `assets/images/home/course-section/web-development-img.webp` | `TopCoursesSection` → `CourseCard` | Course 1 thumbnail |
+| `assets/images/home/course-section/ui-ux-design-img.webp` | `TopCoursesSection` → `CourseCard` | Course 2 thumbnail |
+| `assets/images/home/course-section/data-science-machine-learning-img.webp` | `TopCoursesSection` → `CourseCard` | Course 3 thumbnail |
+| `assets/images/home/course-section/digital-marketing-img.webp` | `TopCoursesSection` → `CourseCard` | Course 4 thumbnail |
+| `assets/images/home/career-advancement/career-advancement.webp` | `AdvancedPromoSection` | Left promo media (`aspect-[4/3]`) |
+| `assets/images/home/course-section-trending/gpt-course-img.webp` | `TrendingCoursesSection` → `CourseCard` | Trending 1 thumbnail |
+| `assets/images/home/course-section-trending/nextjs-course-img.webp` | `TrendingCoursesSection` → `CourseCard` | Trending 2 thumbnail |
+| `assets/images/home/course-section-trending/finance-course-img.webp` | `TrendingCoursesSection` → `CourseCard` | Trending 3 thumbnail |
+
+`SearchSection`, `PromoSection`, and `UpcomingWebinarsSection` have no mapped home assets in the current UI.
 
 ---
 

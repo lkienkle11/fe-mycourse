@@ -18,6 +18,7 @@ const TOP_COURSES: CourseType[] = [
     level: "All Levels",
     price: 89.99,
     originalPrice: 199.99,
+    imageUrl: "/assets/images/home/course-section/web-development-img.webp",
   },
   {
     id: "2",
@@ -32,6 +33,7 @@ const TOP_COURSES: CourseType[] = [
     level: "Beginner",
     price: 59.99,
     originalPrice: 129.99,
+    imageUrl: "/assets/images/home/course-section/ui-ux-design-img.webp",
   },
   {
     id: "3",
@@ -46,6 +48,8 @@ const TOP_COURSES: CourseType[] = [
     level: "Intermediate",
     price: 74.99,
     originalPrice: 149.99,
+    imageUrl:
+      "/assets/images/home/course-section/data-science-machine-learning-img.webp",
   },
   {
     id: "4",
@@ -59,6 +63,7 @@ const TOP_COURSES: CourseType[] = [
     students: 5400,
     level: "All Levels",
     price: 49.99,
+    imageUrl: "/assets/images/home/course-section/digital-marketing-img.webp",
   },
 ];
 
