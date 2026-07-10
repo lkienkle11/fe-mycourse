@@ -28,7 +28,7 @@ export async function AdvancedPromoSection() {
               </div>
 
               {/* Floating Stat Card */}
-              <div className="absolute -bottom-6 -right-6 p-5 bg-background rounded-xl shadow-xl border flex items-center gap-4">
+              <div className="absolute -bottom-6 -right-6 max-md:-right-2 p-5 bg-background rounded-xl shadow-xl border flex items-center gap-4">
                 <div className="h-12 w-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin-slow" />
                 <div>
                   <div className="text-2xl font-bold text-foreground">98%</div>
