@@ -1,6 +1,6 @@
 # API Overview (`fe-mycourse`)
 
-_Last audited: 2026-06-17 (course/taxonomy read-path performance params + instructor course routes)._
+_Last audited: 2026-07-12 (taxonomy/instructor `locale` + taxonomy `view=edit` / dual response)._
 
 
 ## Scope
@@ -46,9 +46,10 @@ Frontend API layer lives in `src/api/` and is used by `src/actions/` and client 
 Mounted under `API_PRIVATE_ROUTES.instructor` — see `src/api/callers/instructor/instructor.ts` and `docs/instructor-admin.md`:
 
 - `GET/DELETE /api/v1/instructors` (roster list/remove); `POST /api/v1/instructors/bulk` (add)
-- `GET/POST /api/v1/instructor-applications`, approve/reject, delete
-- `GET/POST/PATCH/DELETE /api/v1/instructor-profiles`, `GET …/me`
-- `GET/POST/DELETE …/instructors/:id/expertise/topics|skills`
+- `GET/POST /api/v1/instructor-applications`, approve/reject, delete — detail chip hydration threads **`locale`** from query through service → repository; FE detail callers include `locale` in URL/SWR key
+- `GET/PUT /api/v1/instructor-applications/me` (+ first POST submit) — become-instructor: FE `useMyInstructorApplication` includes **`locale`** in SWR key/fetcher; submit/resubmit pass **`locale`** so mutation responses hydrate chips correctly under `revalidate: false`
+- `GET/POST/PATCH/DELETE /api/v1/instructor-profiles`, `GET …/me` — identity/snapshot DTOs (no separate named taxonomy chip hydrate on profile GETs)
+- `GET/POST/DELETE …/instructors/:id/expertise/topics|skills` — pass **`locale`**; FE SWR keys must include `locale`
 - `GET/POST /api/v1/instructor-tickets`, messages, `POST …/close`
 
 ## Course routes (private)
@@ -79,9 +80,11 @@ See `docs/api-using.md` § Course detail and § Taxonomy.
 
 ## Taxonomy routes (private)
 
-`API_PRIVATE_ROUTES.taxonomy` — callers in `src/api/callers/taxonomy/taxonomy.ts`, hook `useTaxonomyList` in `src/api/hooks/taxonomy/useTaxonomy.ts`.
+`API_PRIVATE_ROUTES.taxonomy` — callers in `src/api/callers/taxonomy/taxonomy.ts`, hooks in `src/api/hooks/taxonomy/useTaxonomy.ts` (`useTaxonomyList`, detail via `getTaxonomyDetailService`).
 
-List query extends `ApiListQueryParams` with `search_by`, `search_value`, and optional `include_images` (`false` skips image URL hydration — course editor pickers only; admin CRUD screens keep default `true`).
+List query extends `ApiListQueryParams` with `search_by`, `search_value`, **`locale`** (content locale for resolved labels; from `useLocale()`), and optional `include_images` (`false` skips image URL hydration — course editor pickers only; admin CRUD screens keep default `true`).
+
+**Dual response:** list / `GET /:id?locale=` → localized/public shape; `GET /:id?view=edit` → admin editable (canonical + full `translations` + `row_version`). PATCH sends `expected_row_version` (stale → 409 / **3005**). See `docs/taxonomy-admin.md`, `docs/api-using.md` § Taxonomy.
 
 ## Media routes (private)
 

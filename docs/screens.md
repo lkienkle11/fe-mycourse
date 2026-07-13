@@ -53,7 +53,7 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/sysadmin/courses/reviewing` | Active | `CourseReviewPage` (`scope="sysadmin"`) — pending review queue (+ Preview link in ⋮ menu) |
 | `/{locale}/sysadmin/courses/reviewing/{courseId}/preview` | Active | `CourseReviewPreviewPage` — placeholder |
 | `/{locale}/sysadmin/courses/trash` | Active | `CourseAdminTrashPage` — restore / permanent delete (same ⋮ / dialog pattern as admin) |
-| `/{locale}/admin/taxonomy/{resource}` | Active | Shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags); create/edit increments `formDialogKey` and passes `key={formDialogKey}` to `TaxonomyFormDialog` so edit hydrates from list row `initialData` |
+| `/{locale}/admin/taxonomy/{resource}` | Active | Shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags); list uses `locale` from `useLocale()`; create/edit increments `formDialogKey` and remounts `TaxonomyFormDialog`; **edit loads** `getTaxonomyDetailService(…, { view: "edit" })` (canonical + translations Tabs + `expected_row_version`) |
 | `/{locale}/sysadmin/taxonomy/{resource}` | Active | Same shared `TaxonomyListPage` (sysadmin menu + permissions) |
 | `/{locale}/*` (unknown path) | Active | Custom 404 — `NotFoundPage` via `not-found.tsx` chain |
 

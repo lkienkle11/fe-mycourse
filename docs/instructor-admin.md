@@ -135,8 +135,9 @@ Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `Searchable
 
 - **Instructor / topic / skill pickers:** shared `SearchableSelect` + `useSearchablePaginatedOptions`. Data layer: `useApiInfiniteListQuery` with `getInstructorRosterListKey` / `getTaxonomyListKey` (SWR infinite cache; no refetch on close/reopen when key unchanged). UI layer: pinned `selectedLabel`, debounced search, `excludeValues`, `onError` → `toastApiError`, `retry` via `mutate`. Fetch only while popover is open (`enabled && open`).
 - **Instructor picker:** `GET /instructors` (`page`, `per_page`, `search`). Infinite scroll on near-bottom scroll; search debounce ~300 ms.
-- **Topics / skills add pickers:** `GET /taxonomy/topics` or `/skills` with `status=ACTIVE`, `search_by=name`, `search_value`, `include_images=false`, same infinite-scroll pattern.
-- **Assigned rows:** joined taxonomy `name` from expertise GET (`InstructorExpertiseTopic.name` / `InstructorExpertiseSkill.name`); fallback `instructor.expertise.unknownName`.
+- **Topics / skills add pickers:** `GET /taxonomy/topics` or `/skills` with `status=ACTIVE`, `search_by=name`, `search_value`, `include_images=false`, and **`locale`** from `useLocale()` — same infinite-scroll pattern.
+- **Assigned expertise rows / chips:** `GET /instructors/:id/expertise/topics|skills` **must** send the same **`locale`** and include it in SWR keys (`useInstructorExpertise*` / caller key builders) so a route-locale change revalidates assigned chips (not only pickers). Display `InstructorExpertiseTopic.name` / `InstructorExpertiseSkill.name` (localized); fallback `instructor.expertise.unknownName`.
+- **Application detail chips:** `GET /instructor-applications/:id` (approvals view dialog) **must** pass **`locale`** and include it in the detail SWR key so chip labels match taxonomy/expertise fallback. Managed profile GETs do not hydrate separate named taxonomy chip arrays.
 - Already-assigned topic/skill IDs excluded client-side from add-picker options.
 - Page size: `SEARCHABLE_SELECT_PER_PAGE` (default 20). BE roster endpoints cap `per_page` at 100 only (`getRosterPerPage()`); applications/profiles/tickets lists are unchanged.
 

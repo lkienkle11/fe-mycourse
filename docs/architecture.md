@@ -21,7 +21,7 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Tree graph | @xyflow/react, dagre | 12.x / 0.8.x | `DagreTreeDialog` (`nodesDraggable` default true) + `dagre-tree.ts` |
 | Legacy tree pkg | @nosferatu500/react-sortable-tree | 5.x | Installed; taxonomy form uses `SortableTreeEditor` (@dnd-kit) instead |
 | Forms | react-hook-form + zod | 7.x / 4.x | `@hookform/resolvers` bridges the two |
-| i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` |
+| i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` (no `ja` routing). Taxonomy **data** labels localize from BE via query `locale` / translation tables — see `docs/taxonomy-admin.md`. |
 | Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup, **3 min** `errorRetryInterval`) for hooks under the provider; `useAuth` sets its own SWR options |
 | HTTP client | Axios | 1.x | Shared instance with request/response interceptors |
 | Global state | Zustand | 5.x | Provider-free stores (auth, me, stream event log) |
