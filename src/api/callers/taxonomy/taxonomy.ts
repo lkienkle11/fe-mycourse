@@ -9,6 +9,7 @@ import type {
 } from "@/types/api";
 import type {
   CreateTaxonomyPayloadMap,
+  TaxonomyDetailQuery,
   TaxonomyEntityMap,
   TaxonomyListFilters,
   TaxonomyResourceKey,
@@ -27,6 +28,7 @@ export function getTaxonomyListKey(
   if (filters.search_by) query.search_by = filters.search_by;
   if (filters.search_value) query.search_value = filters.search_value;
   if (filters.include_images === false) query.include_images = "false";
+  if (filters.locale) query.locale = filters.locale;
   return buildQueryParams(taxonomyBasePath(resourceKey), query);
 }
 
@@ -42,6 +44,40 @@ export async function listTaxonomyService<K extends TaxonomyResourceKey>(
     await apiFetch<ApiPaginatedResponse<TaxonomyEntityMap[K][]>>(url);
   if (!data.data) {
     throw new Error(data.message || "Failed to load taxonomy list");
+  }
+  return data.data;
+}
+
+export function getTaxonomyDetailKey(
+  resourceKey: TaxonomyResourceKey,
+  id: string,
+  query: TaxonomyDetailQuery = {},
+): string | null {
+  const params: Record<string, string> = {};
+  if (query.locale) params.locale = query.locale;
+  if (query.view) params.view = query.view;
+  return buildQueryParams(
+    API_PRIVATE_ROUTES.taxonomy.byId,
+    Object.keys(params).length > 0 ? params : undefined,
+    {
+      segment: getTaxonomyResourceConfig(resourceKey).apiSegment,
+      id: String(id),
+    },
+  );
+}
+
+export async function getTaxonomyDetailService<K extends TaxonomyResourceKey>(
+  resourceKey: K,
+  id: string,
+  query: TaxonomyDetailQuery = {},
+): Promise<TaxonomyEntityMap[K]> {
+  const url = getTaxonomyDetailKey(resourceKey, id, query);
+  if (!url) {
+    throw new Error("Invalid taxonomy detail URL");
+  }
+  const { data } = await apiFetch<ApiResponse<TaxonomyEntityMap[K]>>(url);
+  if (!data.data) {
+    throw new Error(data.message || "Failed to load taxonomy item");
   }
   return data.data;
 }

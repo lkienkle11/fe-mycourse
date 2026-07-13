@@ -1261,6 +1261,16 @@ const messages = {
       status: "Status",
       imageFileId: "Cover image",
       imageFileIdHint: "Optional. Choose an image from the media library.",
+      localeTabs: "Translations",
+      addLocale: "Add locale",
+      localePlaceholder: "e.g. fr",
+      localeSearchPlaceholder: "Search locales…",
+      localeEmpty: "No matching locales",
+      advancedLocale: "Advanced (custom code)",
+      outcomeShortRequired:
+        "Short description is required for locale {locale} when description is set",
+      missingTranslation: "No translation for this locale yet.",
+      invalidLocale: "Select a locale from the list (e.g. en, vi, pt-BR).",
       validation: {
         name: "Name is required.",
         nameMax: "Name must be at most 255 characters.",

@@ -1,9 +1,12 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { deleteTaxonomyService } from "@/api/callers/taxonomy";
+import {
+  deleteTaxonomyService,
+  getTaxonomyDetailService,
+} from "@/api/callers/taxonomy";
 import { useTaxonomyList } from "@/api/hooks/taxonomy/useTaxonomy";
 import { TaxonomyFormDialog } from "@/components/features/taxonomy";
 import { buildTaxonomyTableColumns } from "@/components/features/taxonomy/taxonomy-table-columns";
@@ -41,6 +44,7 @@ export type TaxonomyListPageProps = {
 export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
   const t = useTranslations("taxonomy");
   const tErrors = useTranslations("errors.codes");
+  const locale = useLocale();
   const config = getTaxonomyResourceConfig(resourceKey);
   const searchableColumns = getTaxonomySearchableColumns(resourceKey);
   const [filters, setFilters] = useState<TaxonomyListFilters>({
@@ -65,10 +69,16 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<TaxonomyEntity | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditLoading, setIsEditLoading] = useState(false);
+
+  const listFilters = useMemo(
+    () => ({ ...filters, locale }),
+    [filters, locale],
+  );
 
   const { rows, pageInfo, isLoading, mutate } = useTaxonomyList(
     resourceKey,
-    filters,
+    listFilters,
   );
 
   const page = pageInfo?.page ?? filters.page ?? 1;
@@ -158,11 +168,21 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
     setSearchInput("");
   };
 
-  const openEdit = (row: TaxonomyEntity) => {
-    setFormMode("edit");
-    setSelectedRow(row);
-    setFormDialogKey((key) => key + 1);
-    setFormOpen(true);
+  const openEdit = async (row: TaxonomyEntity) => {
+    setIsEditLoading(true);
+    try {
+      const detail = await getTaxonomyDetailService(resourceKey, row.id, {
+        view: "edit",
+      });
+      setFormMode("edit");
+      setSelectedRow(detail);
+      setFormDialogKey((key) => key + 1);
+      setFormOpen(true);
+    } catch (error) {
+      toastApiError(tErrors, error);
+    } finally {
+      setIsEditLoading(false);
+    }
   };
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: React state setters are stable.
@@ -240,7 +260,8 @@ export function TaxonomyListPage({ resourceKey }: TaxonomyListPageProps) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => openEdit(row)}
+                  disabled={isEditLoading}
+                  onClick={() => void openEdit(row)}
                 >
                   {t("common.edit")}
                 </Button>

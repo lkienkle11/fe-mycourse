@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   type ComponentProps,
   type ComponentType,
@@ -156,8 +156,11 @@ export function InstructorCourseEditorPage({
     editableVersion,
     mutateDetail: mutate,
   });
+  const locale = useLocale();
   const basicInfoFilters =
-    tab === "info" ? { page: 1, per_page: 100, include_images: false } : null;
+    tab === "info"
+      ? { page: 1, per_page: 100, include_images: false, locale }
+      : null;
   const { rows: levelRows } = useTaxonomyList("levels", basicInfoFilters);
   const { rows: topicRows } = useTaxonomyList("topics", basicInfoFilters);
   const { rows: tagRows } = useTaxonomyList("tags", basicInfoFilters);

@@ -20,10 +20,15 @@ export function useInstructorApplicationsList(filters: InstructorListFilters) {
   );
 }
 
-export function useInstructorApplicationDetail(applicationId: string | null) {
+export function useInstructorApplicationDetail(
+  applicationId: string | null,
+  locale?: string,
+) {
   return useApiDetailQuery<InstructorApplication>(
-    applicationId ? getInstructorApplicationDetailKey(applicationId) : null,
-    () => getInstructorApplicationService(applicationId as string),
+    applicationId
+      ? getInstructorApplicationDetailKey(applicationId, locale)
+      : null,
+    () => getInstructorApplicationService(applicationId as string, locale),
     { revalidateOnFocus: false },
   );
 }

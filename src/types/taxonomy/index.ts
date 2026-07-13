@@ -3,12 +3,24 @@ import type { ApiEntityStatus, ApiListQueryParams } from "@/types/api";
 /** Taxonomy row status — alias of shared BE list filter status. */
 export type TaxonomyStatus = ApiEntityStatus;
 
+/** Per-locale name payload (root name resources + tree nodes). */
+export type TaxonomyNodeTranslation = {
+  name: string;
+};
+
+/** Per-locale outcome payload. */
+export type TaxonomyOutcomeTranslation = {
+  short_description: string;
+  description?: string[];
+};
+
 /** Recursive tree node stored in JSONB (`child_topics` or `children`). */
 export type TaxonomyTreeNode = {
   id: string;
   name: string;
   /** Present on API responses; omit on create/update (BE computes from `name`). */
   slug?: string;
+  translations?: Record<string, TaxonomyNodeTranslation>;
   children?: TaxonomyTreeNode[];
 };
 
@@ -58,13 +70,29 @@ export type TaxonomyListFilters = ApiListQueryParams & {
   search_value?: string;
   /** When false, skips media_files hydration on list endpoints. */
   include_images?: boolean;
+  /** Content locale for resolved labels (from `useLocale()`). */
+  locale?: string;
 };
 
-export type SlugStatusTaxonomy = {
+/** Query for GET /:id (`locale` + optional `view=edit`). */
+export type TaxonomyDetailQuery = {
+  locale?: string;
+  view?: "edit";
+};
+
+/** Shared multilingual metadata on taxonomy entities. */
+export type TaxonomyLocaleFields = {
+  resolved_locale?: string;
+  available_locales?: string[];
+  row_version?: number;
+};
+
+export type SlugStatusTaxonomy = TaxonomyLocaleFields & {
   id: string;
   name: string;
   slug: string;
   status: TaxonomyStatus;
+  translations?: Record<string, TaxonomyNodeTranslation>;
   created_by?: string;
   created_at: number;
   updated_at: number;
@@ -80,13 +108,14 @@ export type CourseSkill = SlugStatusTaxonomy & {
   children: TaxonomyTreeNode[];
 };
 
-export type CourseOutcome = {
+export type CourseOutcome = TaxonomyLocaleFields & {
   id: string;
   short_description: string;
   description: string[];
   image_file_id?: string;
   image_file_url?: string;
   status: TaxonomyStatus;
+  translations?: Record<string, TaxonomyOutcomeTranslation>;
   created_by?: string;
   created_at: number;
   updated_at: number;
@@ -105,11 +134,14 @@ export type TaxonomyEntity = TaxonomyEntityMap[TaxonomyResourceKey];
 export type CreateSlugStatusPayload = {
   name: string;
   status?: TaxonomyStatus;
+  translations?: Record<string, TaxonomyNodeTranslation>;
 };
 
 export type UpdateSlugStatusPayload = {
   name?: string;
   status?: TaxonomyStatus;
+  translations?: Record<string, TaxonomyNodeTranslation>;
+  expected_row_version: number;
 };
 
 export type CreateTopicPayload = CreateSlugStatusPayload & {
@@ -122,6 +154,8 @@ export type UpdateTopicPayload = {
   image_file_id?: string;
   child_topics?: TaxonomyTreeNode[];
   status?: TaxonomyStatus;
+  translations?: Record<string, TaxonomyNodeTranslation>;
+  expected_row_version: number;
 };
 
 export type CreateSkillPayload = CreateSlugStatusPayload & {
@@ -132,6 +166,8 @@ export type UpdateSkillPayload = {
   name?: string;
   children?: TaxonomyTreeNode[];
   status?: TaxonomyStatus;
+  translations?: Record<string, TaxonomyNodeTranslation>;
+  expected_row_version: number;
 };
 
 export type CreateOutcomePayload = {
@@ -139,6 +175,7 @@ export type CreateOutcomePayload = {
   description?: string[];
   image_file_id?: string;
   status?: TaxonomyStatus;
+  translations?: Record<string, TaxonomyOutcomeTranslation>;
 };
 
 export type UpdateOutcomePayload = {
@@ -146,6 +183,8 @@ export type UpdateOutcomePayload = {
   description?: string[];
   image_file_id?: string;
   status?: TaxonomyStatus;
+  translations?: Record<string, TaxonomyOutcomeTranslation>;
+  expected_row_version: number;
 };
 
 export type CreateTaxonomyPayloadMap = {

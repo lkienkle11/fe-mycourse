@@ -1264,6 +1264,16 @@ const messages = {
       status: "Trạng thái",
       imageFileId: "Ảnh bìa",
       imageFileIdHint: "Tùy chọn. Chọn ảnh từ thư viện tài nguyên.",
+      localeTabs: "Bản dịch",
+      addLocale: "Thêm ngôn ngữ",
+      localePlaceholder: "vd. fr",
+      localeSearchPlaceholder: "Tìm locale…",
+      localeEmpty: "Không có locale phù hợp",
+      advancedLocale: "Nâng cao (mã tùy chỉnh)",
+      outcomeShortRequired:
+        "Cần short description cho locale {locale} khi đã nhập description",
+      missingTranslation: "Chưa có bản dịch cho ngôn ngữ này.",
+      invalidLocale: "Chọn ngôn ngữ từ danh sách (vd. en, vi, pt-BR).",
       validation: {
         name: "Vui lòng nhập tên.",
         nameMax: "Tên tối đa 255 ký tự.",
