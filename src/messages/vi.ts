@@ -1267,8 +1267,8 @@ const messages = {
       localeTabs: "Bản dịch",
       addLocale: "Thêm ngôn ngữ",
       localePlaceholder: "vd. fr",
-      localeSearchPlaceholder: "Tìm locale…",
-      localeEmpty: "Không có locale phù hợp",
+      localeSearchPlaceholder: "Chọn ngôn ngữ",
+      localeEmpty: "Không có ngôn ngữ cần tìm",
       advancedLocale: "Nâng cao (mã tùy chỉnh)",
       outcomeShortRequired:
         "Cần short description cho locale {locale} khi đã nhập description",

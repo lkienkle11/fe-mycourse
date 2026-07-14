@@ -1264,8 +1264,8 @@ const messages = {
       localeTabs: "Translations",
       addLocale: "Add locale",
       localePlaceholder: "e.g. fr",
-      localeSearchPlaceholder: "Search locales…",
-      localeEmpty: "No matching locales",
+      localeSearchPlaceholder: "Select language",
+      localeEmpty: "No languages found",
       advancedLocale: "Advanced (custom code)",
       outcomeShortRequired:
         "Short description is required for locale {locale} when description is set",

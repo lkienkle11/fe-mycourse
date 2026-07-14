@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDownIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { RequiredLabel } from "@/components/shared/required-label";
@@ -18,7 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils/index";
 import { CONTENT_LOCALE_OPTIONS, localeTabLabel } from "@/lib/utils/taxonomy";
 
 type TaxonomyLocaleTabsSectionProps = {
@@ -38,21 +38,24 @@ export function TaxonomyLocaleTabsSection({
   const [localePickerOpen, setLocalePickerOpen] = useState(false);
   const [localeSearch, setLocaleSearch] = useState("");
 
-  const availableLocaleOptions = useMemo(() => {
-    const used = new Set(tabLocales);
+  const filteredLocaleOptions = useMemo(() => {
     const q = localeSearch.trim().toLowerCase();
     return CONTENT_LOCALE_OPTIONS.filter((item) => {
-      if (used.has(item.locale)) return false;
       if (!q) return true;
       return (
         item.locale.toLowerCase().includes(q) ||
         item.label.toLowerCase().includes(q)
       );
     });
-  }, [localeSearch, tabLocales]);
+  }, [localeSearch]);
 
-  const handleAdd = (raw: string) => {
-    onAddLocale(raw);
+  const handleSelect = (raw: string) => {
+    const alreadyOpen = tabLocales.includes(raw);
+    if (alreadyOpen) {
+      onActiveLocaleChange(raw);
+    } else {
+      onAddLocale(raw);
+    }
     setLocalePickerOpen(false);
     setLocaleSearch("");
   };
@@ -60,56 +63,58 @@ export function TaxonomyLocaleTabsSection({
   return (
     <div className="space-y-2">
       <RequiredLabel required={false}>{tForm("localeTabs")}</RequiredLabel>
-      <Tabs value={activeLocale} onValueChange={onActiveLocaleChange}>
-        <TabsList className="flex h-auto flex-wrap gap-1">
-          {tabLocales.map((locale) => (
-            <TabsTrigger key={locale} value={locale}>
-              {localeTabLabel(locale)}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-      {availableLocaleOptions.length > 0 ? (
-        <Popover open={localePickerOpen} onOpenChange={setLocalePickerOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="min-w-[220px] justify-between"
-              aria-label={tForm("localeSearchPlaceholder")}
-            >
-              <span className="truncate text-muted-foreground">
-                {tForm("localeSearchPlaceholder")}
-              </span>
-              <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[280px] p-0" align="start">
-            <Command shouldFilter={false}>
-              <CommandInput
-                value={localeSearch}
-                onValueChange={setLocaleSearch}
-                placeholder={tForm("localeSearchPlaceholder")}
-              />
-              <CommandList className="max-h-60">
-                <CommandEmpty>{tForm("localeEmpty")}</CommandEmpty>
-                <CommandGroup>
-                  {availableLocaleOptions.map((item) => (
+      <Popover
+        open={localePickerOpen}
+        onOpenChange={(open) => {
+          setLocalePickerOpen(open);
+          if (!open) setLocaleSearch("");
+        }}
+      >
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-w-[220px] justify-between"
+            aria-label={tForm("localeSearchPlaceholder")}
+          >
+            <span className="truncate">{localeTabLabel(activeLocale)}</span>
+            <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[280px] p-0" align="start" portal={false}>
+          <Command shouldFilter={false}>
+            <CommandInput
+              value={localeSearch}
+              onValueChange={setLocaleSearch}
+              placeholder={tForm("localeSearchPlaceholder")}
+            />
+            <CommandList className="scrollbar-app max-h-60 overflow-y-auto">
+              <CommandEmpty>{tForm("localeEmpty")}</CommandEmpty>
+              <CommandGroup>
+                {filteredLocaleOptions.map((item) => {
+                  const isActive = item.locale === activeLocale;
+                  return (
                     <CommandItem
                       key={item.locale}
                       value={item.locale}
-                      onSelect={() => handleAdd(item.locale)}
+                      onSelect={() => handleSelect(item.locale)}
                     >
-                      {item.label}
+                      <CheckIcon
+                        className={cn(
+                          "size-4 shrink-0",
+                          isActive ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                      <span className="truncate">{item.label}</span>
                     </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      ) : null}
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
