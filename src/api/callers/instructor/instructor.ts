@@ -123,14 +123,23 @@ export function getInstructorApplicationsListKey(
   return buildQueryParams(routes.applications, listQueryToRecord(filters));
 }
 
-export function getMyInstructorApplicationKey(): string {
-  return routes.applicationMe;
+export function getMyInstructorApplicationKey(locale?: string): string {
+  const query: Record<string, string> = {};
+  if (locale) query.locale = locale;
+  const url = buildQueryParams(
+    routes.applicationMe,
+    Object.keys(query).length > 0 ? query : undefined,
+  );
+  if (!url) throw new Error("Invalid my application URL");
+  return url;
 }
 
-export async function getMyInstructorApplicationService(): Promise<MyInstructorApplication | null> {
+export async function getMyInstructorApplicationService(
+  locale?: string,
+): Promise<MyInstructorApplication | null> {
   try {
     const { data } = await apiFetch<ApiResponse<MyInstructorApplication>>(
-      routes.applicationMe,
+      getMyInstructorApplicationKey(locale),
     );
     return data.data ?? null;
   } catch (error) {
@@ -144,11 +153,19 @@ export async function getMyInstructorApplicationService(): Promise<MyInstructorA
 
 export async function submitInstructorApplicationService(
   payload: SubmitInstructorApplicationPayload,
+  locale?: string,
 ): Promise<MyInstructorApplication> {
+  const query: Record<string, string> = {};
+  if (locale) query.locale = locale;
+  const url =
+    buildQueryParams(
+      routes.applications,
+      Object.keys(query).length > 0 ? query : undefined,
+    ) ?? routes.applications;
   const { data } = await apiPost<
     ApiResponse<MyInstructorApplication>,
     SubmitInstructorApplicationPayload
-  >(routes.applications, payload);
+  >(url, payload);
   if (!data.data) {
     throw new Error(data.message || "Failed to submit application");
   }
@@ -157,11 +174,19 @@ export async function submitInstructorApplicationService(
 
 export async function resubmitInstructorApplicationService(
   payload: SubmitInstructorApplicationPayload,
+  locale?: string,
 ): Promise<MyInstructorApplication> {
+  const query: Record<string, string> = {};
+  if (locale) query.locale = locale;
+  const url =
+    buildQueryParams(
+      routes.applicationMe,
+      Object.keys(query).length > 0 ? query : undefined,
+    ) ?? routes.applicationMe;
   const { data } = await apiPut<
     ApiResponse<MyInstructorApplication>,
     SubmitInstructorApplicationPayload
-  >(routes.applicationMe, payload);
+  >(url, payload);
   if (!data.data) {
     throw new Error(data.message || "Failed to resubmit application");
   }
@@ -193,10 +218,19 @@ export async function listInstructorApplicationsService(
   return data.data;
 }
 
-export function getInstructorApplicationDetailKey(id: string): string {
-  const url = buildQueryParams(routes.applicationById, undefined, {
-    id: String(id),
-  });
+export function getInstructorApplicationDetailKey(
+  id: string,
+  locale?: string,
+): string {
+  const query: Record<string, string> = {};
+  if (locale) query.locale = locale;
+  const url = buildQueryParams(
+    routes.applicationById,
+    Object.keys(query).length > 0 ? query : undefined,
+    {
+      id: String(id),
+    },
+  );
   if (!url) throw new Error("Invalid application URL");
   return url;
 }
@@ -211,22 +245,28 @@ export function getInstructorProfileDetailKey(userId: string): string {
 
 export async function getInstructorApplicationService(
   id: string,
+  locale?: string,
 ): Promise<InstructorApplication> {
-  const url = buildQueryParams(routes.applicationById, undefined, {
-    id: String(id),
-  });
-  if (!url) throw new Error("Invalid application URL");
-  const { data } = await apiFetch<ApiResponse<InstructorApplication>>(url);
+  const { data } = await apiFetch<ApiResponse<InstructorApplication>>(
+    getInstructorApplicationDetailKey(id, locale),
+  );
   if (!data.data) throw new Error(data.message || "Failed to load application");
   return data.data;
 }
 
 export async function approveInstructorApplicationService(
   id: string,
+  locale?: string,
 ): Promise<InstructorApplication> {
-  const url = buildQueryParams(routes.applicationApprove, undefined, {
-    id: String(id),
-  });
+  const query: Record<string, string> = {};
+  if (locale) query.locale = locale;
+  const url = buildQueryParams(
+    routes.applicationApprove,
+    Object.keys(query).length > 0 ? query : undefined,
+    {
+      id: String(id),
+    },
+  );
   if (!url) throw new Error("Invalid approve URL");
   const { data } = await apiPost<ApiResponse<InstructorApplication>>(url, {});
   if (!data.data) throw new Error(data.message || "Failed to approve");
@@ -236,10 +276,17 @@ export async function approveInstructorApplicationService(
 export async function rejectInstructorApplicationService(
   id: string,
   payload: RejectApplicationPayload,
+  locale?: string,
 ): Promise<InstructorApplication> {
-  const url = buildQueryParams(routes.applicationReject, undefined, {
-    id: String(id),
-  });
+  const query: Record<string, string> = {};
+  if (locale) query.locale = locale;
+  const url = buildQueryParams(
+    routes.applicationReject,
+    Object.keys(query).length > 0 ? query : undefined,
+    {
+      id: String(id),
+    },
+  );
   if (!url) throw new Error("Invalid reject URL");
   const { data } = await apiPost<
     ApiResponse<InstructorApplication>,
@@ -322,19 +369,29 @@ export async function deleteInstructorProfileService(
   await apiDelete<ApiResponse<null>>(url);
 }
 
-export function getInstructorExpertiseTopicsKey(instructorId: string): string {
-  const url = buildQueryParams(routes.expertiseTopics, undefined, {
-    id: String(instructorId),
-  });
+export function getInstructorExpertiseTopicsKey(
+  instructorId: string,
+  locale?: string,
+): string {
+  const query: Record<string, string> = {};
+  if (locale) query.locale = locale;
+  const url = buildQueryParams(
+    routes.expertiseTopics,
+    Object.keys(query).length > 0 ? query : undefined,
+    {
+      id: String(instructorId),
+    },
+  );
   if (!url) throw new Error("Invalid expertise topics URL");
   return url;
 }
 
 export async function listInstructorExpertiseTopicsService(
   instructorId: string,
+  locale?: string,
 ): Promise<InstructorExpertiseTopic[]> {
   const { data } = await apiFetch<ApiResponse<InstructorExpertiseTopic[]>>(
-    getInstructorExpertiseTopicsKey(instructorId),
+    getInstructorExpertiseTopicsKey(instructorId, locale),
   );
   if (!data.data) throw new Error(data.message || "Failed to load topics");
   return data.data;
@@ -368,19 +425,29 @@ export async function deleteInstructorExpertiseTopicService(
   await apiDelete<ApiResponse<null>>(url);
 }
 
-export function getInstructorExpertiseSkillsKey(instructorId: string): string {
-  const url = buildQueryParams(routes.expertiseSkills, undefined, {
-    id: String(instructorId),
-  });
+export function getInstructorExpertiseSkillsKey(
+  instructorId: string,
+  locale?: string,
+): string {
+  const query: Record<string, string> = {};
+  if (locale) query.locale = locale;
+  const url = buildQueryParams(
+    routes.expertiseSkills,
+    Object.keys(query).length > 0 ? query : undefined,
+    {
+      id: String(instructorId),
+    },
+  );
   if (!url) throw new Error("Invalid expertise skills URL");
   return url;
 }
 
 export async function listInstructorExpertiseSkillsService(
   instructorId: string,
+  locale?: string,
 ): Promise<InstructorExpertiseSkill[]> {
   const { data } = await apiFetch<ApiResponse<InstructorExpertiseSkill[]>>(
-    getInstructorExpertiseSkillsKey(instructorId),
+    getInstructorExpertiseSkillsKey(instructorId, locale),
   );
   if (!data.data) throw new Error(data.message || "Failed to load skills");
   return data.data;

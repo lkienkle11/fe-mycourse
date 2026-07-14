@@ -23,7 +23,38 @@ type TreeLevelProps = {
   labels: SortableTreeEditorLabels;
   createNode: () => TaxonomyTreeNode;
   onChange: (nodes: TaxonomyTreeNode[]) => void;
+  /** When set, edits `translations[editLocale].name` (and mirrors canonical when `en`). */
+  editLocale?: string;
 };
+
+function getNodeDisplayName(
+  node: TaxonomyTreeNode,
+  editLocale?: string,
+): string {
+  if (!editLocale) return node.name;
+  const translated = node.translations?.[editLocale]?.name;
+  if (translated != null && translated !== "") return translated;
+  if (editLocale === "en") return node.name;
+  return "";
+}
+
+function patchNodeName(
+  node: TaxonomyTreeNode,
+  value: string,
+  editLocale?: string,
+): TaxonomyTreeNode {
+  if (!editLocale) {
+    return { ...node, name: value };
+  }
+  const translations = {
+    ...(node.translations ?? {}),
+    [editLocale]: { name: value },
+  };
+  if (editLocale === "en") {
+    return { ...node, name: value, translations };
+  }
+  return { ...node, translations };
+}
 
 function TreeLevel({
   nodes,
@@ -32,6 +63,7 @@ function TreeLevel({
   labels,
   createNode,
   onChange,
+  editLocale,
 }: TreeLevelProps) {
   return (
     <SortableList
@@ -46,14 +78,16 @@ function TreeLevel({
                 {labels.namePlaceholder}
               </Label>
               <Input
-                value={node.name}
+                value={getNodeDisplayName(node, editLocale)}
                 placeholder={labels.namePlaceholder}
+                maxLength={255}
                 onChange={(event) => {
                   const next = [...nodes];
-                  next[index] = {
-                    ...node,
-                    name: event.target.value,
-                  };
+                  next[index] = patchNodeName(
+                    node,
+                    event.target.value,
+                    editLocale,
+                  );
                   onChange(next);
                 }}
               />
@@ -102,6 +136,7 @@ function TreeLevel({
               indentPx={indentPx}
               labels={labels}
               createNode={createNode}
+              editLocale={editLocale}
               onChange={(children) => {
                 const next = [...nodes];
                 next[index] = { ...node, children };
@@ -122,6 +157,8 @@ export type SortableTreeEditorProps = {
   /** Horizontal indent per nesting level (default 12px). */
   indentPx?: number;
   createNode?: () => TaxonomyTreeNode;
+  /** When set, edits `translations[editLocale].name`. */
+  editLocale?: string;
 };
 
 /**
@@ -134,6 +171,7 @@ export function SortableTreeEditor({
   labels,
   indentPx = 12,
   createNode = createTaxonomyTreeNode,
+  editLocale,
 }: SortableTreeEditorProps) {
   return (
     <div className="space-y-2">
@@ -144,6 +182,7 @@ export function SortableTreeEditor({
         labels={labels}
         createNode={createNode}
         onChange={onChange}
+        editLocale={editLocale}
       />
       <Button
         type="button"

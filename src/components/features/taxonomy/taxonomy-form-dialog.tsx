@@ -7,10 +7,6 @@ import { useMemo, useState } from "react";
 import { type FieldPath, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
-import {
-  createTaxonomyService,
-  updateTaxonomyService,
-} from "@/api/callers/taxonomy";
 import { MediaCollectionDialog } from "@/components/features/media";
 import { FieldError } from "@/components/shared/field-error";
 import { ImageFileField } from "@/components/shared/image-file-field";
@@ -32,18 +28,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PERMISSIONS } from "@/constants/permissions";
-import { slugifyName } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
 import {
+  buildNameTranslations,
+  buildOutcomeTranslations,
+  buildTaxonomyFormDefaultValues,
+  buildTaxonomyInitialImageFileURL,
+  collectTabLocales,
+  contentLocaleOptionLabel,
+  getPersistedTaxonomySlug,
   getTaxonomyResourceConfig,
   getTaxonomyTreeFromEntity,
-  toTaxonomyTreeWritePayload,
+  getTaxonomyTreeMaxDepth,
+  resolveAllowedContentLocale,
+  resolveTaxonomySlugPreview,
+  TAXONOMY_DIALOG_BASE_MIN_PX,
+  TAXONOMY_TREE_INDENT_PX,
+  uniqueLocales,
 } from "@/lib/utils/taxonomy";
+import {
+  buildTaxonomySubmitPayload,
+  persistTaxonomyForm,
+} from "@/lib/utils/taxonomy/form-submit";
 import { resolveValidationMessage } from "@/lib/utils/validation-message";
 import {
-  type TaxonomyOutcomeValues,
-  type TaxonomySlugStatusValues,
-  type TaxonomyTopicValues,
   taxonomyOutcomeSchema,
   taxonomySkillSchema,
   taxonomySlugStatusSchema,
@@ -51,110 +59,26 @@ import {
 } from "@/schema/taxonomy";
 import type { MediaFile } from "@/types/media";
 import type {
-  CourseOutcome,
-  CourseTopic,
-  SlugStatusTaxonomy,
   TaxonomyEntity,
   TaxonomyResourceKey,
   TaxonomyStatus,
   TaxonomyTreeNode,
 } from "@/types/taxonomy";
 import { TaxonomyDescriptionEditor } from "./taxonomy-description-editor";
+import { TaxonomyLocaleTabsSection } from "./taxonomy-locale-tabs-section";
 import { TaxonomyTreeEditor } from "./taxonomy-tree-editor";
-
-const TAXONOMY_TREE_INDENT_PX = 12;
-const TAXONOMY_DIALOG_BASE_MIN_PX = 672;
-
-function buildTaxonomyFormDefaultValues(
-  resourceKey: TaxonomyResourceKey,
-  initialData?: TaxonomyEntity | null,
-) {
-  if (resourceKey === "outcomes") {
-    const row = initialData as CourseOutcome | undefined;
-    return {
-      short_description: row?.short_description ?? "",
-      description: row?.description ?? [],
-      image_file_id: row?.image_file_id ?? "",
-      status: row?.status ?? "ACTIVE",
-    };
-  }
-
-  const row = initialData as SlugStatusTaxonomy | undefined;
-  return {
-    name: row?.name ?? "",
-    status: row?.status ?? "ACTIVE",
-    short_description: "",
-    description: [],
-    image_file_id:
-      resourceKey === "topics"
-        ? ((initialData as CourseTopic | undefined)?.image_file_id ?? "")
-        : "",
-    child_topics: [],
-    children: [],
-  };
-}
-
-function buildTaxonomyDescriptionState(
-  resourceKey: TaxonomyResourceKey,
-  initialData?: TaxonomyEntity | null,
-): string[] {
-  if (resourceKey !== "outcomes") return [""];
-  const row = initialData as CourseOutcome | undefined;
-  return row?.description?.length ? [...row.description] : [""];
-}
-
-function buildTaxonomyInitialImageFileURL(
-  resourceKey: TaxonomyResourceKey,
-  initialData?: TaxonomyEntity | null,
-): string {
-  if (resourceKey === "outcomes") {
-    return (initialData as CourseOutcome | undefined)?.image_file_url ?? "";
-  }
-  if (resourceKey === "topics") {
-    return (initialData as CourseTopic | undefined)?.image_file_url ?? "";
-  }
-  return "";
-}
-
-function getPersistedTaxonomySlug(
-  resourceKey: TaxonomyResourceKey,
-  initialData?: TaxonomyEntity | null,
-): string {
-  if (resourceKey === "outcomes" || !initialData) return "";
-  return (initialData as SlugStatusTaxonomy).slug ?? "";
-}
-
-function resolveTaxonomySlugPreview(
-  name: string,
-  persistedSlug: string,
-): string {
-  const trimmed = name.trim();
-  if (trimmed) return slugifyName(trimmed);
-  return persistedSlug;
-}
-
-function getTaxonomyTreeMaxDepth(nodes: TaxonomyTreeNode[]): number {
-  let max = 0;
-  const visit = (items: TaxonomyTreeNode[], depth: number) => {
-    for (const node of items) {
-      max = Math.max(max, depth);
-      if (node.children?.length) {
-        visit(node.children, depth + 1);
-      }
-    }
-  };
-  visit(nodes, 0);
-  return max;
-}
 
 export type TaxonomyFormDialogProps = {
   resourceKey: TaxonomyResourceKey;
   mode: "create" | "edit";
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Create: null. Edit: editable detail from `getTaxonomyDetailService(..., { view: "edit" })`. */
   initialData?: TaxonomyEntity | null;
   onSuccess: () => void;
 };
+
+export { buildTaxonomyFormDefaultValues } from "@/lib/utils/taxonomy";
 
 export function TaxonomyFormDialog({
   resourceKey,
@@ -173,9 +97,14 @@ export function TaxonomyFormDialog({
   const [tree, setTree] = useState<TaxonomyTreeNode[]>(() =>
     getTaxonomyTreeFromEntity(resourceKey, initialData),
   );
-  const [description, setDescription] = useState<string[]>(() =>
-    buildTaxonomyDescriptionState(resourceKey, initialData),
+  const [nameTranslations, setNameTranslations] = useState(() =>
+    buildNameTranslations(initialData),
   );
+  const [outcomeTranslations, setOutcomeTranslations] = useState(() =>
+    buildOutcomeTranslations(initialData),
+  );
+  const [extraLocales, setExtraLocales] = useState<string[]>([]);
+  const [activeLocale, setActiveLocale] = useState("en");
   const [mediaOpen, setMediaOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<MediaFile | null>(null);
   const [initialImageFileURL, setInitialImageFileURL] = useState(() =>
@@ -219,75 +148,126 @@ export function TaxonomyFormDialog({
       name: "status",
     }) as TaxonomyStatus | undefined) ?? "ACTIVE";
 
+  const tabLocales = useMemo(
+    () =>
+      collectTabLocales(
+        resourceKey === "outcomes"
+          ? Object.keys(outcomeTranslations)
+          : Object.keys(nameTranslations),
+        initialData?.available_locales,
+        extraLocales,
+      ),
+    [
+      extraLocales,
+      initialData?.available_locales,
+      nameTranslations,
+      outcomeTranslations,
+      resourceKey,
+    ],
+  );
+
   const resourceLabel = t(`resources.${resourceKey}.singular`);
   const dialogTitle =
     mode === "create"
       ? tForm("createTitle", { resource: resourceLabel })
       : tForm("editTitle", { resource: resourceLabel });
 
+  const expectedRowVersion = initialData?.row_version ?? 0;
+
+  const addLocaleTab = (rawLocale: string) => {
+    const locale = resolveAllowedContentLocale(rawLocale);
+    if (!locale) {
+      toast.error(tForm("invalidLocale"));
+      return;
+    }
+    if (tabLocales.includes(locale)) {
+      setActiveLocale(locale);
+      return;
+    }
+    setExtraLocales((prev) => uniqueLocales([...prev, locale]));
+    if (resourceKey === "outcomes") {
+      setOutcomeTranslations((prev) =>
+        prev[locale]
+          ? prev
+          : {
+              ...prev,
+              [locale]: { short_description: "", description: [""] },
+            },
+      );
+    } else {
+      setNameTranslations((prev) =>
+        prev[locale] ? prev : { ...prev, [locale]: { name: "" } },
+      );
+    }
+    setActiveLocale(locale);
+  };
+
+  const updateActiveName = (value: string) => {
+    setNameTranslations((prev) => ({
+      ...prev,
+      [activeLocale]: { name: value },
+    }));
+    if (activeLocale === "en") {
+      (form.setValue as (name: "name", value: string) => void)("name", value);
+    }
+  };
+
+  const updateActiveOutcomeShort = (value: string) => {
+    setOutcomeTranslations((prev) => ({
+      ...prev,
+      [activeLocale]: {
+        short_description: value,
+        description: prev[activeLocale]?.description ?? [""],
+      },
+    }));
+    if (activeLocale === "en") {
+      (form.setValue as (name: "short_description", value: string) => void)(
+        "short_description",
+        value,
+      );
+    }
+  };
+
+  const updateActiveOutcomeDescription = (value: string[]) => {
+    setOutcomeTranslations((prev) => ({
+      ...prev,
+      [activeLocale]: {
+        short_description: prev[activeLocale]?.short_description ?? "",
+        description: value,
+      },
+    }));
+  };
+
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
-      if (resourceKey === "outcomes") {
-        const payload = {
-          short_description: (values as TaxonomyOutcomeValues)
-            .short_description,
-          description: description.filter((line) => line.trim().length > 0),
-          image_file_id:
-            (values as TaxonomyOutcomeValues).image_file_id || undefined,
-          status: values.status as TaxonomyStatus,
-        };
-        if (mode === "create") {
-          await createTaxonomyService("outcomes", payload);
-          toast.success(t("common.createSuccess"));
-        } else if (initialData) {
-          await updateTaxonomyService("outcomes", initialData.id, payload);
-          toast.success(t("common.updateSuccess"));
-        }
-      } else if (resourceKey === "topics") {
-        const name = (values as TaxonomySlugStatusValues).name;
-        const payload = {
-          name,
-          status: values.status as TaxonomyStatus,
-          image_file_id:
-            (values as TaxonomyTopicValues).image_file_id || undefined,
-          child_topics: toTaxonomyTreeWritePayload(tree),
-        };
-        if (mode === "create") {
-          await createTaxonomyService("topics", payload);
-          toast.success(t("common.createSuccess"));
-        } else if (initialData) {
-          await updateTaxonomyService("topics", initialData.id, payload);
-          toast.success(t("common.updateSuccess"));
-        }
-      } else if (resourceKey === "skills") {
-        const name = (values as TaxonomySlugStatusValues).name;
-        const payload = {
-          name,
-          status: values.status as TaxonomyStatus,
-          children: toTaxonomyTreeWritePayload(tree),
-        };
-        if (mode === "create") {
-          await createTaxonomyService("skills", payload);
-          toast.success(t("common.createSuccess"));
-        } else if (initialData) {
-          await updateTaxonomyService("skills", initialData.id, payload);
-          toast.success(t("common.updateSuccess"));
-        }
-      } else {
-        const name = (values as TaxonomySlugStatusValues).name;
-        const payload = {
-          name,
-          status: values.status as TaxonomyStatus,
-        };
-        if (mode === "create") {
-          await createTaxonomyService(resourceKey, payload);
-          toast.success(t("common.createSuccess"));
-        } else if (initialData) {
-          await updateTaxonomyService(resourceKey, initialData.id, payload);
-          toast.success(t("common.updateSuccess"));
-        }
+      const built = buildTaxonomySubmitPayload({
+        resourceKey,
+        values,
+        nameTranslations,
+        outcomeTranslations,
+        tree,
+      });
+      if (!built.ok) {
+        toast.error(
+          tForm("outcomeShortRequired", {
+            locale: contentLocaleOptionLabel(built.error.locale),
+          }),
+        );
+        return;
       }
+      await persistTaxonomyForm(
+        resourceKey,
+        mode,
+        initialData?.id,
+        expectedRowVersion,
+        built.payload,
+      );
+      toast.success(
+        mode === "create"
+          ? t("common.createSuccess")
+          : t("common.updateSuccess"),
+      );
       onSuccess();
       onOpenChange(false);
     } catch (error) {
@@ -313,6 +293,17 @@ export function TaxonomyFormDialog({
       ? `min(100%, ${TAXONOMY_DIALOG_BASE_MIN_PX + treeMaxDepth * TAXONOMY_TREE_INDENT_PX}px)`
       : undefined;
 
+  const activeName = nameTranslations[activeLocale]?.name ?? "";
+  const activeOutcome = outcomeTranslations[activeLocale] ?? {
+    short_description: "",
+    description: [""],
+  };
+  const hasActiveTranslation =
+    resourceKey === "outcomes"
+      ? Boolean(activeOutcome.short_description.trim()) ||
+        (activeOutcome.description ?? []).some((line) => line.trim())
+      : Boolean(activeName.trim());
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -336,63 +327,6 @@ export function TaxonomyFormDialog({
           </Button>
         </div>
         <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-          {resourceKey === "outcomes" ? (
-            <div className="space-y-2">
-              <RequiredLabel htmlFor="short_description">
-                {tForm("shortDescription")}
-              </RequiredLabel>
-              <Input
-                id="short_description"
-                {...form.register("short_description")}
-              />
-              <FieldError
-                error={
-                  "short_description" in form.formState.errors
-                    ? form.formState.errors.short_description
-                    : undefined
-                }
-                message={resolveValidationMessage(
-                  tForm as (key: string) => string,
-                  "short_description" in form.formState.errors
-                    ? form.formState.errors.short_description?.message
-                    : undefined,
-                )}
-              />
-            </div>
-          ) : (
-            <>
-              <div className="space-y-2">
-                <RequiredLabel htmlFor="name">{tForm("name")}</RequiredLabel>
-                <Input id="name" {...form.register("name")} />
-                <FieldError
-                  error={
-                    "name" in form.formState.errors
-                      ? form.formState.errors.name
-                      : undefined
-                  }
-                  message={resolveValidationMessage(
-                    tForm as (key: string) => string,
-                    "name" in form.formState.errors
-                      ? form.formState.errors.name?.message
-                      : undefined,
-                  )}
-                />
-              </div>
-              <div className="space-y-2">
-                <RequiredLabel htmlFor="slug" required={false}>
-                  {tForm("slug")}
-                </RequiredLabel>
-                <Input
-                  id="slug"
-                  readOnly
-                  value={slugPreview}
-                  className="cursor-not-allowed bg-muted"
-                  aria-readonly
-                />
-              </div>
-            </>
-          )}
-
           <div className="space-y-2">
             <RequiredLabel required={false}>{tForm("status")}</RequiredLabel>
             <Select
@@ -443,18 +377,104 @@ export function TaxonomyFormDialog({
             />
           ) : null}
 
+          <TaxonomyLocaleTabsSection
+            activeLocale={activeLocale}
+            tabLocales={tabLocales}
+            onActiveLocaleChange={setActiveLocale}
+            onAddLocale={addLocaleTab}
+          />
+
+          {!hasActiveTranslation && activeLocale !== "en" ? (
+            <p className="text-sm text-muted-foreground">
+              {tForm("missingTranslation")}
+            </p>
+          ) : null}
+
+          {resourceKey === "outcomes" ? (
+            <div className="space-y-2">
+              <RequiredLabel htmlFor="short_description">
+                {tForm("shortDescription")}
+              </RequiredLabel>
+              <Input
+                id="short_description"
+                value={activeOutcome.short_description}
+                maxLength={100}
+                onChange={(event) =>
+                  updateActiveOutcomeShort(event.target.value)
+                }
+              />
+              {activeLocale === "en" ? (
+                <FieldError
+                  error={
+                    "short_description" in form.formState.errors
+                      ? form.formState.errors.short_description
+                      : undefined
+                  }
+                  message={resolveValidationMessage(
+                    tForm as (key: string) => string,
+                    "short_description" in form.formState.errors
+                      ? form.formState.errors.short_description?.message
+                      : undefined,
+                  )}
+                />
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <RequiredLabel htmlFor="name">{tForm("name")}</RequiredLabel>
+                <Input
+                  id="name"
+                  value={activeName}
+                  maxLength={255}
+                  onChange={(event) => updateActiveName(event.target.value)}
+                />
+                {activeLocale === "en" ? (
+                  <FieldError
+                    error={
+                      "name" in form.formState.errors
+                        ? form.formState.errors.name
+                        : undefined
+                    }
+                    message={resolveValidationMessage(
+                      tForm as (key: string) => string,
+                      "name" in form.formState.errors
+                        ? form.formState.errors.name?.message
+                        : undefined,
+                    )}
+                  />
+                ) : null}
+              </div>
+              {activeLocale === "en" ? (
+                <div className="space-y-2">
+                  <RequiredLabel htmlFor="slug" required={false}>
+                    {tForm("slug")}
+                  </RequiredLabel>
+                  <Input
+                    id="slug"
+                    readOnly
+                    value={slugPreview}
+                    className="cursor-not-allowed bg-muted"
+                    aria-readonly
+                  />
+                </div>
+              ) : null}
+            </>
+          )}
+
           {config.hasTree ? (
             <TaxonomyTreeEditor
               resourceKey={config.key}
               value={tree}
               onChange={setTree}
+              editLocale={activeLocale}
             />
           ) : null}
 
           {config.hasDescriptionList ? (
             <TaxonomyDescriptionEditor
-              value={description}
-              onChange={setDescription}
+              value={activeOutcome.description ?? [""]}
+              onChange={updateActiveOutcomeDescription}
             />
           ) : null}
 

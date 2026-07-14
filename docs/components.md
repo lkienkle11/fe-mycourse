@@ -62,7 +62,7 @@ All **54** primitives are exported from `src/components/ui/index.ts`. Catalog re
 | `NavigationMenu` | `ui/navigation-menu.tsx` | `radix-ui` | Top nav with dropdown submenus |
 | `NativeSelect` | `ui/native-select.tsx` | Native HTML | Styled `<select>` / `<option>` / `<optgroup>` (OS-native dropdown; **not** the same as `Select`) |
 | `Pagination` | `ui/pagination.tsx` | `Button` + Tailwind | Page navigation (`Pagination`, `PaginationContent`, `PaginationLink`, …) |
-| `Popover` | `ui/popover.tsx` | `radix-ui` | Floating panel (date picker, menus) |
+| `Popover` | `ui/popover.tsx` | `radix-ui` | Floating panel (date picker, menus). `PopoverContent` accepts optional `portal` (default `true`). Use `portal={false}` when the popover must stay interactive inside a Radix `Dialog` (e.g. taxonomy locale combobox). |
 | `Progress` | `ui/progress.tsx` | `radix-ui` | Progress bar |
 | `RadioGroup` | `ui/radio-group.tsx` | `radix-ui` | Radio button group |
 | `Resizable` | `ui/resizable.tsx` | `react-resizable-panels` | Resizable panel layout |
@@ -233,7 +233,7 @@ Assets live under `public/assets/images/home/`. Import via `@public/assets/image
 | `SearchBar` | `search-bar.tsx` | Global search input (UI stub). `visibility`: `"header"` (default, hidden below `md`) or `"sidebar"` (full-width flex for mobile sheet). |
 | `SearchableSelect` | `searchable-select.tsx` | Single-select combobox (`Popover` + `Command` + `Button` trigger). Uses `selectedLabel` from hook (pinned across popover close). Search input, infinite scroll via `onLoadMore`. Fetch errors via hook `onError`. |
 
-`src/components/features/taxonomy/` — taxonomy CRUD: `TaxonomyFormDialog` (shared Zod schemas, `RequiredLabel`, `FieldError`, `toastApiError`; `useForm`/`useState` initialized from `initialData` on mount — parent remounts via `key`; slug preview uses `slugifyName(name)` with API `slug` fallback until `useWatch` reports name), `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns` (maps resource config → `DataTable` columns; `child_render` column opens tree view).
+`src/components/features/taxonomy/` — taxonomy CRUD UI only: `TaxonomyFormDialog` (Zod schemas, `RequiredLabel`, `FieldError`, `toastApiError`; locale picker is **`TaxonomyLocaleTabsSection` searchable combobox only** — no en/vi pill Tabs; presets from `CONTENT_LOCALE_OPTIONS`, **no free-enter**; form state + tree/description/image; edit hydrates from `getTaxonomyDetailService(…, { view: "edit" })`; update sends `expected_row_version`; stale **3005** via `toastApiError`; parent remounts via `key`; slug preview via `resolveTaxonomySlugPreview`), `TaxonomyTreeEditor`, `TaxonomyDescriptionEditor`, `TaxonomyTreeViewButton`, `buildTaxonomyTableColumns`. Locale/canonicalize/defaultValues helpers live in `src/lib/utils/taxonomy/form-helpers.ts` (via `@/lib/utils/taxonomy`); submit prepare/persist in `src/lib/utils/taxonomy/form-submit.ts` (deep import only). See `docs/taxonomy-admin.md`.
 
 `src/components/features/instructor/` — … `InstructorProfileViewDialog` (… certificates via `InstructorCertificateCarousel`), … feature model in `src/lib/instructor-application/` (`mergeInstructorApplicationDetail`, `url-validation.ts`, `search-text.ts`, `validate-application-form.ts` incl. `refreshCertificateFieldErrors` on certificate row delete …). Shared carousel: `src/components/ui/carousel.tsx` (Embla). …
 

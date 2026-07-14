@@ -65,9 +65,10 @@ export function buildTaxonomyDagreRoot(
 export function toTaxonomyTreeWritePayload(
   nodes: TaxonomyTreeNode[],
 ): TaxonomyTreeNode[] {
-  return nodes.map(({ id, name, children }) => ({
+  return nodes.map(({ id, name, translations, children }) => ({
     id,
     name,
+    ...(translations ? { translations } : {}),
     children: children?.length
       ? toTaxonomyTreeWritePayload(children)
       : undefined,
@@ -79,6 +80,7 @@ export function createTaxonomyTreeNode(name = ""): TaxonomyTreeNode {
   return {
     id: newV7(),
     name,
+    translations: name ? { en: { name } } : {},
     children: [],
   };
 }

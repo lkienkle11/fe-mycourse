@@ -79,6 +79,16 @@ Without this, Radix can leave `document.body` with `pointer-events: none` after 
 
 **Reuse:** `DeferredDropdownMenuItem`, `deferDropdownAction`, `CourseAdminTableActionsMenu`, `CourseReviewRowActions`, `CourseOutlineRowActions`, `course-admin-all-page`, `course-admin-trash-page`. See `docs/logic-flow.md` §14.
 
+### Popover combobox inside Dialog (taxonomy locale)
+
+Sympton: language list under a Dialog does not scroll or accept clicks even when `CommandList` has `overflow-y-auto` and `scrollHeight > clientHeight`.
+
+Cause: Dialog sets `body { pointer-events: none }` and only dialog content resets to `auto`. Default `PopoverContent` **portals to `body`**, so the panel inherits `none`.
+
+Preferred fix (scoped): `PopoverContent` supports **`portal?: boolean` (default `true`)**. Taxonomy locale picker uses **`portal={false}`** so content stays in the dialog tree. Do **not** flip shared default styles on `PopoverContent` for every consumer (`SearchableSelect` and others).
+
+Manual blast radius before editing `PopoverContent`: grep importers — currently `TaxonomyLocaleTabsSection` + `SearchableSelect`. Default `portal={true}` must keep SearchableSelect behavior unchanged. GitNexus `impact(PopoverContent)` may show 0 callers when the index is stale; trust grep until `npx gitnexus analyze` is fresh.
+
 ### Client-only libraries (Quill)
 
 Libraries that touch `document` at import time (e.g. `quill`) **must not** use top-level `import Quill from "quill"`. Pattern used in this repo:
@@ -376,7 +386,17 @@ setServerError(translateApiErrorCode(tErrors, result.code));
 
 ## 7. Internationalization (i18n) Pattern
 
-Translations live in `src/messages/en.ts` and `vi.ts` (`vi` uses `satisfies Messages`). Server bootstrap loads them via `loadMessages` in `src/lib/i18n/load-messages.ts`, called from `src/i18n/request.ts`.
+Translations live in `src/messages/en.ts` and `vi.ts` (`vi` uses `satisfies Messages`). Server bootstrap loads them via `loadMessages` in `src/lib/i18n/load-messages.ts`, called from `src/i18n/request.ts`. **No** `messages/ja.ts` and no `ja` in routing — UI chrome is `en`/`vi` only.
+
+### UI i18n vs data locale
+
+| Concern | Source | Used for |
+|---------|--------|----------|
+| UI chrome | `useTranslations` + `src/messages/{en,vi}.ts` | Buttons, labels, validation copy |
+| Data / content locale | `useLocale()` → API query `locale` | Taxonomy list/picker names, instructor chips (BE translation fallback) |
+| Admin taxonomy edit | `GET …?view=edit` + locale combobox only (presets from `CONTENT_LOCALE_OPTIONS`, no en/vi pill Tabs, no free-enter) | Canonical + full `translations` map (stored BCP47 may exceed UI presets for legacy rows) |
+
+Do not conflate next-intl route locale with inventing a second FE locale store for taxonomy reads — pass `useLocale()` through callers/hooks.
 
 ### All user-visible text via `useTranslations`
 
@@ -485,7 +505,7 @@ export type CourseListFilters = ApiListQueryParams;
 const url = buildQueryParams("/api/v1/courses", apiListQueryToRecord(filters));
 ```
 
-Media lists add optional `category` and `sort_order` on the same type (`MediaListFilters` = `ApiListQueryParams` + narrowed fields). Taxonomy keeps `sort_desc` and adds typed search fields (`search_by`, `search_value`) in taxonomy filter type; shared keys are still emitted via `apiListQueryToRecord()`.
+Media lists add optional `category` and `sort_order` on the same type (`MediaListFilters` = `ApiListQueryParams` + narrowed fields). Taxonomy keeps `sort_desc` and adds typed search fields (`search_by`, `search_value`), **`locale`**, and optional `include_images` in taxonomy filter type; shared keys are still emitted via `apiListQueryToRecord()`.
 
 For human-readable file sizes in the UI, use `formatBytes()` from `src/lib/utils/format-bytes.ts` (exported via `@/lib/utils`). Do not copy byte-formatting logic into feature components.
 
