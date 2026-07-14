@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { getTaxonomyListKey } from "@/api/callers/taxonomy";
@@ -36,6 +36,7 @@ export function TaxonomySection({
 }) {
   const t = useTranslations("instructor.application.form");
   const tErrors = useTranslations("errors.codes");
+  const locale = useLocale();
   const [topicPick, setTopicPick] = useState("");
   const [skillPick, setSkillPick] = useState("");
   const [topicLabels, setTopicLabels] = useState<Record<string, string>>({});
@@ -76,8 +77,9 @@ export function TaxonomySection({
         search_value: search,
         status: "ACTIVE",
         include_images: false,
+        locale,
       }),
-    [],
+    [locale],
   );
 
   const skillGetPageKey = useCallback(
@@ -97,8 +99,9 @@ export function TaxonomySection({
         search_value: search,
         status: "ACTIVE",
         include_images: false,
+        locale,
       }),
-    [],
+    [locale],
   );
 
   const topicPicker = useSearchablePaginatedOptions({

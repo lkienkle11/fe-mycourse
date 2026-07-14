@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { deleteInstructorApplicationService } from "@/api/callers/instructor";
@@ -40,6 +40,7 @@ export function InstructorApprovalsPage() {
   const t = useTranslations("instructor.approvals");
   const tc = useTranslations("instructor.common");
   const tErrors = useTranslations("errors.codes");
+  const locale = useLocale();
   const [filters, setFilters] = useState<InstructorListFilters>({
     page: 1,
     per_page: 20,
@@ -57,7 +58,10 @@ export function InstructorApprovalsPage() {
   const { rows, pageInfo, isLoading, mutate } =
     useInstructorApplicationsList(filters);
   const { data: detailApplication, isLoading: detailLoading } =
-    useInstructorApplicationDetail(profileOpen ? viewApplicationId : null);
+    useInstructorApplicationDetail(
+      profileOpen ? viewApplicationId : null,
+      locale,
+    );
   const displayApplication = useMemo(
     () => mergeInstructorApplicationDetail(selected, detailApplication),
     [selected, detailApplication],

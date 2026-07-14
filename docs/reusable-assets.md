@@ -95,7 +95,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `ApiListQueryParams`, `ApiEntityStatus`
 - **Type**: Interface / Union
 - **Path**: `src/types/api.ts`
-- **Purpose**: Shared BE list query params (`page`, `per_page`, `search`, `status`, `sort_by`, `sort_desc`) used directly or extended by domain modules (taxonomy extends with typed-search fields).
+- **Purpose**: Shared BE list query params (`page`, `per_page`, `search`, `status`, `sort_by`, `sort_desc`) used directly or extended by domain modules (taxonomy extends with typed-search fields + **`locale`**).
 - **Scope**: List API callers, list screens, SWR hooks.
 - **Dependencies**: none.
 
@@ -412,8 +412,8 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `LANGUAGE_OPTIONS`
 - **Type**: Constant array
 - **Path**: `src/constants/common.ts`
-- **Purpose**: Locale options for the locale switcher — `{ locale, label }`.
-- **Scope**: `src/components/common/header/locale-switcher.tsx`.
+- **Purpose**: Locale options for the locale switcher — `{ locale, label }` for `en` / `vi` only (UI chrome). Taxonomy **content** locale presets live separately in `CONTENT_LOCALE_OPTIONS` (`form-helpers.ts`); do **not** add `ja` here or `messages/ja.ts`.
+- **Scope**: `src/components/common/header/locale-switcher.tsx`. Taxonomy form locale combobox uses `CONTENT_LOCALE_OPTIONS`, not this list alone.
 - **Dependencies**: none.
 
 ---
@@ -450,7 +450,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `apiListQueryToRecord(params: ApiListQueryParams): Record<string, string>`
 - **Type**: Utility function
 - **Path**: `src/lib/utils/list-query.ts`
-- **Purpose**: Convert shared list filters to query key/values for `buildQueryParams`. Use instead of per-module full `filtersToQuery` helpers. Supports `sort_desc` (taxonomy), `sort_order` + `category` (media); taxonomy caller appends typed-search keys (`search_by`, `search_value`) after base conversion.
+- **Purpose**: Convert shared list filters to query key/values for `buildQueryParams`. Use instead of per-module full `filtersToQuery` helpers. Supports `sort_desc` (taxonomy), `sort_order` + `category` (media); taxonomy caller appends typed-search keys (`search_by`, `search_value`), **`locale`**, and optional `include_images` after base conversion.
 - **Scope**: Taxonomy and media list callers; future paginated list callers.
 - **Dependencies**: `ApiListQueryParams`.
 
@@ -474,10 +474,18 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: Taxonomy config helpers
 - **Name**: `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`, `getTaxonomyTreeFromEntity`, `buildTaxonomyDagreRoot`, `toTaxonomyTreeWritePayload`, `createTaxonomyTreeNode`, `countTaxonomyTreeNodes`
 - **Type**: Utility functions
-- **Path**: `src/lib/utils/taxonomy.ts`
+- **Path**: `src/lib/utils/taxonomy/resource.ts` (re-exported from `src/lib/utils/taxonomy/index.ts`)
 - **Purpose**: Resolve `TAXONOMY_RESOURCES` entry, searchable column ids, extract nested tree from entity, build dagre root for read-only popup, strip slug for write payloads, create empty editor node, count nested nodes for button state.
 - **Scope**: Taxonomy list page, form dialog, table columns, tree view button.
 - **Dependencies**: `TAXONOMY_RESOURCES` (`src/constants/taxonomy/resources.ts`), `TaxonomyTreeNode`, `DagreTreeRoot` (`dagre-tree.ts`).
+
+### Asset: Taxonomy form helpers
+- **Name**: `CONTENT_LOCALE_OPTIONS`, `resolveAllowedContentLocale`, `canonicalizeContentLocale`, `buildTaxonomyFormDefaultValues`, `compactNameTranslations`, `compactOutcomeTranslations`, `contentLocaleOptionLabel`, …
+- **Type**: Utility functions + constants
+- **Path**: `src/lib/utils/taxonomy/form-helpers.ts`
+- **Purpose**: Multi-locale content presets for taxonomy translation tabs; BCP47 canonicalize; **whitelist** add via `resolveAllowedContentLocale` (dropdown-only — no free-enter); hydrate form defaultValues / translation maps; compact empty locales before write; slug preview helpers.
+- **Scope**: Taxonomy form dialog + locale tabs section; do **not** keep these next to React components.
+- **Dependencies**: `LANGUAGE_OPTIONS` (for `en`/`vi` labels), `slugifyName`, taxonomy types.
 
 ### Asset: `TAXONOMY_RESOURCE_KEYS`
 - **Name**: `TAXONOMY_RESOURCE_KEYS`
@@ -499,17 +507,31 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `TaxonomyListPage`, `TaxonomyListPageProps`
 - **Type**: React component (client)
 - **Path**: `src/screen/common/taxonomy/taxonomy-list-page.tsx`
-- **Purpose**: Shared admin CRUD list for all five taxonomy resources (DataTable toolbar, form dialog with `formDialogKey` remount on create/edit, delete confirm, pagination).
+- **Purpose**: Shared admin CRUD list for all five taxonomy resources (DataTable toolbar with `locale` from `useLocale()`, form dialog with `formDialogKey` remount on create/edit, edit loads `getTaxonomyDetailService(…, { view: "edit" })`, delete confirm, pagination).
 - **Scope**: Imported directly by app routes under `src/app/[locale]/{admin,sysadmin}/taxonomy/*/page.tsx`.
-- **Dependencies**: `useTaxonomyList`, `TaxonomyFormDialog`, `DataTable`, `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`.
+- **Dependencies**: `useTaxonomyList`, `getTaxonomyDetailService`, `TaxonomyFormDialog`, `DataTable`, `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`.
 
 ### Asset: `TaxonomyFormDialog`
 - **Name**: `TaxonomyFormDialog`, `TaxonomyFormDialogProps`
 - **Type**: React component (client)
 - **Path**: `src/components/features/taxonomy/taxonomy-form-dialog.tsx`
-- **Purpose**: Create/update taxonomy rows per `resourceKey`; initializes `useForm` and local tree/description/image state from `initialData` on mount (no `useEffect` sync). Slug preview is read-only via `resolveTaxonomySlugPreview(name, persistedSlug)`.
+- **Purpose**: Create/update taxonomy rows per `resourceKey`; locale UI is a multi-preset combobox only (`CONTENT_LOCALE_OPTIONS`, **no en/vi Tabs**, **no free-enter**; placeholder “Select language” / “Chọn ngôn ngữ”; scrollable list + empty copy); submit via `buildTaxonomySubmitPayload` / `persistTaxonomyForm` from `@/lib/utils/taxonomy/form-submit`; canonical + `translations` (and tree node `translations`); initializes `useForm` and local tree/description/image state from **edit detail** on mount (no `useEffect` sync). Update body includes `expected_row_version`. Slug preview is read-only via `resolveTaxonomySlugPreview(name, persistedSlug)`.
 - **Scope**: Opened from `TaxonomyListPage`; parent must remount with `key` when controlled `open` toggles from table actions.
-- **Dependencies**: `getTaxonomyResourceConfig`, `getTaxonomyTreeFromEntity`, `toTaxonomyTreeWritePayload`, `slugifyName`, `MediaCollectionDialog`, taxonomy Zod schemas.
+- **Dependencies**: `@/lib/utils/taxonomy` (resource + form-helpers), `@/lib/utils/taxonomy/form-submit`, `slugifyName`, `MediaCollectionDialog`, taxonomy Zod schemas, `toastApiError` (incl. **3005**).
+### Asset: taxonomy form-submit utils
+- **Name**: `buildTaxonomySubmitPayload`, `persistTaxonomyForm`, `prepareOutcomeSubmitPayload`, `prepareTopicSubmitPayload`, `prepareSkillSubmitPayload`, `prepareSlugStatusSubmitPayload`
+- **Type**: Pure helpers + API persist wrappers
+- **Path**: `src/lib/utils/taxonomy/form-submit.ts` (import `@/lib/utils/taxonomy/form-submit` — **not** re-exported from `@/lib/utils/taxonomy` barrel to avoid cycle with `api/callers/taxonomy`)
+- **Purpose**: Keep create/update submit branching out of `TaxonomyFormDialog.onSubmit` (≤60 lines / low cyclo). Compact translations, outcome short_description validation, and create vs update service calls.
+- **Scope**: Taxonomy admin form dialog only; lives under utils, not under `components/features/taxonomy/`.
+- **Dependencies**: `createTaxonomyService` / `updateTaxonomyService`, `toTaxonomyTreeWritePayload`, compact helpers in `form-helpers.ts`.
+### Asset: getTaxonomyDetailService
+- **Name**: `getTaxonomyDetailService`, `listTaxonomyService`, `useTaxonomyList`
+- **Type**: API service + SWR hook
+- **Path**: `src/api/callers/taxonomy/taxonomy.ts`, `src/api/hooks/taxonomy/useTaxonomy.ts`
+- **Purpose**: List with `locale` for localized labels; detail with `locale` (public) or `view=edit` (canonical + full `translations` + `row_version`). Admin edit **must** use `view=edit` — do not treat list row as editable SoT.
+- **Scope**: Taxonomy admin, course editor pickers, instructor expertise/application pickers (list + locale).
+- **REUSE MAP:** reuse `useLocale`, `LANGUAGE_OPTIONS`, course `expected_row_version` + `toastApiError` for **3005**; do **not** invent `expected_updated_at`; no `messages/ja.ts`.
 
 ### Asset: Media filename / extension helpers
 - **Name**: `isImageFilename`, `getMediaTabExtensions`, `isExecutableExtension`

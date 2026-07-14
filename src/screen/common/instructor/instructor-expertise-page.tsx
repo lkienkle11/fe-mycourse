@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -37,6 +37,7 @@ export function InstructorExpertisePage() {
   const tc = useTranslations("instructor.common");
   const tErrors = useTranslations("errors.codes");
   const tValidation = useTranslations("instructor.validation");
+  const locale = useLocale();
   const [instructorId, setInstructorId] = useState<string | null>(null);
   const [topicToAdd, setTopicToAdd] = useState<string>("");
   const [skillToAdd, setSkillToAdd] = useState<string>("");
@@ -51,10 +52,14 @@ export function InstructorExpertisePage() {
     [tErrors],
   );
 
-  const { rows: topics, mutate: mutateTopics } =
-    useInstructorExpertiseTopics(instructorId);
-  const { rows: skills, mutate: mutateSkills } =
-    useInstructorExpertiseSkills(instructorId);
+  const { rows: topics, mutate: mutateTopics } = useInstructorExpertiseTopics(
+    instructorId,
+    locale,
+  );
+  const { rows: skills, mutate: mutateSkills } = useInstructorExpertiseSkills(
+    instructorId,
+    locale,
+  );
 
   const instructorGetPageKey = useCallback(
     ({
@@ -104,9 +109,10 @@ export function InstructorExpertisePage() {
         per_page,
         status: "ACTIVE",
         include_images: false,
+        locale,
         ...(search ? { search_by: "name" as const, search_value: search } : {}),
       }),
-    [],
+    [locale],
   );
 
   const mapTopicOption = useCallback(
@@ -147,9 +153,10 @@ export function InstructorExpertisePage() {
         per_page,
         status: "ACTIVE",
         include_images: false,
+        locale,
         ...(search ? { search_by: "name" as const, search_value: search } : {}),
       }),
-    [],
+    [locale],
   );
 
   const mapSkillOption = useCallback(

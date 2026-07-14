@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import useSWR from "swr";
 import {
   contactInstructorAdminService,
@@ -19,6 +20,7 @@ import type {
 } from "@/types/instructor";
 
 export function useMyInstructorApplication() {
+  const locale = useLocale();
   const { me, mePermissions, isLoading: isAuthLoading } = useGetMe();
   const isLoggedIn = Boolean(me);
 
@@ -27,8 +29,8 @@ export function useMyInstructorApplication() {
     error,
     mutate,
   } = useSWR<MyInstructorApplication | null>(
-    isLoggedIn ? getMyInstructorApplicationKey() : null,
-    getMyInstructorApplicationService,
+    isLoggedIn ? getMyInstructorApplicationKey(locale) : null,
+    () => getMyInstructorApplicationService(locale),
     { shouldRetryOnError: false },
   );
 
@@ -41,13 +43,13 @@ export function useMyInstructorApplication() {
   });
 
   const submit = async (payload: SubmitInstructorApplicationPayload) => {
-    const result = await submitInstructorApplicationService(payload);
+    const result = await submitInstructorApplicationService(payload, locale);
     await mutate(result, { revalidate: false });
     return result;
   };
 
   const resubmit = async (payload: SubmitInstructorApplicationPayload) => {
-    const result = await resubmitInstructorApplicationService(payload);
+    const result = await resubmitInstructorApplicationService(payload, locale);
     await mutate(result, { revalidate: false });
     return result;
   };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -50,6 +50,7 @@ export function InstructorApprovalsRowActions({
   const tc = useTranslations("instructor.common");
   const tValidation = useTranslations("instructor.validation");
   const tErrors = useTranslations("errors.codes");
+  const locale = useLocale();
   const [rejectOpen, setRejectOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [isApproving, setIsApproving] = useState(false);
@@ -68,7 +69,7 @@ export function InstructorApprovalsRowActions({
   const handleApprove = async () => {
     setIsApproving(true);
     try {
-      await approveInstructorApplicationService(application.id);
+      await approveInstructorApplicationService(application.id, locale);
       toast.success(t("approveSuccess"));
       await onSuccess?.();
     } catch (error) {
@@ -88,9 +89,13 @@ export function InstructorApprovalsRowActions({
     }
     setIsRejecting(true);
     try {
-      await rejectInstructorApplicationService(application.id, {
-        rejection_reason: reason.trim(),
-      });
+      await rejectInstructorApplicationService(
+        application.id,
+        {
+          rejection_reason: reason.trim(),
+        },
+        locale,
+      );
       toast.success(t("rejectSuccess"));
       setRejectOpen(false);
       setReason("");

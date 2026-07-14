@@ -98,7 +98,7 @@ Content (max-w-[1200px], 2-col desktop) — page shell `min-h-[calc(100svh-4rem)
 3. Documents & links — `cv_file_id` **PDF only**; optional `linkedin_url` (valid **http(s) URL** on **linkedin.com**), `github_url` (valid **http(s) URL** on **github.com**), `portfolio_links` ≤5 (each non-empty entry must be a valid **http(s) URL**). Validated on FE (`instructorApplicationSubmitSchema` + `src/lib/instructor-application/url-validation.ts`) and BE (`validateSubmitInput` / `internal/shared/utils/http_url.go`).
 4. Certificates (≤10) — optional collapsible; each row: title, issuer, year, credential URL **or** (label `hoặc` + line break + **Chứng chỉ PDF**) `certificate_file_id` via `MediaCollectionDialog` (`uploadAllowedExtensions` PDF). BE requires **either** non-empty `credential_url` **or** `certificate_file_id` (`application/pdf`, **READY**) per saved certificate row. **Duplicate certificate rows are rejected** on both FE (`instructorApplicationSubmitSchema` `.superRefine`) and BE (`ErrDuplicateCertificate`, dedicated API code `2010` `DuplicateCertificate`): two rows collide when they share the same non-empty `certificate_file_id` (trim), the same non-empty trimmed `credential_url`, or the same normalized `title | issuer | issued_year` composite (case-insensitive, internal whitespace collapsed — `"AWS"` matches `"aws"`, `"AWS  Certified"` matches `"AWS Certified"`). The `.superRefine` flags **both** colliding rows (not only the second) with the inline `validation.certDuplicate` message under each row card; issues use **relative** Zod paths `[index]` inside the array `.superRefine` so `mapZodIssuesToFieldErrors` resolves them to `certificates.{index}` (never `certificates.certificates.{index}`). **Section 4 collapsible UX:** `CollapsibleSection` accepts `expandOnError`; resolved open state is `userOpen || expandOnError` (no remount `key`, no effect-driven `setState`) so the section stays expanded after PDF pickers close when the user had opened it manually, and auto-expands while certificate inline errors exist. Editing **any** certificate field re-runs `refreshCertificateFieldErrors` for the whole certificate section so stale duplicate errors clear on the sibling row when the user resolves the collision. BE returns code `2010` so non-form API clients (e.g. admin profile upsert) get a specific duplicate-certificate error instead of the generic `3001` bad-request code.
 5. Intro video (`intro_video_file_id`, `visibleTabs={["video"]}`) — optional collapsible
-6. Expertise (`topic_ids` 1–5, `skill_ids` 1–15) — `TaxonomySelect` in `taxonomy-select.tsx` wraps shared `SearchableSelect` with `grid w-full` + `triggerClassName="w-full min-w-0"` so pickers span the section width. Section title has **no trailing question mark** (e.g. Vietnamese: 「Bạn có thể dạy gì」). Selected topic/skill chips show the **taxonomy name**, never the raw UUID: labels are cached when the user picks from the dropdown (`taxonomy-section.tsx`) and prefilled from `application.topics` / `application.skills` via `resolveApplicationTaxonomyLabels()` in `helpers.ts`. **Do not** change `src/components/shared/searchable-select.tsx` (also used by `instructor-expertise-page.tsx` with fixed `w-[280px]` / `max-w-md`).
+6. Expertise (`topic_ids` 1–5, `skill_ids` 1–15) — `TaxonomySelect` in `taxonomy-select.tsx` wraps shared `SearchableSelect` with `grid w-full` + `triggerClassName="w-full min-w-0"` so pickers span the section width. Section title has **no trailing question mark** (e.g. Vietnamese: 「Bạn có thể dạy gì」). Selected topic/skill chips show the **localized taxonomy name**, never the raw UUID: labels are cached when the user picks from the dropdown (`taxonomy-section.tsx`) and prefilled from `application.topics` / `application.skills` via `resolveApplicationTaxonomyLabels()` in `helpers.ts`. Taxonomy list calls for the pickers pass **`locale`** from `useLocale()` so BE resolves translation-backed names. **Do not** change `src/components/shared/searchable-select.tsx` (also used by `instructor-expertise-page.tsx` with fixed `w-[280px]` / `max-w-md`).
 
 **Sidebar required checklist (no headline):** bio (≥100 chars), job title + company, years of experience, CV (PDF), ≥1 topic, ≥1 skill.
 
@@ -121,12 +121,12 @@ Content (max-w-[1200px], 2-col desktop) — page shell `min-h-[calc(100svh-4rem)
 
 | Action | Method | Path |
 |--------|--------|------|
-| Bootstrap / prefill | GET | `/api/v1/instructor-applications/me` — P45 |
-| First submit (`ready_to_apply`) | POST | `/api/v1/instructor-applications` — P45 |
-| Resubmit (`returned_for_revision` / `rejected_can_resubmit`) | PUT | `/api/v1/instructor-applications/me` — P45 |
+| Bootstrap / prefill | GET | `/api/v1/instructor-applications/me?locale=` — P45; FE must include route locale in URL **and** SWR key |
+| First submit (`ready_to_apply`) | POST | `/api/v1/instructor-applications?locale=` — P45; pass locale so response chips match UI language when mutated with `revalidate: false` |
+| Resubmit (`returned_for_revision` / `rejected_can_resubmit`) | PUT | `/api/v1/instructor-applications/me?locale=` — P45; same locale on response hydrate |
 | State H contact | POST | `/api/v1/instructor-applications/contact-admin` — P45 + server `rejection_count >= 5`; response `{ ticket_id, status }` |
 | Permission gate | GET | `/api/v1/me/permissions` |
-| Taxonomy pickers | GET | `/api/v1/taxonomy/topics`, `/api/v1/taxonomy/skills` |
+| Taxonomy pickers | GET | `/api/v1/taxonomy/topics`, `/api/v1/taxonomy/skills` (include `locale` from `useLocale()`) |
 
 **FE files:** `src/api/callers/instructor/instructor.ts`, `src/hooks/instructor/use-my-instructor-application.ts`, `src/types/instructor.ts`, `src/schema/instructor/instructor.ts`, i18n `instructor.application.*`.
 
@@ -136,7 +136,7 @@ Hook: `src/hooks/instructor/use-my-instructor-application.ts`.
 
 | Concern | Behaviour |
 |---------|-----------|
-| SWR key | `GET /api/v1/instructor-applications/me` when logged in; `null` when logged out |
+| SWR key | `GET /api/v1/instructor-applications/me?locale=<route>` when logged in (`useLocale()`); `null` when logged out — key **must** change with route locale so chips revalidate |
 | Focus revalidation | **Off** — inherits global `revalidateOnFocus: false` from `AppProviders` (do not opt into focus refetch; it caused full-page spinner flashes when returning to the tab) |
 | Error retry | `shouldRetryOnError: false` — no automatic retry loop on BE failure |
 | `isLoading` | **Bootstrap only** — `true` while auth is still resolving **or** while the first application fetch has not settled (`application === undefined` and no `error`). Background revalidation must **not** flip `isLoading` back to `true` when cached data exists |

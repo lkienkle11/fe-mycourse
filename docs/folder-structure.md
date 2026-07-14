@@ -170,7 +170,7 @@ src/components/
 │   ├── course/             # CourseStatusBadge, CourseBasicInfoTab,
 │   │                       # CourseOutlineTab, CourseOutlineRowActions, CourseCollaboratorsTab,
 │   │                       # Course*Dialog helpers; grouped tab prop objects (`state` / `data|taxonomyRows` / `actions`)
-│   ├── taxonomy/           # TaxonomyFormDialog (mount init from initialData; persistedSlug slug preview), tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button
+│   ├── taxonomy/           # TaxonomyFormDialog, TaxonomyLocaleTabsSection, tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button (no form helper/submit modules — those live under src/lib/utils/taxonomy/)
 │   ├── instructor/         # InstructorProfileViewDialog, InstructorApprovalsRowActions,
 │   │                       # InstructorListPagination, instructor action/footer helpers,
 │   │                       # shared instructor course editor route adapter for app pages
@@ -459,7 +459,11 @@ src/lib/
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
 │   ├── media.ts            # isImageFilename, isExecutableExtension, validateMediaUploadBatch, isImageMedia, …
 │   ├── dagre-tree.ts       # treeToFlowElements, getLayoutedElements (React Flow + dagre)
-│   ├── taxonomy.ts         # getTaxonomyResourceConfig, getTaxonomySearchableColumns, getTaxonomyTreeFromEntity, buildTaxonomyDagreRoot, countTaxonomyTreeNodes
+│   ├── taxonomy/           # Taxonomy utils package (import via `@/lib/utils/taxonomy`)
+│   │   ├── index.ts        # Re-exports resource + form-helpers only (not form-submit — avoids API cycle)
+│   │   ├── resource.ts     # getTaxonomyResourceConfig, getTaxonomySearchableColumns, getTaxonomyTreeFromEntity, buildTaxonomyDagreRoot, toTaxonomyTreeWritePayload, createTaxonomyTreeNode, countTaxonomyTreeNodes
+│   │   ├── form-helpers.ts # CONTENT_LOCALE_OPTIONS, canonicalizeContentLocale, buildTaxonomyFormDefaultValues, compact*Translations, slug preview helpers
+│   │   └── form-submit.ts  # buildTaxonomySubmitPayload, persistTaxonomyForm — import as `@/lib/utils/taxonomy/form-submit` only
 │   ├── slug.ts             # generateSlug() + slugifyName() — live slug normalization
 │   ├── react.ts            # useUniqueId() — stable ID generator for accessibility
 │   ├── user.ts             # pickCharacter() — avatar initial picker

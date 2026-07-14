@@ -374,7 +374,7 @@ const filters: ApiListQueryParams = {
 const url = buildQueryParams("/api/v1/taxonomy/levels", apiListQueryToRecord(filters));
 ```
 
-Domain modules may alias or extend this shape. Taxonomy extends it with `search_by` + `search_value` and optional `include_images` (pass `false` to skip image URL hydration on list — used by course editor info tab pickers).
+Domain modules may alias or extend this shape. Taxonomy extends it with `search_by` + `search_value`, optional `include_images` (pass `false` to skip image URL hydration on list — used by course editor info tab pickers), and **`locale`** (from `useLocale()` for resolved labels).
 
 ---
 
@@ -396,30 +396,54 @@ const { data } = useCourseDetail(courseId, { includeOutline: false });
 
 ## Taxonomy (admin)
 
-Callers live in `src/api/callers/taxonomy/taxonomy.ts`. List data uses the paginated envelope (`data.result` + `data.page_info`).
+Callers live in `src/api/callers/taxonomy/taxonomy.ts`. List data uses the paginated envelope (`data.result` + `data.page_info`). Hooks and services **pass `locale`** (typically `useLocale()`).
 
 ```ts
-import { listTaxonomyService, createTaxonomyService } from "@/api/callers/taxonomy";
+import {
+  listTaxonomyService,
+  getTaxonomyDetailService,
+  createTaxonomyService,
+  updateTaxonomyService,
+} from "@/api/callers/taxonomy";
 import { useTaxonomyList } from "@/api/hooks/taxonomy/useTaxonomy";
 
-// SWR list hook
+// SWR list hook — localized display columns
 const { rows, pageInfo, mutate } = useTaxonomyList("levels", {
   page: 1,
   per_page: 20,
   status: "ACTIVE",
+  locale: "vi",
 });
 
 // Course editor info tab pickers (no image hydration)
-useTaxonomyList("topics", { page: 1, per_page: 100, include_images: false });
+useTaxonomyList("topics", {
+  page: 1,
+  per_page: 100,
+  include_images: false,
+  locale: "vi",
+});
 
-// One-off service call
+// Admin edit — full translations + row_version (list row is not enough)
+const detail = await getTaxonomyDetailService("levels", id, { view: "edit" });
+
+// Create / update (update sends expected_row_version)
 await createTaxonomyService("tags", {
   name: "React",
+  translations: { en: { name: "React" }, vi: { name: "React" } },
   status: "ACTIVE",
+});
+await updateTaxonomyService("tags", id, {
+  translations: { vi: { name: "Phản ứng" } },
+  expected_row_version: detail.row_version,
 });
 ```
 
-Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource tables live in `src/constants/taxonomy/resources.ts` (`TAXONOMY_RESOURCES`, `TAXONOMY_RESOURCE_KEYS`); lookup helpers are `getTaxonomyResourceConfig()` / `getTaxonomySearchableColumns()` in `src/lib/utils/taxonomy.ts`. Types (`TaxonomyResourceConfig`, `TaxonomyListColumn`, `TaxonomyListFilters.include_images`, …) are in `src/types/taxonomy/`. List callers reuse `apiListQueryToRecord()` and append taxonomy typed-search fields (`search_by`, `search_value`, `include_images`) in caller scope. UI entry points: `src/screen/common/taxonomy/taxonomy-list-page.tsx` via role wrappers in `src/screen/{admin,sysadmin}/taxonomy/*/page.tsx`; course editor info tab via `editor-page.tsx`.
+| Call | Purpose |
+|------|---------|
+| `listTaxonomyService` / `useTaxonomyList` | Localized list (`locale`); optional `include_images` |
+| `getTaxonomyDetailService` | `locale` → public/localized shape; `view: "edit"` → canonical + `translations` + tree translations + `row_version` |
+
+Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource tables live in `src/constants/taxonomy/resources.ts` (`TAXONOMY_RESOURCES`, `TAXONOMY_RESOURCE_KEYS`); lookup helpers are `getTaxonomyResourceConfig()` / `getTaxonomySearchableColumns()` in `src/lib/utils/taxonomy/`. Types (`TaxonomyResourceConfig`, `TaxonomyListColumn`, `TaxonomyListFilters.include_images` / `locale`, …) are in `src/types/taxonomy/`. List callers reuse `apiListQueryToRecord()` and append taxonomy typed-search + `locale` fields in caller scope. UI entry points: `src/screen/common/taxonomy/taxonomy-list-page.tsx` via app routes under `src/app/[locale]/{admin,sysadmin}/taxonomy/*/page.tsx`; course editor info tab via `editor-page.tsx`.
 
 See also `docs/taxonomy-admin.md`, `docs/instructor-admin.md`.
 
