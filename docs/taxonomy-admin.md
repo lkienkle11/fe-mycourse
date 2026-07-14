@@ -125,11 +125,14 @@ Taxonomy list screens use the built-in `DataTable` toolbar:
 - **Edit always loads detail:** `getTaxonomyDetailService(resource, id, { view: "edit" })` — list row is insufficient for full `translations` / tree translations / `row_version`.
 - `TaxonomyFormDialog` builds `defaultValues` from that editable detail (`buildTaxonomyFormDefaultValues`, tree/description/image helpers). No `useEffect` form sync (react-compiler safe).
 
-## Form: locale Tabs + translations
+## Form: locale picker + translations
 
-- Tabs default to **`en` / `vi`** (`DEFAULT_CONTENT_LOCALES` / `LANGUAGE_OPTIONS`).
-- **Add locale:** searchable combobox from `CONTENT_LOCALE_OPTIONS` (multi-locale presets). Selection must resolve to an **allowed preset** via `resolveAllowedContentLocale` (canonicalize + whitelist). **No free-enter** — typed text only filters the list; empty/`CommandEmpty` does not add a custom locale; invalid codes toast `invalidLocale`.
-- Existing edit rows may still show extra locale tabs if the BE `available_locales` / `translations` map already contains them (read-only tabs for legacy); new tabs can only be added from the preset dropdown.
+- **No en/vi pill Tabs** in `TaxonomyLocaleTabsSection` — language switch + add is a **single searchable dropdown** over `CONTENT_LOCALE_OPTIONS`.
+- Defaults still seed form state with **`en` / `vi`** (`DEFAULT_CONTENT_LOCALES`); the combobox shows the active locale label and lists presets (already-open locales switch focus; unused presets add + switch).
+- Combobox copy: closed trigger shows the **active** locale label; search placeholder **`localeSearchPlaceholder`** (“Chọn ngôn ngữ” / “Select language”); empty filter **`localeEmpty`** (“Không có ngôn ngữ cần tìm” / “No languages found”).
+- Selection must resolve to an **allowed preset** via `resolveAllowedContentLocale` (canonicalize + whitelist). **No free-enter** — typed text only filters the list; `CommandEmpty` does not add a custom locale; invalid codes toast `invalidLocale`.
+- `CommandList` uses **`scrollbar-app`** (visible thin scrollbar) + `max-h` so long preset lists scroll inside the popover.
+- **Inside `TaxonomyFormDialog`:** do **not** portal the language `Popover` to `document.body` (`PopoverContent portal={false}`). Radix Dialog sets `body { pointer-events: none }` while open; a default portaled popover sits under `body`, inherits that, and the list looks “unscrollable / unclickable”. Keeping content in the dialog tree inherits the dialog’s `pointer-events: auto`. Prefer this scoped opt-in over changing shared `PopoverContent` defaults (also used by `SearchableSelect`).
 - Toast / validation messages that mention a locale use **friendly labels** via `contentLocaleOptionLabel`.
 - Locale/form helpers live in `src/lib/utils/taxonomy/form-helpers.ts`; submit payload builders + persist wrappers live in `src/lib/utils/taxonomy/form-submit.ts` (import that path directly — not via the `@/lib/utils/taxonomy` barrel, which omits form-submit to avoid a cycle with API callers). Components under `components/features/taxonomy/` stay UI-only.
 - Form state holds canonical fields and a `translations` map; outcome uses per-locale `short_description` + `description[]`.

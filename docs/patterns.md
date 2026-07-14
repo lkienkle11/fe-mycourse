@@ -79,6 +79,16 @@ Without this, Radix can leave `document.body` with `pointer-events: none` after 
 
 **Reuse:** `DeferredDropdownMenuItem`, `deferDropdownAction`, `CourseAdminTableActionsMenu`, `CourseReviewRowActions`, `CourseOutlineRowActions`, `course-admin-all-page`, `course-admin-trash-page`. See `docs/logic-flow.md` §14.
 
+### Popover combobox inside Dialog (taxonomy locale)
+
+Sympton: language list under a Dialog does not scroll or accept clicks even when `CommandList` has `overflow-y-auto` and `scrollHeight > clientHeight`.
+
+Cause: Dialog sets `body { pointer-events: none }` and only dialog content resets to `auto`. Default `PopoverContent` **portals to `body`**, so the panel inherits `none`.
+
+Preferred fix (scoped): `PopoverContent` supports **`portal?: boolean` (default `true`)**. Taxonomy locale picker uses **`portal={false}`** so content stays in the dialog tree. Do **not** flip shared default styles on `PopoverContent` for every consumer (`SearchableSelect` and others).
+
+Manual blast radius before editing `PopoverContent`: grep importers — currently `TaxonomyLocaleTabsSection` + `SearchableSelect`. Default `portal={true}` must keep SearchableSelect behavior unchanged. GitNexus `impact(PopoverContent)` may show 0 callers when the index is stale; trust grep until `npx gitnexus analyze` is fresh.
+
 ### Client-only libraries (Quill)
 
 Libraries that touch `document` at import time (e.g. `quill`) **must not** use top-level `import Quill from "quill"`. Pattern used in this repo:
@@ -384,7 +394,7 @@ Translations live in `src/messages/en.ts` and `vi.ts` (`vi` uses `satisfies Mess
 |---------|--------|----------|
 | UI chrome | `useTranslations` + `src/messages/{en,vi}.ts` | Buttons, labels, validation copy |
 | Data / content locale | `useLocale()` → API query `locale` | Taxonomy list/picker names, instructor chips (BE translation fallback) |
-| Admin taxonomy edit | `GET …?view=edit` + form Tabs (preset combobox from `CONTENT_LOCALE_OPTIONS`, dropdown-only) | Canonical + full `translations` map (stored BCP47 may exceed UI presets for legacy rows) |
+| Admin taxonomy edit | `GET …?view=edit` + locale combobox only (presets from `CONTENT_LOCALE_OPTIONS`, no en/vi pill Tabs, no free-enter) | Canonical + full `translations` map (stored BCP47 may exceed UI presets for legacy rows) |
 
 Do not conflate next-intl route locale with inventing a second FE locale store for taxonomy reads — pass `useLocale()` through callers/hooks.
 

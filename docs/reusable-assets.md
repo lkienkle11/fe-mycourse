@@ -413,7 +413,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant array
 - **Path**: `src/constants/common.ts`
 - **Purpose**: Locale options for the locale switcher — `{ locale, label }` for `en` / `vi` only (UI chrome). Taxonomy **content** locale presets live separately in `CONTENT_LOCALE_OPTIONS` (`form-helpers.ts`); do **not** add `ja` here or `messages/ja.ts`.
-- **Scope**: `src/components/common/header/locale-switcher.tsx`. Taxonomy form tabs use `CONTENT_LOCALE_OPTIONS`, not this list alone.
+- **Scope**: `src/components/common/header/locale-switcher.tsx`. Taxonomy form locale combobox uses `CONTENT_LOCALE_OPTIONS`, not this list alone.
 - **Dependencies**: none.
 
 ---
@@ -515,7 +515,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `TaxonomyFormDialog`, `TaxonomyFormDialogProps`
 - **Type**: React component (client)
 - **Path**: `src/components/features/taxonomy/taxonomy-form-dialog.tsx`
-- **Purpose**: Create/update taxonomy rows per `resourceKey`; locale Tabs with multi-preset combobox (`CONTENT_LOCALE_OPTIONS`, **dropdown-only**); submit via `buildTaxonomySubmitPayload` / `persistTaxonomyForm` from `@/lib/utils/taxonomy/form-submit`; canonical + `translations` (and tree node `translations`); initializes `useForm` and local tree/description/image state from **edit detail** on mount (no `useEffect` sync). Update body includes `expected_row_version`. Slug preview is read-only via `resolveTaxonomySlugPreview(name, persistedSlug)`.
+- **Purpose**: Create/update taxonomy rows per `resourceKey`; locale UI is a multi-preset combobox only (`CONTENT_LOCALE_OPTIONS`, **no en/vi Tabs**, **no free-enter**; placeholder “Select language” / “Chọn ngôn ngữ”; scrollable list + empty copy); submit via `buildTaxonomySubmitPayload` / `persistTaxonomyForm` from `@/lib/utils/taxonomy/form-submit`; canonical + `translations` (and tree node `translations`); initializes `useForm` and local tree/description/image state from **edit detail** on mount (no `useEffect` sync). Update body includes `expected_row_version`. Slug preview is read-only via `resolveTaxonomySlugPreview(name, persistedSlug)`.
 - **Scope**: Opened from `TaxonomyListPage`; parent must remount with `key` when controlled `open` toggles from table actions.
 - **Dependencies**: `@/lib/utils/taxonomy` (resource + form-helpers), `@/lib/utils/taxonomy/form-submit`, `slugifyName`, `MediaCollectionDialog`, taxonomy Zod schemas, `toastApiError` (incl. **3005**).
 ### Asset: taxonomy form-submit utils
