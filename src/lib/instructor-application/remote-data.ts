@@ -1,4 +1,4 @@
-import { rawFetch } from "@/api/raw-http";
+import { rawFetch } from "@/api/core/raw-http";
 import { MOCK_COMPANIES } from "./mock-companies";
 import { MOCK_JOB_TITLES } from "./mock-job-titles";
 import {
