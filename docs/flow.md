@@ -110,7 +110,7 @@ TTL is **not** hardcoded on FE — it comes from BE `Set-Cookie`. Fallback: `aut
 | `domain` | parent domain (e.g. `yourdomain.net`) | Allows cookies to be sent to `api.yourdomain.net` when FE and API are on separate subdomains. Controlled by `AUTH_COOKIE_DOMAIN` env var. |
 | `maxAge` | — (`access_token`), refresh/session from BE Set-Cookie Max-Age | Parsed by BFF; fallback `auth_session_expires_at` |
 
-**Client API calls:** `createApiInstance` uses `withCredentials: true`. The browser sends HttpOnly cookies; the Go backend reads `access_token` from the cookie when no `Authorization` header is present. **Server-side** Next.js still reads HttpOnly cookies via `next/headers` and attaches `Authorization: Bearer …`.
+**Client API calls:** browser transport uses `credentials: "include"`. The browser sends HttpOnly cookies; the Go backend reads `access_token` from the cookie when no `Authorization` header is present. **Server-side** Next.js still reads HttpOnly cookies via `next/headers` and attaches `Authorization: Bearer …`.
 
 **After silent refresh (client):** FE proxy reads BE `Set-Cookie` Max-Age; if unavailable, uses `auth_session_expires_at` (last value from BE).
 
@@ -229,13 +229,13 @@ sequenceDiagram
   participant AL as AuthLayout (client)
   participant UA as useAuth (SWR)
   participant GM as getMeService
-  participant AX as Axios (apiInstance)
+  participant AX as Fetch (apiTransport)
   participant API as Go API
 
   AL->>UA: useAuth()
   UA->>GM: getMeService() [SWR fetcher]
   GM->>AX: apiFetch(GET /api/v1/me)
-  AX->>AX: Request interceptor: read access_token cookie → set Authorization header
+  AX->>AX: Server transport: read access_token cookie → set Authorization header
   AX->>API: GET /api/v1/me  Authorization: Bearer <token>
   API-->>AX: 200 MeResponse  OR  401 (unauthenticated)
   AX-->>GM: ApiResult<ApiResponse<MeResponse>>
@@ -259,7 +259,7 @@ sequenceDiagram
 const { me, isLoading, error, mutate } = useAuth();
 ```
 
-- **Key:** `getMeEndpointKey` = `"/api/v1/me"` (defined once in `src/api/callers/auth/auth.ts`).
+- **Key:** `getMeEndpointKey` = `"/api/v1/me"` (defined once in `src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)`).
 - **Hook options:** `useAuth` passes `shouldRetryOnError: false` and `revalidateOnFocus: true` in `useAuth.ts`. `AppProviders` renders `SWRConfig` with `revalidateOnFocus: false`, `dedupingInterval: 30_000ms`, and `errorRetryInterval: 180_000ms` (3 min — see `src/constants/swr.ts`); `MeSwrSync` calls `useSyncMeFromAuth` **inside** that provider so the `/me` SWR subscription shares the same context as the rest of the tree. Hooks that omit `shouldRetryOnError: false` retry on error at the 3-minute interval, not SWR’s default 5 seconds.
 - **401 handling:** `getMeService` catches 401 and returns `null` instead of throwing, so SWR does not enter error state for unauthenticated users.
 
@@ -269,53 +269,48 @@ const { me, isLoading, error, mutate } = useAuth();
 
 **Goal:** Attach a valid `Authorization: Bearer` token to every request and silently rotate the token when it expires.
 
-### 4.1 Request interceptor
+### 4.1 Authenticated request auth attach
 
-Every Axios request goes through the interceptor in `createApiInstance`:
+Every authenticated request goes through `createApiTransport` / `apiTransport`:
 
 ```
 Request
-  └─ Server: interceptor reads access_token via next/headers and sets
+  └─ Server: transport reads access_token via next/headers and sets
       Authorization: Bearer <access_token>
   └─ Client: does not attach Authorization manually; browser sends HttpOnly cookies
-      via withCredentials and BE reads access_token from cookie
+      via credentials:include and BE reads access_token from cookie
   └─ If access_token cookie is missing / empty → no bearer context → BE returns 401 "missing bearer token"
 ```
 
 ### 4.2 Token refresh flow
 
-Triggered when **all** of: HTTP `401` or `403`; response not already retried (`_retry`); and **either** the response header `X-Token-Expired: true` is set **(access JWT expired)**, **or** the failure is **`401` and the outgoing request had no non-empty `Authorization: Bearer …`** (session cookies exist but `access_token` was cleared — BE does not send `X-Token-Expired` for that case; see `be-mycourse/middleware/auth_jwt.go`).
+Triggered when **all** of: HTTP `401` or `403`; request not already retried; and **either** `X-Token-Expired: true` **or** `401` with no outgoing non-empty Bearer.
 
 ```
 Eligible 401/403?
   │
-  ├─ cfg._retry already set? → surface error immediately (prevent retry loop)
+  ├─ already retried? → report + throw immediately
   │
-  ├─ SERVER PATH (no shared mutex — each request is per-user):
-  │     Read refresh_token + session_id from cookies via next/headers
-  │     POST /api/v1/auth/refresh  (rawPost in src/api/raw-http.ts — not apiInstance)
-  │       X-Refresh-Token: <refresh_jwt>
-  │       X-Session-Id:    <session_id>
-  │     ├─ success → syncAuthSessionCookiesAction (setAuthSessionCookies) → retry original request
-  │     └─ failure → reportError → reject
+  ├─ SERVER writable:
+  │     rawPost BE refresh → validate three tokens → setAuthSessionCookies → retry once
+  │     failure → throw original ApiHttpError with sanitized cause + report
   │
-  └─ CLIENT PATH (with mutex to prevent refresh stampede):
-        isRefreshing == true?
-          → queue resolver in pendingResolvers → wait
-        isRefreshing == false:
-          → set isRefreshing = true
-          → POST /api/auth/refresh (rawPost to FE proxy, same-origin)
-            FE proxy reads HttpOnly cookies, sends explicit headers to BE refresh
-          ├─ success:
-          │     FE proxy already rewrote rotated cookies to browser
-          │     flushRefreshQueue(newAccessToken) → unblock all queued requests
-          │     retry original request
-          └─ failure:
-                flushRefreshQueue(null) → reject all queued requests
-                reportError → reject
+  ├─ SERVER readonly / no-context:
+  │     throw ApiRefreshRequiredError (no report toast)
+  │
+  └─ BROWSER:
+        join/create single-flight refresh
+        POST `${origin}/api/auth/refresh` (absolute same-origin; credentials include)
+        ├─ success → retry once with rotated access_token
+        └─ failure → throw original ApiHttpError with sanitized cause + report
 
-Any other 4xx/5xx → reportError → reject
+Transport throws (timeout/network/abort/parse/policy) before HTTP outcome
+  → reportApiError then rethrow (reporter matrix)
+
+Any other final 4xx/5xx → reportApiError → throw ApiHttpError
 ```
+
+Server authenticated redirects (`followServerRedirects` in `src/api/core/fetch-core-redirect.ts`) follow only **301 / 302 / 303 / 307 / 308**. Other 3xx (including **304**) are returned as the final response and are not treated as Location hops. Hop validation/state updates are file-private helpers (`resolveRedirectTargetUrl`, `applyRedirectHopState`); intermediate bodies are **await**-cancelled via `releaseAbandonedRedirectBody`. Credential refresh uses `rawPostRefreshUpstream` (`redirect: "error"` + trusted origin); public `RawApiOptions` stays locked without those fields.
 
 ### 4.3 Refresh request format
 
@@ -339,7 +334,7 @@ The `session_id` does not change across rotations. Both `access_token` and `refr
 | Environment | Cookie update method |
 |-------------|---------------------|
 | Client (browser) | FE proxy `/api/auth/refresh` rewrites cookies via `setAuthSessionCookies` |
-| Server (SSR / Server Action) | `syncAuthSessionCookiesAction` → `setAuthSessionCookies` via `next/headers` |
+| Server (SSR / Server Action) | writable refresh → `setAuthSessionCookies` via `next/headers` |
 
 BE and FE must use the **same** `AUTH_COOKIE_DOMAIN` (e.g. `yourdomain.net`) on hosted multi-subdomain setups.
 
@@ -349,7 +344,7 @@ BE and FE must use the **same** `AUTH_COOKIE_DOMAIN` (e.g. `yourdomain.net`) on 
 
 **Goal:** Surface API failures to the user and allow global observability.
 
-The Axios response interceptor calls `reportError(error)` for every failed request. This:
+The Fetch transport reporter calls `reportError(error)` for every failed request. This:
 
 1. Logs `[API] METHOD /path → HTTP status | appCode=N | message` to the console.
 2. Calls `useApiError.getState().push({ statusCode, appCode, message, url, method })`.
