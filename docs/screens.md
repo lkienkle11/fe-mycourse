@@ -491,7 +491,7 @@ Symbol and edge counts change as the codebase grows. Refresh the local graph wit
 |---------|------------------|
 | **Ui** | `src/components/ui/*`, home sections, `SearchBar`, `LocaleSwitcher`, `Header`, `HeaderDashboard`, `DashboardLayout`, `Footer`, `FooterSocial` |
 | **Auth** | `AuthLayout`, `AuthButton`, `LoginSignupPopup`, `LoginContent`, `SignupContent`, `AuthSocialLogin`, `GoogleOneTapHost`, `UserMenu`, `handleAuthSubmit`, OAuth actions (`googleLoginAction`, `googleOneTapAction`, `startDiscordLoginAction`, `discordLoginAction`, `startXLoginAction`, `xLoginAction`), OAuth hooks (`useGoogleLogin`, `useGoogleOneTap`, `useDiscordLogin`, `useXLogin`, `useOAuthPostAuth`), auth stores and hooks |
-| **Api** | `useAuth` SWR hook, `getMeService`, `createApiInstance`, `apiInstance`, `raw-http` helpers, `src/api/index.ts` barrel, callers and `methods` |
+| **Api** | `useAuth` SWR hook, `getMeService`, `createApiTransport`, `apiTransport`, `raw-http` helpers, `src/api/index.ts` barrel, callers and `methods` |
 
 ---
 

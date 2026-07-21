@@ -24,14 +24,14 @@ react-hook-form validates via zodResolver(loginSchema)   [src/schema/auth/auth.t
   ↓
 onSubmit -> handleAuthSubmit("login", values) -> loginAction(payload)   [src/actions/auth/auth.ts]  "use server"
   ↓
-loginService(payload)   [src/api/callers/auth/auth.ts]
+loginService(payload)   [src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)]
   → apiPost(API_PUBLIC_ROUTES.auth.login, payload)
   → returns { data: ApiResponse<LoginResponse>, cookies: Set-Cookie parsed }
   ↓
 Server Action reads response:
   - data.code === ApiErrorCode.Success?   [ApiErrorCode from src/constants/api-error-code.ts]
     YES → set 3 cookies on browser via next/headers cookies().set():
-            access_token   (HttpOnly — browser sends via withCredentials; BE reads cookie)
+            access_token   (HttpOnly — browser sends via credentials:include; BE reads cookie)
             refresh_token  (HttpOnly, maxAge from BE Set-Cookie)
             session_id     (HttpOnly, same maxAge)
             auth_session_expires_at (HttpOnly FE-only — absolute expiry for refresh fallback)
@@ -71,46 +71,37 @@ Errors: translateApiErrorCode (BE 4013–4017/4019, 4023–4025; FE-local 4018, 
 
 ---
 
-## 2. Token Refresh Flow (Transparent, client-side)
+## 2. Token Refresh Flow (Transparent)
 
-Handled automatically in `src/api/instance.ts` response interceptor.
+Owned by `src/api/transport/api-transport.ts` + adapters (`browser-auth` / `server-auth`). Non-2xx HTTP outcomes throw `ApiHttpError`. Timeout / network / abort / parse / policy errors thrown from `fetch-core` are reported via `reportApiError` before rethrow (console + Zustand on browser per reporter matrix). Reporter uses FE-owned safe copy only — never BE body `message`. `ApiRefreshRequiredError` is server-logged once via `reportApiError` then rethrown. Body-read abort/timeout use the shared abort lifecycle (`ApiAbortError` / `ApiTimeoutError`); only non-abort body failures become `ApiResponseParseError`. BFF refresh maps `ApiTimeoutError` → 504.
 
 ```
-Any apiInstance request fails with 401 or 403
+Any authenticated request fails
   ↓
-Interceptor checks refresh conditions:
-  - X-Token-Expired: "true", OR
-  - 401 with missing/empty Authorization bearer while refresh cookies exist
-  If neither condition matches -> re-throw error
+HTTP non-2xx → FailedHttpResponse descriptor
+  OR transport throw (timeout/network/abort/parse/policy) → reportApiError → rethrow
   ↓
-  PRESENT →
-    isRefreshing === true?  → queue request into pendingResolvers (mutex prevents stampede)
-    isRefreshing === false? →
-      isRefreshing = true
-      ↓
-      browser path:
-        rawPost("/api/auth/refresh")  // FE proxy route
-        FE proxy reads refresh/session HttpOnly cookies
-        FE proxy calls BE refresh with X-Refresh-Token + X-Session-Id
-      server path:
-        rawPost(API_PUBLIC_ROUTES.auth.refresh, null, headers: {
-          X-Refresh-Token: refresh_token cookie,
-          X-Session-Id:    session_id cookie
-        })
-      ↓
-      Refresh succeeds?
-        YES → new access_token, refresh_token received
-              → browser/server: rewrite cookies from BE Set-Cookie Max-Age (fallback auth_session_expires_at)
-              → flushRefreshQueue(newAccessToken) → retry all queued requests
-              → retry original failed request with new token
-        NO  → flushRefreshQueue(null) → reject all queued requests
-              
+Refresh eligibility (401/403 + X-Token-Expired or 401 without Bearer; not already retried)
+  If not eligible → reportApiError(ApiHttpError) → throw
+  ↓
+  browser-proxy:
+    rawPost absolute same-origin URL: `${window.location.origin}/api/auth/refresh`
+    (relative `/api/auth/refresh` alone is invalid for fetch-core URL parse)
+    single-flight module Promise; waiters share one result
+  server-writable:
+    rawPost BE refresh with X-Refresh-Token + X-Session-Id; persist cookies
+  server-readonly / no-context:
+    throw ApiRefreshRequiredError (no refresh, no cookie write)
+  ↓
+  Refresh succeeds? → retry once with rotated Bearer
+  Refresh fails? → throw original protected ApiHttpError with sanitized refresh cause
 ```
 
 **Important notes:**
-- Refresh mutex uses module-level `isRefreshing` + `pendingResolvers` array — prevents N parallel requests all triggering N refresh calls.
-- On server (SSR/Server Component), each request is isolated — no shared module state between different users.
-- `rawPost` (not `apiInstance.post`) is used for the refresh call to avoid interceptor recursion.
+- Browser refresh uses an absolute origin URL so `fetch-core` does not throw `invalid-url` before the network call.
+- On refresh failure, `result.cause` / server catch cause is sanitized and attached to the original protected-request error.
+- `rawPost` (not authenticated `apiPost`) is used for refresh to avoid recursion.
+- FE refresh Route Handler exact-validates upstream `{code,message,data}` (finite integer code, non-empty string message) before cookie persist; malformed upstream → safe `502` (never invent success `0`/`"OK"`). Client success DTO remains access_token-only; browser adapter exact-validates top-level keys `{code,message,data}` with `data.access_token` only. Error responses use fixed safe messages and allowlisted `code` values only (never raw BE message passthrough).
 
 ---
 
@@ -126,16 +117,16 @@ MeSwrSync component mounts → useSyncMeFromAuth()   [src/hooks/auth/use-auth-st
 useAuth() runs   [src/api/hooks/auth/useAuth.ts]
   → useSWR(getMeEndpointKey, getMeService, { revalidateOnFocus: true, shouldRetryOnError: false })
   ↓
-getMeService()   [src/api/callers/auth/auth.ts]
+getMeService()   [src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)]
   → apiFetch(getMeEndpointKey)
-  → GET /api/v1/me with access_token cookie attached by interceptor
+  → GET /api/v1/me with access_token cookie attached by browser credentials:include
   ↓
   401 response? → return null (user not logged in — no error thrown)
   Other error?  → throw (network error, 5xx)
   200 response? → return MeResponse
   ↓
 useAuth exposes errorCode for non-401 GET failures:
-  → extractAxiosApiError(error)?.code → consumers can translate via errors.codes.*
+  → extractApiError(error)?.code → consumers can translate via errors.codes.*
   ↓
 useSyncMeFromAuth:
   useEffect([me, isLoading, error, mutate]) → useMeStore.syncFromUseAuth({ me, isLoading, error, mePermissions, mutate })
@@ -279,9 +270,9 @@ Convention:
 ## 8. API Error Display Flow (user-facing)
 
 ```
-API call fails (Axios throws or Server Action returns !success)
+API call fails (transport throws or Server Action returns !success)
   ↓
-extractAxiosApiError(error) or result.code from AuthActionResult
+extractApiError(error) or result.code from AuthActionResult
   → { code, message }   // message = dev reference only (console.debug in development)
   ↓
 translateApiErrorCode(tErrors, code)  OR  toastApiError(tErrors, error)
@@ -298,9 +289,9 @@ Modules migrated: Auth, Me GET errorCode, Media, Taxonomy, Instructor, Course (i
 ## 9. API Error Global Capture Flow
 
 ```
-Any apiInstance request fails (error response) on client
+Any apiTransport request fails (error response) on client
   ↓
-Axios response interceptor in src/api/instance.ts
+Fetch transport reporter in src/api/transport/api-transport.ts
   -> useApiError.getState().push({ statusCode, appCode, message, url, method })
   ↓
 Error is re-thrown so callers can still catch it locally.
