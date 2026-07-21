@@ -1,8 +1,7 @@
-import type { AxiosError } from "axios";
 import { toast } from "sonner";
+import { isApiHttpError, parseApiErrorEnvelope } from "@/api/core/fetch-error";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { errorCodesEn } from "@/messages/error-codes";
-import type { ApiResponse } from "@/types/api";
 
 export type ApiErrorCodeKey = keyof typeof errorCodesEn;
 
@@ -12,13 +11,13 @@ export type ExtractedApiError = {
   message: string;
 };
 
-/** Pulls `code` and `message` from an Axios API error envelope. */
-export function extractAxiosApiError(error: unknown): ExtractedApiError {
-  const axiosError = error as AxiosError<ApiResponse<unknown>>;
-  const code = axiosError?.response?.data?.code ?? ApiErrorCode.Unknown;
-  const message =
-    axiosError?.response?.data?.message ?? "Unexpected error occurred";
-  return { code, message };
+/** Pulls `code` and `message` from an API error envelope. */
+export function extractApiError(error: unknown): ExtractedApiError {
+  if (isApiHttpError(error)) {
+    return parseApiErrorEnvelope(error.response.data);
+  }
+  const legacy = error as { response?: { data?: unknown } };
+  return parseApiErrorEnvelope(legacy?.response?.data);
 }
 
 /** i18n key for a numeric API error code: `errors.codes.{code}`. */
@@ -50,7 +49,7 @@ export function toastApiError(
   tCodes: (key: ApiErrorCodeKey) => string,
   error: unknown,
 ): void {
-  const { code, message } = extractAxiosApiError(error);
+  const { code, message } = extractApiError(error);
   if (process.env.NODE_ENV === "development") {
     console.debug("[API error]", { code, message });
   }

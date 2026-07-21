@@ -1,1 +1,2 @@
-export * from "./taxonomy";
+export * from "./taxonomy-browser";
+export * from "./taxonomy-factory";

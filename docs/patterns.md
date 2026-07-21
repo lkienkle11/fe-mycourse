@@ -160,11 +160,11 @@ const { openLoginModal } = useAuthStore();
 ### SWR: always use the endpoint key constant
 
 ```ts
-// src/api/callers/auth/auth.ts
+// src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)
 export const getMeEndpointKey = "/api/v1/me"; // defined once
 
 // In hooks or components that need to mutate
-import { getMeEndpointKey } from "@/api/callers/auth/auth";
+import { getMeEndpointKey } from "@/api/callers/auth/auth-factory";
 mutate(getMeEndpointKey);
 ```
 
@@ -277,16 +277,15 @@ postSocketOutbound({
 
 ## 5. API Call Pattern
 
-### Never call Axios directly — use `api` wrappers
+### Never call `fetch` / third-party HTTP clients for MyCourse API — use `api` wrappers
 
 ```ts
 // ✅ Correct
 import { apiFetch } from "@/api";
-const { data, error } = await apiFetch<T>(url);
+const { data } = await apiFetch<T>(url);
 
-// ❌ Wrong
-import axios from "axios";
-const res = await axios.get(url);
+// ❌ Wrong — bypasses auth refresh / error reporting
+const res = await fetch(url);
 ```
 
 ### Always check both HTTP error and app-level error code
@@ -379,7 +378,7 @@ setServerError(translateApiErrorCode(tErrors, result.code));
 - Copy: `errors.codes.{code}` in `src/messages/en.ts` / `vi.ts` (sourced from `src/messages/error-codes.ts`).
 - Unknown codes fall back to `errors.codes.9999`.
 - `ApiErrorCode` in `src/constants/api-error-code.ts` mirrors `be/internal/shared/errors/errcode_codes.go` 1:1.
-- BE has **no** taxonomy/course/instructor-specific numeric codes — those modules reuse shared `2xxx`/`3xxx` (and media also `9010`–`9018`).
+- BE has **no** taxonomy/course/instructor-specific numeric codes — those modules reuse shared `2xxx`/`3xxx` (and media also `9011`–`9019`, including `R2BucketNotConfigured = 9019`).
 - Do **not** use semantic per-module API keys (`auth.errors.emailAlreadyExists`, `media.upload.errors.*` for API responses, etc.).
 
 ---

@@ -128,7 +128,7 @@ Content (max-w-[1200px], 2-col desktop) — page shell `min-h-[calc(100svh-4rem)
 | Permission gate | GET | `/api/v1/me/permissions` |
 | Taxonomy pickers | GET | `/api/v1/taxonomy/topics`, `/api/v1/taxonomy/skills` (include `locale` from `useLocale()`) |
 
-**FE files:** `src/api/callers/instructor/instructor.ts`, `src/hooks/instructor/use-my-instructor-application.ts`, `src/types/instructor.ts`, `src/schema/instructor/instructor.ts`, i18n `instructor.application.*`.
+**FE files:** `src/api/callers/instructor/instructor-factory.ts (+ instructor-browser.ts)`, `src/hooks/instructor/use-my-instructor-application.ts`, `src/types/instructor.ts`, `src/schema/instructor/instructor.ts`, i18n `instructor.application.*`.
 
 ### Data fetching (`useMyInstructorApplication`)
 
@@ -150,7 +150,7 @@ Manual refresh: call `mutate()` after submit, resubmit, or contact-admin — not
 
 ## Remote combobox data
 
-Port from `code-temp/` — HTTP via **`rawFetch`** from `src/api/raw-http.ts` (timeout, signal) for third-party URLs. Privacy: user queries are sent from the browser to HH.ru / Wikidata / Cloudflare static JSON.
+Port from `code-temp/` — HTTP via **`rawFetch`** from `src/api/core/raw-http.ts` (timeout, signal) for third-party URLs. Privacy: user queries are sent from the browser to HH.ru / Wikidata / Cloudflare static JSON.
 
 | Dataset | URL | Fallback |
 |---------|-----|----------|
