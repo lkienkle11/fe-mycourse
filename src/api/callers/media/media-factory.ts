@@ -12,6 +12,9 @@ import type {
 } from "@/types/api";
 import type { MediaFile, MediaListFilters } from "@/types/media";
 
+/** Multipart upload needs longer than the authenticated default (10s). */
+const MEDIA_UPLOAD_TIMEOUT_MS = 30_000;
+
 export function getMediaListKey(filters: MediaListFilters): string | null {
   return buildQueryParams(
     API_PRIVATE_ROUTES.media.files,
@@ -48,7 +51,9 @@ export function createMediaCallers(methods: ApiMethods) {
       const { data } = await methods.apiPost<
         ApiResponse<MediaFile[]>,
         FormData
-      >(API_PRIVATE_ROUTES.media.files, form);
+      >(API_PRIVATE_ROUTES.media.files, form, {
+        timeout: MEDIA_UPLOAD_TIMEOUT_MS,
+      });
       if (!data.data) {
         throw new Error(data.message || "Failed to upload media files");
       }

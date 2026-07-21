@@ -41,6 +41,11 @@ import { mergeHeadersCaseInsensitive } from "../core/fetch-helpers";
 export type BaseApiOptions = {
   headers?: Record<string, string>;
   cookies?: Record<string, string>;
+  /**
+   * Per-request timeout in ms. Overrides transport `timeoutMs` / fetch-core
+   * authenticated default (10s). Used by long uploads (e.g. media 30s).
+   */
+  timeout?: number;
 };
 
 export type FetchApiOptions = BaseApiOptions & {
@@ -288,7 +293,7 @@ export function createApiTransport(config: ApiTransportConfig): ApiTransport {
           headers: attemptHeaders,
           cookies: options.cookies,
           data: init.data,
-          timeoutMs,
+          timeoutMs: options.timeout ?? timeoutMs,
           credentials,
           cache,
           redirect,
