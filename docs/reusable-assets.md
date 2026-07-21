@@ -1079,7 +1079,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `apiTransport`
 - **Type**: ApiTransport
 - **Path**: `src/api/transport/api-transport.ts`
-- **Purpose**: Browser authenticated Fetch transport with runtime adapters: server Bearer attach from cookies, refresh eligibility, one retry, reporter matrix for both thrown transport errors and final HTTP errors (`reportApiError` → console + Zustand on browser). Refresh failure attaches a sanitized cause; browser refresh uses absolute same-origin `/api/auth/refresh`.
+- **Purpose**: Browser authenticated Fetch transport with runtime adapters: server Bearer attach from cookies, refresh eligibility, one retry, reporter matrix for both thrown transport errors and final HTTP errors (`reportApiError` → console + Zustand on browser). Refresh failure attaches a sanitized cause; browser refresh uses absolute same-origin `/api/auth/refresh`. Default timeout 10s; per-request `options.timeout` (ms) overrides transport/`fetch-core` default (e.g. media upload 30s).
 - **Scope**: Used via `apiFetch`/`apiPost` etc. in `src/api/core/methods.ts` (browser) or `createApiMethods` after FromRequest factories (server).
 - **Dependencies**: `fetch-core`, `browser-auth` / `server-auth`, `useApiError`, `isServer`.
 

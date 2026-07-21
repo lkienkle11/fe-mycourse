@@ -1,6 +1,6 @@
 # Media collection (FE)
 
-_Last audited: 2026-07-04 — backend-scoped list (own + public only; legacy NULL owner excluded); `visibility` on upload/response; R2 keys `{user_code}/…`; uploader `display_name` only (no email in API)._
+_Last audited: 2026-07-22 — `uploadMediaFiles` uses authenticated transport with **30s** per-request timeout (default API timeout remains 10s). Prior: backend-scoped list; `visibility` on upload; R2 keys `{user_code}/…`._
 
 Reusable media library popup for browsing, uploading, and selecting files. Wired into taxonomy topic/outcome forms, course editor, instructor application (CV/certificate/video), and Quill embeds.
 
@@ -19,7 +19,7 @@ Dialog width: `MediaCollectionDialog` uses `max-w-5xl` for a wider browsing surf
 
 | File | Role |
 |------|------|
-| `src/api/callers/media/media-factory.ts (+ media-browser.ts)` | `listMediaFiles`, `uploadMediaFiles` (sends `visibility=private` by default), `deleteMediaFile` |
+| `src/api/callers/media/media-factory.ts (+ media-browser.ts)` | `listMediaFiles`, `uploadMediaFiles` (default `visibility=private`; **30s** `timeout` on multipart POST), `deleteMediaFile` |
 | `src/api/hooks/media/useMediaFiles.ts` | SWR list + `mutate` |
 | `src/constants/api-route.ts` | `media.files`, `media.fileById` |
 | `src/types/media/index.ts` | `MediaFile`, filters, tab types; `visibility?: "private" \| "public"`; uploader `display_name?` only |

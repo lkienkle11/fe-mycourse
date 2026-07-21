@@ -1,6 +1,6 @@
 # API Overview (`fe-mycourse`)
 
-_Last audited: 2026-07-21 (refresh credential helper internal; RawApiOptions locked contract; delete unused syncAuthSessionCookiesAction)._
+_Last audited: 2026-07-22 (authenticated per-request `timeout` override; media upload 30s)._
 
 ## Scope
 Frontend API layer lives in `src/api/` and is used by `src/actions/` and client hooks.
@@ -18,7 +18,7 @@ Transport code is grouped by folder (SoT owners stay as separate files inside fo
 | `src/api/hooks/` | SWR hooks |
 
 ## Layers (paths)
-- `transport/api-transport.ts`: ApiTransport + injectable reporter (browser installs Zustand; server never imports Zustand). **Every authenticated request** hard-codes `cache: "no-store"` (browser and server). Only browser **raw GET** may omit cache; only `serverRawFetch` may use endpoint-bound Next Data Cache.
+- `transport/api-transport.ts`: ApiTransport + injectable reporter (browser installs Zustand; server never imports Zustand). **Every authenticated request** hard-codes `cache: "no-store"` (browser and server). Default authenticated timeout is **10s** (`fetch-core` when unset); per-request override via `FetchApiOptions` / `MutationApiOptions`.`timeout` (ms). Only browser **raw GET** may omit cache; only `serverRawFetch` may use endpoint-bound Next Data Cache.
 - `auth/auth-refresh.ts`: refresh eligibility + `validateRotatedTokens` + exact success-envelope helpers.
 - `core/fetch-core.ts` + `fetch-core-redirect.ts`: native Fetch executor; timeout/abort through body-read; overall redirect deadline; Cookie merge generated→caller.
   - **`executeFetchCoreOutcome`** orchestrates only: `prepareFetchCoreRequest` → `dispatchFetchResponse` → `readResponseData` → `toFetchCoreOutcome` (helpers stay file-private; export signature unchanged).

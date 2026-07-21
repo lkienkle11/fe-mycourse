@@ -277,7 +277,7 @@ All HTTP communication and token lifecycle management:
 | `toastApiError` / `translateApiErrorCode` | `lib/utils/api-error.ts` | Map `response.code` → `errors.codes.{code}` |
 | `RequiredLabel` / `FieldError` | `components/shared/` | Form required asterisk + inline Zod errors |
 | `loginService` | `api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | `POST /api/v1/auth/login` |
-| `listMediaFiles` / `uploadMediaFiles` / `deleteMediaFile` | `api/callers/media/media-factory.ts (+ media-browser.ts)` | Media library CRUD (multipart upload, delete by `object_key`) |
+| `listMediaFiles` / `uploadMediaFiles` / `deleteMediaFile` | `api/callers/media/media-factory.ts (+ media-browser.ts)` | Media library CRUD (multipart upload with 30s timeout, delete by `object_key`) |
 | `useMediaFiles` | `api/hooks/media/useMediaFiles.ts` | SWR hook for paginated media list |
 | `useAuth` | `api/hooks/auth/useAuth.ts` | SWR hook for current user |
 | `useApiError` | `store/api-error-store.ts` | Global error store (max 20 entries) |

@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-07-21 (internal refresh-upstream raw helper; locked RawApiOptions; removed syncAuthSessionCookiesAction). Prior: await body cancel; factory/browser; Max-Age; BFF 504._
+_Last audited: 2026-07-22 (authenticated `timeout` per-request; `uploadMediaFiles` uses 30s). Prior: refresh-upstream helper; locked RawApiOptions; Max-Age; BFF 504._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -152,6 +152,8 @@ Every request
 ```
 
 You do **not** need to manually set the Authorization header.
+
+Authenticated default timeout is **10s**. Override per call with `options.timeout` (milliseconds), e.g. `apiPost(url, body, { timeout: 30_000 })`. Media upload uses this for large multipart posts.
 
 ---
 
@@ -457,6 +459,8 @@ See also `docs/taxonomy-admin.md`, `docs/instructor-admin.md`.
 
 Callers live in `src/api/callers/media/media-factory.ts (+ media-browser.ts)`. List uses the same `apiListQueryToRecord()` helper as taxonomy.
 
+Authenticated transport default timeout is **10s**. Multipart upload must pass a longer per-request `timeout` — `uploadMediaFiles` uses **30_000 ms** via `apiPost(..., { timeout: MEDIA_UPLOAD_TIMEOUT_MS })`. Other authenticated calls omit `timeout` and keep the default.
+
 ```ts
 import { listMediaFiles, uploadMediaFiles, deleteMediaFile } from "@/api/callers/media";
 import { useMediaFiles } from "@/api/hooks/media/useMediaFiles";
@@ -469,7 +473,7 @@ const { rows, mutate } = useMediaFiles({
   sort_order: "desc",
 });
 
-await uploadMediaFiles(fileList); // multipart field `files`
+await uploadMediaFiles(fileList); // multipart field `files`; 30s timeout
 await deleteMediaFile(objectKey); // path param is object_key, not UUID
 ```
 
