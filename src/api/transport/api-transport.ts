@@ -17,7 +17,7 @@ import type {
 } from "../auth/auth-runtime";
 import { createBrowserProxyRuntimeAdapter } from "../auth/browser-auth";
 import {
-  executeFetchCoreOutcome,
+  executeFetchCoreOutcomeWithExecutor,
   type FailedHttpResponse,
   type HttpMethod,
   type ReplayableBody,
@@ -39,6 +39,7 @@ import {
   sanitizeApiErrorCause,
 } from "../core/fetch-error";
 import { mergeHeadersCaseInsensitive } from "../core/fetch-helpers";
+import { createAuthenticatedXiorRequestExecutor } from "../xior/client";
 
 export type BaseApiOptions = {
   headers?: Record<string, string>;
@@ -329,10 +330,20 @@ export function createApiTransport(config: ApiTransportConfig): ApiTransport {
     }): Promise<ApiResult<T>> {
       const method = init.method as HttpMethod;
       const options = init.options ?? {};
-      let headers = mergeHeadersCaseInsensitive(options.headers);
-      headers = await attachServerAuthorization(runtime, headers);
-
-      const outgoingHadBearer = requestSentNonEmptyBearer(headers);
+      const headers = mergeHeadersCaseInsensitive(options.headers);
+      let outgoingHadBearer = requestSentNonEmptyBearer(headers);
+      const executeAuthenticatedXiorRequest =
+        createAuthenticatedXiorRequestExecutor(
+          async (attemptHeaders) =>
+            requestSentNonEmptyBearer(attemptHeaders)
+              ? attemptHeaders
+              : attachServerAuthorization(runtime, attemptHeaders),
+          (resolvedHeaders, attemptInit) => {
+            if (!attemptInit.retried) {
+              outgoingHadBearer = requestSentNonEmptyBearer(resolvedHeaders);
+            }
+          },
+        );
       const credentials =
         runtime.kind === "browser-proxy" ? ("include" as const) : undefined;
       // Authenticated/private/mutation must never use browser HTTP cache.
@@ -349,27 +360,30 @@ export function createApiTransport(config: ApiTransportConfig): ApiTransport {
         attemptHeaders: Record<string, string>,
         retried: boolean,
       ) =>
-        executeFetchCoreOutcome<T>({
-          method,
-          url: init.url,
-          baseURL,
-          trustedOrigin,
-          params: options.params,
-          headers: attemptHeaders,
-          cookies: options.cookies,
-          data: init.data,
-          timeoutMs: options.timeout ?? timeoutMs,
-          credentials,
-          cache,
-          redirect,
-          mode: "authenticated",
-          retried,
-          compress:
-            method === "POST" || method === "PUT" || method === "PATCH"
-              ? (options as MutationApiOptions).compress
-              : undefined,
-          bodyMemo,
-        });
+        executeFetchCoreOutcomeWithExecutor<T>(
+          {
+            method,
+            url: init.url,
+            baseURL,
+            trustedOrigin,
+            params: options.params,
+            headers: attemptHeaders,
+            cookies: options.cookies,
+            data: init.data,
+            timeoutMs: options.timeout ?? timeoutMs,
+            credentials,
+            cache,
+            redirect,
+            mode: "authenticated",
+            retried,
+            compress:
+              method === "POST" || method === "PUT" || method === "PATCH"
+                ? (options as MutationApiOptions).compress
+                : undefined,
+            bodyMemo,
+          },
+          executeAuthenticatedXiorRequest,
+        );
 
       const runAttemptReported = async (
         attemptHeaders: Record<string, string>,
