@@ -226,7 +226,7 @@ src/api/
 │   ├── fetch-core-redirect.ts # followServerRedirects; await releaseAbandonedRedirectBody
 │   ├── fetch-core.ts        # executeFetchCore / Outcome + prepare/dispatch helpers
 │   ├── methods.ts           # createApiMethods(transport) — isomorphic
-│   └── raw-http.ts          # raw* helpers; locked RawApiOptions (no public redirect/trustedOrigin)
+│   └── raw-http.ts          # raw* helpers; optional GET-only cache?: RequestCache; no public redirect/trustedOrigin
 ├── transport/               # Authenticated transport + browser binding
 │   ├── api-transport.ts     # createApiTransport + injectable reporter (no Zustand)
 │   └── browser-api-methods.ts # browserApiMethods + Zustand reporter install
@@ -252,7 +252,7 @@ src/api/
 
 Import convention: prefer `@/api/...` paths under `core/`, `transport/`, `auth/`, `server/`. Public app code may keep using `@/api` barrel for `api*` / `raw*` / errors. **Server Actions must import `@/api/callers/<domain>/*-factory` (or course-factory), not the domain barrel alone if that would evaluate browser bindings.**
 
-Authenticated transport always sets `cache: "no-store"`. Intermediate server redirect responses **await** body cancel before the next hop. Credential refresh uses `rawPostRefreshUpstream` (internal fail-closed redirect), not public `RawApiOptions`.
+Authenticated transport always sets `cache: "no-store"`. Intermediate server redirect responses **await** body cancel before the next hop. Credential refresh uses `rawPostRefreshUpstream` (internal fail-closed redirect). Public raw GET may opt into Fetch `cache` (e.g. `force-cache`); omitting `cache` keeps browser HTTP default / server `no-store`. Mutations stay `no-store`.
 
 ### `src/store/` — Global State (Zustand)
 
