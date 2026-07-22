@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-07-09 (OAuth callback middleware bypass: locale-less `/auth/*/callback` excluded from next-intl redirect). Prior: 2026-07-09 (OAuth callback: locale-less + English-only relay copy). Prior: 2026-07-08 (locale-less `/auth/discord/callback` + retained `/auth/x/callback`). Prior: 2026-07-02 (`/{locale}/become-instructor` documented)._
+_Last audited: 2026-07-22 (unmounted account/forgot-password: keep route constants; comment Link/menu usage to block prefetch). Prior: OAuth COOP note; OAuth callback middleware bypass._
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
 
@@ -109,6 +109,19 @@ export const config = {
 **Discord (wired to popup):** `redirect_uri` is `<origin>/auth/discord/callback`, built in `startDiscordLoginAction` from `NEXT_PUBLIC_DISCORD_CALLBACK_URL`. The page runs as a popup: it reads `code` / `state` / `error` from the query string, `postMessage`s them to `window.opener` (origin-scoped), and closes itself. The opener's `useDiscordLogin` listener (`DISCORD_OAUTH_MESSAGE_TYPE`) then completes login via `discordLoginAction`.
 
 **X (retained, not on popup):** `redirect_uri` is `<origin>/auth/x/callback`, built in `startXLoginAction` from `NEXT_PUBLIC_X_CALLBACK_URL`. Same popup relay pattern via `useXLogin` (`X_OAUTH_MESSAGE_TYPE`) and `xLoginAction`.
+
+**COOP / OAuth popup:** OAuth popup flows need the opener and popup to share a browsing context group. If Cloudflare (or another edge proxy) sets `Cross-Origin-Opener-Policy: same-origin` (or a restrictive variant) on the FE origin, `window.opener` may be null and focus/postMessage can break. Prefer omitting COOP on the marketing/auth origin, or use a popup-compatible value; verify at the proxy — FE app code does not set COOP today. See `docs/deploy.md`.
+
+### Unmounted account / forgot-password paths (no app pages)
+
+These path **constants and href helpers stay in the codebase** (`src/constants/route.ts`, `src/lib/navigation/routes.ts`) for later use. There is **no** matching `src/app/[locale]/…/page.tsx` yet:
+
+| Path | Status |
+|------|--------|
+| `/forgot-password` | Constant + `forgotPasswordHref` kept. Login `Link` usage is **commented**; temporary non-navigating label until the page ships (no prefetch 404). |
+| `/my-courses`, `/my-cart`, `/wishlist`, `/notifications`, `/account-settings` | Constants + href helpers kept. Live config in `HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING`; **not** spread into `HEADER_DROPDOWN_ITEMS` until pages exist (commented spread). |
+
+Do not delete route/API constants or business code. Do not “fix” missing routes by silencing the console — temporarily comment (or `prefetch={false}` only where a Link must stay) the **usage** that would prefetch.
 
 Role dashboards use **URL segments** (not route groups) with a dedicated `DashboardLayout` shell:
 

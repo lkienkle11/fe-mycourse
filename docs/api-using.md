@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-07-22 (compress body memo + force Content-Encoding + abort-aware gzip; raw GET cache; media 30s). Prior: refresh-upstream; Max-Age; BFF 504._
+_Last audited: 2026-07-22 (server sanitized logs; browser no custom Console; compress body memo retained). Prior: raw GET cache; media 30s._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -330,23 +330,35 @@ Eligibility helper: `canMoveCourseToTrash` in `src/lib/utils/course.ts` (mirrors
 
 ## Error Handling
 
-Client-side API errors are pushed to `useApiError` by the browser-installed reporter (server path logs only; never imports Zustand). Reporter messages are FE-owned (`HTTP ${status}` / transport-typed); never BE body `message`. Server Actions bind callers via `create*Callers` imported from `*-factory.ts` so the server graph never evaluates `browserApiMethods`.
+Client-side **abnormal** API errors are pushed to `useApiError` by the browser-installed reporter. Server path never imports Zustand. Reporter messages are FE-owned (`HTTP ${status}` / transport-typed); never BE body `message`, tokens, cookies, session IDs, Authorization headers, or sensitive bodies.
+
+**Classification** (`reportApiError` in `api-transport.ts` — no logging env vars / feature flags):
+
+| Class | Examples | Console `[API]` | Zustand |
+|-------|----------|-----------------|---------|
+| Expected | `ApiRefreshRequiredError` only | never | never |
+| Logged | all **4xx** (incl. guest `GET /me` 401); **5xx**; timeout; **abort**; **network** (incl. `ERR_BLOCKED_BY_CLIENT`); **parse**; policy; replay | **`isServer()` OR `NODE_ENV === "development"`** | browser yes |
+
+Production **browser**: no custom `[API]`. Server (any env) and local development: sanitized Console for the logged set above. Do not blanket-skip `status < 500`, guest `/me` 401, or ad-blocker network errors. `toastApiError`: i18n from `code`; development may `console.debug({ code, message })`.
+
+Do not silence bad navigations by hiding console — prevent missing-route Links/prefetch instead (see `docs/screens.md` / `docs/router.md`).
 
 ```ts
 import { useApiError } from "@/store/api-error-store";
 const { lastError, errors, clear } = useApiError();
 ```
 
-For component-level error handling, check `ApiResult.error` or `ApiResult.data.code`:
+For component-level error handling, catch transport throws or check application `code`:
 
 ```ts
-const { data, error } = await apiFetch<T>(url);
-if (error) {
+try {
+  const { data } = await apiFetch<ApiResponse<T>>(url);
+  if (data.code !== 0) {
+    // Application-level error — use toastApiError / translateApiErrorCode, never data.message
+  }
+} catch (error) {
   // Network / HTTP-level error (ApiHttpError / ApiTransportError)
-}
-if (data && data.code !== 0) {
-  // Application-level error (business logic)
-  toast.error(data.message);
+  toastApiError(tErrors, error);
 }
 ```
 

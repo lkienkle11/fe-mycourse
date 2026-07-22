@@ -73,16 +73,16 @@ Errors: translateApiErrorCode (BE 4013–4017/4019, 4023–4025; FE-local 4018, 
 
 ## 2. Token Refresh Flow (Transparent)
 
-Owned by `src/api/transport/api-transport.ts` + adapters (`browser-auth` / `server-auth`). Non-2xx HTTP outcomes throw `ApiHttpError`. Timeout / network / abort / parse / policy errors thrown from `fetch-core` are reported via `reportApiError` before rethrow (console + Zustand on browser per reporter matrix). Reporter uses FE-owned safe copy only — never BE body `message`. `ApiRefreshRequiredError` is server-logged once via `reportApiError` then rethrown. Body-read abort/timeout use the shared abort lifecycle (`ApiAbortError` / `ApiTimeoutError`); only non-abort body failures become `ApiResponseParseError`. BFF refresh maps `ApiTimeoutError` → 504.
+Owned by `src/api/transport/api-transport.ts` + adapters (`browser-auth` / `server-auth`). Non-2xx HTTP outcomes throw `ApiHttpError`. Timeout / network / **abort** / parse / policy errors thrown from `fetch-core` pass through `reportApiError` before rethrow. **Expected** = `ApiRefreshRequiredError` only. Guest `GET /me` 401 and `ERR_BLOCKED_BY_CLIENT` **are logged**. **Logged** set includes all 4xx, 5xx, abort, network, parse, timeout, policy, replay. Console `[API]` when **`isServer()` OR `NODE_ENV === "development"`**; production browser silent + Zustand. BFF refresh maps `ApiTimeoutError` → 504.
 
 ```
 Any authenticated request fails
   ↓
 HTTP non-2xx → FailedHttpResponse descriptor
-  OR transport throw (timeout/network/abort/parse/policy) → reportApiError → rethrow
+  OR transport throw (timeout/network/abort/parse/policy) → reportApiError (filter) → rethrow
   ↓
 Refresh eligibility (401/403 + X-Token-Expired or 401 without Bearer; not already retried)
-  If not eligible → reportApiError(ApiHttpError) → throw
+  If not eligible → reportApiError(ApiHttpError, filter) → throw
   ↓
   browser-proxy:
     rawPost absolute same-origin URL: `${window.location.origin}/api/auth/refresh`
@@ -91,10 +91,11 @@ Refresh eligibility (401/403 + X-Token-Expired or 401 without Bearer; not alread
   server-writable:
     rawPost BE refresh with X-Refresh-Token + X-Session-Id; persist cookies
   server-readonly / no-context:
-    throw ApiRefreshRequiredError (no refresh, no cookie write)
+    throw ApiRefreshRequiredError (expected — no reporter console/store)
   ↓
   Refresh succeeds? → retry once with rotated Bearer
   Refresh fails? → throw original protected ApiHttpError with sanitized refresh cause
+    (guest `GET /me` 401 and other 4xx still reported)
 ```
 
 **Important notes:**
@@ -208,7 +209,7 @@ Config rule (menu + PermissionRequirement):
   permissions undefined or [] → visible (when authenticated)
   permissionMode omitted → "all" (AND, mirrors BE RequirePermission)
   permissionMode "any" → OR guard
-  current temporary state: legacy study/account links use commented config guards; role-switch links still require role-modify permissions
+  current temporary state: HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING not spread into HEADER_DROPDOWN_ITEMS (route constants kept); role-switch links still require role-modify permissions
   current i18n state: all header dropdown items provide both `title` and `titleKey`
 
 User menu filter flow:
@@ -273,11 +274,12 @@ Convention:
 API call fails (transport throws or Server Action returns !success)
   ↓
 extractApiError(error) or result.code from AuthActionResult
-  → { code, message }   // message = dev reference only (console.debug in development)
+  → { code, message }   // message kept for mappers only — never Console / never UI
   ↓
 translateApiErrorCode(tErrors, code)  OR  toastApiError(tErrors, error)
   → tErrors = useTranslations("errors.codes")
   → key = String(code); unknown → fallback 9999
+  → toastApiError: toast + optional development `console.debug({ code })` (never BE message)
   ↓
 Toast or inline <p> — user never sees BE message string
 ```

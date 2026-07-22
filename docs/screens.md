@@ -325,26 +325,28 @@ AuthLayout
       Displays: avatar (pickCharacter fallback), display_name, email
       └── DropdownMenu (Radix)
             ├── Role-switch group: Sysadmin, Admin, Instructor
-            ├── Study group: My Courses, My Cart, Wishlist
-            ├── Account group: Notifications, Account Settings
+            ├── Study group: My Courses, My Cart, Wishlist *(commented in config until pages exist)*
+            ├── Account group: Notifications, Account Settings *(commented in config until pages exist)*
             └── Session group: Logout
 ```
 
+Account study/settings paths (`/my-courses`, `/my-cart`, `/wishlist`, `/notifications`, `/account-settings`) and `/forgot-password` **remain as route constants + href helpers**. Pages are not under `src/app/` yet, so active `Link` usage would prefetch 404. Study/account groups live in **`HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING`** and are **not** spread into `HEADER_DROPDOWN_ITEMS` (commented spread — do not delete). Uncomment the spread when matching `app/[locale]/…/page.tsx` exists. Login forgot-password: keep the `Link` snippet commented; temporary label only.
+
 #### Dropdown menu items (`HEADER_DROPDOWN_ITEMS` in `src/constants/common.ts`; types in `src/types/user-menu.ts`)
 
-| Item | Route | Permissions (FE UI guard) |
-|------|-------|---------------------------|
-| My Courses | `/my-courses` | *(temporarily none — config guard commented out)* |
-| My Cart | `/my-cart` | *(temporarily none — config guard commented out)* |
-| Wishlist | `/wishlist` | *(temporarily none — config guard commented out)* |
-| Notifications | `/notifications` | *(temporarily none — config guard commented out)* |
-| Account Settings | `/account-settings` | *(temporarily none — config guard commented out)* |
-| Sysadmin | `/sysadmin` | `sysadmin:modify` |
-| Admin | `/admin` | `admin:modify` |
-| Instructor | `/instructor` | `instructor:modify` |
-| Logout | `/logout` | *(none — always visible when logged in)* |
+| Item | Route | Permissions (FE UI guard) | Active in UI |
+|------|-------|---------------------------|--------------|
+| My Courses | `/my-courses` | *(temporarily none — config guard commented out)* | In `HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING` (not spread) |
+| My Cart | `/my-cart` | *(temporarily none — config guard commented out)* | In `HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING` (not spread) |
+| Wishlist | `/wishlist` | *(temporarily none — config guard commented out)* | In `HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING` (not spread) |
+| Notifications | `/notifications` | *(temporarily none — config guard commented out)* | In `HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING` (not spread) |
+| Account Settings | `/account-settings` | *(temporarily none — config guard commented out)* | In `HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING` (not spread) |
+| Sysadmin | `/sysadmin` | `sysadmin:modify` | Yes |
+| Admin | `/admin` | `admin:modify` | Yes |
+| Instructor | `/instructor` | `instructor:modify` | Yes |
+| Logout | `/logout` | *(none — always visible when logged in)* | Yes |
 
-Groups `roles`, `study`, `account`, and `session` have no group-level permissions (gating is per item). `UserMenuDropdownItems` calls `useFilteredUserMenuGroups()`; the role-switch links are filtered by role-modify permissions, while the legacy study/account links currently remain visible because their per-item guards are intentionally commented out. All current items expose `titleKey` → `commonHeader.userMenu.*` while retaining the existing `title` string in config.
+Groups `roles` and `session` render. Study/account groups are preserved as comments in the same file. `UserMenuDropdownItems` calls `useFilteredUserMenuGroups()`; role-switch links are filtered by role-modify permissions. Items expose `titleKey` → `commonHeader.userMenu.*` while retaining the existing `title` string in config.
 
 Rendered via `UserMenuDropdownItems` in `UserMenu` and `SidebarAuthFooter`.
 

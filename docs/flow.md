@@ -342,14 +342,16 @@ BE and FE must use the **same** `AUTH_COOKIE_DOMAIN` (e.g. `yourdomain.net`) on 
 
 ## 5. Global Error Handling
 
-**Goal:** Surface API failures to the user and allow global observability.
+**Goal:** Server observability for **abnormal** failures (sanitized); browser UI gets codes/toasts only — no custom Console API logs and no server-log leakage.
 
-The Fetch transport reporter calls `reportError(error)` for every failed request. This:
+`reportApiError` in `src/api/transport/api-transport.ts` runs on transport throws and final HTTP failures. It:
 
-1. Logs `[API] METHOD /path → HTTP status | appCode=N | message` to the console.
-2. Calls `useApiError.getState().push({ statusCode, appCode, message, url, method })`.
+1. **Skips expected noise** (no server log, no Zustand): `ApiRefreshRequiredError` only.
+2. **Logs** all **4xx** (incl. guest `GET /me` 401), **5xx**, timeout, **abort**, **network** (incl. `ERR_BLOCKED_BY_CLIENT`), **parse**, policy, replay: one entry per incident.
+3. **Console `[API]`:** when **`isServer()` OR `NODE_ENV === "development"`** (sanitized). Production browser never prints `[API]`.
+4. **Browser Zustand:** same logged set → `useApiError.push` (not on server). `toastApiError` uses `code` → i18n; development may `console.debug({ code, message })`.
 
-The `useApiError` Zustand store (`src/store/api-error-store.ts`) retains the last 20 errors. UI components can subscribe:
+The `useApiError` Zustand store (`src/store/api-error-store.ts`) retains the last 20 **abnormal** errors. UI components can subscribe:
 
 ```ts
 import { useApiError } from "@/store/api-error-store";
