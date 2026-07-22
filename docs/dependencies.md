@@ -26,7 +26,7 @@ All dependencies for the `fe-mycourse` project. Checked against `package.json`.
 
 | Package | Version | Role |
 |---------|---------|------|
-| `xior` | **0.8.3** (exact) | HTTP client over the Next.js Fetch runtime — `ApiTransport` in `src/api/transport/api-transport.ts` with runtime adapters for auth header injection and transparent token refresh |
+| `xior` | **0.8.3** (exact) | HTTP lifecycle over Next.js Fetch — raw/auth instance factory plus request/response interceptors; `ApiTransport` retains the transparent refresh state machine outside plugins |
 | `js-cookie` | 3.0.5 | Client-side cookie read/write (used inside `src/lib/utils/cookie.ts` for browser-side token access) |
 
 ---

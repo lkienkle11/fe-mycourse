@@ -271,16 +271,19 @@ const { me, isLoading, error, mutate } = useAuth();
 
 ### 4.1 Authenticated request auth attach
 
-Every authenticated request goes through `createApiTransport` / `apiTransport`, whose HTTP attempt is executed by Xior 0.8.3 over the Next.js Fetch runtime:
+Every authenticated request goes through `createApiTransport` / `apiTransport`. The transport creates an isolated authenticated Xior 0.8.3 executor for that request; its request interceptor resolves runtime headers immediately before the native Fetch attempt, while the response interceptor preserves native success/non-2xx metadata for the existing policy layer:
 
 ```
 Request
-  └─ Server: transport reads access_token via next/headers and sets
+  └─ Server: Xior request interceptor asks the transport runtime for
+      access_token via next/headers and sets
       Authorization: Bearer <access_token>
   └─ Client: does not attach Authorization manually; browser sends HttpOnly cookies
       via credentials:include and BE reads access_token from cookie
   └─ If access_token cookie is missing / empty → no bearer context → BE returns 401 "missing bearer token"
 ```
+
+The interceptor does not refresh tokens. `ApiTransport` still owns refresh eligibility, browser single-flight, server capability checks, cookie rotation, reporter behavior and the single protected-request retry. This prevents Xior plugins from changing mutation or body-replay semantics.
 
 ### 4.2 Token refresh flow
 
@@ -310,7 +313,7 @@ Transport throws (timeout/network/abort/parse/policy) before HTTP outcome
 Any other final 4xx/5xx → reportApiError → throw ApiHttpError
 ```
 
-Server authenticated redirects (`followServerRedirects` in `src/api/core/fetch-core-redirect.ts`) follow only **301 / 302 / 303 / 307 / 308**. Other 3xx (including **304**) are returned as the final response and are not treated as Location hops. Hop validation/state updates are file-private helpers (`resolveRedirectTargetUrl`, `applyRedirectHopState`); intermediate bodies are **await**-cancelled via `releaseAbandonedRedirectBody`. Credential refresh uses `rawPostRefreshUpstream` (`redirect: "error"` + trusted origin); public `RawApiOptions` stays locked without those fields.
+Server authenticated redirects (`followServerRedirects` in `src/api/core/fetch-core.ts`) follow only **301 / 302 / 303 / 307 / 308**. Other 3xx (including **304**) are returned as the final response and are not treated as Location hops. The file-private loop validates each Location and trusted origin, enforces visited/hop limits, applies status-specific method/body rewrites, and **awaits** intermediate body cancellation. Credential refresh uses `rawPostRefreshUpstream` (`redirect: "error"` + trusted origin); public `RawApiOptions` stays locked without those fields.
 
 ### 4.3 Refresh request format
 

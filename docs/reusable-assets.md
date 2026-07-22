@@ -1039,11 +1039,11 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ### Asset: executeFetchCore / executeFetchCoreOutcome
 - **Name**: `executeFetchCore`, `executeFetchCoreOutcome`
-- **Type**: Xior-backed Fetch policy executor (raw + authenticated modes)
-- **Path**: `src/api/xior/client.ts` + `src/api/core/fetch-core.ts` (+ `fetch-core-redirect.ts` for server authenticated hops)
-- **Purpose**: Xior 0.8.3 supplies the HTTP lifecycle over Next.js Fetch. Fetch-core remains the single project policy owner for `prepareFetchCoreRequest` → `dispatchFetchResponse` → `toFetchCoreOutcome`, redirect hops, body replay/gzip and typed error metadata. **Do not change public signatures** when shortening internals.
+- **Type**: Fetch policy executor backed by raw/authenticated Xior lifecycle instances
+- **Path**: `src/api/xior/client.ts` + `src/api/core/fetch-core.ts`
+- **Purpose**: Xior 0.8.3 supplies the HTTP lifecycle over Next.js Fetch through a shared executor factory. Request interceptors resolve runtime headers and preserve native Fetch config; response interceptors preserve success/non-2xx response metadata. Fetch-core is the single project policy owner for `prepareFetchCoreRequest` → `dispatchFetchResponse` → `toFetchCoreOutcome`, including trusted-origin redirect hops, body replay/gzip and typed error metadata. **Do not change public signatures** when shortening internals.
 - **Scope**: `api-transport` (`runAttempt`), `raw-http`, `serverRawFetch`, `executeFetchCore` wrapper.
-- **Dependencies**: `xior`, `fetch-core-body`, `fetch-core-redirect`, `fetch-helpers`, `fetch-error`, `isServer`.
+- **Dependencies**: `xior` (no plugins), `fetch-core-body`, `fetch-helpers`, `fetch-error`, `isServer`.
 
 ### Asset: serverRawFetch
 - **Name**: `serverRawFetch<T>(url, options)`
@@ -1079,7 +1079,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `apiTransport`
 - **Type**: Xior-backed ApiTransport
 - **Path**: `src/api/transport/api-transport.ts`
-- **Purpose**: Browser authenticated Xior-backed transport with runtime adapters: server Bearer attach from cookies, refresh eligibility, one retry, reporter matrix (`reportApiError` → sanitized server process log; browser `[API]` Console only when `NODE_ENV === "development"`; browser Zustand always for abnormal). Refresh failure attaches a sanitized cause; browser refresh uses absolute same-origin `/api/auth/refresh`. Default timeout 10s; per-request `options.timeout` (ms) overrides transport/`fetch-core` default (e.g. media upload 30s).
+- **Purpose**: Browser authenticated transport that creates an isolated Xior executor per request. The Xior request interceptor resolves server Bearer headers from the runtime; its response interceptor preserves typed HTTP metadata. `ApiTransport` retains refresh eligibility, one retry and the reporter matrix (`reportApiError` → sanitized server process log; browser `[API]` Console only when `NODE_ENV === "development"`; browser Zustand always for abnormal). Refresh failure attaches a sanitized cause; browser refresh uses absolute same-origin `/api/auth/refresh`. Default timeout 10s; per-request `options.timeout` (ms) overrides transport/`fetch-core` default (e.g. media upload 30s).
 - **Scope**: Used via `apiFetch`/`apiPost` etc. in `src/api/core/methods.ts` (browser) or `createApiMethods` after FromRequest factories (server).
 - **Dependencies**: `xior/client`, `fetch-core`, `browser-auth` / `server-auth`, `useApiError`, `isServer`.
 

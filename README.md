@@ -175,6 +175,8 @@ Create a `.env` file at the project root (gitignored). In production use `.env.p
 
 Six authenticated helpers on `browserApiMethods` — `apiFetch`, `apiPost`, `apiPut`, `apiPatch`, `apiDelete`, and **`apiOptions`** (HTTP OPTIONS) — all return `ApiResult<T>` (defined in `src/types/api.ts`):
 
+The HTTP attempt is owned by an exact-pinned Xior instance. Raw traffic uses one shared executor with no auth/refresh behavior; each authenticated transport request creates an isolated executor from the same Xior factory. The request interceptor applies runtime-provided headers and preserves native Fetch options (`cache`, `next`, credentials, redirect and signal). The response interceptor exposes both successful and non-2xx native responses to the existing project error contract. Token refresh, one-retry, reporter, body replay/gzip and trusted-origin redirect rules remain outside Xior plugins.
+
 ```ts
 interface ApiResult<T = unknown> {
   data: T;                          // parsed response body
@@ -392,7 +394,7 @@ Otherwise (wrong kind of 401/403, other status) → report + reject immediately
 
 ### Raw HTTP (`src/api/core/raw-http.ts` + `src/api/index.ts`)
 
-`rawFetch`, `rawPost`, `rawPut`, `rawPatch`, `rawDelete`, and `rawOptions` call the Xior-backed executor via `src/api/core/fetch-core.ts` (no MyCourse auth, no refresh, no error store). The adapter preserves Next.js Fetch cache semantics, body replay, redirect policy and `ApiResult<T>` metadata. The public barrel **`src/api/index.ts`** re-exports both `api*` and `raw*` symbols so callers can `import { apiFetch, rawPost } from "@/api"`.
+`rawFetch`, `rawPost`, `rawPut`, `rawPatch`, `rawDelete`, and `rawOptions` call the shared raw Xior executor via `src/api/core/fetch-core.ts` (no MyCourse auth, no refresh, no error store). The Xior interceptors preserve Next.js Fetch cache semantics and native response metadata, while Fetch policy retains body replay, gzip and redirect security. The public barrel **`src/api/index.ts`** re-exports both `api*` and `raw*` symbols so callers can `import { apiFetch, rawPost } from "@/api"`.
 
 ### Browser refresh single-flight
 

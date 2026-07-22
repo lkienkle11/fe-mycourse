@@ -73,7 +73,7 @@ Errors: translateApiErrorCode (BE 4013–4017/4019, 4023–4025; FE-local 4018, 
 
 ## 2. Token Refresh Flow (Transparent)
 
-Owned by `src/api/transport/api-transport.ts` + adapters (`browser-auth` / `server-auth`). Non-2xx HTTP outcomes throw `ApiHttpError`. Timeout / network / **abort** / parse / policy errors thrown from `fetch-core` pass through `reportApiError` before rethrow. **Expected** (no custom Console / Zustand): guest `GET /api/v1/me` 401, `ERR_BLOCKED_BY_CLIENT`, `ApiRefreshRequiredError`. **Logged** set: other 4xx, 5xx, abort, network (non-blocked), parse, timeout, policy, replay. Custom Console `[API]` only when **`isServer()` OR `NODE_ENV === "development"`**; production browser → **0** custom API Console. BFF refresh maps `ApiTimeoutError` → 504.
+Owned by `src/api/transport/api-transport.ts` + adapters (`browser-auth` / `server-auth`). A request-scoped Xior executor performs the HTTP lifecycle: the request interceptor resolves runtime authorization and the response interceptor preserves native non-2xx metadata. Refresh eligibility, one-retry and reporting remain in `ApiTransport`, not Xior plugins. Non-2xx HTTP outcomes throw `ApiHttpError`. Timeout / network / **abort** / parse / policy errors thrown from `fetch-core` pass through `reportApiError` before rethrow. **Expected** (no custom Console / Zustand): guest `GET /api/v1/me` 401, `ERR_BLOCKED_BY_CLIENT`, `ApiRefreshRequiredError`. **Logged** set: other 4xx, 5xx, abort, network (non-blocked), parse, timeout, policy, replay. Custom Console `[API]` only when **`isServer()` OR `NODE_ENV === "development"`**; production browser → **0** custom API Console. BFF refresh maps `ApiTimeoutError` → 504.
 
 ```
 Any authenticated request fails
