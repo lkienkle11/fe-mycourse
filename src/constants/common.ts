@@ -12,33 +12,13 @@ import {
 } from "@/lib/navigation/routes";
 import type { UserMenuGroup } from "@/types/user-menu";
 
-export const HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
-  {
-    key: "roles",
-    value: [
-      {
-        href: sysadminRootHref,
-        title: "Sysadmin",
-        titleKey: "sysadmin",
-        status: "normal",
-        permissions: [PERMISSIONS.SysadminModify],
-      },
-      {
-        href: adminRootHref,
-        title: "Admin",
-        titleKey: "admin",
-        status: "normal",
-        permissions: [PERMISSIONS.AdminModify],
-      },
-      {
-        href: instructorRootHref,
-        title: "Instructor",
-        titleKey: "instructor",
-        status: "normal",
-        permissions: [PERMISSIONS.InstructorModify],
-      },
-    ],
-  },
+/**
+ * Study + account menu groups — kept for later wiring.
+ * Not spread into `HEADER_DROPDOWN_ITEMS` yet: those paths have no
+ * `app/[locale]/…/page.tsx`, and Next.js `Link` would prefetch 404.
+ * Uncomment the spread in `HEADER_DROPDOWN_ITEMS` when pages ship.
+ */
+export const HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING: UserMenuGroup[] = [
   {
     key: "study",
     value: [
@@ -84,6 +64,41 @@ export const HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
       },
     ],
   },
+];
+
+/**
+ * Header / sidebar account menu (active render).
+ * Account study/settings groups: see `HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING`.
+ */
+export const HEADER_DROPDOWN_ITEMS: UserMenuGroup[] = [
+  {
+    key: "roles",
+    value: [
+      {
+        href: sysadminRootHref,
+        title: "Sysadmin",
+        titleKey: "sysadmin",
+        status: "normal",
+        permissions: [PERMISSIONS.SysadminModify],
+      },
+      {
+        href: adminRootHref,
+        title: "Admin",
+        titleKey: "admin",
+        status: "normal",
+        permissions: [PERMISSIONS.AdminModify],
+      },
+      {
+        href: instructorRootHref,
+        title: "Instructor",
+        titleKey: "instructor",
+        status: "normal",
+        permissions: [PERMISSIONS.InstructorModify],
+      },
+    ],
+  },
+  // TODO(account-pages): restore render when pages exist — uncomment next line.
+  // ...HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING,
   {
     key: "session",
     value: [

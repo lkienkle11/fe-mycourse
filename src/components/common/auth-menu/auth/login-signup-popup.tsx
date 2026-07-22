@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogTitle,
 } from "@/components/ui";
 import { Button } from "@/components/ui/button";
@@ -31,9 +32,14 @@ export function LoginSignupPopup({
     closeAllModals();
   };
 
+  const title = authAction === "signup" ? "Sign up" : "Sign in";
+  const description =
+    authAction === "signup"
+      ? "Create a MyCourse account"
+      : "Sign in to your MyCourse account";
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogTitle />
       <DialogContent
         showCloseButton={false}
         overlayClassName="z-300 bg-black/50 backdrop-blur-sm"
@@ -42,6 +48,8 @@ export function LoginSignupPopup({
           contentClassName,
         )}
       >
+        <DialogTitle className="sr-only">{title}</DialogTitle>
+        <DialogDescription className="sr-only">{description}</DialogDescription>
         <div
           className={cn(
             "scrollbar-app relative w-full max-w-200 overflow-y-auto rounded-xl bg-popover ring-1 ring-foreground/10",

@@ -16,8 +16,9 @@ import { useAuthStore, useGetMe } from "@/hooks";
 import { useDiscordLogin } from "@/hooks/auth/use-discord-login";
 import { useGoogleLogin } from "@/hooks/auth/use-google-login";
 import { useOAuthPostAuth } from "@/hooks/auth/use-oauth-post-auth";
-import { Link, useRouter } from "@/i18n/navigation";
-import { forgotPasswordHref } from "@/lib/navigation/routes";
+import { useRouter } from "@/i18n/navigation";
+// import { Link } from "@/i18n/navigation";
+// import { forgotPasswordHref } from "@/lib/navigation/routes";
 import { cn } from "@/lib/utils";
 import { translateApiErrorCode } from "@/lib/utils/api-error";
 import { type LoginFormValues, loginSchema } from "@/schema/auth";
@@ -162,14 +163,20 @@ export function LoginContent({ className }: { className?: string }) {
             orientation="horizontal"
             className="justify-end items-center text-end"
           >
+            {/* TODO(forgot-password-page): restore Link when /forgot-password exists
+                (avoids Next prefetch 404). Keep forgotPasswordHref / PUBLIC_ROUTES.
             <Link
               href={forgotPasswordHref}
-              className="hover:no-underline hover:cursor-pointer no-underlin"
+              className="hover:no-underline hover:cursor-pointer no-underline"
             >
               <Label className="hover:no-underline hover:cursor-pointer no-underline text-[#3DCBB1] hover:brightness-110 transition-all duration-300">
                 {t("forgotPassword")}
               </Label>
             </Link>
+            */}
+            <Label className="cursor-default no-underline text-[#3DCBB1]/opacity-70">
+              {t("forgotPassword")}
+            </Label>
           </Field>
         </div>
 
