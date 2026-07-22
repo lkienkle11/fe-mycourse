@@ -4,6 +4,7 @@
  */
 
 import { ApiErrorCode } from "@/constants/api-error-code";
+import { API_PRIVATE_ROUTES } from "@/constants/api-route";
 import { isServer } from "@/lib/utils/runtime";
 import type { ApiResult } from "@/types/api";
 import {
@@ -120,21 +121,61 @@ function buildHttpError(
   });
 }
 
-/**
- * Expected noise — never console, never Zustand.
- * Only `ApiRefreshRequiredError` (readonly/no-context cannot refresh).
- * Guest GET /me 401 and ERR_BLOCKED_BY_CLIENT are logged.
- */
-function isExpectedApiReporterNoise(error: unknown): boolean {
-  return error instanceof ApiRefreshRequiredError;
+/** True when a browser extension blocked the request (adblock — expected). */
+function isBlockedByClientError(error: unknown): boolean {
+  const marker = "ERR_BLOCKED_BY_CLIENT";
+  const texts: string[] = [];
+  if (error instanceof Error) {
+    texts.push(error.message);
+  }
+  if (error && typeof error === "object" && "cause" in error) {
+    const cause = (error as { cause?: unknown }).cause;
+    if (cause instanceof Error) {
+      texts.push(cause.message);
+    } else if (typeof cause === "string") {
+      texts.push(cause);
+    }
+  }
+  return texts.some((text) => text.includes(marker));
+}
+
+function apiErrorPathname(rawUrl: string): string {
+  try {
+    const hasScheme = /^[a-z][a-z\d+\-.]*:/i.test(rawUrl);
+    const url = hasScheme
+      ? new URL(rawUrl)
+      : new URL(rawUrl, "http://invalid.local");
+    return url.pathname;
+  } catch {
+    return "";
+  }
+}
+
+/** Anonymous probe: GET /api/v1/me → 401 — expected (getMeService → null). */
+function isGuestMeUnauthorized(error: unknown): boolean {
+  if (!isApiHttpError(error)) return false;
+  if (error.response.status !== 401) return false;
+  if (error.request.method.toUpperCase() !== "GET") return false;
+  return apiErrorPathname(error.request.url) === API_PRIVATE_ROUTES.user.getMe;
 }
 
 /**
- * Logged failures: all 4xx (incl. guest /me 401), 5xx, timeout, abort,
- * network (incl. ERR_BLOCKED_BY_CLIENT), parse, policy, replay.
- * One incident → one record.
- * Console `[API]`: when **server OR** `NODE_ENV === "development"` (sanitized).
- * Production browser: no Console — Zustand only.
+ * Expected noise — never custom Console, never Zustand.
+ * Guest GET /me 401, ERR_BLOCKED_BY_CLIENT, refresh-required.
+ * Other 4xx / abort / timeout / network / parse / policy are NOT noise.
+ */
+function isExpectedApiReporterNoise(error: unknown): boolean {
+  if (error instanceof ApiRefreshRequiredError) return true;
+  if (isBlockedByClientError(error)) return true;
+  if (isGuestMeUnauthorized(error)) return true;
+  return false;
+}
+
+/**
+ * Logged failures: other 4xx, 5xx, timeout, abort, network (non-blocked),
+ * parse, policy, replay. One incident → one record.
+ * Custom Console `[API]`: **server OR** `NODE_ENV === "development"` only.
+ * Production browser: **0** custom Console — Zustand only for logged set.
  * Never tokens/cookies/session/Authorization/bodies in the log line.
  */
 function reportApiError(
@@ -172,7 +213,7 @@ function reportApiError(
   const safeUrl = redactApiErrorUrl(meta.url);
   const line = `[API] ${meta.method} ${safeUrl} → HTTP ${statusCode} | appCode=${appCode} | ${message}`;
 
-  // Server (any env) OR development (browser/SSR local diagnostic).
+  // Manual Console: server (any env) OR development only — never production browser.
   if (isServer() || process.env.NODE_ENV === "development") {
     console.error(line);
   }
