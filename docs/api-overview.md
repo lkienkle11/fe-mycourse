@@ -121,10 +121,10 @@ List query extends `ApiListQueryParams` with `search_by`, `search_value`, **`loc
 4. Client form validation uses separate `*.validation.*` namespaces — not `errors.codes.*`.
 5. Authenticated transport reporter (`transport/api-transport.ts` → `reportApiError`) must **not** log or store BE body `message`, tokens, cookies, session IDs, Authorization headers, or sensitive request/response bodies. For `ApiHttpError`, reporter builds FE-owned copy from status (+ appCode); it must **not** reuse `error.message` when that string was derived from BE body. Keep raw body only on `ApiHttpError.response.data` for code mappers (never print that body in logs).
 6. **Reporter matrix (no extra env / feature flag):**
-   - **Expected (never log, never Zustand):** `ApiRefreshRequiredError` only (readonly/no-context boundary cannot refresh). Do **not** treat guest `GET /me` 401, `ERR_BLOCKED_BY_CLIENT`, or all status &lt; 500 as noise.
-   - **Logged when `isServer()` OR `NODE_ENV === "development"`:** HTTP **4xx** (including guest `GET /me` 401), HTTP **5xx**, `ApiTimeoutError`, `ApiAbortError`, `ApiNetworkError` (including `ERR_BLOCKED_BY_CLIENT`), `ApiResponseParseError`, `ApiPolicyError`, `ApiRequestReplayError`.
-   - **Console `[API]` (sanitized):** `isServer() || NODE_ENV === "development"`. Production **browser** never prints custom `[API]`. Log line uses FE-owned message (timeout/abort/network/parse text or `HTTP ${status}` / `policy ${code}`) — never tokens/cookies/session/Authorization/bodies.
-   - **Zustand `pushApiError`:** browser only (not server), same logged set.
+   - **Expected (never custom Console, never Zustand):** guest `GET /api/v1/me` → `401`; `ERR_BLOCKED_BY_CLIENT`; `ApiRefreshRequiredError`. Do **not** blanket-skip all status &lt; 500 — other 4xx stay logged.
+   - **Logged when `isServer()` OR `NODE_ENV === "development"` (custom `[API]` Console only):** other HTTP **4xx**, HTTP **5xx**, `ApiTimeoutError`, `ApiAbortError`, `ApiNetworkError` (non-blocked), `ApiResponseParseError`, `ApiPolicyError`, `ApiRequestReplayError`.
+   - **Production browser:** never prints custom `[API]` / reporter `console.*`. Acceptance: guest homepage → **0** custom API Console lines.
+   - **Zustand `pushApiError`:** browser only (not server), same logged set (not expected).
    - **`toastApiError`:** UI uses numeric `code` → i18n; development may `console.debug({ code, message })` for diagnosis.
 7. Browser refresh BFF (`POST /api/auth/refresh`): upstream `ApiTimeoutError` → HTTP **504**; other network failures → **502**. Classify with `instanceof ApiTimeoutError`, never regex on `error.message` for timeout mapping (blocked-by-client detection may use a safe substring on the live error/cause only). Error DTO to the browser uses allowlisted codes + fixed safe messages only.
 8. `parseMaxAgeForCookie`: Max-Age digits must end at `;`, whitespace, or end-of-attribute; malformed suffix → `undefined` (fail closed).
