@@ -1,5 +1,5 @@
 export {
-  extractAxiosApiError,
+  extractApiError,
   resolveApiErrorMessageKey,
   toastApiError,
   translateApiErrorCode,

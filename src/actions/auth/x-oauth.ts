@@ -2,7 +2,8 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
-import { xLoginService } from "@/api/callers/auth";
+import { createWritableServerApiMethods } from "@/api/auth/server-auth";
+import { createAuthCallers } from "@/api/callers/auth/auth-factory";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { finalizeAuthLoginAction } from "@/lib/utils/auth-action";
 import {
@@ -118,8 +119,9 @@ export async function xLoginAction(payload: {
   }
 
   try {
+    const auth = createAuthCallers(await createWritableServerApiMethods());
     return await finalizeAuthLoginAction(() =>
-      xLoginService({
+      auth.xLoginService({
         code: payload.code,
         code_verifier: verifier,
         remember_me: entrypoint === "login" ? rememberRaw : false,
