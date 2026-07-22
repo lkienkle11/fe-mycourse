@@ -22,7 +22,7 @@ import {
 
 export type RawServerFetchApiOptions = Omit<
   RawApiOptions,
-  "cookies" | "withCredentials" | "signal" | "cache"
+  "cookies" | "withCredentials" | "signal"
 > & {
   cacheProfileId: PublicCacheProfileId;
 };

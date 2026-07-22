@@ -150,7 +150,7 @@ Manual refresh: call `mutate()` after submit, resubmit, or contact-admin — not
 
 ## Remote combobox data
 
-Port from `code-temp/` — HTTP via **`rawFetch`** from `src/api/core/raw-http.ts` (timeout, signal; optional GET `cache`) for third-party URLs. Privacy: user queries are sent from the browser to HH.ru / Wikidata / Cloudflare static JSON.
+Port from `code-temp/` — HTTP via **`rawFetch`** from `src/api/core/raw-http.ts` (timeout, signal) for third-party URLs. Privacy: user queries are sent from the browser to HH.ru / Wikidata / Cloudflare static JSON.
 
 | Dataset | URL | Fallback |
 |---------|-----|----------|

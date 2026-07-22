@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-07-22 (raw GET optional `cache`; authenticated timeout; media 30s). Prior: refresh-upstream helper; Max-Age; BFF 504._
+_Last audited: 2026-07-22 (authenticated `timeout` per-request; `uploadMediaFiles` uses 30s). Prior: refresh-upstream helper; locked RawApiOptions; Max-Age; BFF 504._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -525,26 +525,6 @@ import {
 ```
 
 `useAuth` exposes `errorCode` for non-401 GET failures. PATCH body: `{ avatar_file_id?: uuid }` (optional).
-
----
-
-## Raw helpers (`rawFetch` / `rawPost` / …)
-
-Public options: `headers`, `cookies`, `params`, `timeout`, `withCredentials`, `baseURL`, `signal`, and optional **`cache?: RequestCache`**.
-
-| Request | When `cache` omitted | When `cache` set |
-|---|---|---|
-| `rawFetch` (GET) | Browser: omit Fetch cache (HTTP semantics). Server: `no-store` | Use caller value (e.g. `"force-cache"`) — **GET only** |
-| POST/PUT/PATCH/DELETE/OPTIONS | Always `no-store` | Ignored; still `no-store` |
-
-```ts
-import { rawFetch } from "@/api/core/raw-http";
-
-await rawFetch(url); // defaults unchanged
-await rawFetch(url, { cache: "force-cache" }); // opt-in browser/HTTP cache mode
-```
-
-**TTL caveat:** approving `cache` on `RawApiOptions` does **not** make `force-cache` expire after 30 seconds. Exact TTL still needs response `Cache-Control: max-age=30`, an app Cache Storage timestamp, or Next `revalidate: 30` via `serverRawFetch` profiles. Fetch `cache` alone is opt-in browser cache, not a precise TTL.
 
 ---
 

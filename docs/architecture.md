@@ -271,7 +271,7 @@ All HTTP communication and token lifecycle management:
 | browser/server refresh adapters | `api/auth/browser-auth.ts`, `api/auth/server-auth.ts`, `api/auth/refresh-upstream-raw.ts` | Browser proxy + writable server refresh via credential-safe raw helper |
 | `createWritableServerApiMethods` | `api/auth/server-auth.ts` | Server Actions: request-scoped writable `ApiMethods` |
 | `refreshBrowserSession` | `api/auth/browser-auth.ts` | Browser single-flight refresh promise |
-| `rawPost` / `rawFetch` / … | `api/core/raw-http.ts` | Native Fetch helpers → `ApiResult<T>` (no MyCourse auth); raw GET may pass optional `cache` |
+| `rawPost` / `rawFetch` / … | `api/core/raw-http.ts` | Native Fetch helpers → `ApiResult<T>` (no MyCourse auth) |
 | `apiFetch` / `apiPost` / `apiPut` / `apiDelete` / `apiOptions` | `api/core/methods.ts` | Low-level helpers on `apiTransport` → `ApiResult<T>` |
 | `getMeService` / `patchMeService` / `deleteMeService` / `getMyPermissionsService` | `api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | Me API callers |
 | `toastApiError` / `translateApiErrorCode` | `lib/utils/api-error.ts` | Map `response.code` → `errors.codes.{code}` |
