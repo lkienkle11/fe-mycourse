@@ -26,7 +26,7 @@ All dependencies for the `fe-mycourse` project. Checked against `package.json`.
 
 | Package | Version | Role |
 |---------|---------|------|
-| *(none — native Fetch)* | — | HTTP client — `ApiTransport` in `src/api/transport/api-transport.ts` with runtime adapters for auth header injection and transparent token refresh |
+| `xior` | **0.8.3** (exact) | HTTP lifecycle over Next.js Fetch — raw/auth instance factory plus request/response interceptors; `ApiTransport` retains the transparent refresh state machine outside plugins |
 | `js-cookie` | 3.0.5 | Client-side cookie read/write (used inside `src/lib/utils/cookie.ts` for browser-side token access) |
 
 ---
@@ -197,5 +197,5 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 7. **Toasts**: Use `sonner` (`toast.success`, `toast.error`, etc.) for user-facing notifications.
 8. **Stream events**: Subscribe with `hooks/events/*`; send WS via `postSocketOutbound`, broadcast via `postBroadcastOutbound`. Do not add a second WebSocket/SSE library without updating [`delivery.md`](./delivery.md).
 9. **Server-only modules**: Use runtime dep `server-only` (0.0.1) with `import "server-only"` at file top (e.g. `auth-session.ts`). Never re-export from client-safe barrels (`@/lib/utils`).
-10. **Dead-code gate**: Dev dep `knip` (6.17.1) — `npm run deadcode`; config [`knip.json`](../knip.json). Pin version; run `npm install` after `package.json` changes to refresh `package-lock.json`.
+10. **Dead-code gate**: Dev dep `knip` (6.17.1) — `npm run deadcode`; config [`knip.json`](../knip.json). Pin versions; install Xior with `npm install --save-exact xior@0.8.3`, then run `npm ci` to verify the lockfile is reproducible.
 11. **Quality gates**: Run **`npm run check-all`** before PRs (or **`npm run test-all`** to match CI without build). CI on **`dev`** enforces `test-all` in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.

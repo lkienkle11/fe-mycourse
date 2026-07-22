@@ -1,10 +1,17 @@
 /**
- * Single native Fetch executor shared by raw and authenticated transports.
- * Always calls `globalThis.fetch` — no fetchImpl escape hatch.
+ * Fetch-core policy orchestrator shared by raw and authenticated transports.
+ * The actual HTTP attempt is delegated to the Xior adapter; this module keeps
+ * MyCourse-specific URL, body, timeout, redirect and error policy.
  */
 
 import { isServer } from "@/lib/utils/runtime";
 import type { ApiResult } from "@/types/api";
+import {
+  executeXiorOnce,
+  type SharedAbortLifecycle,
+  XiorHeaderResolutionError,
+  type XiorRequestExecutor,
+} from "../xior/client";
 import {
   buildAuthenticatedBody,
   buildRawBody,
@@ -14,15 +21,12 @@ import {
   type ReplayableBody,
 } from "./fetch-core-body";
 import {
-  followServerRedirects,
-  type SharedAbortLifecycle,
-} from "./fetch-core-redirect";
-import {
   ApiAbortError,
   type ApiErrorRequest,
   ApiHttpError,
   ApiNetworkError,
   type ApiPolicyErrorCode,
+  ApiRequestReplayError,
   ApiResponseParseError,
   ApiTimeoutError,
   redactApiErrorUrl,
@@ -145,6 +149,139 @@ function assertTrustedOrigin(
   }
 }
 
+const FOLLOW_REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+const REDIRECT_BODY_HEADERS =
+  "content-type content-length content-encoding content-language content-location".split(
+    " ",
+  );
+
+async function releaseAbandonedRedirectBody(response: Response): Promise<void> {
+  try {
+    await response.body?.cancel();
+  } catch {
+    // Cancel failures must not mask typed redirect/policy errors.
+  }
+}
+
+async function followServerRedirects(
+  init: FetchCoreInit,
+  startUrl: string,
+  body: ReplayableBody,
+  headers: Record<string, string>,
+  executeOnce: XiorRequestExecutor,
+  lifecycle: SharedAbortLifecycle,
+): Promise<Response> {
+  const maxHops = init.maxRedirectHops ?? 5;
+  const visited = new Set<string>([startUrl]);
+  const currentHeaders = { ...headers };
+  const retried = Boolean(init.retried);
+  let currentUrl = startUrl;
+  let currentMethod = init.method;
+  let dropBody = false;
+  let hops = 0;
+  const request = (url = currentUrl, method = currentMethod) => ({
+    url: redactApiErrorUrl(url),
+    method,
+    retried,
+  });
+  const fail = (code: ApiPolicyErrorCode, message: string, url = currentUrl) =>
+    throwApiPolicyError(code, message, request(url));
+
+  while (true) {
+    const response = await executeOnce(
+      { ...init, method: currentMethod, redirect: "manual", timeoutMs: false },
+      currentUrl,
+      {
+        ...body,
+        bodyForAttempt: (attempt) =>
+          dropBody ? null : body.bodyForAttempt(attempt),
+      },
+      currentHeaders,
+      init.retried ? 1 : 0,
+      lifecycle,
+    );
+
+    if (response.status < 300 || response.status >= 400) return response;
+
+    // Only hop statuses become redirect locations. 304 and other 3xx
+    // responses remain the final response.
+    if (!FOLLOW_REDIRECT_STATUSES.has(response.status)) return response;
+
+    hops += 1;
+    if (hops > maxHops) {
+      await releaseAbandonedRedirectBody(response);
+      fail("redirect-hop-limit", "Redirect hop limit exceeded");
+    }
+
+    const location = response.headers.get("location");
+    if (!location) {
+      await releaseAbandonedRedirectBody(response);
+      fail("redirect-location-missing", "Redirect Location missing");
+    }
+
+    let nextUrl = new URL(currentUrl);
+    try {
+      try {
+        nextUrl = new URL(location as string, currentUrl);
+      } catch {
+        fail("redirect-location-invalid", "Redirect Location invalid");
+      }
+      if (nextUrl.protocol !== "http:" && nextUrl.protocol !== "https:") {
+        fail(
+          "unsupported-protocol",
+          "Redirect target protocol unsupported",
+          nextUrl.toString(),
+        );
+      }
+      if (nextUrl.username || nextUrl.password) {
+        fail(
+          "embedded-credentials",
+          "Redirect target has embedded credentials",
+          nextUrl.toString(),
+        );
+      }
+      assertTrustedOrigin(
+        nextUrl,
+        init.trustedOrigin,
+        request(nextUrl.toString()),
+      );
+    } catch (error) {
+      await releaseAbandonedRedirectBody(response);
+      throw error;
+    }
+    const nextHref = nextUrl.toString();
+    if (visited.has(nextHref)) {
+      await releaseAbandonedRedirectBody(response);
+      fail("redirect-loop", "Redirect loop detected", nextHref);
+    }
+    visited.add(nextHref);
+
+    const hopStatus = response.status;
+    await releaseAbandonedRedirectBody(response);
+
+    const bodylessMethod = currentMethod === "GET" || currentMethod === "HEAD";
+    const rewriteToGet =
+      (hopStatus === 303 && !bodylessMethod) ||
+      ((hopStatus === 301 || hopStatus === 302) && currentMethod === "POST");
+    const nextMethod = rewriteToGet ? "GET" : currentMethod;
+    const nextDropBody = bodylessMethod || hopStatus === 303 || rewriteToGet;
+
+    if (nextDropBody) {
+      for (const header of REDIRECT_BODY_HEADERS) {
+        deleteHeader(currentHeaders, header);
+      }
+    } else if (!body.replayable) {
+      throw new ApiRequestReplayError({
+        message: "Redirect requires replayable body",
+        request: request(nextHref, nextMethod),
+      });
+    }
+    currentMethod = nextMethod;
+    dropBody = nextDropBody;
+    currentUrl = nextHref;
+  }
+}
+
 function composeAbortSignal(
   caller: AbortSignal | undefined,
   timeoutMs: number | false,
@@ -253,54 +390,8 @@ function classifyFetchFailure(
   });
 }
 
-async function executeOnce(
-  init: FetchCoreInit,
-  resolvedUrl: string,
-  body: ReplayableBody,
-  headers: Record<string, string>,
-  attempt: 0 | 1,
-  lifecycle: SharedAbortLifecycle,
-): Promise<Response> {
-  const request = {
-    url: redactApiErrorUrl(resolvedUrl),
-    method: init.method,
-    retried: Boolean(init.retried) || attempt === 1,
-  };
-
-  const fetchInit: RequestInit & {
-    next?: { revalidate?: number | false; tags?: string[] };
-  } = {
-    method: init.method,
-    headers,
-    body: body.bodyForAttempt(attempt),
-    signal: lifecycle.signal,
-    redirect: init.redirect ?? "follow",
-  };
-
-  if (init.credentials) {
-    fetchInit.credentials = init.credentials;
-  }
-  if (init.cache) {
-    fetchInit.cache = init.cache;
-  }
-  if (init.next && isServer()) {
-    fetchInit.next = init.next;
-  }
-
-  try {
-    return await globalThis.fetch(resolvedUrl, fetchInit);
-  } catch (error) {
-    classifyFetchFailure(
-      error,
-      lifecycle.getAbortKind(),
-      request,
-      init.redirect,
-    );
-  }
-}
-
 /**
- * Execute one native Fetch request and return ApiResult on 2xx.
+ * Execute one Xior-backed request and return ApiResult on 2xx.
  * Non-2xx responses throw ApiHttpError with parsed metadata (raw path).
  */
 
@@ -536,8 +627,43 @@ async function prepareFetchCoreRequest(
 
 async function dispatchFetchResponse(
   prepared: PreparedFetchCore,
+  executeXiorRequest: XiorRequestExecutor,
 ): Promise<Response> {
   const { init, resolvedUrl, body, headers, redirect, lifecycle } = prepared;
+
+  const executeAttempt = async (
+    attemptInit: FetchCoreInit,
+    attemptUrl: string,
+    attemptBody: ReplayableBody,
+    attemptHeaders: Record<string, string>,
+    attempt: 0 | 1,
+    attemptLifecycle: SharedAbortLifecycle,
+  ): Promise<Response> => {
+    try {
+      return await executeXiorRequest(
+        attemptInit,
+        attemptUrl,
+        attemptBody,
+        attemptHeaders,
+        attempt,
+        attemptLifecycle,
+      );
+    } catch (error) {
+      if (error instanceof XiorHeaderResolutionError) {
+        throw error.original;
+      }
+      classifyFetchFailure(
+        error,
+        attemptLifecycle.getAbortKind(),
+        {
+          url: redactApiErrorUrl(attemptUrl),
+          method: attemptInit.method,
+          retried: Boolean(attemptInit.retried) || attempt === 1,
+        },
+        attemptInit.redirect,
+      );
+    }
+  };
 
   if (init.mode === "authenticated" && isServer() && redirect === "manual") {
     return followServerRedirects(
@@ -545,13 +671,12 @@ async function dispatchFetchResponse(
       resolvedUrl,
       body,
       headers,
-      executeOnce,
-      assertTrustedOrigin,
+      executeAttempt,
       lifecycle,
     );
   }
 
-  return executeOnce(
+  return executeAttempt(
     { ...init, redirect, timeoutMs: false },
     resolvedUrl,
     body,
@@ -601,9 +726,17 @@ function toFetchCoreOutcome<T>(
 export async function executeFetchCoreOutcome<T>(
   init: FetchCoreInit,
 ): Promise<FetchCoreOutcome<T>> {
+  return executeFetchCoreOutcomeWithExecutor(init, executeXiorOnce);
+}
+
+/** Internal authenticated entry point; public helpers keep their signatures. */
+export async function executeFetchCoreOutcomeWithExecutor<T>(
+  init: FetchCoreInit,
+  executeXiorRequest: XiorRequestExecutor,
+): Promise<FetchCoreOutcome<T>> {
   const prepared = await prepareFetchCoreRequest(init);
   try {
-    const response = await dispatchFetchResponse(prepared);
+    const response = await dispatchFetchResponse(prepared, executeXiorRequest);
     const meta = parseFetchResponseMeta(response);
     const data = await readResponseData(
       response,
