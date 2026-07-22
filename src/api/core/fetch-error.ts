@@ -1,5 +1,5 @@
 /**
- * Typed transport errors for the native Fetch API layer.
+ * Typed transport errors for the Xior-backed Fetch transport layer.
  * Public consumers should prefer `isApiHttpError` / `isApiTransportError` guards.
  */
 

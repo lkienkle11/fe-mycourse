@@ -1,10 +1,12 @@
 /**
- * Single native Fetch executor shared by raw and authenticated transports.
- * Always calls `globalThis.fetch` — no fetchImpl escape hatch.
+ * Fetch-core policy orchestrator shared by raw and authenticated transports.
+ * The actual HTTP attempt is delegated to the Xior adapter; this module keeps
+ * MyCourse-specific URL, body, timeout, redirect and error policy.
  */
 
 import { isServer } from "@/lib/utils/runtime";
 import type { ApiResult } from "@/types/api";
+import { executeXiorOnce } from "../xior/client";
 import {
   buildAuthenticatedBody,
   buildRawBody,
@@ -253,54 +255,8 @@ function classifyFetchFailure(
   });
 }
 
-async function executeOnce(
-  init: FetchCoreInit,
-  resolvedUrl: string,
-  body: ReplayableBody,
-  headers: Record<string, string>,
-  attempt: 0 | 1,
-  lifecycle: SharedAbortLifecycle,
-): Promise<Response> {
-  const request = {
-    url: redactApiErrorUrl(resolvedUrl),
-    method: init.method,
-    retried: Boolean(init.retried) || attempt === 1,
-  };
-
-  const fetchInit: RequestInit & {
-    next?: { revalidate?: number | false; tags?: string[] };
-  } = {
-    method: init.method,
-    headers,
-    body: body.bodyForAttempt(attempt),
-    signal: lifecycle.signal,
-    redirect: init.redirect ?? "follow",
-  };
-
-  if (init.credentials) {
-    fetchInit.credentials = init.credentials;
-  }
-  if (init.cache) {
-    fetchInit.cache = init.cache;
-  }
-  if (init.next && isServer()) {
-    fetchInit.next = init.next;
-  }
-
-  try {
-    return await globalThis.fetch(resolvedUrl, fetchInit);
-  } catch (error) {
-    classifyFetchFailure(
-      error,
-      lifecycle.getAbortKind(),
-      request,
-      init.redirect,
-    );
-  }
-}
-
 /**
- * Execute one native Fetch request and return ApiResult on 2xx.
+ * Execute one Xior-backed request and return ApiResult on 2xx.
  * Non-2xx responses throw ApiHttpError with parsed metadata (raw path).
  */
 
@@ -539,19 +495,50 @@ async function dispatchFetchResponse(
 ): Promise<Response> {
   const { init, resolvedUrl, body, headers, redirect, lifecycle } = prepared;
 
+  const executeAttempt = async (
+    attemptInit: FetchCoreInit,
+    attemptUrl: string,
+    attemptBody: ReplayableBody,
+    attemptHeaders: Record<string, string>,
+    attempt: 0 | 1,
+    attemptLifecycle: SharedAbortLifecycle,
+  ): Promise<Response> => {
+    try {
+      return await executeXiorOnce(
+        attemptInit,
+        attemptUrl,
+        attemptBody,
+        attemptHeaders,
+        attempt,
+        attemptLifecycle,
+      );
+    } catch (error) {
+      classifyFetchFailure(
+        error,
+        attemptLifecycle.getAbortKind(),
+        {
+          url: redactApiErrorUrl(attemptUrl),
+          method: attemptInit.method,
+          retried: Boolean(attemptInit.retried) || attempt === 1,
+        },
+        attemptInit.redirect,
+      );
+    }
+  };
+
   if (init.mode === "authenticated" && isServer() && redirect === "manual") {
     return followServerRedirects(
       { ...init, redirect: "manual", timeoutMs: false },
       resolvedUrl,
       body,
       headers,
-      executeOnce,
+      executeAttempt,
       assertTrustedOrigin,
       lifecycle,
     );
   }
 
-  return executeOnce(
+  return executeAttempt(
     { ...init, redirect, timeoutMs: false },
     resolvedUrl,
     body,

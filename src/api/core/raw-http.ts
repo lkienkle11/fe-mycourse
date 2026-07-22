@@ -1,5 +1,5 @@
 /**
- * Bare Fetch helpers — no MyCourse auth, no refresh, no global error store.
+ * Bare Xior-backed HTTP helpers — no MyCourse auth, no refresh, no global error store.
  * Public RawApiOptions: optional GET-only `cache`; no redirect/trustedOrigin.
  */
 

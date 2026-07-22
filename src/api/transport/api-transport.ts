@@ -1,5 +1,5 @@
 /**
- * Authenticated ApiTransport — native Fetch with runtime-bound refresh.
+ * Authenticated ApiTransport — Xior-backed Fetch with runtime-bound refresh.
  * Isomorphic / client-safe. Must not import Next cookie APIs or writable server runtime adapters.
  */
 
