@@ -207,52 +207,47 @@ src/hooks/auth/use-oauth-popup-login.ts # Generic popup OAuth hook (Discord + X 
 src/components/auth/oauth-popup-callback-relay.tsx # Shared /auth/*/callback postMessage relay
 ```
 
-OAuth server actions reuse the shared `finalizeAuthLoginAction` helper in `src/lib/utils/auth-action.ts` (sets session cookies via `setAuthSessionCookies`, maps errors via `mapAuthApiError`). `loginAction` and `confirmAction` use the same helper.
+OAuth server actions reuse the shared `finalizeAuthLoginAction` helper in `src/lib/utils/auth-action.ts` (sets session cookies via `setAuthSessionCookies`, maps errors via `mapAuthAxiosError`). `loginAction` and `confirmAction` use the same helper.
 
 ### `src/api/` — HTTP Client Layer
 
 All communication with the Go backend API.
 
-Transport foundation is grouped by concern (not a flat dump of leaf files). Canonical SoT owners remain **separate files** inside these folders — do not inline them solely for line-budget:
-
 ```
 src/api/
-├── index.ts                 # Public barrel (no server-only re-exports)
-├── cache.ts                 # Dormant dual-layer cache (SoT retain)
-├── core/                    # Native Fetch executor + typed helpers
-│   ├── fetch-error.ts       # Errors + parseApiErrorEnvelope + throwApiPolicyError
-│   ├── fetch-helpers.ts     # URL / header / cookie helpers
-│   ├── fetch-core-body.ts   # Replayable bodies (server string → UTF-8 bytes)
-│   ├── fetch-core-redirect.ts # followServerRedirects; await releaseAbandonedRedirectBody
-│   ├── fetch-core.ts        # executeFetchCore / Outcome + prepare/dispatch helpers
-│   ├── methods.ts           # createApiMethods(transport) — isomorphic
-│   └── raw-http.ts          # raw* helpers; optional GET-only cache?: RequestCache; no public redirect/trustedOrigin
-├── transport/               # Authenticated transport + browser binding
-│   ├── api-transport.ts     # createApiTransport + injectable reporter (no Zustand)
-│   └── browser-api-methods.ts # browserApiMethods + Zustand reporter install
-├── auth/                    # Refresh + runtime adapters
-│   ├── auth-refresh.ts      # Eligibility + rotated tokens + exact envelopes
-│   ├── auth-runtime.ts      # AuthRuntimeAdapter types only
-│   ├── refresh-upstream-raw.ts # rawPostRefreshUpstream (credential refresh; fail-closed redirect)
-│   ├── browser-auth.ts      # Browser single-flight refresh
-│   └── server-auth.ts       # server-only FromRequest + writable methods
-├── server/                  # Server-only public cache path
-│   ├── cache-policy.ts      # Endpoint-bound public cache registry
-│   └── server-raw-http.ts   # serverRawFetch + option/cache guard helpers
-├── callers/                 # create*Callers per domain
+├── index.ts                # Barrel: re-exports api*, raw*, types from all sub-modules
+├── instance.ts             # createApiInstance() — Axios instance + interceptors
+│                           #   Request: attach Authorization: Bearer <access_token>
+│                           #   Response: token refresh mutex, error reporting
+├── axios-helpers.ts        # normalizeHeaders, parseSetCookies, buildAxiosConfigWithCookies (methods + raw-http)
+├── methods.ts              # apiFetch / apiPost / apiPut / apiPatch / apiDelete / apiOptions → ApiResult<T>
+├── raw-http.ts             # rawFetch / rawPost / … plain Axios (token refresh + instructor-application third-party fetches)
+├── cache.ts                # Dual-layer cache (IndexedDB + Map) — implemented but currently not wired in methods.ts
+├── callers/
 │   ├── auth/
-│   │   ├── auth-factory.ts  # isomorphic createAuthCallers + types (no Zustand)
-│   │   ├── auth-browser.ts  # browser singleton services (browserApiMethods)
-│   │   └── index.ts         # re-exports factory + browser (client OK; Server Actions use factory path)
-│   ├── course/ …            # course-factory* isomorphic; course-browser.ts = browser bindings
-│   ├── instructor/ …        # instructor-factory.ts composes roster/application/profile/expertise/ticket; instructor-browser.ts
-│   └── …                    # same factory vs browser split for media/taxonomy
-└── hooks/                   # SWR hooks
+│   │   └── auth.ts         # auth + Me API: getMe/patchMe/deleteMe/getMyPermissions, getMeEndpointKey
+│   │                       # + OAuth: googleLoginService, googleOneTapService, discordLoginService, xLoginService
+│   ├── taxonomy/
+│   │   └── taxonomy.ts     # list/create/patch/delete taxonomy services
+│   ├── instructor/
+│   │   └── instructor.ts   # roster, applications, profiles, expertise, tickets
+│   ├── course/
+│   │   └── course.ts       # course list/detail, draft review, outline CRUD/reorder, leases, learner progress
+│   └── media/
+│       └── media.ts        # list/upload/delete media services
+└── hooks/
+    ├── shared.ts          # useApiListQuery / useApiRowsQuery / useApiDetailQuery
+    ├── auth/
+    │   └── useAuth.ts      # SWR hook: { me, isLoading, error, errorCode, mutate }
+    ├── taxonomy/
+    │   └── useTaxonomy.ts  # useTaxonomyList(resourceKey, filters)
+    ├── instructor/
+    │   └── useInstructor*.ts  # roster, applications, profiles, expertise, tickets
+    ├── course/
+    │   └── useCourses.ts      # editable course list/detail, review queue, learner course hooks
+    └── media/
+        └── useMediaFiles.ts # useMediaFiles(filters)
 ```
-
-Import convention: prefer `@/api/...` paths under `core/`, `transport/`, `auth/`, `server/`. Public app code may keep using `@/api` barrel for `api*` / `raw*` / errors. **Server Actions must import `@/api/callers/<domain>/*-factory` (or course-factory), not the domain barrel alone if that would evaluate browser bindings.**
-
-Authenticated transport always sets `cache: "no-store"`. Intermediate server redirect responses **await** body cancel before the next hop. Credential refresh uses `rawPostRefreshUpstream` (internal fail-closed redirect). Public raw GET may opt into Fetch `cache` (e.g. `force-cache`); omitting `cache` keeps browser HTTP default / server `no-store`. Mutations stay `no-store`.
 
 ### `src/store/` — Global State (Zustand)
 
@@ -455,8 +450,8 @@ src/lib/
 │   ├── url.ts              # buildQueryParams() — query string builder
 │   ├── list-query.ts       # apiListQueryToRecord() — BE list filter → query record (taxonomy + media)
 │   ├── api.ts              # isApiSuccess() — ApiResponse success type guard
-│   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractApiError
-│   ├── auth-action.ts      # finalizeAuthLoginAction, mapAuthApiError — shared login-session cookie finalizer
+│   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractAxiosApiError
+│   ├── auth-action.ts      # finalizeAuthLoginAction, mapAuthAxiosError — shared login-session cookie finalizer
 │   ├── validation-message.ts # resolveValidationMessage, toastValidationError, firstValidationMessageKey
 │   ├── course-delta.ts       # Quill Delta parse/stringify/text helpers + countDeltaNonWhitespace
 │   ├── course.ts             # createCourseBasicInfoState, createCourseSubLessonFormState, buildSubLessonEstimatedDurationPayload, validateSubLessonDurationForm, validateSubLessonFormContent, validateCourseSubmitReadiness, applyQuizAllowMultipleChange, applyQuizOptionCorrectChange, rootOutlineStableId, selectedIdsToMap

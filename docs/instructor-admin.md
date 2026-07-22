@@ -74,14 +74,14 @@ UI gates use `PermissionGate` and sidebar filtering via `useFilteredDashboardIte
 ## API layer
 
 - Routes: `API_PRIVATE_ROUTES.instructor` in `src/constants/api-route.ts`
-- Callers: `src/api/callers/instructor/instructor-factory.ts (+ instructor-browser.ts)`
+- Callers: `src/api/callers/instructor/instructor.ts`
 - Hooks (SWR): `src/api/hooks/instructor/` — roster, applications, profiles, expertise topics/skills, tickets, messages
 - Types: `src/types/instructor.ts` (single profile payload shape for applications and profiles)
 
 Course authoring / review reuses the same dashboard and API patterns:
 
 - instructor routes + review routes live in `API_PRIVATE_ROUTES.course`
-- callers in `src/api/callers/course/course-factory.ts (+ course-browser.ts)`
+- callers in `src/api/callers/course/course.ts`
 - hooks in `src/api/hooks/course/useCourses.ts`
 - types in `src/types/course.ts`
 

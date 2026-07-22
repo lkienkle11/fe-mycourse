@@ -1,8 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { createWritableServerApiMethods } from "@/api/auth/server-auth";
-import { createAuthCallers } from "@/api/callers/auth/auth-factory";
+import { discordLoginService } from "@/api/callers/auth";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { finalizeAuthLoginAction } from "@/lib/utils/auth-action";
 import {
@@ -109,9 +108,8 @@ export async function discordLoginAction(payload: {
   }
 
   try {
-    const auth = createAuthCallers(await createWritableServerApiMethods());
     return await finalizeAuthLoginAction(() =>
-      auth.discordLoginService({
+      discordLoginService({
         code: payload.code,
         remember_me: entrypoint === "login" ? rememberRaw : false,
         entrypoint,

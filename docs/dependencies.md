@@ -26,7 +26,7 @@ All dependencies for the `fe-mycourse` project. Checked against `package.json`.
 
 | Package | Version | Role |
 |---------|---------|------|
-| *(none — native Fetch)* | — | HTTP client — `ApiTransport` in `src/api/transport/api-transport.ts` with runtime adapters for auth header injection and transparent token refresh |
+| `axios` | 1.13.6 | HTTP client — shared `apiInstance` in `src/api/instance.ts` with interceptors for auth header injection and transparent token refresh |
 | `js-cookie` | 3.0.5 | Client-side cookie read/write (used inside `src/lib/utils/cookie.ts` for browser-side token access) |
 
 ---

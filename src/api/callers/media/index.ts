@@ -1,2 +1,1 @@
-export * from "./media-browser";
-export * from "./media-factory";
+export * from "./media";

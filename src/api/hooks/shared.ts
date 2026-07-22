@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import useSWR, { type SWRConfiguration, type SWRResponse } from "swr";
 import useSWRInfinite, { type SWRInfiniteConfiguration } from "swr/infinite";
-import { apiFetch } from "@/api/transport/browser-api-methods";
+import { apiFetch } from "@/api/methods";
 import type { ApiPaginatedData, ApiPaginatedResponse } from "@/types/api";
 
 type QueryKey = string | null;
