@@ -222,16 +222,13 @@ Recommended before PR: **`npm run check-all`** (optionally `npm run fix:biome` o
 | `npm run cycles` | **Pass** | 311 files processed; no circular dependency |
 | `npm run dupl` | **Pass** | **215** files analyzed (UI primitives excluded); **0 clones** (0% duplicated lines) |
 
-_Re-run on 2026-07-20 after Axios→Fetch review fixes: cookie fail-closed, timeout/redirect/Cookie parity, SoT owners, domain callers factories (no FE test suite)._
+_Re-run on 2026-06-08 after validation + code-based API error i18n across Auth/Me/Media/Taxonomy/Instructor/Course: `lint:biome`, `lint`, `tsc --noEmit`, `quality:deps`, `build` pass._
 
 **jscpd dedup refactors (2026-05-27):**
 
 | Was duplicated | Extracted to |
 |----------------|--------------|
-| `api/methods.ts` ↔ `api/raw-http.ts` header/cookie helpers | `src/api/core/fetch-helpers.ts` |
-| Refresh eligibility / rotated-token checks | `src/api/auth/auth-refresh.ts` |
-| Public cache profiles | `src/api/server/cache-policy.ts` (consumed by `server-raw-http.ts`) |
-| AuthRuntimeAdapter types | `src/api/auth/auth-runtime.ts` |
+| `api/methods.ts` ↔ `api/raw-http.ts` header/cookie helpers | `src/api/axios-helpers.ts` |
 | Login ↔ signup email/password fields | `src/components/common/auth-menu/auth/auth-form-fields.tsx` (`AuthEmailPasswordFields`, …) |
 | `DashboardSidebarLevel` ↔ `DashboardSidebarSubLevel` | Single `DashboardSidebarTree` with `level: "root" \| "sub"` in `dashboard-sidebar.tsx` |
 

@@ -23,7 +23,7 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Forms | react-hook-form + zod | 7.x / 4.x | `@hookform/resolvers` bridges the two |
 | i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` (no `ja` routing). Taxonomy **data** labels localize from BE via query `locale` / translation tables — see `docs/taxonomy-admin.md`. |
 | Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup, **3 min** `errorRetryInterval`) for hooks under the provider; `useAuth` sets its own SWR options |
-| HTTP client | Native Fetch (`ApiTransport`) | — | Browser singleton + request-scoped server factories; six `api*` + six `raw*` helpers |
+| HTTP client | Axios | 1.x | Shared instance with request/response interceptors |
 | Global state | Zustand | 5.x | Provider-free stores (auth, me, stream event log) |
 | Realtime (client) | BroadcastChannel, SSE, WebSocket, NDJSON fetch | — | See [`docs/delivery.md`](./delivery.md) |
 | Stream libraries | `reconnecting-websocket`, `@microsoft/fetch-event-source` | 4.x / 2.x | Transports in `src/events/` |
@@ -135,19 +135,13 @@ fe/
 │   │   └── auth/auth.ts            # "use server": loginAction, registerAction, confirmAction, logoutAction (+ deprecated signupAction alias)
 │   │
 │   ├── api/
-│   │   ├── index.ts                # Barrel: api* + raw* + ApiTransport (no server-only)
-│   │   ├── core/                   # Fetch executor + methods/raw
-│   │   ├── transport/              # createApiTransport + browserApiMethods
-│   │   ├── auth/                   # refresh + runtime adapters
-│   │   ├── server/                 # cache-policy + serverRawFetch
-│   │   ├── callers/                # Domain services
-│   │   └── hooks/                  # SWR hooks
-│   │   ├── methods.ts              # api* helpers + option types → ApiResult<T>
-│   │   ├── fetch-helpers.ts        # Shared header/cookie helpers
-│   │   ├── raw-http.ts             # raw* native Fetch (refresh path)
-│   │   ├── server-raw-http.ts      # server-only public-cache raw fetch + profiles
+│   │   ├── index.ts                # Barrel: re-exports api* + raw* + types from instance/methods/raw-http
+│   │   ├── instance.ts             # createApiInstance + singleton apiInstance
+│   │   │                           # Interceptors: Bearer token attach, token refresh
+│   │   ├── methods.ts              # apiFetch / apiPost / apiPut / apiDelete / apiOptions → ApiResult<T>
+│   │   ├── axios-helpers.ts        # Shared header/cookie helpers for methods + raw-http
+│   │   ├── raw-http.ts             # rawFetch / rawPost / … plain Axios (used by doTokenRefresh)
 │   │   ├── cache.ts                # (DISABLED) Client IndexedDB + server Map cache layer
-│   │   ├── runtime/                # browser-auth (+ adapter types), server-auth (+ writable methods)
 │   │   ├── callers/
 │   │   │   └── auth/auth.ts        # login/register/confirm/logout + getMe/patchMe/deleteMe/getMyPermissions
 │   │   └── hooks/
@@ -266,18 +260,17 @@ All HTTP communication and token lifecycle management:
 
 | Symbol | File | Role |
 |--------|------|------|
-| `createApiTransport` | `api/transport/api-transport.ts` | Authenticated Fetch transport factory (+ refresh eligibility) |
-| `apiTransport` | `api/transport/api-transport.ts` | Browser singleton shared by browser callers |
-| browser/server refresh adapters | `api/auth/browser-auth.ts`, `api/auth/server-auth.ts`, `api/auth/refresh-upstream-raw.ts` | Browser proxy + writable server refresh via credential-safe raw helper |
-| `createWritableServerApiMethods` | `api/auth/server-auth.ts` | Server Actions: request-scoped writable `ApiMethods` |
-| `refreshBrowserSession` | `api/auth/browser-auth.ts` | Browser single-flight refresh promise |
-| `rawPost` / `rawFetch` / … | `api/core/raw-http.ts` | Native Fetch helpers → `ApiResult<T>` (no MyCourse auth) |
-| `apiFetch` / `apiPost` / `apiPut` / `apiDelete` / `apiOptions` | `api/core/methods.ts` | Low-level helpers on `apiTransport` → `ApiResult<T>` |
-| `getMeService` / `patchMeService` / `deleteMeService` / `getMyPermissionsService` | `api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | Me API callers |
+| `createApiInstance` | `api/instance.ts` | Axios instance factory with interceptors |
+| `apiInstance` | `api/instance.ts` | Singleton shared by all callers |
+| `doTokenRefresh` | `api/instance.ts` | Calls `rawPost` in `raw-http.ts` for `POST /auth/refresh` (no `apiInstance`) |
+| `scheduleAfterRefresh` / `flushRefreshQueue` | `api/instance.ts` | Client-side mutex queue |
+| `rawPost` / `rawFetch` / … | `api/raw-http.ts` | Plain Axios helpers → `ApiResult<T>`; imported by `instance.ts` only from here |
+| `apiFetch` / `apiPost` / `apiPut` / `apiDelete` / `apiOptions` | `api/methods.ts` | Low-level helpers on `apiInstance` → `ApiResult<T>` |
+| `getMeService` / `patchMeService` / `deleteMeService` / `getMyPermissionsService` | `api/callers/auth/auth.ts` | Me API callers |
 | `toastApiError` / `translateApiErrorCode` | `lib/utils/api-error.ts` | Map `response.code` → `errors.codes.{code}` |
 | `RequiredLabel` / `FieldError` | `components/shared/` | Form required asterisk + inline Zod errors |
-| `loginService` | `api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | `POST /api/v1/auth/login` |
-| `listMediaFiles` / `uploadMediaFiles` / `deleteMediaFile` | `api/callers/media/media-factory.ts (+ media-browser.ts)` | Media library CRUD (multipart upload with 30s timeout, delete by `object_key`) |
+| `loginService` | `api/callers/auth/auth.ts` | `POST /api/v1/auth/login` |
+| `listMediaFiles` / `uploadMediaFiles` / `deleteMediaFile` | `api/callers/media/media.ts` | Media library CRUD (multipart upload, delete by `object_key`) |
 | `useMediaFiles` | `api/hooks/media/useMediaFiles.ts` | SWR hook for paginated media list |
 | `useAuth` | `api/hooks/auth/useAuth.ts` | SWR hook for current user |
 | `useApiError` | `store/api-error-store.ts` | Global error store (max 20 entries) |
@@ -304,21 +297,21 @@ Login and signup calls are proxied through Next.js Server Actions (`"use server"
 
 ### 2. HttpOnly Auth Cookies — Cookie-Based Session
 
-Auth tokens (`access_token`, `refresh_token`, `session_id`) are stored as **HttpOnly**, `SameSite=Lax` cookies. Client-side JavaScript cannot read them (XSS blast radius reduced). The browser sends cookies on API requests via `credentials: "include"`; the Go backend reads the JWT from the `access_token` cookie when no `Authorization` header is present. Server-side Next.js code still reads HttpOnly cookies via `next/headers` and attaches `Authorization: Bearer …` when proxying to the API.
+Auth tokens (`access_token`, `refresh_token`, `session_id`) are stored as **HttpOnly**, `SameSite=Lax` cookies. Client-side JavaScript cannot read them (XSS blast radius reduced). The browser sends cookies on API requests via `withCredentials: true`; the Go backend reads the JWT from the `access_token` cookie when no `Authorization` header is present. Server-side Next.js code still reads HttpOnly cookies via `next/headers` and attaches `Authorization: Bearer …` when proxying to the API.
 
-`buildAuthCookieOptions` (auth cookies) enforces `httpOnly: true` and `secure: true` in production. After silent refresh, the FE BFF proxy and server writable refresh rewrite cookies via `setAuthSessionCookies` using BE `Set-Cookie` Max-Age when available, otherwise the persisted `auth_session_expires_at` HttpOnly cookie. Upstream refresh uses `rawPostRefreshUpstream` (fail-closed redirect + trusted origin); public `rawPost` does not expose those controls.
+`buildAuthCookieOptions` (auth cookies) enforces `httpOnly: true` and `secure: true` in production. After silent refresh, the FE proxy and `syncAuthSessionCookiesAction` rewrite cookies using BE `Set-Cookie` Max-Age when available, otherwise the persisted `auth_session_expires_at` HttpOnly cookie (absolute expiry from last BE Set-Cookie).
 
 **Follow-up (not in this pass):** stop returning raw tokens in JSON body (BE-03), enable CSRF middleware (BE-04).
 
 ### 3. Isomorphic Cookie Layer
 
-`getCookieValue` / `setCookieValue` in `src/lib/utils/cookie.ts` (re-exported from `src/lib/utils/index.ts` as `@/lib/utils`) transparently switch between `js-cookie` (browser) and `next/headers` (server). This allows the same Fetch transport reporter logic to run in both RSC/Server Action and browser contexts without code duplication.
+`getCookieValue` / `setCookieValue` in `src/lib/utils/cookie.ts` (re-exported from `src/lib/utils/index.ts` as `@/lib/utils`) transparently switch between `js-cookie` (browser) and `next/headers` (server). This allows the same Axios interceptor logic to run in both RSC/Server Action and browser contexts without code duplication.
 
 `setAuthSessionCookies` lives in `src/lib/utils/auth-session.ts` with `import "server-only"` — it is **excluded** from the `@/lib/utils` barrel so Client Components never pull in `next/headers`. Server Actions import it directly: `@/lib/utils/auth-session`.
 
 ### 4. Token Refresh Mutex (Client Only)
 
-When multiple concurrent browser requests are eligible for silent refresh simultaneously, only **one** refresh call is issued (`refreshBrowserSession` module-scoped Promise). Waiters share the same success or failure; waiter abort does not cancel the shared refresh. Server writable requests are request-scoped and do not use browser single-flight. Refresh failure attaches a sanitized cause to the original protected-request `ApiHttpError`. Browser refresh always targets an absolute same-origin URL (`window.location.origin + /api/auth/refresh`) so URL validation succeeds.
+When multiple concurrent client requests are **eligible for silent refresh** (expired access per `X-Token-Expired`, or `401` with no Bearer while refresh cookies exist) simultaneously, only **one** refresh call is issued. All others are queued via a `pendingResolvers` array and receive the new token once the single refresh completes. Server-side requests are isolated per user and do not use this mutex.
 
 ### 5. SWR for Current User
 
@@ -461,7 +454,7 @@ API_PUBLIC_ROUTES.auth.logout    → POST /api/v1/auth/logout
 API_PRIVATE_ROUTES.user.getMe    → GET  /api/v1/me
 ```
 
-All paths use the `NEXT_PUBLIC_API_URL` base URL (via `apiTransport`).
+All paths use the `NEXT_PUBLIC_API_URL` base URL (via `apiInstance`).
 
 ---
 

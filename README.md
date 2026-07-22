@@ -1,6 +1,6 @@
 # MyCourse — Frontend (`fe`)
 
-Next.js **16.2** (App Router) client for **MyCourse**: React **19**, **Tailwind CSS 4**, **next-intl** (`en` / `vi`), **SWR**, **native Fetch** (`ApiTransport`), **Zustand**, **react-hook-form** + **Zod**. The UI communicates with the Go API via `NEXT_PUBLIC_API_URL`.
+Next.js **16.2** (App Router) client for **MyCourse**: React **19**, **Tailwind CSS 4**, **next-intl** (`en` / `vi`), **SWR**, **Axios**, **Zustand**, **react-hook-form** + **Zod**. The UI communicates with the Go API via `NEXT_PUBLIC_API_URL`.
 
 > **Locale routing:** Next.js **16** uses **`src/proxy.ts`** (not `middleware.ts`) for the `next-intl` locale proxy. Keep that file in place — see [`docs/deploy.md` Appendix C](docs/deploy.md#appendix-c--middleware-locale-routing-fix).
 
@@ -163,7 +163,7 @@ Create a `.env` file at the project root (gitignored). In production use `.env.p
 | `NEXT_PUBLIC_STREAM_WS_URL` | No | Build + client | WebSocket URL; omit to disable WS transport | `ws://localhost:8080/v1/events/ws` |
 | `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | Build + client | Base URL for NDJSON event stream (no trailing slash) | `http://localhost:8080` |
 
-`ApiTransport` (`src/api/transport/api-transport.ts`) resolves `baseURL` from `NEXT_PUBLIC_API_URL` (or `API_URL` as a server-side fallback). `AUTH_COOKIE_DOMAIN` is read by `loginAction` via `getCookieDomain()` to scope cookies for cross-subdomain auth.
+The Axios instance at `src/api/instance.ts` reads `NEXT_PUBLIC_API_URL` (or `API_URL` as a server-side fallback) as its `baseURL`. `AUTH_COOKIE_DOMAIN` is read by `loginAction` via `getCookieDomain()` to scope cookies for cross-subdomain auth.
 
 **Stream events (v1):** `EventsStreamProvider` in `AppProviders` starts BroadcastChannel (always) plus SSE/WS/gRPC when the env vars above are set. See [`docs/delivery.md`](docs/delivery.md).
 
@@ -171,9 +171,9 @@ Create a `.env` file at the project root (gitignored). In production use `.env.p
 
 ## Low-level API Helpers
 
-### Native Fetch transport (`src/api/core/methods.ts` + `src/api/transport/api-transport.ts`)
+### Shared Axios instance (`src/api/methods.ts` + `src/api/instance.ts`)
 
-Six authenticated helpers on `browserApiMethods` — `apiFetch`, `apiPost`, `apiPut`, `apiPatch`, `apiDelete`, and **`apiOptions`** (HTTP OPTIONS) — all return `ApiResult<T>` (defined in `src/types/api.ts`):
+Five helpers on the singleton `apiInstance` — `apiFetch`, `apiPost`, `apiPut`, `apiDelete`, and **`apiOptions`** (HTTP OPTIONS) — all return `ApiResult<T>` (defined in `src/types/api.ts`):
 
 ```ts
 interface ApiResult<T = unknown> {
@@ -190,7 +190,7 @@ All response headers are flattened to `Record<string, string>`. Multi-value head
 
 ### `cookies`
 
-Parsed from the `Set-Cookie` response header. Each entry `name=value; Path=/; HttpOnly` becomes `{ name: "value" }` (attributes are stripped). Useful when running inside a Server Action / SSR context — where the browser does not automatically receive `Set-Cookie` from upstream Fetch and the cookie must be relayed manually.
+Parsed from the `Set-Cookie` response header. Each entry `name=value; Path=/; HttpOnly` becomes `{ name: "value" }` (attributes are stripped). Useful when running inside a Server Action / SSR context — where the browser does not automatically receive `Set-Cookie` from Axios and the cookie must be relayed manually.
 
 ### Example
 
@@ -219,12 +219,12 @@ const { data, statusCode, headers, cookies } = await apiPost<ApiResponse<null>>(
 LoginContent (client)
   → handleAuthSubmit("login", values)   [auth-form-handler.ts]
     → loginAction(payload)              [src/actions/auth/auth.ts — "use server"]
-      → loginService(payload)           [src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)]
+      → loginService(payload)           [src/api/callers/auth/auth.ts]
         → apiPost(API_PUBLIC_ROUTES.auth.login, payload)
 ```
 
 - **No API endpoint is exposed in the browser network tab** — the call goes through a Next.js Server Action (`"use server"`).
-- **Tokens are set as HttpOnly cookies** via Server Actions (`buildAuthCookieOptions`). Client-side JS cannot read them; the browser sends cookies with `credentials: "include"` and the backend reads session from cookies.
+- **Tokens are set as HttpOnly cookies** via Server Actions (`buildAuthCookieOptions`). Client-side JS cannot read them; the browser sends cookies with `withCredentials: true` and the backend reads session from cookies.
 - The Server Action reads `access_token`, `refresh_token`, and `session_id` from the **JSON response body** (all three are returned by the BE) and sets them as `SameSite=Lax` **HttpOnly** cookies via `next/headers`.
 - **`buildAuthCookieOptions`** (from `src/lib/utils/cookie.ts`) is used for auth cookies. **`buildCookieOptions`** remains for non-auth UI cookies only (`httpOnly: false` default).
 
@@ -234,7 +234,7 @@ LoginContent (client)
 |------|------|
 | `.env` | `NEXT_PUBLIC_API_URL=http://localhost:8080` |
 | `src/schema/auth/auth.ts` | Zod schemas: `loginSchema`, `signupSchema` + inferred types |
-| `src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | `loginService(payload)` — wraps `apiPost` |
+| `src/api/callers/auth/auth.ts` | `loginService(payload)` — wraps `apiPost` |
 | `src/actions/auth/auth.ts` | `loginAction(payload)` Server Action — reads tokens from JSON body, sets HttpOnly cookies |
 | `src/lib/utils/*.ts` | `cn`, `url`, `react`, `user`, `cookie` in barrel `@/lib/utils`; `auth-session.ts` is server-only (import `@/lib/utils/auth-session` in actions, not from barrel) |
 | `src/components/…/auth-form-handler.ts` | `handleAuthSubmit(type, payload)` — shared by LoginContent & SignupContent |
@@ -264,13 +264,13 @@ AuthLayout (client)
   → useAuth()                           [src/api/hooks/auth/useAuth.ts — SWR]
       → getMeService()                  [src/api/callers/auth — apiFetch wrapper]
         → apiFetch(getMeEndpointKey)    [GET /api/v1/me]
-          ↑ Server-side: Authorization: Bearer <access_token> (runtime adapter)
+          ↑ Server-side only: Authorization: Bearer <access_token> (Axios interceptor)
 ```
 
 Optional: `useGetMe()` / `useSyncMeFromAuth()` in [`src/hooks/auth/use-auth-store.ts`](src/hooks/auth/use-auth-store.ts) — shallow `useMeStore` slice and SWR → store sync; `AppProviders` mounts `MeSwrSync` under `SWRConfig` to run the sync (see [`src/components/providers/app-providers.tsx`](src/components/providers/app-providers.tsx)).
 
-- **Header-based auth**: server-side requests (RSC/Server Action) read `access_token` via `next/headers` and set `Authorization: Bearer <token>`. Browser requests rely on `credentials: "include"` so BE reads HttpOnly cookies directly.
-- **Automatic token refresh**: the authenticated Fetch transport retries eligible `401`/`403` failures once. Browser path calls FE proxy `POST /api/auth/refresh` (access_token-only DTO). Writable server path refreshes upstream via `rawPost` and persists cookies with `setAuthSessionCookies`. Readonly RSC fails closed with `ApiRefreshRequiredError`.
+- **Header-based auth**: server-side requests (RSC/Server Action) read `access_token` via `next/headers` and set `Authorization: Bearer <token>`. Browser requests rely on `withCredentials: true` so BE reads HttpOnly cookies directly.
+- **Automatic token refresh**: the response interceptor retries eligible `401`/`403` failures. Browser path calls FE proxy `POST /api/auth/refresh` (no token storage in browser), and proxy forwards explicit refresh headers to BE using HttpOnly cookies read on Next server. Server path still calls BE refresh directly.
 - **401 = not authenticated**: `getMeService` catches 401 and returns `null` instead of throwing, so SWR does not treat it as an error.
 
 ### Conditional Rendering in `AuthLayout`
@@ -286,7 +286,7 @@ Optional: `useGetMe()` / `useSyncMeFromAuth()` in [`src/hooks/auth/use-auth-stor
 | File | Change |
 |------|--------|
 | `src/types/auth/auth.ts` | `MeResponse`, `LoginResponse` (+ `session_id`), `RefreshTokenResponse` |
-| `src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | `getMeEndpointKey`, `getMeService()`, `loginService()`, … (no refreshTokenService — refresh via transport/BFF) |
+| `src/api/callers/auth/auth.ts` | `getMeEndpointKey`, `getMeService()`, `loginService()`, `refreshTokenService()` |
 | `src/api/hooks/auth/useAuth.ts` | SWR hook returning `{ me, isLoading, error, mutate }` |
 | `src/hooks/auth/use-auth-store.ts` | Re-export `useAuthStore`; `useGetMe()`; `useSyncMeFromAuth()` — shallow `useMeStore` + SWR → store sync |
 | `src/components/…/auth-layout.tsx` | Header chrome: `useAuth()` → skeleton / `UserMenu` / `AuthButton` + `LoginSignupPopup` |
@@ -369,36 +369,37 @@ const canManage = useSatisfiesPermissions({
 
 ---
 
-## Token Refresh (`src/api/transport/api-transport.ts` + `src/api/auth/*` adapters)
+## Token Refresh Interceptor (`src/api/instance.ts`)
 
 ### How it works
 
-An automatic rotation runs **before** the error is surfaced if **all** of the following hold: response is `401` or `403`; the request has not already been retried; and **either** the response includes `X-Token-Expired: true` **or** the failed request had **no** non-empty `Authorization: Bearer …` and the status is `401` (missing access token while a session still exists).
+An automatic rotation runs **before** the error is surfaced if **all** of the following hold: response is `401` or `403`; the request has not already been retried (`_retry`); and **either** the response includes `X-Token-Expired: true` **or** the failed request had **no** non-empty `Authorization: Bearer …` and the status is `401` (missing access token while a session still exists).
 
 ```
 Request → BE → 401 (or 403 with X-Token-Expired)
   │
-  ├─ [eligible, not retried]
-  │     Browser: POST /api/auth/refresh (single-flight promise)
-  │     Writable server: raw upstream refresh + setAuthSessionCookies
-  │     Readonly / no-context: ApiRefreshRequiredError (no refresh)
-  │     ├─ [success] Retry original request once with rotated access token
-  │     └─ [failure] Report original protected-request error → reject
+  ├─ [eligible, no _retry]
+  │     POST /api/v1/auth/refresh  (server path; rawPost in raw-http.ts — no apiInstance)
+  │       X-Refresh-Token / X-Session-Id:
+  │         - server: from next/headers cookies
+  │         - client: through FE proxy /api/auth/refresh (same-origin)
+  │     ├─ [success] Update cookies → retry original request → return response
+  │     └─ [failure] Report error → reject promise
   │
-  └─ [second attempt already retried] → Report error → reject
+  └─ [second attempt, _retry flag set] → Report error → reject promise
 
 Otherwise (wrong kind of 401/403, other status) → report + reject immediately
 ```
 
-### Raw HTTP (`src/api/core/raw-http.ts` + `src/api/index.ts`)
+### Raw HTTP (`src/api/raw-http.ts` + `src/api/index.ts`)
 
-`rawFetch`, `rawPost`, `rawPut`, `rawPatch`, `rawDelete`, and `rawOptions` call **native Fetch** via `src/api/core/fetch-core.ts` (no MyCourse auth, no refresh, no error store). They share the same `ApiResult<T>` shape as the `api*` helpers. The public barrel **`src/api/index.ts`** re-exports both `api*` and `raw*` symbols so callers can `import { apiFetch, rawPost } from "@/api"`.
+`rawFetch`, `rawPost`, `rawPut`, `rawDelete`, and `rawOptions` call **plain Axios** (no `apiInstance`, no interceptors). They share the same `ApiResult<T>` shape as the `api*` helpers. The public barrel **`src/api/index.ts`** re-exports both `api*` and `raw*` symbols so callers can `import { apiFetch, rawPost } from "@/api"`. `instance.ts` imports **`rawPost` only from `./raw-http`** to avoid a circular dependency with `methods.ts`.
 
-### Browser refresh single-flight
+### Mutex (client-side only)
 
-If multiple browser requests expire simultaneously, only **one** refresh call is made (`src/api/auth/browser-auth.ts`). All waiters join the same module-scoped promise. Public authenticated options intentionally omit `AbortSignal`, so `refreshBrowserSession` has no signal parameter. BFF `POST /api/auth/refresh` maps upstream timeout to **504** (`instanceof ApiTimeoutError`) and other network failures to **502**.
+If multiple requests expire simultaneously, only **one** refresh call is made. All other requests are queued and receive the new token once the refresh completes. This is implemented with a module-level `isRefreshing` flag and a `pendingResolvers` array.
 
-Server Actions must use `createWritableServerApiTransportFromRequest` + `createApiMethods` + domain caller factories (for example `createAuthCallers`) — there is no server-global refresh mutex.
+The mutex is **not used server-side** — server requests are isolated per user, so a shared flag would incorrectly block or mix tokens across different users.
 
 ### Cookie helpers (`src/lib/utils/cookie.ts` + `@/lib/utils`)
 
@@ -408,9 +409,9 @@ Server Actions must use `createWritableServerApiTransportFromRequest` + `createA
 | `getCookieValue(name)` | Reads a cookie. Client: `js-cookie`. Server: `next/headers` (requires a Next.js request context). |
 | `setCookieValue(name, value, options?)` | Writes a cookie. Client: `js-cookie`. Server: `next/headers` (writable only inside Server Actions / Route Handlers — silently skipped in pure RSC). |
 
-### Production refresh ownership
+### `refreshTokenService` (optional caller)
 
-Refresh never recurses through the authenticated transport. Browser refresh goes through Route Handler `POST /api/auth/refresh` (access_token-only DTO). Writable server refresh uses `rawPost` to the BE refresh route, validates all three rotated tokens, then persists via `setAuthSessionCookies`.
+A commented-out example in `src/api/callers/auth/auth.ts` showed calling refresh via `apiPost`; that would recurse through the same interceptors. **Production refresh** is implemented only inside `doTokenRefresh` → **`rawPost`** (`raw-http.ts`). Uncomment or reintroduce a dedicated caller only if you need refresh from code paths that must not duplicate `rawPost` logic.
 
 ### API route constants
 
@@ -431,12 +432,12 @@ The project uses [Zustand](https://zustand-demo.pmnd.rs/) instead of React Conte
 | Store file | Hook export | Purpose |
 |---|---|---|
 | `src/store/auth/auth.ts` | `useAuthStore` | Auth modal state (`authAction`, `openLoginModal`, `closeAllModals`, `nextLink`) |
-| `src/store/api-error-store.ts` | `useApiError` | Accumulates API errors from the authenticated Fetch reporter (max 20 entries) |
+| `src/store/api-error-store.ts` | `useApiError` | Accumulates API errors from the Axios interceptor (max 20 entries) |
 | `src/store/use-app-store.ts` | `useAppStore` | App-level state (counter placeholder, extend as needed) |
 
 ### `useApiError` — Global API Error Store
 
-Populated automatically by the authenticated transport reporter in `src/api/transport/api-transport.ts`. Entries use FE-owned safe copy only (HTTP status + appCode) — never the BE response `message`. Components can subscribe to display toast notifications or error banners:
+Populated automatically by the Axios response interceptor in `src/api/instance.ts`. Components can subscribe to display toast notifications or error banners:
 
 ```ts
 import { useApiError } from "@/store/api-error-store";
@@ -459,7 +460,7 @@ interface ApiErrorEntry {
   id: string;          // crypto.randomUUID()
   statusCode: number;  // HTTP status (0 = network error)
   appCode: number;     // BE app-level code (mirrors be/pkg/errcode/codes.go), fallback 9999
-  message: string;     // FE-owned safe copy only (never BE body message)
+  message: string;     // Human-readable error message
   url: string;         // Request path, e.g. "/auth/login"
   method: string;      // "GET" | "POST" | "PUT" | "DELETE" | …
   timestamp: number;   // Date.now() when recorded

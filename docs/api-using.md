@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-07-22 (authenticated `timeout` per-request; `uploadMediaFiles` uses 30s). Prior: refresh-upstream helper; locked RawApiOptions; Max-Age; BFF 504._
+_Last audited: 2026-07-08 (Discord OAuth on popup; X code retained; shared finalizeAuthLoginAction). Prior: 2026-07-05 (global SWR error retry interval + become-instructor bootstrap loading)._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -22,13 +22,12 @@ Set in `.env` or the deployment environment. Never hard-code these values.
 
 ```
 src/api/
-├── index.ts / cache.ts
-├── core/           # fetch-error, helpers, body, redirect, fetch-core, methods, raw-http
-├── transport/      # api-transport, browser-api-methods
-├── auth/           # auth-refresh, auth-runtime, browser-auth, server-auth
-├── server/         # cache-policy, server-raw-http
-├── callers/        # Domain create*Callers + browser-bound services
-└── hooks/          # SWR hooks
+├── instance.ts         # Axios instance + request/response interceptors
+├── axios-helpers.ts    # Shared header/cookie helpers (methods + raw-http)
+├── methods.ts          # apiFetch / apiPost / apiPut / apiPatch / apiDelete / apiOptions
+├── raw-http.ts         # rawFetch / rawPost (interceptor-free, for token refresh only)
+├── callers/            # Domain-specific service functions
+└── hooks/              # SWR hooks built on top of service functions
 ```
 
 ---
@@ -141,31 +140,28 @@ Add new constants here when new API endpoints are used.
 
 ## Authentication — How Tokens Are Attached
 
-The authenticated `ApiTransport` request path in `src/api/transport/api-transport.ts` handles this automatically:
+The Axios request interceptor in `src/api/instance.ts` handles this automatically:
 
 ```
 Every request
-  └─ Server (RSC/Action): transport reads next/headers cookie and sets
+  └─ Server (RSC/Action): interceptor reads next/headers cookie and sets
       Authorization: Bearer <access_token>
-  └─ Client (browser): credentials:include; BE reads HttpOnly cookies
+  └─ Client (browser): relies on withCredentials; BE reads HttpOnly cookies
       directly (no manual Authorization header)
 ```
 
 You do **not** need to manually set the Authorization header.
 
-Authenticated default timeout is **10s**. Override per call with `options.timeout` (milliseconds), e.g. `apiPost(url, body, { timeout: 30_000 })`. Media upload uses this for large multipart posts.
-
 ---
 
 ## Token Refresh
 
-The authenticated transport in `src/api/transport/api-transport.ts` handles silent token refresh automatically:
+The response interceptor in `src/api/instance.ts` handles silent token refresh automatically:
 
 - Triggers on eligible `401` / `403` responses (`X-Token-Expired: true` or `401` missing bearer token).
 - **Client**: uses a mutex (single refresh, queued requests) to avoid refresh stampedes.
 - **Client refresh transport**: browser calls FE proxy `POST /api/auth/refresh`; proxy relays tokens and rewrites cookies using BE `Set-Cookie` Max-Age or `auth_session_expires_at` fallback.
-- **Server (SSR)**: writable FromRequest transport persists rotated cookies via `setAuthSessionCookies` (same Max-Age relay).
-- **Refresh upstream (BFF + server writable)**: `rawPostRefreshUpstream` in `src/api/auth/refresh-upstream-raw.ts` (not public `rawPost` options) hard-codes fail-closed `redirect: "error"` + trusted origin from the resolved API base URL.
+- **Server (SSR)**: `instance.ts` + `syncAuthSessionCookiesAction` use the same cookie relay strategy.
 - After refresh: all queued requests are retried with the new token.
 - On refresh failure: all requests reject and `reportError` is called.
 
@@ -211,9 +207,7 @@ Google, Discord, and X (Twitter) social login use Server Actions that reuse the 
 
 > **Popup wiring:** `LoginContent` / `SignupContent` call **`useDiscordLogin`** + **`useGoogleLogin`** only. X actions/hooks remain but are not connected to `AuthSocialLogin`.
 
-### Callers (`src/api/callers/auth/auth-factory.ts` + `auth-browser.ts`)
-
-Factory (`createAuthCallers`) is isomorphic. Browser singletons live in `auth-browser.ts`. Server Actions import **`@/api/callers/auth/auth-factory` only**.
+### Callers (`src/api/callers/auth/auth.ts`)
 
 | Service | Method | Path constant | Payload |
 |---------|--------|---------------|---------|
@@ -237,7 +231,7 @@ Each returns `{ data: ApiResponse<LoginResponse>, setCookieHeaders }` — the sa
 
 ### Shared finalizer (`src/lib/utils/auth-action.ts`)
 
-`loginAction`, `confirmAction`, and all OAuth actions call `finalizeAuthLoginAction(serviceCall)`. On `code === Success` with data it sets session cookies via `setAuthSessionCookies` (using `refreshMaxAgeFromBeSetCookie(setCookieHeaders)`). Errors map through shared `mapAuthApiError` to `AuthActionResult` (`src/types/auth/auth.ts`); register uses `mapAuthApiError(error, { includeRetryAfter: true })`. Reuse this helper for any new login-like action.
+`loginAction`, `confirmAction`, and all OAuth actions call `finalizeAuthLoginAction(serviceCall)`. On `code === Success` with data it sets session cookies via `setAuthSessionCookies` (using `refreshMaxAgeFromBeSetCookie(setCookieHeaders)`). Errors map through `mapAuthAxiosError` to `AuthActionResult` (`src/types/auth/auth.ts`). Reuse this helper for any new login-like action.
 
 ### Client wiring
 
@@ -276,7 +270,7 @@ Creating a new SWR hook:
 ```ts
 // src/api/hooks/course/useCourses.ts
 import useSWR from "swr";
-import { getMeEndpointKey } from "@/api/callers/auth/auth-factory";
+import { getMeEndpointKey } from "@/api/callers/auth/auth";
 import { apiFetch } from "@/api";
 
 const COURSES_KEY = "/api/v1/courses";
@@ -295,7 +289,7 @@ export function useCourses() {
 
 ### Course collaborators (instructor editor)
 
-Callers in `src/api/callers/course/course-factory.ts (+ course-browser.ts)`:
+Callers in `src/api/callers/course/course.ts`:
 
 | Service | Method | Path | Notes |
 |---------|--------|------|-------|
@@ -308,7 +302,7 @@ Hooks: `useCourseCollaborators`, `useCourseInstructorCandidates` in `src/api/hoo
 
 ### Course-admin (sysadmin catalog + trash)
 
-Callers in `src/api/callers/course/course-factory.ts (+ course-browser.ts)`:
+Callers in `src/api/callers/course/course.ts`:
 
 | Service | Method | Path |
 |---------|--------|------|
@@ -328,7 +322,7 @@ Eligibility helper: `canMoveCourseToTrash` in `src/lib/utils/course.ts` (mirrors
 
 ## Error Handling
 
-Client-side API errors are pushed to `useApiError` by the browser-installed reporter (server path logs only; never imports Zustand). Reporter messages are FE-owned (`HTTP ${status}` / transport-typed); never BE body `message`. Server Actions bind callers via `create*Callers` imported from `*-factory.ts` so the server graph never evaluates `browserApiMethods`.
+Client-side API errors are pushed to `useApiError` store by the response interceptor (server-side path only logs and returns):
 
 ```ts
 import { useApiError } from "@/store/api-error-store";
@@ -340,7 +334,7 @@ For component-level error handling, check `ApiResult.error` or `ApiResult.data.c
 ```ts
 const { data, error } = await apiFetch<T>(url);
 if (error) {
-  // Network / HTTP-level error (ApiHttpError / ApiTransportError)
+  // Network / HTTP-level error (AxiosError)
 }
 if (data && data.code !== 0) {
   // Application-level error (business logic)
@@ -386,7 +380,7 @@ Domain modules may alias or extend this shape. Taxonomy extends it with `search_
 
 ## Course detail (instructor)
 
-Callers: `src/api/callers/course/course-factory.ts (+ course-browser.ts)`, hook `useCourseDetail` in `src/api/hooks/course/useCourses.ts`.
+Callers: `src/api/callers/course/course.ts`, hook `useCourseDetail` in `src/api/hooks/course/useCourses.ts`.
 
 ```ts
 // Course editor — one fetch per courseId, SWR cache shared across tabs
@@ -402,7 +396,7 @@ const { data } = useCourseDetail(courseId, { includeOutline: false });
 
 ## Taxonomy (admin)
 
-Callers live in `src/api/callers/taxonomy/taxonomy-factory.ts (+ taxonomy-browser.ts)`. List data uses the paginated envelope (`data.result` + `data.page_info`). Hooks and services **pass `locale`** (typically `useLocale()`).
+Callers live in `src/api/callers/taxonomy/taxonomy.ts`. List data uses the paginated envelope (`data.result` + `data.page_info`). Hooks and services **pass `locale`** (typically `useLocale()`).
 
 ```ts
 import {
@@ -457,9 +451,7 @@ See also `docs/taxonomy-admin.md`, `docs/instructor-admin.md`.
 
 ## Media (library popup)
 
-Callers live in `src/api/callers/media/media-factory.ts (+ media-browser.ts)`. List uses the same `apiListQueryToRecord()` helper as taxonomy.
-
-Authenticated transport default timeout is **10s**. Multipart upload must pass a longer per-request `timeout` — `uploadMediaFiles` uses **30_000 ms** via `apiPost(..., { timeout: MEDIA_UPLOAD_TIMEOUT_MS })`. Other authenticated calls omit `timeout` and keep the default.
+Callers live in `src/api/callers/media/media.ts`. List uses the same `apiListQueryToRecord()` helper as taxonomy.
 
 ```ts
 import { listMediaFiles, uploadMediaFiles, deleteMediaFile } from "@/api/callers/media";
@@ -473,7 +465,7 @@ const { rows, mutate } = useMediaFiles({
   sort_order: "desc",
 });
 
-await uploadMediaFiles(fileList); // multipart field `files`; 30s timeout
+await uploadMediaFiles(fileList); // multipart field `files`
 await deleteMediaFile(objectKey); // path param is object_key, not UUID
 ```
 
@@ -485,7 +477,7 @@ See `docs/media-collection.md`.
 
 ## API error i18n (all modules)
 
-Never show the BE `message` field to users. Resolve errors by numeric `code` only. The authenticated transport reporter also must not put BE `message` into console or Zustand — only status + `appCode` (or FE transport-typed messages).
+Never show the BE `message` field to users. Resolve errors by numeric `code` only:
 
 ```ts
 import { useTranslations } from "next-intl";
@@ -512,7 +504,7 @@ setServerError(translateApiErrorCode(tErrors, result.code));
 
 Routes in `API_PRIVATE_ROUTES.user`: `getMe`, `patchMe`, `deleteMe`, `hardDeleteMe`, `getMyPermissions`.
 
-Callers in `src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)`:
+Callers in `src/api/callers/auth/auth.ts`:
 
 ```ts
 import {
@@ -532,9 +524,9 @@ import {
 
 | Pattern | Reason |
 |---------|--------|
-| Direct `fetch` / third-party HTTP for MyCourse API | Bypasses transport — use `apiFetch`/`apiPost`/etc. |
+| Direct `axios` calls | Bypasses interceptors — use `apiFetch`/`apiPost`/etc. |
 | Hard-coded API paths | Use constants from `src/constants/api-route.ts` |
-| `rawPost`/`rawFetch` for private MyCourse routes | Reserved for refresh/third-party only (`remote-data.ts`, `wikidata-company.ts`) — never for private API routes |
-| Manual `Authorization` header | Set automatically by the authenticated transport |
+| `rawPost`/`rawFetch` outside `instance.ts` | Reserved for token refresh **and** instructor-application third-party combobox sources (`src/lib/instructor-application/remote-data.ts`, `wikidata-company.ts`) — never for private API routes |
+| Manual `Authorization` header | Set automatically by the request interceptor |
 | Showing `response.message` in UI | Use `toastApiError` / `translateApiErrorCode` with `errors.codes.{code}` |
 | Semantic error keys per module (`auth.errors.*` for API) | API errors use numeric `errors.codes.*` only |
