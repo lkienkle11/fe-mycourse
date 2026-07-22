@@ -1,23 +1,50 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { createWritableServerApiMethods } from "@/api/auth/server-auth";
 import type {
   ConfirmPayload,
   LoginPayload,
   RegisterPayload,
-} from "@/api/callers/auth/auth-factory";
-import { createAuthCallers } from "@/api/callers/auth/auth-factory";
-import { ApiErrorCode } from "@/constants/api-error-code";
+} from "@/api/callers/auth";
 import {
-  finalizeAuthLoginAction,
-  mapAuthApiError,
-} from "@/lib/utils/auth-action";
+  confirmService,
+  loginService,
+  logoutService,
+  registerService,
+} from "@/api/callers/auth";
+import { ApiErrorCode } from "@/constants/api-error-code";
+import { finalizeAuthLoginAction } from "@/lib/utils/auth-action";
 import { clearAuthSessionCookies } from "@/lib/utils/auth-session";
 import type { AuthActionResult } from "@/types/auth/auth";
 
-async function authCallers() {
-  return createAuthCallers(await createWritableServerApiMethods());
+function parseRetryAfterSeconds(
+  headers?: Record<string, string>,
+): number | undefined {
+  if (!headers) return undefined;
+  const raw =
+    headers["retry-after"] ??
+    headers["Retry-After"] ??
+    headers["x-mycourse-register-retry-after"] ??
+    headers["X-Mycourse-Register-Retry-After"];
+  if (!raw) return undefined;
+  const sec = Number.parseInt(raw, 10);
+  return Number.isFinite(sec) && sec > 0 ? sec : undefined;
+}
+
+function mapAxiosAuthError(error: unknown): AuthActionResult {
+  const axiosError = error as {
+    response?: {
+      data?: { code?: number; message?: string };
+      headers?: Record<string, string>;
+    };
+  };
+  const code = axiosError?.response?.data?.code ?? ApiErrorCode.Unknown;
+  const message =
+    axiosError?.response?.data?.message ?? "Unexpected error occurred";
+  const retryAfterSeconds = parseRetryAfterSeconds(
+    axiosError?.response?.headers,
+  );
+  return { success: false, message, code, retryAfterSeconds };
 }
 
 /**
@@ -26,8 +53,7 @@ async function authCallers() {
 export async function loginAction(
   payload: LoginPayload,
 ): Promise<AuthActionResult> {
-  const auth = await authCallers();
-  return finalizeAuthLoginAction(() => auth.loginService(payload));
+  return finalizeAuthLoginAction(() => loginService(payload));
 }
 
 /**
@@ -37,8 +63,7 @@ export async function registerAction(
   payload: RegisterPayload,
 ): Promise<AuthActionResult> {
   try {
-    const auth = await authCallers();
-    const { data: response } = await auth.registerService(payload);
+    const { data: response } = await registerService(payload);
 
     if (response.code === ApiErrorCode.Success) {
       return { success: true, message: response.message, code: response.code };
@@ -46,7 +71,7 @@ export async function registerAction(
 
     return { success: false, message: response.message, code: response.code };
   } catch (error: unknown) {
-    return mapAuthApiError(error, { includeRetryAfter: true });
+    return mapAxiosAuthError(error);
   }
 }
 
@@ -59,8 +84,7 @@ export const signupAction = registerAction;
 export async function confirmAction(
   payload: ConfirmPayload,
 ): Promise<AuthActionResult> {
-  const auth = await authCallers();
-  return finalizeAuthLoginAction(() => auth.confirmService(payload));
+  return finalizeAuthLoginAction(() => confirmService(payload));
 }
 
 /**
@@ -73,8 +97,7 @@ export async function logoutAction(): Promise<AuthActionResult> {
 
   try {
     if (refreshToken && sessionId) {
-      const auth = await authCallers();
-      await auth.logoutService(refreshToken, sessionId);
+      await logoutService(refreshToken, sessionId);
     }
     await clearAuthSessionCookies();
     return {
@@ -84,6 +107,6 @@ export async function logoutAction(): Promise<AuthActionResult> {
     };
   } catch (error: unknown) {
     await clearAuthSessionCookies();
-    return mapAuthApiError(error);
+    return mapAxiosAuthError(error);
   }
 }

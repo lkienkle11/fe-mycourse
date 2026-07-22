@@ -1,4 +1,4 @@
-import { rawFetch } from "@/api/core/raw-http";
+import { rawFetch } from "@/api/raw-http";
 import { normalizeDedupeKey } from "./search-text";
 
 const WIKIDATA_API = "https://www.wikidata.org/w/api.php";

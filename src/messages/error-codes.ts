@@ -6,7 +6,7 @@
  * under `*.validation.*` namespaces in `en.ts` / `vi.ts`.
  *
  * Typical mapping:
- * - Media upload/delete: 2003–2009, 9011–9019
+ * - Media upload/delete: 2003–2009, 9010–9018
  * - Taxonomy / course / instructor CRUD: 2001–2002, 2010, 3003–3006
  * - Auth flows: 4001–4012
  */
@@ -73,6 +73,7 @@ export const errorCodesEn = {
   "9999": "Something went wrong. Please try again.",
 
   // Media upstream (90xx)
+  "9010": "Media storage is not configured.",
   "9011": "Video streaming is not configured.",
   "9012": "Could not create the video. Please try again.",
   "9013": "Could not upload the video. Please try again.",
@@ -81,7 +82,6 @@ export const errorCodesEn = {
   "9016": "Could not load video details.",
   "9017": "Image processing is busy. Please try again shortly.",
   "9018": "Service is temporarily unavailable. Please try again later.",
-  "9019": "Media storage is not configured.",
 } as const;
 
 export const errorCodesVi = {
@@ -146,6 +146,7 @@ export const errorCodesVi = {
   "9999": "Đã xảy ra lỗi. Vui lòng thử lại.",
 
   // Media upstream (90xx)
+  "9010": "Kho lưu trữ media chưa được cấu hình.",
   "9011": "Dịch vụ phát video chưa được cấu hình.",
   "9012": "Không thể tạo video. Vui lòng thử lại.",
   "9013": "Không thể tải video lên. Vui lòng thử lại.",
@@ -154,5 +155,4 @@ export const errorCodesVi = {
   "9016": "Không thể tải thông tin video.",
   "9017": "Hệ thống xử lý ảnh đang bận. Vui lòng thử lại sau.",
   "9018": "Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.",
-  "9019": "Kho lưu trữ media chưa được cấu hình.",
 } as const;

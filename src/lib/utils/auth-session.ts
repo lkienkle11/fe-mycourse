@@ -1,8 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
-import { sanitizeApiErrorCause } from "@/api/core/fetch-error";
-import { parseMaxAgeForCookie } from "@/api/core/fetch-helpers";
+import { parseMaxAgeForCookie } from "@/api/axios-helpers";
 import { buildAuthCookieOptions, getCookieDomain } from "./cookie";
 
 /**
@@ -47,11 +46,7 @@ export function resolveRefreshMaxAgeFromBe({
   refreshMaxAge,
   storedExpiresAt,
 }: ResolveRefreshMaxAgeFromBeInput): number | undefined {
-  if (
-    refreshMaxAge !== undefined &&
-    Number.isInteger(refreshMaxAge) &&
-    refreshMaxAge > 0
-  ) {
+  if (refreshMaxAge !== undefined && refreshMaxAge > 0) {
     return refreshMaxAge;
   }
   if (storedExpiresAt !== undefined) {
@@ -68,9 +63,9 @@ export function refreshMaxAgeFromBeSetCookie(
 }
 
 function readStoredExpiresAt(raw: string | undefined): number | undefined {
-  if (!raw || !/^\d+$/.test(raw)) return undefined;
-  const ts = Number(raw);
-  if (!Number.isInteger(ts) || ts < MIN_VALID_EXPIRES_AT_UNIX) {
+  if (!raw) return undefined;
+  const ts = Number.parseInt(raw, 10);
+  if (!Number.isFinite(ts) || ts < MIN_VALID_EXPIRES_AT_UNIX) {
     return undefined;
   }
   return remainingSecondsUntilExpiresAt(ts) !== undefined ? ts : undefined;
@@ -79,7 +74,7 @@ function readStoredExpiresAt(raw: string | undefined): number | undefined {
 export interface AuthSessionTokens {
   access_token: string;
   refresh_token: string;
-  session_id: string;
+  session_id?: string;
 }
 
 export interface SetAuthSessionCookiesInput {
@@ -88,58 +83,15 @@ export interface SetAuthSessionCookiesInput {
   refreshMaxAge?: number;
 }
 
-function assertNonEmptyToken(name: string, value: string): void {
-  if (typeof value !== "string" || !value.trim()) {
-    throw new Error(`Invalid auth session token: ${name}`);
-  }
-  if (/[\r\n\0]/.test(value)) {
-    throw new Error(`Invalid auth session token control char: ${name}`);
-  }
-}
-
-function createCookieRemover(
-  cookieStore: Awaited<ReturnType<typeof cookies>>,
-  sameSite: "lax",
-  isProduction: boolean,
-  domain: string | undefined,
-) {
-  return (name: string) => {
-    const opts = buildAuthCookieOptions({
-      sameSite,
-      isProduction,
-      domain,
-    });
-    cookieStore.delete({
-      name,
-      path: opts.path,
-      ...(opts.domain ? { domain: opts.domain } : {}),
-    });
-  };
-}
-
 /**
  * Ghi access_token, refresh_token, session_id vào cookie.
- * PENDING-01: all three tokens must be non-empty before any write.
  * TTL lấy từ BE Set-Cookie; fallback auth_session_expires_at khi relay SSR.
- * Fail closed: missing positive integer lifetime → cleanup-all + throw before any set.
- * On any write failure: clear cookies and rethrow with sanitized cleanup as nested cause.
  */
 export async function setAuthSessionCookies({
   tokens,
   refreshMaxAge,
 }: SetAuthSessionCookiesInput): Promise<void> {
   const { access_token, refresh_token, session_id } = tokens;
-  assertNonEmptyToken("access_token", access_token);
-  assertNonEmptyToken("refresh_token", refresh_token);
-  assertNonEmptyToken("session_id", session_id);
-
-  if (
-    refreshMaxAge !== undefined &&
-    (!Number.isInteger(refreshMaxAge) || refreshMaxAge <= 0)
-  ) {
-    throw new Error("Invalid refresh Max-Age");
-  }
-
   const cookieStore = await cookies();
 
   const storedExpiresAt = readStoredExpiresAt(
@@ -153,25 +105,6 @@ export async function setAuthSessionCookies({
   const isProduction = process.env.NODE_ENV === "production";
   const domain = getCookieDomain(process.env.AUTH_COOKIE_DOMAIN);
   const sameSite = "lax" as const;
-  const remove = createCookieRemover(
-    cookieStore,
-    sameSite,
-    isProduction,
-    domain,
-  );
-
-  if (
-    resolvedMaxAge === undefined ||
-    !Number.isInteger(resolvedMaxAge) ||
-    resolvedMaxAge <= 0
-  ) {
-    try {
-      await clearAuthSessionCookies();
-    } catch {
-      // best-effort cleanup before fail-closed throw
-    }
-    throw new Error("Auth session cookie lifetime unresolved");
-  }
 
   const set = (name: string, value: string, maxAge?: number) => {
     cookieStore.set(
@@ -186,44 +119,39 @@ export async function setAuthSessionCookies({
     );
   };
 
-  try {
-    set("access_token", access_token);
-    set("refresh_token", refresh_token, resolvedMaxAge);
+  const remove = (name: string) => {
+    const opts = buildAuthCookieOptions({
+      sameSite,
+      isProduction,
+      domain,
+    });
+    cookieStore.delete({
+      name,
+      path: opts.path,
+      ...(opts.domain ? { domain: opts.domain } : {}),
+    });
+  };
+
+  set("access_token", access_token);
+  set("refresh_token", refresh_token, resolvedMaxAge);
+  if (session_id) {
     set("session_id", session_id, resolvedMaxAge);
-
-    // Fresh Set-Cookie → new absolute expiry. Fallback only → keep stored expiry (no extension).
-    const sessionExpiresAt =
-      refreshMaxAge !== undefined &&
-      Number.isInteger(refreshMaxAge) &&
-      refreshMaxAge > 0
-        ? expiresAtFromMaxAge(refreshMaxAge)
-        : storedExpiresAt;
-
-    if (sessionExpiresAt !== undefined) {
-      const metaMaxAge = remainingSecondsUntilExpiresAt(sessionExpiresAt);
-      if (metaMaxAge !== undefined) {
-        set(
-          AUTH_SESSION_EXPIRES_AT_COOKIE,
-          String(sessionExpiresAt),
-          metaMaxAge,
-        );
-      }
-    }
-
-    remove(LEGACY_AUTH_SESSION_MAX_AGE_COOKIE);
-  } catch (error) {
-    let cleanupError: unknown;
-    try {
-      await clearAuthSessionCookies();
-    } catch (cleanup) {
-      cleanupError = cleanup;
-    }
-    if (cleanupError) {
-      (error as Error & { cause?: unknown }).cause =
-        sanitizeApiErrorCause(cleanupError);
-    }
-    throw error;
   }
+
+  // Fresh Set-Cookie → new absolute expiry. Fallback only → keep stored expiry (no extension).
+  const sessionExpiresAt =
+    refreshMaxAge !== undefined && refreshMaxAge > 0
+      ? expiresAtFromMaxAge(refreshMaxAge)
+      : storedExpiresAt;
+
+  if (sessionExpiresAt !== undefined) {
+    const metaMaxAge = remainingSecondsUntilExpiresAt(sessionExpiresAt);
+    if (metaMaxAge !== undefined) {
+      set(AUTH_SESSION_EXPIRES_AT_COOKIE, String(sessionExpiresAt), metaMaxAge);
+    }
+  }
+
+  remove(LEGACY_AUTH_SESSION_MAX_AGE_COOKIE);
 }
 
 /**
@@ -234,12 +162,19 @@ export async function clearAuthSessionCookies(): Promise<void> {
   const domain = getCookieDomain(process.env.AUTH_COOKIE_DOMAIN);
   const sameSite = "lax" as const;
   const cookieStore = await cookies();
-  const remove = createCookieRemover(
-    cookieStore,
-    sameSite,
-    isProduction,
-    domain,
-  );
+
+  const remove = (name: string) => {
+    const opts = buildAuthCookieOptions({
+      sameSite,
+      isProduction,
+      domain,
+    });
+    cookieStore.delete({
+      name,
+      path: opts.path,
+      ...(opts.domain ? { domain: opts.domain } : {}),
+    });
+  };
 
   remove("access_token");
   remove("refresh_token");
