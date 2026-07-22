@@ -120,11 +120,30 @@ function buildHttpError(
   });
 }
 
+/**
+ * Expected noise — never console, never Zustand.
+ * Only `ApiRefreshRequiredError` (readonly/no-context cannot refresh).
+ * Guest GET /me 401 and ERR_BLOCKED_BY_CLIENT are logged.
+ */
+function isExpectedApiReporterNoise(error: unknown): boolean {
+  return error instanceof ApiRefreshRequiredError;
+}
+
+/**
+ * Logged failures: all 4xx (incl. guest /me 401), 5xx, timeout, abort,
+ * network (incl. ERR_BLOCKED_BY_CLIENT), parse, policy, replay.
+ * One incident → one record.
+ * Console `[API]`: when **server OR** `NODE_ENV === "development"` (sanitized).
+ * Production browser: no Console — Zustand only.
+ * Never tokens/cookies/session/Authorization/bodies in the log line.
+ */
 function reportApiError(
   error: unknown,
   meta: { url: string; method: string },
   pushApiError?: ApiErrorStorePush,
 ): void {
+  if (isExpectedApiReporterNoise(error)) return;
+
   let statusCode = 0;
   let appCode: number = ApiErrorCode.Unknown;
   let message = "Unknown Error";
@@ -143,34 +162,27 @@ function reportApiError(
   ) {
     message = error.message;
   } else if (error instanceof ApiPolicyError) {
-    console.error(
-      `[API] ${meta.method} ${redactApiErrorUrl(meta.url)} → policy ${error.code}`,
-    );
-    return;
+    message = `policy ${error.code}`;
   } else if (error instanceof ApiRequestReplayError) {
-    console.error(
-      `[API] ${meta.method} ${redactApiErrorUrl(meta.url)} → replay error`,
-    );
-    return;
-  } else if (error instanceof ApiRefreshRequiredError) {
-    if (isServer()) {
-      console.error(
-        `[API] ${meta.method} ${redactApiErrorUrl(meta.url)} → refresh required`,
-      );
-    }
+    message = "replay error";
+  } else {
     return;
   }
 
-  console.error(
-    `[API] ${meta.method} ${redactApiErrorUrl(meta.url)} → HTTP ${statusCode} | appCode=${appCode} | ${message}`,
-  );
+  const safeUrl = redactApiErrorUrl(meta.url);
+  const line = `[API] ${meta.method} ${safeUrl} → HTTP ${statusCode} | appCode=${appCode} | ${message}`;
+
+  // Server (any env) OR development (browser/SSR local diagnostic).
+  if (isServer() || process.env.NODE_ENV === "development") {
+    console.error(line);
+  }
 
   if (isServer() || !pushApiError) return;
   pushApiError({
     statusCode,
     appCode,
     message,
-    url: redactApiErrorUrl(meta.url),
+    url: safeUrl,
     method: meta.method,
   });
 }
