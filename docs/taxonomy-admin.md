@@ -105,7 +105,7 @@ Topics and outcomes support optional `image_file_id` (media file UUID). The form
 - `search_value`: text value used with `search_by`
 - **`locale`**: content locale for resolved list labels (from `useLocale()`; omit → BE defaults to `en`)
 
-Query strings are built from shared `apiListQueryToRecord()` plus taxonomy-specific `search_by`/`search_value`/`locale`/`include_images` keys in `src/api/callers/taxonomy/taxonomy.ts`.
+Query strings are built from shared `apiListQueryToRecord()` plus taxonomy-specific `search_by`/`search_value`/`locale`/`include_images` keys in `src/api/callers/taxonomy/taxonomy-factory.ts (+ taxonomy-browser.ts)`.
 
 ## List toolbar (FilterBy)
 
