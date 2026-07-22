@@ -346,9 +346,9 @@ BE and FE must use the **same** `AUTH_COOKIE_DOMAIN` (e.g. `yourdomain.net`) on 
 
 `reportApiError` in `src/api/transport/api-transport.ts` runs on transport throws and final HTTP failures. It:
 
-1. **Skips expected noise** (no server log, no Zustand): `ApiRefreshRequiredError` only.
-2. **Logs** all **4xx** (incl. guest `GET /me` 401), **5xx**, timeout, **abort**, **network** (incl. `ERR_BLOCKED_BY_CLIENT`), **parse**, policy, replay: one entry per incident.
-3. **Console `[API]`:** when **`isServer()` OR `NODE_ENV === "development"`** (sanitized). Production browser never prints `[API]`.
+1. **Skips expected noise** (no custom Console, no Zustand): guest `GET /api/v1/me` → 401; `ERR_BLOCKED_BY_CLIENT`; `ApiRefreshRequiredError`.
+2. **Logs** other **4xx**, **5xx**, timeout, **abort**, **network** (non-blocked), **parse**, policy, replay: one entry per incident.
+3. **Console `[API]`:** when **`isServer()` OR `NODE_ENV === "development"`** (sanitized). Production browser → **0** custom `[API]`.
 4. **Browser Zustand:** same logged set → `useApiError.push` (not on server). `toastApiError` uses `code` → i18n; development may `console.debug({ code, message })`.
 
 The `useApiError` Zustand store (`src/store/api-error-store.ts`) retains the last 20 **abnormal** errors. UI components can subscribe:

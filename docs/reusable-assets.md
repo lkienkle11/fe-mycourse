@@ -1056,7 +1056,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: reportApiError / browser refresh
 - **Name**: `reportApiError` (file-private), `refreshBrowserSession`
 - **Path**: `src/api/transport/api-transport.ts`, `src/api/auth/browser-auth.ts`
-- **Purpose**: Reporter classifies expected vs logged failures. Expected = `ApiRefreshRequiredError` only. Guest `GET /me` 401 and `ERR_BLOCKED_BY_CLIENT` are logged. Logged set includes all **4xx**, **5xx**, **abort, network, parse**, timeout, policy, replay. **Console `[API]`:** `isServer()` **OR** `NODE_ENV === "development"`. Production browser silent; Zustand browser-only. No logging feature flags.
+- **Purpose**: Reporter classifies expected vs logged failures. Expected = guest `GET /api/v1/me` 401 + `ERR_BLOCKED_BY_CLIENT` + `ApiRefreshRequiredError` (never custom Console / Zustand). Logged set = other **4xx**, **5xx**, **abort, network (non-blocked), parse**, timeout, policy, replay. **Console `[API]`:** `isServer()` **OR** `NODE_ENV === "development"`. Production browser → **0** custom `[API]`. No logging feature flags.
 - **Dependencies**: `fetch-error`, `auth-refresh`, `rawPost`.
 
 ### Asset: apiFetch / apiPost / apiPut / apiPatch / apiDelete / apiOptions
