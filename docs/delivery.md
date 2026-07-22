@@ -3,7 +3,7 @@
 _Last audited: 2026-05-29 (stubs unchanged; not affected by constants refactor)._
 
 
-Index of **non-REST** realtime channels exposed to the browser. REST/Axios usage remains in [`api-using.md`](./api-using.md) and [`api-overview.md`](./api-overview.md).
+Index of **non-REST** realtime channels exposed to the browser. REST / native Fetch usage remains in [`api-using.md`](./api-using.md) and [`api-overview.md`](./api-overview.md).
 
 ---
 
