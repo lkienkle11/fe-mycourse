@@ -1,6 +1,6 @@
 /**
  * Bare Fetch helpers — no MyCourse auth, no refresh, no global error store.
- * Public RawApiOptions matches the locked plan contract (no redirect/trustedOrigin).
+ * Public RawApiOptions: optional GET-only `cache`; no redirect/trustedOrigin.
  */
 
 import { isServer } from "@/lib/utils/runtime";
@@ -15,6 +15,13 @@ export type RawApiOptions = {
   withCredentials?: boolean;
   baseURL?: string;
   signal?: AbortSignal;
+  /**
+   * Honored only for raw GET. When omitted, defaults match committed behavior:
+   * browser GET → omit (HTTP cache semantics); server GET → no-store.
+   * Mutations/OPTIONS always use no-store (this field is ignored).
+   * Fetch `cache` is not a TTL — exact expiry needs Cache-Control / storage / Next revalidate.
+   */
+  cache?: RequestCache;
 };
 
 export type RawFetchApiOptions = RawApiOptions;
@@ -28,12 +35,19 @@ function mapCredentials(
   return undefined;
 }
 
-function resolveRawCache(method: string): RequestCache | undefined {
-  if (!isServer()) {
-    // Browser GET preserves HTTP cache semantics (omit cache option).
-    if (method === "GET") return undefined;
+function resolveRawCache(
+  method: string,
+  callerCache: RequestCache | undefined,
+): RequestCache | undefined {
+  if (method === "GET") {
+    if (callerCache !== undefined) return callerCache;
+    if (!isServer()) {
+      // Browser GET preserves HTTP cache semantics (omit cache option).
+      return undefined;
+    }
     return "no-store";
   }
+  // Mutations and OPTIONS: always no-store (ignore caller cache).
   return "no-store";
 }
 
@@ -51,6 +65,7 @@ async function rawRequest<T>(
     withCredentials,
     baseURL,
     signal,
+    cache,
   } = options;
 
   return executeFetchCore<T>({
@@ -64,7 +79,7 @@ async function rawRequest<T>(
     timeoutMs: timeout,
     signal,
     credentials: mapCredentials(withCredentials),
-    cache: resolveRawCache(method),
+    cache: resolveRawCache(method, cache),
     mode: "raw",
     allowBody: method === "POST" || method === "PUT" || method === "PATCH",
   });
