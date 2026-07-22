@@ -336,10 +336,10 @@ Client-side **abnormal** API errors are pushed to `useApiError` by the browser-i
 
 | Class | Examples | Console `[API]` | Zustand |
 |-------|----------|-----------------|---------|
-| Expected | `ApiRefreshRequiredError` only | never | never |
-| Logged | all **4xx** (incl. guest `GET /me` 401); **5xx**; timeout; **abort**; **network** (incl. `ERR_BLOCKED_BY_CLIENT`); **parse**; policy; replay | **`isServer()` OR `NODE_ENV === "development"`** | browser yes |
+| Expected | guest `GET /api/v1/me` → 401; `ERR_BLOCKED_BY_CLIENT`; `ApiRefreshRequiredError` | never | never |
+| Logged | other **4xx**; **5xx**; timeout; **abort**; **network** (non-blocked); **parse**; policy; replay | **`isServer()` OR `NODE_ENV === "development"`** | browser yes |
 
-Production **browser**: no custom `[API]`. Server (any env) and local development: sanitized Console for the logged set above. Do not blanket-skip `status < 500`, guest `/me` 401, or ad-blocker network errors. `toastApiError`: i18n from `code`; development may `console.debug({ code, message })`.
+Production **browser**: **0** custom `[API]` Console (manual reporter only). Server / development: sanitized Console for the logged set. Do not blanket-skip all `status < 500`. `toastApiError`: i18n from `code`; development may `console.debug({ code, message })`.
 
 Do not silence bad navigations by hiding console — prevent missing-route Links/prefetch instead (see `docs/screens.md` / `docs/router.md`).
 

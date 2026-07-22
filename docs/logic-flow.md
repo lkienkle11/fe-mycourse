@@ -73,7 +73,7 @@ Errors: translateApiErrorCode (BE 4013–4017/4019, 4023–4025; FE-local 4018, 
 
 ## 2. Token Refresh Flow (Transparent)
 
-Owned by `src/api/transport/api-transport.ts` + adapters (`browser-auth` / `server-auth`). Non-2xx HTTP outcomes throw `ApiHttpError`. Timeout / network / **abort** / parse / policy errors thrown from `fetch-core` pass through `reportApiError` before rethrow. **Expected** = `ApiRefreshRequiredError` only. Guest `GET /me` 401 and `ERR_BLOCKED_BY_CLIENT` **are logged**. **Logged** set includes all 4xx, 5xx, abort, network, parse, timeout, policy, replay. Console `[API]` when **`isServer()` OR `NODE_ENV === "development"`**; production browser silent + Zustand. BFF refresh maps `ApiTimeoutError` → 504.
+Owned by `src/api/transport/api-transport.ts` + adapters (`browser-auth` / `server-auth`). Non-2xx HTTP outcomes throw `ApiHttpError`. Timeout / network / **abort** / parse / policy errors thrown from `fetch-core` pass through `reportApiError` before rethrow. **Expected** (no custom Console / Zustand): guest `GET /api/v1/me` 401, `ERR_BLOCKED_BY_CLIENT`, `ApiRefreshRequiredError`. **Logged** set: other 4xx, 5xx, abort, network (non-blocked), parse, timeout, policy, replay. Custom Console `[API]` only when **`isServer()` OR `NODE_ENV === "development"`**; production browser → **0** custom API Console. BFF refresh maps `ApiTimeoutError` → 504.
 
 ```
 Any authenticated request fails
@@ -95,7 +95,7 @@ Refresh eligibility (401/403 + X-Token-Expired or 401 without Bearer; not alread
   ↓
   Refresh succeeds? → retry once with rotated Bearer
   Refresh fails? → throw original protected ApiHttpError with sanitized refresh cause
-    (guest `GET /me` 401 and other 4xx still reported)
+    (guest `GET /me` 401 → expected — no custom Console; other 4xx reported)
 ```
 
 **Important notes:**
