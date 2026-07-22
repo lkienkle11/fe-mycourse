@@ -219,14 +219,15 @@ Transport foundation is grouped by concern (not a flat dump of leaf files). Cano
 src/api/
 ├── index.ts                 # Public barrel (no server-only re-exports)
 ├── cache.ts                 # Dormant dual-layer cache (SoT retain)
-├── core/                    # Native Fetch executor + typed helpers
+├── core/                    # Fetch policy/executor + typed helpers
 │   ├── fetch-error.ts       # Errors + parseApiErrorEnvelope + throwApiPolicyError
 │   ├── fetch-helpers.ts     # URL / header / cookie helpers
 │   ├── fetch-core-body.ts   # Replayable bodies; optional gzip JSON compress (default off)
-│   ├── fetch-core-redirect.ts # followServerRedirects; await releaseAbandonedRedirectBody
-│   ├── fetch-core.ts        # executeFetchCore / Outcome + prepare/dispatch helpers
+│   ├── fetch-core.ts        # executeFetchCore / Outcome + prepare/dispatch/redirect policy
 │   ├── methods.ts           # createApiMethods(transport) — isomorphic
 │   └── raw-http.ts          # raw*; GET cache?; mutation compress?; no public redirect/trustedOrigin
+├── xior/                    # Exact-pinned Xior lifecycle over Next.js Fetch
+│   └── client.ts            # Raw/auth executor factory + request/response interceptors
 ├── transport/               # Authenticated transport + browser binding
 │   ├── api-transport.ts     # createApiTransport + injectable reporter (no Zustand)
 │   └── browser-api-methods.ts # browserApiMethods + Zustand reporter install

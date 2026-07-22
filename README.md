@@ -1,6 +1,6 @@
 # MyCourse — Frontend (`fe`)
 
-Next.js **16.2** (App Router) client for **MyCourse**: React **19**, **Tailwind CSS 4**, **next-intl** (`en` / `vi`), **SWR**, **native Fetch** (`ApiTransport`), **Zustand**, **react-hook-form** + **Zod**. The UI communicates with the Go API via `NEXT_PUBLIC_API_URL`.
+Next.js **16.2** (App Router) client for **MyCourse**: React **19**, **Tailwind CSS 4**, **next-intl** (`en` / `vi`), **SWR**, **Xior 0.8.3** over the Next.js Fetch runtime (`ApiTransport`), **Zustand**, **react-hook-form** + **Zod**. The UI communicates with the Go API via `NEXT_PUBLIC_API_URL`.
 
 > **Locale routing:** Next.js **16** uses **`src/proxy.ts`** (not `middleware.ts`) for the `next-intl` locale proxy. Keep that file in place — see [`docs/deploy.md` Appendix C](docs/deploy.md#appendix-c--middleware-locale-routing-fix).
 
@@ -171,9 +171,11 @@ Create a `.env` file at the project root (gitignored). In production use `.env.p
 
 ## Low-level API Helpers
 
-### Native Fetch transport (`src/api/core/methods.ts` + `src/api/transport/api-transport.ts`)
+### Xior transport (`src/api/core/methods.ts` + `src/api/transport/api-transport.ts`)
 
 Six authenticated helpers on `browserApiMethods` — `apiFetch`, `apiPost`, `apiPut`, `apiPatch`, `apiDelete`, and **`apiOptions`** (HTTP OPTIONS) — all return `ApiResult<T>` (defined in `src/types/api.ts`):
+
+The HTTP attempt is owned by an exact-pinned Xior instance. Raw traffic uses one shared executor with no auth/refresh behavior; each authenticated transport request creates an isolated executor from the same Xior factory. The request interceptor applies runtime-provided headers and preserves native Fetch options (`cache`, `next`, credentials, redirect and signal). The response interceptor exposes both successful and non-2xx native responses to the existing project error contract. Token refresh, one-retry, reporter, body replay/gzip and trusted-origin redirect rules remain outside Xior plugins.
 
 ```ts
 interface ApiResult<T = unknown> {
@@ -392,7 +394,7 @@ Otherwise (wrong kind of 401/403, other status) → report + reject immediately
 
 ### Raw HTTP (`src/api/core/raw-http.ts` + `src/api/index.ts`)
 
-`rawFetch`, `rawPost`, `rawPut`, `rawPatch`, `rawDelete`, and `rawOptions` call **native Fetch** via `src/api/core/fetch-core.ts` (no MyCourse auth, no refresh, no error store). They share the same `ApiResult<T>` shape as the `api*` helpers. The public barrel **`src/api/index.ts`** re-exports both `api*` and `raw*` symbols so callers can `import { apiFetch, rawPost } from "@/api"`.
+`rawFetch`, `rawPost`, `rawPut`, `rawPatch`, `rawDelete`, and `rawOptions` call the shared raw Xior executor via `src/api/core/fetch-core.ts` (no MyCourse auth, no refresh, no error store). The Xior interceptors preserve Next.js Fetch cache semantics and native response metadata, while Fetch policy retains body replay, gzip and redirect security. The public barrel **`src/api/index.ts`** re-exports both `api*` and `raw*` symbols so callers can `import { apiFetch, rawPost } from "@/api"`.
 
 ### Browser refresh single-flight
 

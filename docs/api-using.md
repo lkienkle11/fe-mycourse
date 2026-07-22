@@ -23,7 +23,8 @@ Set in `.env` or the deployment environment. Never hard-code these values.
 ```
 src/api/
 ├── index.ts / cache.ts
-├── core/           # fetch-error, helpers, body, redirect, fetch-core, methods, raw-http
+├── core/           # fetch policy/error, helpers, body, redirect policy, methods, raw-http
+├── xior/           # exact-pinned raw/auth client factory and lifecycle interceptors
 ├── transport/      # api-transport, browser-api-methods
 ├── auth/           # auth-refresh, auth-runtime, browser-auth, server-auth
 ├── server/         # cache-policy, server-raw-http
@@ -141,17 +142,20 @@ Add new constants here when new API endpoints are used.
 
 ## Authentication — How Tokens Are Attached
 
-The authenticated `ApiTransport` request path in `src/api/transport/api-transport.ts` handles this automatically:
+Each authenticated `ApiTransport.request` creates an isolated Xior executor whose request interceptor handles this automatically:
 
 ```
 Every request
-  └─ Server (RSC/Action): transport reads next/headers cookie and sets
+  └─ Server (RSC/Action): request interceptor asks the request-scoped
+      runtime to read next/headers cookie and sets
       Authorization: Bearer <access_token>
   └─ Client (browser): credentials:include; BE reads HttpOnly cookies
       directly (no manual Authorization header)
 ```
 
 You do **not** need to manually set the Authorization header.
+
+Xior's response interceptor preserves non-2xx responses for the typed project error mapper. Token refresh and the one protected-request retry remain in `ApiTransport`; no Xior retry, refresh, cache, dedupe, throttle or progress plugin is enabled.
 
 Authenticated default timeout is **10s**. Override per call with `options.timeout` (milliseconds), e.g. `apiPost(url, body, { timeout: 30_000 })`. Media upload uses this for large multipart posts.
 
