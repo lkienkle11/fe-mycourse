@@ -1,22 +1,45 @@
 # API Overview (`fe-mycourse`)
 
-_Last audited: 2026-07-12 (taxonomy/instructor `locale` + taxonomy `view=edit` / dual response)._
-
+_Last audited: 2026-07-22 (compress: body memo across refresh retry; force Content-Encoding after merge; abort-aware gzip)._
 
 ## Scope
 Frontend API layer lives in `src/api/` and is used by `src/actions/` and client hooks.
 
-## Layers
-- `src/api/instance.ts`: Axios instance, auth header attach, refresh flow.
-- `src/api/methods.ts`: typed helpers `apiFetch/apiPost/apiPut/apiPatch/apiDelete/apiOptions`.
-- `src/api/raw-http.ts`: raw HTTP helpers for refresh path.
-- `src/api/callers/auth/auth.ts`: domain callers (auth + Me API).
-- `src/api/hooks/auth/useAuth.ts`: SWR hook for `/api/v1/me`.
+## Layout
+Transport code is grouped by folder (SoT owners stay as separate files inside folders):
+
+| Folder | Role |
+|--------|------|
+| `src/api/core/` | Fetch executor, body/helpers/errors, `methods`, `raw-http` |
+| `src/api/transport/` | Authenticated `ApiTransport` + browser `ApiMethods` binding |
+| `src/api/auth/` | Refresh eligibility/envelopes + browser/server runtime adapters |
+| `src/api/server/` | `cache-policy` + `serverRawFetch` (server-only) |
+| `src/api/callers/` | Per domain: `*-factory.ts` (isomorphic) + `*-browser.ts` (Zustand-bound) |
+| `src/api/hooks/` | SWR hooks |
+
+## Layers (paths)
+- `transport/api-transport.ts`: ApiTransport + injectable reporter (browser installs Zustand; server never imports Zustand). **Every authenticated request** hard-codes `cache: "no-store"` (browser and server). Default authenticated timeout is **10s** (`fetch-core` when unset); per-request override via `FetchApiOptions` / `MutationApiOptions`.`timeout` (ms). Optional mutation `compress?: boolean` (default false) — gzip JSON POST/PUT/PATCH only; body memo shared across refresh retry so gzip runs once; no callers enable it yet. Only browser **raw GET** may omit cache; only `serverRawFetch` may use endpoint-bound Next Data Cache.
+- `auth/auth-refresh.ts`: refresh eligibility + `validateRotatedTokens` + exact success-envelope helpers.
+- `core/fetch-core.ts` + `fetch-core-redirect.ts`: native Fetch executor; timeout/abort through body-read; overall redirect deadline; Cookie merge generated→caller.
+  - **`executeFetchCoreOutcome`** orchestrates only: `prepareFetchCoreRequest` → `dispatchFetchResponse` → `readResponseData` → `toFetchCoreOutcome` (helpers stay file-private; export signature unchanged).
+  - **`followServerRedirects`**: hop execute + `resolveRedirectTargetUrl` + `applyRedirectHopState`; **await** intermediate body `cancel()` before the next hop or policy throw (301/302/303/307/308 only).
+  - Fetch redirect TypeError classification lives only in **`classifyFetchFailure`** (not a dead branch after `executeOnce`).
+- `core/fetch-core-body.ts`: replayable bodies; server strings → UTF-8 bytes. Optional **`compress`** (default false) for JSON POST/PUT/PATCH: gzip **once** via `CompressionStream("gzip")` into a replayable `ArrayBuffer` shared for refresh retry + redirect hops (transport `bodyMemo`); keep `Content-Type: application/json`, set `Content-Encoding: gzip`, do **not** set `Content-Length`. After caller header merge, fetch-core **forces** `Content-Encoding: gzip` and strips `Content-Length` when the body is gzipped. Gzip runs **after** abort/timeout lifecycle starts and honors the request signal. FormData / uploads / GET / DELETE / OPTIONS are never compressed. No caller enables `compress: true` yet (BE does not decompress gzip).
+- `core/fetch-error.ts`: transport errors + `parseApiErrorEnvelope` + `throwApiPolicyError`.
+- `core/methods.ts` / `core/raw-http.ts`: typed `api*` / `raw*` helpers. **Public `RawApiOptions`** includes `headers`, `cookies`, `params`, `timeout`, `withCredentials`, `baseURL`, `signal`, and optional **`cache?: RequestCache` (honored only for raw GET)**. No public `redirect` / `trustedOrigin` (credential refresh uses `rawPostRefreshUpstream`).
+  - **Default when `cache` omitted (unchanged):** browser GET → omit Fetch cache (browser HTTP semantics); server GET → `no-store`; POST/PUT/PATCH/DELETE/OPTIONS → always `no-store` (caller `cache` ignored).
+  - **Opt-in:** `rawFetch(url, { cache: "force-cache" })` (GET only). This is Fetch RequestCache opt-in — **not** a 30s TTL. Exact TTL still needs `Cache-Control: max-age=…`, Cache Storage timestamps, or Next `revalidate` via `serverRawFetch` profiles.
+- `auth/refresh-upstream-raw.ts`: **`rawPostRefreshUpstream`** — credential refresh POST only; hard-codes `redirect: "error"` + `resolveTrustedOrigin(baseURL)` so `X-Refresh-Token` / `X-Session-Id` never follow cross-origin redirects. Used by BFF + `refreshUpstreamSession`.
+- `server/cache-policy.ts` + `server/server-raw-http.ts`: public cache profiles + cached GET.
+  - **`serverRawFetch`** = `assertServerRawFetchOptions` + `resolveServerRawCacheOptions` + `executeFetchCore` (no auth cookies/signal/credentials).
+- `auth/auth-runtime.ts` + `browser-auth.ts` / `server-auth.ts`: adapters; exact browser refresh DTO.
+- Domain callers: **`create*Callers` lives in `*-factory.ts`** (no `browserApiMethods` / Zustand). Browser singletons live in `*-browser.ts`. **Server Actions must import the factory path** (e.g. `@/api/callers/auth/auth-factory`), never a module that evaluates browser bindings. BFF `src/app/api/auth/refresh/route.ts` exact-validates upstream envelope.
 
 ## Contracts
 - Response envelope: `ApiResponse<T>` in `src/types/api.ts`.
 - Low-level helper return type: `ApiResult<T>` with `data/statusCode/headers/cookies`.
-- Error code map: `ApiErrorCode` in `src/constants/api-error-code.ts` (1:1 with BE `errcode_codes.go`).
+- Error code map: `ApiErrorCode` in `src/constants/api-error-code.ts` (1:1 with BE `errcode_codes.go`, including `R2BucketNotConfigured = 9019`).
+- Server authenticated redirects follow only 301/302/303/307/308 (304 and other 3xx are not Location hops).
 - Success type guard: `isApiSuccess()` in `src/lib/utils/api.ts`.
 - User-facing errors: `toastApiError` / `translateApiErrorCode` in `src/lib/utils/api-error.ts` → `errors.codes.{code}`.
 
@@ -43,7 +66,7 @@ Frontend API layer lives in `src/api/` and is used by `src/actions/` and client 
 
 ## Instructor routes (private)
 
-Mounted under `API_PRIVATE_ROUTES.instructor` — see `src/api/callers/instructor/instructor.ts` and `docs/instructor-admin.md`:
+Mounted under `API_PRIVATE_ROUTES.instructor` — see `instructor-factory.ts` (composes roster/application/profile/expertise/ticket slices) + `instructor-browser.ts` and `docs/instructor-admin.md`:
 
 - `GET/DELETE /api/v1/instructors` (roster list/remove); `POST /api/v1/instructors/bulk` (add)
 - `GET/POST /api/v1/instructor-applications`, approve/reject, delete — detail chip hydration threads **`locale`** from query through service → repository; FE detail callers include `locale` in URL/SWR key
@@ -54,7 +77,7 @@ Mounted under `API_PRIVATE_ROUTES.instructor` — see `src/api/callers/instructo
 
 ## Course routes (private)
 
-Mounted under `API_PRIVATE_ROUTES.course` — see `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourses.ts`, and `docs/instructor-admin.md`:
+Mounted under `API_PRIVATE_ROUTES.course` — see `src/api/callers/course/course-factory.ts (+ course-browser.ts)`, `src/api/hooks/course/useCourses.ts`, and `docs/instructor-admin.md`:
 
 | Route | Caller / hook | Notes |
 |-------|---------------|-------|
@@ -80,7 +103,7 @@ See `docs/api-using.md` § Course detail and § Taxonomy.
 
 ## Taxonomy routes (private)
 
-`API_PRIVATE_ROUTES.taxonomy` — callers in `src/api/callers/taxonomy/taxonomy.ts`, hooks in `src/api/hooks/taxonomy/useTaxonomy.ts` (`useTaxonomyList`, detail via `getTaxonomyDetailService`).
+`API_PRIVATE_ROUTES.taxonomy` — callers in `src/api/callers/taxonomy/taxonomy-factory.ts (+ taxonomy-browser.ts)`, hooks in `src/api/hooks/taxonomy/useTaxonomy.ts` (`useTaxonomyList`, detail via `getTaxonomyDetailService`).
 
 List query extends `ApiListQueryParams` with `search_by`, `search_value`, **`locale`** (content locale for resolved labels; from `useLocale()`), and optional `include_images` (`false` skips image URL hydration — course editor pickers only; admin CRUD screens keep default `true`).
 
@@ -88,7 +111,7 @@ List query extends `ApiListQueryParams` with `search_by`, `search_value`, **`loc
 
 ## Media routes (private)
 
-`API_PRIVATE_ROUTES.media` — `src/api/callers/media/media.ts`, `useMediaFiles`. Used by `MediaCollectionDialog` (thumbnail, preview video, Quill embeds). See `docs/media-collection.md`.
+`API_PRIVATE_ROUTES.media` — `src/api/callers/media/media-factory.ts (+ media-browser.ts)`, `useMediaFiles`. Used by `MediaCollectionDialog` (thumbnail, preview video, Quill embeds). See `docs/media-collection.md`.
 
 ## Error handling rules
 
@@ -96,10 +119,17 @@ List query extends `ApiListQueryParams` with `search_by`, `search_value`, **`loc
 2. Use `toastApiError(tErrors, error)` in `catch` blocks after service calls.
 3. Use `translateApiErrorCode(tErrors, code)` for Server Action results.
 4. Client form validation uses separate `*.validation.*` namespaces — not `errors.codes.*`.
+5. Authenticated transport reporter (`transport/api-transport.ts` → `reportApiError`) must **not** log or store BE body `message`. For `ApiHttpError`, reporter builds FE-owned copy from status (+ appCode); it must **not** reuse `error.message` when that string was derived from BE body. Keep raw body only on `ApiHttpError.response.data` for code mappers.
+6. `ApiRefreshRequiredError`: no browser toast/store; **server safe-log once** via `reportApiError` before rethrow.
+7. Browser refresh BFF (`POST /api/auth/refresh`): upstream `ApiTimeoutError` → HTTP **504**; other network failures → **502**. Classify with `instanceof ApiTimeoutError`, never regex on `error.message`.
+8. `parseMaxAgeForCookie`: Max-Age digits must end at `;`, whitespace, or end-of-attribute; malformed suffix → `undefined` (fail closed).
+9. Authenticated/`ApiTransport` traffic always uses `cache: "no-store"` on **browser and server**.
+10. Server Actions import `create*Callers` from `*-factory.ts` only — never from a file that top-level-imports `browserApiMethods` / Zustand.
 
 See `docs/api-using.md` § API error i18n.
 
 ## Rules
-- Do not call `axios` directly in features.
+- Do not call native `fetch` directly for MyCourse authenticated/private API routes.
 - Use constants from `src/constants/api-route.ts`.
 - Use `raw*` helpers only for refresh/low-level paths.
+- `refreshBrowserSession` has **no** `AbortSignal` parameter — authenticated public options intentionally omit signal; adapter single-flight only.

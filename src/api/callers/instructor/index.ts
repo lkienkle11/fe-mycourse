@@ -1,1 +1,2 @@
-export * from "./instructor";
+export * from "./instructor-browser";
+export * from "./instructor-factory";

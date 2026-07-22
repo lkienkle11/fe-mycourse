@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { getMeEndpointKey, getMeService } from "@/api/callers/auth";
-import { extractAxiosApiError } from "@/lib/utils/api-error";
+import { extractApiError } from "@/lib/utils/api-error";
 import type { MeResponse } from "@/types/auth";
 
 export interface UseAuthReturn {
@@ -35,7 +35,7 @@ export function useAuth(): UseAuthReturn {
     },
   );
 
-  const errorCode = error ? extractAxiosApiError(error).code : null;
+  const errorCode = error ? extractApiError(error).code : null;
 
   return {
     me: data ?? null,

@@ -37,7 +37,7 @@ _Last audited: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code 
 - **Constants**: `src/constants/taxonomy/resources.ts` — `TAXONOMY_RESOURCES`, `TAXONOMY_RESOURCE_KEYS`, `TAXONOMY_GROUP_READ_PERMISSIONS` (data only).
 - **Utils**: `src/lib/utils/taxonomy/` — `resource.ts` (`getTaxonomyResourceConfig()`, `getTaxonomySearchableColumns()`, `getTaxonomyTreeFromEntity()`, `buildTaxonomyDagreRoot()`, `countTaxonomyTreeNodes()`, …); `form-helpers.ts` (locale tabs, canonicalize, defaultValues, compact translations); `form-submit.ts` (prepare/persist create-update payloads — import `@/lib/utils/taxonomy/form-submit` only, not via barrel, to avoid API caller cycle); barrel `index.ts` re-exports resource + form-helpers. Also `src/lib/utils/dagre-tree.ts` — read-only tree layout helpers.
 - **Nav**: `src/constants/dashboard/taxonomy-icons.ts` (`TAXONOMY_MENU_ICONS`) + taxonomy nodes in `admin-items.ts` / `sysadmin-items.ts`; filtered by `useFilteredDashboardItems`.
-- **API**: `src/api/callers/taxonomy/taxonomy.ts`, `src/api/hooks/taxonomy/useTaxonomy.ts`, shared SWR normalizers in `src/api/hooks/shared.ts`.
+- **API**: `src/api/callers/taxonomy/taxonomy-factory.ts (+ taxonomy-browser.ts)`, `src/api/hooks/taxonomy/useTaxonomy.ts`, shared SWR normalizers in `src/api/hooks/shared.ts`.
 - **UI**: `src/screen/common/taxonomy/taxonomy-list-page.tsx` (`TaxonomyListPage`), app routes under `src/app/[locale]/{admin,sysadmin}/taxonomy/*/page.tsx`, `src/components/features/taxonomy/*` (incl. `TaxonomyTreeViewButton` with `nodesDraggable={false}`, `child_render` column), shared `DagreTreeDialog`, `ConfirmDeleteDialog`.
 - **Docs**: `docs/taxonomy-admin.md` (routes, permissions, sidebar icons, slug, DnD).
 
@@ -47,7 +47,7 @@ _Last audited: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code 
 - **Constants**: `src/constants/media/file-rules.ts` — upload limits, accept strings, extension lists, `MEDIA_TAB_ACCEPT`, `MEDIA_COLLECTION_ALL_TABS`.
 - **Utils**: `src/lib/utils/media.ts` — `isImageFilename`, `getMediaTabExtensions`, `isExecutableExtension`, validation, `isImageMedia`, …
 - **Shared utils**: `formatBytes` (`src/lib/utils/format-bytes.ts`) for upload size labels.
-- **API**: `src/api/callers/media/media.ts`, `src/api/hooks/media/useMediaFiles.ts`; routes in `API_PRIVATE_ROUTES.media`.
+- **API**: `src/api/callers/media/media-factory.ts (+ media-browser.ts)`, `src/api/hooks/media/useMediaFiles.ts`; routes in `API_PRIVATE_ROUTES.media`.
 - **UI**: `src/components/features/media/*`; embedded from `taxonomy-form-dialog.tsx`.
 - **Docs**: `docs/media-collection.md`.
 
@@ -55,14 +55,14 @@ _Last audited: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code 
 
 - **Types**: `src/types/instructor.ts` — roster, applications, profiles, expertise junction rows, tickets, messages, list filters.
 - **Constants**: `src/constants/instructor/resources.ts` — `INSTRUCTOR_GROUP_READ_PERMISSIONS`; `src/constants/dashboard/instructor-icons.ts` — `INSTRUCTOR_MENU_ICONS`; instructor group in `admin-items.ts` / `sysadmin-items.ts` / `instructor-items.ts`.
-- **API**: `src/api/callers/instructor/instructor.ts`, `src/api/hooks/instructor/*`, shared SWR normalizers in `src/api/hooks/shared.ts`; routes in `API_PRIVATE_ROUTES.instructor`.
+- **API**: `src/api/callers/instructor/instructor-factory.ts (+ instructor-browser.ts)`, `src/api/hooks/instructor/*`, shared SWR normalizers in `src/api/hooks/shared.ts`; routes in `API_PRIVATE_ROUTES.instructor`.
 - **UI**: `src/screen/common/instructor/*` (shared pages), `src/screen/instructor/tickets/page.tsx`, app routes under `src/app/[locale]/{admin,sysadmin}/instructors/*/page.tsx`; `src/components/features/instructor/*`.
 - **Docs**: `docs/instructor-admin.md` (admin routes, permissions, ADM enhancements), **`docs/instructor-application.md`** (user become-instructor page).
 
 ## Course module
 
 - **Types**: `src/types/course.ts` — version status, `CourseDetail.last_rejection_reason`, outline nodes (`estimated_duration_ms` on section/lesson/sub-lesson), collaborators, leases, learner progress, request payloads (`UpsertCourseSubLessonPayload.estimated_duration_ms` optional for TEXT/QUIZ).
-- **API**: `src/api/callers/course/course.ts` (`getCourseDetailKey` / `getCourseDetailService` accept `{ includeOutline?: boolean }` → query `include_outline=false` when omitted on info/collaborators tabs; `deleteCourseSectionService` → `DELETE /api/v1/courses/:courseId/sections/:sectionId`, returns updated `CourseSection[]`), `src/api/hooks/course/useCourses.ts` (`useCourseDetail(courseId, { includeOutline })`); routes under `API_PRIVATE_ROUTES.course`.
+- **API**: `src/api/callers/course/course-factory.ts (+ course-browser.ts)` (`getCourseDetailKey` / `getCourseDetailService` accept `{ includeOutline?: boolean }` → query `include_outline=false` when omitted on info/collaborators tabs; `deleteCourseSectionService` → `DELETE /api/v1/courses/:courseId/sections/:sectionId`, returns updated `CourseSection[]`), `src/api/hooks/course/useCourses.ts` (`useCourseDetail(courseId, { includeOutline })`); routes under `API_PRIVATE_ROUTES.course`.
 - **UI**:
   - `src/screen/instructor/courses/page.tsx` — editable course list + create/delete owner flow
   - `src/screen/instructor/courses/editor-page.tsx` — editor shell, status header (edit `version_no` badge + optional `publishedVersionBadge` when both draft and live exist), route-backed tab panels; `useCourseDetail(courseId)` single SWR cache (tab switch = no refetch); taxonomy lists on **info** tab only (`include_images: false`); `editable` only when `draft_version.status === "DRAFT"`; shows `last_rejection_reason` after reject-fork
@@ -106,7 +106,7 @@ _Last audited: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code 
 ## Me API module
 
 - **Routes**: `API_PRIVATE_ROUTES.user` — `getMe`, `patchMe`, `deleteMe`, `hardDeleteMe`, `getMyPermissions`.
-- **Callers**: `src/api/callers/auth/auth.ts` — `getMeService`, `patchMeService`, `deleteMeService`, `hardDeleteMeService`, `getMyPermissionsService`.
+- **Callers**: `src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)` — `getMeService`, `patchMeService`, `deleteMeService`, `hardDeleteMeService`, `getMyPermissionsService`.
 - **Hook**: `useAuth` exposes `{ me, isLoading, error, errorCode, mutate }`; 401 on GET `/me` → `null` (not an error).
 - **Schema**: `src/schema/me/me.ts` — `updateMeSchema` (`avatar_file_id` optional UUID).
 - **UI**: No dedicated account-settings page yet; callers ready for avatar PATCH via `MediaCollectionDialog`.
@@ -116,8 +116,8 @@ _Last audited: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code 
 > **Popup:** `AuthSocialLogin` shows **Discord + Google** on login/signup modals. X OAuth code (`x-oauth.ts`, `use-x-login.ts`, `/auth/x/callback`) is retained but not wired to the popup.
 
 - **Shared popup utilities**: `src/lib/utils/oauth-popup-cookies.ts` (state cookie options/clear/read), `src/hooks/auth/use-oauth-popup-login.ts` (generic popup + `postMessage` relay), `src/components/auth/oauth-popup-callback-relay.tsx` (shared callback page relay). Discord and X provider actions/hooks compose these instead of duplicating cookie/popup logic.
-- **Shared finalizer**: `src/lib/utils/auth-action.ts` — `finalizeAuthLoginAction` (sets session cookies via `setAuthSessionCookies` on success) + `mapAuthAxiosError`. Reused by `loginAction`, `confirmAction`, and every OAuth action.
-- **Callers**: `src/api/callers/auth/auth.ts` — `googleLoginService`, `googleOneTapService`, `discordLoginService`, `xLoginService`; routes in `API_PUBLIC_ROUTES.auth` (`google`, `googleOnetap`, `discord`, `x`). The BE `/api/v1/auth/google/mobile` endpoint is a native-mobile-only contract and is intentionally not in the web route map.
+- **Shared finalizer**: `src/lib/utils/auth-action.ts` — `finalizeAuthLoginAction` (sets session cookies via `setAuthSessionCookies` on success) + `mapAuthApiError`. Reused by `loginAction`, `confirmAction`, and every OAuth action.
+- **Callers**: `src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)` — `googleLoginService`, `googleOneTapService`, `discordLoginService`, `xLoginService`; routes in `API_PUBLIC_ROUTES.auth` (`google`, `googleOnetap`, `discord`, `x`). The BE `/api/v1/auth/google/mobile` endpoint is a native-mobile-only contract and is intentionally not in the web route map.
 - **Hooks**: `src/hooks/auth/use-google-login.ts`, `use-google-one-tap.ts`, `use-discord-login.ts`, `use-x-login.ts`, `use-oauth-post-auth.ts`. Google uses the GSI code-client popup / One Tap prompt; Discord uses an OAuth popup + `postMessage` relay with `state` stored in short-lived HttpOnly cookies (no PKCE); X uses PKCE + state (retained, not on popup).
 - **UI**: `AuthSocialLogin` (`src/components/common/auth-menu/auth-social-login/`) wired by `LoginContent` / `SignupContent` with `useDiscordLogin` + `useGoogleLogin`; `GoogleOneTapHost` (`src/components/providers/google-one-tap-host.tsx`) mounted in `(web)/layout.tsx` for guests; GSI script loaded in `(web)/layout.tsx` only.
 - **Discord callback URL**: FE `startDiscordLoginAction` uses canonical `NEXT_PUBLIC_DISCORD_CALLBACK_URL` (must match BE `DISCORD_CALLBACK_URL` exactly). Do not derive `redirect_uri` from request headers.
@@ -132,7 +132,7 @@ _Last audited: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code 
 - `OAuth: AuthSocialLogin / GoogleOneTapHost -> hooks/auth (useDiscordLogin | useGoogleLogin | useGoogleOneTap [| useXLogin retained]) -> actions/auth/{discord-oauth,google-oauth,x-oauth} -> lib/utils/auth-action (finalizeAuthLoginAction) -> api/callers/auth`; success runs `useOAuthPostAuth` (`mutateMe` + close modal + push `nextLink`).
 - `api/hooks/auth/useAuth -> hooks/auth/use-auth-store` for SWR-to-Zustand sync.
 - All feature `catch` blocks after API calls → `toastApiError(useTranslations("errors.codes"), error)` (Auth, Media, Taxonomy, Instructor, Course).
-- `api/instance` depends on `lib/utils/cookie` for isomorphic token read/write.
+- `api/api-transport` + runtime adapters depend on `lib/utils/cookie` / `auth-session` for token cookie read/write.
 - `AppProviders -> EventsStreamProvider -> events/registry` starts transports; transports call `events/core/publish` → `store/events`.
 - Feature UI listens via `hooks/events/*` with shared source-scoping helpers under `src/hooks/events/internal/` (never import transports directly except outbound helpers).
 

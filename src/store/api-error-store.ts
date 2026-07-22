@@ -1,10 +1,10 @@
 /**
  * Global API error store (Zustand).
  *
- * Populated automatically by the Axios response interceptor in
- * src/api/instance.ts whenever a request fails and the caller did NOT
- * wrap the call in a try-catch.  Callers who do catch can still read or
- * clear entries here if they want to sync with the global state.
+ * Populated automatically by the authenticated Fetch transport reporter in
+ * src/api/transport/api-transport.ts whenever a final request failure is reported.
+ * Callers who catch errors can still read or clear entries here if they want
+ * to sync with the global state.
  *
  * Usage in any client component:
  *
@@ -33,7 +33,7 @@ export interface ApiErrorEntry {
    * the response body does not include a `code` field.
    */
   appCode: number;
-  /** Human-readable error message from the BE response body or Axios. */
+  /** Human-readable error message from the BE response body or transport. */
   message: string;
   /** Request URL (relative path, e.g. "/auth/login"). */
   url: string;

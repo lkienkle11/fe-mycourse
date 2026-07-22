@@ -72,7 +72,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Interface
 - **Path**: `src/types/api.ts`
 - **Purpose**: Return shape for low-level HTTP helpers (`apiFetch`, `apiPost`, etc.) — wraps `data`, `statusCode`, `headers`, `cookies`.
-- **Scope**: `src/api/methods.ts`, `src/api/callers/**`.
+- **Scope**: `src/api/core/methods.ts`, `src/api/callers/**`.
 - **Dependencies**: none.
 
 ### Asset: ApiPageInfo
@@ -112,7 +112,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Interface
 - **Path**: `src/types/auth/auth.ts`
 - **Purpose**: Response bodies for login, confirm, and refresh — three token fields only (no remember-me metadata in JSON).
-- **Scope**: `src/api/callers/auth/auth.ts`, `src/actions/auth/auth.ts`, `src/api/instance.ts`, refresh proxy.
+- **Scope**: `src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)`, `src/actions/auth/auth.ts`, `src/api/transport/api-transport.ts`, refresh proxy.
 - **Dependencies**: none.
 
 ### Asset: AUTH_SESSION_EXPIRES_AT_COOKIE / resolveRefreshMaxAgeFromBe
@@ -121,7 +121,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Path**: `src/lib/utils/auth-session.ts`
 - **Purpose**: FE-only HttpOnly cookie storing **absolute session expiry** (Unix seconds) derived from BE `Set-Cookie` Max-Age. Fallback computes `expires_at - now` so non-remember sessions are never extended when Set-Cookie is unavailable.
 - **Scope**: `setAuthSessionCookies`, `clearAuthSessionCookies`, refresh proxy, login/confirm actions.
-- **Dependencies**: `parseMaxAgeForCookie` from `axios-helpers`.
+- **Dependencies**: `parseMaxAgeForCookie` from `fetch-helpers` (`src/api/core/fetch-helpers.ts`).
 
 ### Asset: AuthActions
 - **Name**: `AuthActions`
@@ -156,9 +156,9 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant object (mirrors `be/pkg/errcode/codes.go`)
 - **Path**: `src/constants/api-error-code.ts` (barrel: `@/constants`)
 - **Purpose**: FE-side mirror of BE application error codes. Use to compare `response.code` in callers and Server Actions instead of hardcoding numeric values.
-- **Scope**: All API callers, Server Actions, interceptors.
+- **Scope**: All API callers, Server Actions, authenticated transport.
 - **Dependencies**: none.
-- **Current Usage**: `src/api/instance.ts`, `src/actions/auth/auth.ts`, login/signup UI.
+- **Current Usage**: `src/api/transport/api-transport.ts`, `src/actions/auth/auth.ts`, login/signup UI.
 - **Reuse Rule**: Always import from here. Never hardcode `code === 0` or `code === 3002` inline.
 
 ### Asset: API_PUBLIC_ROUTES
@@ -167,7 +167,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Path**: `src/constants/api-route.ts`
 - **Purpose**: All public (unauthenticated) BE API endpoint paths. Prevents scattered hardcoded strings.
 - **Current Entries**: `auth.login`, `auth.register`, `auth.confirm`, `auth.refresh`, `auth.logout`.
-- **Scope**: API callers, `api/instance.ts` token refresh interceptor.
+- **Scope**: API callers, refresh Route Handler / runtime refresh adapters.
 - **Dependencies**: none.
 
 ### Asset: API_PRIVATE_ROUTES
@@ -339,7 +339,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: Instructor API callers & hooks
 - **Name**: `listInstructorRosterService`, `useInstructorApplicationsList`, …
 - **Type**: Service functions + SWR hooks
-- **Path**: `src/api/callers/instructor/instructor.ts`, `src/api/hooks/instructor/*`
+- **Path**: `src/api/callers/instructor/instructor-factory.ts (+ instructor-browser.ts)`, `src/api/hooks/instructor/*`
 - **Purpose**: HTTP + cache for roster, applications (approve/reject), profiles, expertise, tickets.
 - **Scope**: `src/screen/common/instructor/*`, `src/screen/instructor/tickets/page.tsx`.
 - **Dependencies**: `API_PRIVATE_ROUTES.instructor`, `src/types/instructor.ts`.
@@ -528,7 +528,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: getTaxonomyDetailService
 - **Name**: `getTaxonomyDetailService`, `listTaxonomyService`, `useTaxonomyList`
 - **Type**: API service + SWR hook
-- **Path**: `src/api/callers/taxonomy/taxonomy.ts`, `src/api/hooks/taxonomy/useTaxonomy.ts`
+- **Path**: `src/api/callers/taxonomy/taxonomy-factory.ts (+ taxonomy-browser.ts)`, `src/api/hooks/taxonomy/useTaxonomy.ts`
 - **Purpose**: List with `locale` for localized labels; detail with `locale` (public) or `view=edit` (canonical + full `translations` + `row_version`). Admin edit **must** use `view=edit` — do not treat list row as editable SoT.
 - **Scope**: Taxonomy admin, course editor pickers, instructor expertise/application pickers (list + locale).
 - **REUSE MAP:** reuse `useLocale`, `LANGUAGE_OPTIONS`, course `expected_row_version` + `toastApiError` for **3005**; do **not** invent `expected_updated_at`; no `messages/ja.ts`.
@@ -616,7 +616,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: course review history tab + hook
 - **Name**: `getCourseReviewHistoryKey`, `listCourseReviewHistoryService`, `useCourseReviewHistory`, `CourseEditorReviewHistoryTab`
 - **Type**: API callers + SWR hook + React component
-- **Path**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourseReviewHistory.ts`, `src/components/features/course/course-editor-review-history-tab.tsx`
+- **Path**: `src/api/callers/course/course-factory.ts (+ course-browser.ts)`, `src/api/hooks/course/useCourseReviewHistory.ts`, `src/components/features/course/course-editor-review-history-tab.tsx`
 - **Purpose**: Paginated instructor review history (`GET /courses/:id/review-history`); filter by `APPROVED`/`REJECTED`; URL query sync via `instructorCourseEditorTabHref`.
 - **Scope**: `InstructorCourseEditorPage` tab `review-history`.
 - **Dependencies**: `useApiListQuery`, `InstructorListPagination`, `courseApproveFeedbackSchema` / `courseRejectReasonSchema` on admin review page.
@@ -648,7 +648,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: instructor roster picker + hook
 - **Name**: `getInstructorRosterCandidatesKey`, `listInstructorRosterCandidatesService`, `addInstructorRosterBulkService`, `useInstructorRosterCandidates`, `InstructorRosterPickerDialog`
 - **Type**: API callers + SWR hook + React component
-- **Path**: `src/api/callers/instructor/instructor.ts`, `src/api/hooks/instructor/useInstructorRosterCandidates.ts`, `src/components/features/instructor/instructor-roster-picker-dialog.tsx`
+- **Path**: `src/api/callers/instructor/instructor-factory.ts (+ instructor-browser.ts)`, `src/api/hooks/instructor/useInstructorRosterCandidates.ts`, `src/components/features/instructor/instructor-roster-picker-dialog.tsx`
 - **Purpose**: Admin/sysadmin roster add modal — multi-select from `GET /instructors/roster-candidates` (P42); excludes users with instructor/sysadmin/admin roles; bulk add via `POST /instructors/bulk`.
 - **Scope**: `InstructorRosterPage` (`/admin/instructors/roster`, `/sysadmin/instructors/roster`).
 - **Dependencies**: `UserMultiSelectPickerDialog`, `useUserMultiSelectPickerState`, `UserPickerFilters`, `PermissionGate` + `InstructorRosterCreate`, `finalizeBulkUserPickerSubmit`, `handleAddInstructors(userIds[])`.
@@ -656,7 +656,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: course collaborators tab + picker + hooks
 - **Name**: `getCourseCollaboratorsKey`, `listCourseCollaboratorsService`, `useCourseCollaborators`, `getCourseInstructorCandidatesKey`, `listCourseInstructorCandidatesService`, `useCourseInstructorCandidates`, `CourseCollaboratorsTab`, `CourseCollaboratorPickerDialog`
 - **Type**: API callers + SWR hooks + React components
-- **Path**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourseCollaborators.ts`, `src/api/hooks/course/useCourseInstructorCandidates.ts`, `src/components/features/course/course-editor-collaborators-tab.tsx`, `src/components/features/course/course-collaborator-picker-dialog.tsx`
+- **Path**: `src/api/callers/course/course-factory.ts (+ course-browser.ts)`, `src/api/hooks/course/useCourseCollaborators.ts`, `src/api/hooks/course/useCourseInstructorCandidates.ts`, `src/components/features/course/course-editor-collaborators-tab.tsx`, `src/components/features/course/course-collaborator-picker-dialog.tsx`
 - **Purpose**: Paginated collaborator list with search/URL sync; owner opens multi-select picker backed by `GET …/instructor-candidates` (`course_collaborator_candidate:read` / P67, replaces global `instructor_roster:read` P41). Picker stays open on add failure (selection preserved for retry). After remove on the last page, tab clamps URL to `total_pages`. List refresh uses `useCourseCollaborators().mutate()` only — add/remove do not refetch full `CourseDetail` (submit revalidates via `mutateDetail()`). **Responsive overflow**: picker `max-w-xl` with `overflow-x-hidden`; long `display_name` uses `truncate` + `title`; long `email` uses `break-all` (same on tab list rows). Pattern matches `course-editor-dialogs` (`min-w-0` flex chain). UI gates add/picker with `PermissionGate` + `canManageCollaborators` (OWNER).
 - **Scope**: `InstructorCourseEditorPage` tab `collaborators`.
 - **Dependencies**: `useApiListQuery`, `InstructorListPagination`, `buildInstructorPageFooterFromInfo`, `Checkbox`, `Dialog`, `UserMultiSelectPickerDialog`, `useCourseCollaboratorActions`, `addCourseCollaboratorsBulkService`, `finalizeBulkUserPickerSubmit`. Filter types: `CourseCollaboratorListFilters` / `CourseInstructorCandidateFilters` = `ApiListQueryParams`; `CourseInstructorCandidate` = `UserPickerCandidate`.
@@ -664,7 +664,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: instructor course detail hook
 - **Name**: `getCourseDetailKey`, `getCourseDetailService`, `useCourseDetail`
 - **Type**: API callers + SWR hook
-- **Path**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourses.ts`
+- **Path**: `src/api/callers/course/course-factory.ts (+ course-browser.ts)`, `src/api/hooks/course/useCourses.ts`
 - **Purpose**: Load `CourseDetail`; optional `{ includeOutline?: boolean }` appends `include_outline=false` for lighter info/collaborators tab loads (BE skips outline queries).
 - **Scope**: `editor-page.tsx` uses `useCourseDetail(courseId)` (default full detail). Optional `{ includeOutline: false }` for non-editor callers only.
 - **Dependencies**: `useApiDetailQuery`, `API_PRIVATE_ROUTES.course`.
@@ -672,7 +672,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: course-admin API services + hooks
 - **Name**: `listAdminCoursesService`, `listTrashedCoursesService`, `trashCourseService`, `restoreTrashedCourseService`, `permanentDeleteTrashedCourseService`, `useAdminCourses`, `useTrashedCourses`
 - **Type**: API callers + SWR hooks
-- **Path**: `src/api/callers/course/course.ts`, `src/api/hooks/course/useCourses.ts`
+- **Path**: `src/api/callers/course/course-factory.ts (+ course-browser.ts)`, `src/api/hooks/course/useCourses.ts`
 - **Purpose**: Sysadmin course catalog, trash list, and trash lifecycle mutations. Row ⋮ actions use `DeferredDropdownMenuItem` when opening `ConfirmDeleteDialog`.
 - **Scope**: `course-admin-all-page`, `course-admin-trash-page`.
 - **Dependencies**: `apiFetch`, `admin:modify` permission on BE.
@@ -839,28 +839,37 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: General Server Actions / Route Handlers for UI state cookies.
 - **Dependencies**: none.
 
-### Asset: syncAuthSessionCookiesAction
-- **Name**: `syncAuthSessionCookiesAction(tokens: SyncAuthSessionCookiesInput): Promise<void>`
-- **Type**: Server Action
-- **Path**: `src/actions/auth/sync-auth-session.ts`
-- **Purpose**: Rewrites HttpOnly auth cookies after server-side silent refresh. TTL from BE `Set-Cookie` Max-Age or persisted `auth_session_expires_at` (remaining lifetime).
-- **Scope**: `src/api/instance.ts` SSR refresh path.
-- **Dependencies**: `setAuthSessionCookies` from `@/lib/utils/auth-session`.
+### Asset: setAuthSessionCookies
+- **Name**: `setAuthSessionCookies(input: SetAuthSessionCookiesInput): Promise<void>`
+- **Type**: Server-only utility function
+- **Path**: `src/lib/utils/auth-session.ts` — **not** re-exported from `@/lib/utils` (barrel is client-safe).
+- **Purpose**: Writes auth cookies after login, confirm, or refresh relay. Persists absolute expiry in `auth_session_expires_at` when BE Set-Cookie is parsed; fallback never extends expiry.
+- **Scope**: `src/actions/auth/auth.ts`, `src/api/auth/server-auth.ts`, `src/app/api/auth/refresh/route.ts`.
+- **Import**: `import { setAuthSessionCookies } from "@/lib/utils/auth-session";`
+- **Dependencies**: `server-only` (0.0.1), `next/headers`, `buildAuthCookieOptions`, `getCookieDomain` from `./cookie`.
+
+### Asset: rawPostRefreshUpstream
+- **Name**: `rawPostRefreshUpstream<T>(url, input): Promise<ApiResult<T>>`
+- **Type**: Auth-internal raw helper (not public `rawPost` / `RawApiOptions`)
+- **Path**: `src/api/auth/refresh-upstream-raw.ts`
+- **Purpose**: POST BE refresh with `X-Refresh-Token` / `X-Session-Id`; hard-codes `redirect: "error"` and `trustedOrigin` from `baseURL`. Keeps public `RawApiOptions` locked to the plan contract.
+- **Scope**: `src/app/api/auth/refresh/route.ts`, `src/api/auth/server-auth.ts` (`refreshUpstreamSession`).
+- **Dependencies**: `executeFetchCore`, `resolveTrustedOrigin`.
 
 ### Asset: resolveRefreshMaxAgeFromBe
 - **Name**: `resolveRefreshMaxAgeFromBe(input): number | undefined`
 - **Type**: Utility function
 - **Path**: `src/lib/utils/auth-session.ts`
 - **Purpose**: Resolves refresh/session cookie Max-Age (seconds). Priority: `refreshMaxAge` (parsed Set-Cookie) → remaining seconds until `auth_session_expires_at`. No hardcoded TTL constants.
-- **Scope**: `setAuthSessionCookies`, refresh proxy, SSR interceptor relay.
+- **Scope**: `setAuthSessionCookies`, refresh proxy, server writable refresh relay.
 - **Dependencies**: `parseMaxAgeForCookie`.
 
 ### Asset: parseMaxAgeForCookie
 - **Name**: `parseMaxAgeForCookie(setCookieHeader, cookieName): number | undefined`
 - **Type**: Utility function
-- **Path**: `src/api/axios-helpers.ts`
+- **Path**: `src/api/core/fetch-helpers.ts`
 - **Purpose**: Parses `Max-Age` from raw BE `Set-Cookie` header(s) for `refresh_token`.
-- **Scope**: `src/app/api/auth/refresh/route.ts`, `src/api/instance.ts` SSR refresh.
+- **Scope**: `src/app/api/auth/refresh/route.ts`, `src/api/auth/server-auth.ts` refresh.
 - **Dependencies**: none.
 
 ### Asset: pending-tab-auth-sync / useAuthConfirmTabSync
@@ -873,21 +882,12 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: `localStorage` helpers for site-wide learner promo banner (`mycourse:become_instructor_banner_dismissed`); `useSyncExternalStore` subscribe/getSnapshot/serverSnapshot pair + `dismissBecomeInstructorBanner`, exported `BECOME_INSTRUCTOR_PROMO_BANNER_HEIGHT_PX`.
 - **Scope**: `BecomeInstructorPromoBanner` in `(web)` layout.
 
-### Asset: setAuthSessionCookies
-- **Name**: `setAuthSessionCookies(input: SetAuthSessionCookiesInput): Promise<void>`
-- **Type**: Server-only utility function
-- **Path**: `src/lib/utils/auth-session.ts` — **not** re-exported from `@/lib/utils` (barrel is client-safe).
-- **Purpose**: Writes auth cookies after login, confirm, or refresh relay. Persists absolute expiry in `auth_session_expires_at` when BE Set-Cookie is parsed; fallback never extends expiry.
-- **Scope**: `src/actions/auth/auth.ts`, `src/actions/auth/sync-auth-session.ts`, `src/app/api/auth/refresh/route.ts`.
-- **Import**: `import { setAuthSessionCookies } from "@/lib/utils/auth-session";`
-- **Dependencies**: `server-only` (0.0.1), `next/headers`, `buildAuthCookieOptions`, `getCookieDomain` from `./cookie`.
-
 ### Asset: getCookieValue / setCookieValue
 - **Name**: `getCookieValue(name): Promise<string | null>`, `setCookieValue(name, value, options?): Promise<void>`
 - **Type**: Isomorphic utility functions
 - **Path**: `src/lib/utils/cookie.ts`
 - **Purpose**: Unified cookie read/write that works on both client (via `js-cookie`) and server (via `next/headers`). Hides the environment-branching logic.
-- **Scope**: Any isomorphic code that needs to read/write cookies (e.g. token extraction in interceptors).
+- **Scope**: Any isomorphic code that needs to read/write cookies (e.g. token extraction in transport).
 - **Dependencies**: `js-cookie`, `next/headers`, `isServer`.
 
 ### Asset: pickCharacter
@@ -953,7 +953,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `useApiError`
 - **Type**: Zustand store
 - **Path**: `src/store/api-error-store.ts`
-- **Purpose**: Global API error log — populated automatically by the Axios response interceptor. Keeps at most 20 entries. Methods: `push(error)`, `remove(id)`, `clear()`.
+- **Purpose**: Global API error log — populated automatically by the Fetch transport reporter. Keeps at most 20 entries. Methods: `push(error)`, `remove(id)`, `clear()`.
 - **Scope**: Error display components, toast-on-error listeners.
 - **Dependencies**: `zustand`.
 
@@ -1029,21 +1029,43 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ## API Layer Functions
 
-### Asset: axios-helpers (normalizeHeaders / parseSetCookies / buildAxiosConfigWithCookies)
-- **Name**: `normalizeHeaders`, `parseSetCookies`, `buildAxiosConfigWithCookies`, `parseAxiosResponseMeta`
-- **Type**: HTTP header/cookie utilities
-- **Path**: `src/api/axios-helpers.ts`
-- **Purpose**: Shared Axios config and response meta parsing for `methods.ts` and `raw-http.ts` (no `apiInstance` import — safe for refresh path).
-- **Scope**: `src/api/methods.ts`, `src/api/raw-http.ts` only. **Do not duplicate** these helpers elsewhere.
-- **Dependencies**: `axios` types only.
+### Asset: fetch-helpers (normalizeHeaders / parseSetCookies / parseFetchResponseMeta)
+- **Name**: `normalizeHeaders`, `parseSetCookies`, `parseMaxAgeForCookie`, `parseFetchResponseMeta`, `combineURLs`, `appendQueryParams`
+- **Type**: HTTP header/cookie/URL utilities
+- **Path**: `src/api/core/fetch-helpers.ts`
+- **Purpose**: Web-neutral helpers for Fetch transport and cookie Max-Age parsing (no transport import — safe for refresh path). `parseMaxAgeForCookie` requires digit boundary (`;` / whitespace / end); malformed suffix → `undefined`.
+- **Scope**: `src/api/core/fetch-core.ts`, `src/api/transport/api-transport.ts`, `src/lib/utils/auth-session.ts`. **Do not duplicate** these helpers elsewhere.
+- **Dependencies**: none (Web APIs only).
 
-### Asset: apiFetch / apiPost / apiPut / apiDelete / apiOptions
-- **Name**: `apiFetch<T>`, `apiPost<T,D>`, `apiPut<T,D>`, `apiDelete<T>`, `apiOptions<T>`
+### Asset: executeFetchCore / executeFetchCoreOutcome
+- **Name**: `executeFetchCore`, `executeFetchCoreOutcome`
+- **Type**: Native Fetch executor (raw + authenticated modes)
+- **Path**: `src/api/core/fetch-core.ts` (+ `fetch-core-redirect.ts` for server authenticated hops)
+- **Purpose**: Single executor shared by raw helpers and `ApiTransport`. Outcome path is split into file-private `prepareFetchCoreRequest` → `dispatchFetchResponse` → `toFetchCoreOutcome`; redirect hops use `resolveRedirectTargetUrl` / `applyRedirectHopState`. Optional mutation `compress` (default false) gzips JSON POST/PUT/PATCH **once** (body memo across refresh retry); forces `Content-Encoding: gzip` after header merge; gzip is abort/timeout-aware. **Do not change public signatures** when shortening internals.
+- **Scope**: `api-transport` (`runAttempt`), `raw-http`, `serverRawFetch`, `executeFetchCore` wrapper.
+- **Dependencies**: `fetch-core-body`, `fetch-helpers`, `fetch-error`, `isServer`.
+
+### Asset: serverRawFetch
+- **Name**: `serverRawFetch<T>(url, options)`
+- **Type**: Server-only public cached GET
+- **Path**: `src/api/server/server-raw-http.ts`
+- **Purpose**: Requires `cacheProfileId`; rejects signal/cookies/withCredentials/Authorization/Cookie; validates via `cache-policy` then calls `executeFetchCore` in raw mode. Option guards live in file-private helpers; prefer `throwApiPolicyError` for policy construction.
+- **Scope**: Server Components / RSC public reads only. Not re-exported from `@/api` barrel.
+- **Dependencies**: `cache-policy`, `executeFetchCore`, `server-only`.
+
+### Asset: reportApiError / browser refresh
+- **Name**: `reportApiError` (file-private), `refreshBrowserSession`
+- **Path**: `src/api/transport/api-transport.ts`, `src/api/auth/browser-auth.ts`
+- **Purpose**: Reporter logs/stores FE-owned safe copy only (never BE body `message`). `ApiRefreshRequiredError` → server safe-log once then rethrow. `refreshBrowserSession()` has no `AbortSignal` (SoT: public auth options omit signal). BFF maps `ApiTimeoutError` → 504.
+- **Dependencies**: `fetch-error`, `auth-refresh`, `rawPost`.
+
+### Asset: apiFetch / apiPost / apiPut / apiPatch / apiDelete / apiOptions
+- **Name**: `apiFetch<T>`, `apiPost<T,D>`, `apiPut<T,D>`, `apiPatch<T,D>`, `apiDelete<T>`, `apiOptions<T>`
 - **Type**: HTTP method wrappers
-- **Path**: `src/api/methods.ts`
-- **Purpose**: Thin wrappers around the shared Axios `apiInstance`. All return `ApiResult<T>` (data + statusCode + headers + cookies). Support `headers`, `cookies` (server-side forwarding), `params`, and `otherAxiosInstance` options.
-- **Scope**: All API callers in `src/api/callers/**`. **Do not call `apiInstance.get/post/...` directly.**
-- **Dependencies**: `apiInstance`, `ApiResult`, `axios-helpers`.
+- **Path**: `src/api/core/methods.ts`
+- **Purpose**: Thin wrappers around `browserApiMethods` / `createApiMethods(transport)`. All return `ApiResult<T>` (data + statusCode + headers + cookies). Support `headers`, `cookies` (server-side forwarding), and `params`.
+- **Scope**: All API callers in `src/api/callers/**`. **Do not call `apiTransport.request` directly from features.**
+- **Dependencies**: `apiTransport`, `ApiResult`, `fetch-helpers`.
 
 ### Asset: AuthEmailPasswordFields / AuthFullNameField
 - **Name**: `AuthEmailPasswordFields`, `AuthFullNameField`, `AuthEmailField`, `AuthPasswordField`
@@ -1053,18 +1075,18 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `login-content.tsx`, `signup-content.tsx`. Pass `error` only — **do not** call `t(errors.*.message)` in parents (avoids `MISSING_MESSAGE` from `t(undefined)`).
 - **Dependencies**: `InputGroup`, lucide icons, react-hook-form, `next-intl`.
 
-### Asset: apiInstance
-- **Name**: `apiInstance`
-- **Type**: Axios instance
-- **Path**: `src/api/instance.ts`
-- **Purpose**: Shared Axios instance with: `baseURL` from `NEXT_PUBLIC_API_URL`/`API_URL`; request interceptor that attaches `access_token` cookie as `Authorization: Bearer`; response interceptor that detects `X-Token-Expired` header and performs transparent token refresh with client-side mutex (prevents refresh stampede).
-- **Scope**: Used exclusively via `apiFetch`/`apiPost` etc. in `src/api/methods.ts`.
-- **Dependencies**: `axios`, `js-cookie`, `getCookieValue`, `setCookieValue`, `isServer`, `useApiError`.
+### Asset: apiTransport
+- **Name**: `apiTransport`
+- **Type**: ApiTransport
+- **Path**: `src/api/transport/api-transport.ts`
+- **Purpose**: Browser authenticated Fetch transport with runtime adapters: server Bearer attach from cookies, refresh eligibility, one retry, reporter matrix for both thrown transport errors and final HTTP errors (`reportApiError` → console + Zustand on browser). Refresh failure attaches a sanitized cause; browser refresh uses absolute same-origin `/api/auth/refresh`. Default timeout 10s; per-request `options.timeout` (ms) overrides transport/`fetch-core` default (e.g. media upload 30s).
+- **Scope**: Used via `apiFetch`/`apiPost` etc. in `src/api/core/methods.ts` (browser) or `createApiMethods` after FromRequest factories (server).
+- **Dependencies**: `fetch-core`, `browser-auth` / `server-auth`, `useApiError`, `isServer`.
 
 ### Asset: Me API services
 - **Name**: `getMeService`, `patchMeService`, `deleteMeService`, `hardDeleteMeService`, `getMyPermissionsService`, `getMeEndpointKey`
 - **Type**: API services + SWR key
-- **Path**: `src/api/callers/auth/auth.ts`
+- **Path**: `src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)`
 - **Purpose**: `GET /api/v1/me` returns `null` on 401; PATCH/DELETE/permissions for profile lifecycle. `getMeEndpointKey` is the canonical SWR cache key.
 - **Scope**: `useAuth` hook (`errorCode` for non-401 failures); future account-settings UI.
 - **Dependencies**: `apiFetch`, `apiPatch`, `apiDelete`, `buildQueryParams`, `API_PRIVATE_ROUTES.user`.
@@ -1072,7 +1094,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: loginService
 - **Name**: `loginService(payload: LoginPayload): Promise<{ data, cookies }>`
 - **Type**: API service
-- **Path**: `src/api/callers/auth/auth.ts`
+- **Path**: `src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)`
 - **Purpose**: Calls `POST /api/v1/auth/login`. Returns both the response body (`data`) and parsed `Set-Cookie` headers (`cookies`) so the Server Action can re-set cookies for the browser.
 - **Scope**: `loginAction` Server Action.
 - **Dependencies**: `apiPost`, `API_PUBLIC_ROUTES`.
@@ -1110,7 +1132,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `ApiErrorCode` (`src/constants/api-error-code.ts`), `ApiResponse` type.
 
 ### Asset: toastApiError / translateApiErrorCode
-- **Name**: `toastApiError`, `translateApiErrorCode`, `extractAxiosApiError`, `resolveApiErrorMessageKey`
+- **Name**: `toastApiError`, `translateApiErrorCode`, `extractApiError`, `resolveApiErrorMessageKey`
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/api-error.ts` (barrel: `@/lib/utils`)
 - **Purpose**: Unified API error resolver — maps `response.code` → `errors.codes.{code}` i18n key. Never passes BE `message` to UI.
