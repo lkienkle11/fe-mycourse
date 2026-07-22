@@ -1,6 +1,6 @@
 # API Overview (`fe-mycourse`)
 
-_Last audited: 2026-07-22 (authenticated per-request `timeout` override; media upload 30s)._
+_Last audited: 2026-07-22 (raw GET optional `cache?: RequestCache`; default cache behavior unchanged)._
 
 ## Scope
 Frontend API layer lives in `src/api/` and is used by `src/actions/` and client hooks.
@@ -26,7 +26,9 @@ Transport code is grouped by folder (SoT owners stay as separate files inside fo
   - Fetch redirect TypeError classification lives only in **`classifyFetchFailure`** (not a dead branch after `executeOnce`).
 - `core/fetch-core-body.ts`: replayable bodies; server strings → UTF-8 bytes.
 - `core/fetch-error.ts`: transport errors + `parseApiErrorEnvelope` + `throwApiPolicyError`.
-- `core/methods.ts` / `core/raw-http.ts`: typed `api*` / `raw*` helpers. **Public `RawApiOptions` is locked** to `headers`, `cookies`, `params`, `timeout`, `withCredentials`, `baseURL`, `signal` — no public `redirect` / `trustedOrigin`.
+- `core/methods.ts` / `core/raw-http.ts`: typed `api*` / `raw*` helpers. **Public `RawApiOptions`** includes `headers`, `cookies`, `params`, `timeout`, `withCredentials`, `baseURL`, `signal`, and optional **`cache?: RequestCache` (honored only for raw GET)**. No public `redirect` / `trustedOrigin` (credential refresh uses `rawPostRefreshUpstream`).
+  - **Default when `cache` omitted (unchanged):** browser GET → omit Fetch cache (browser HTTP semantics); server GET → `no-store`; POST/PUT/PATCH/DELETE/OPTIONS → always `no-store` (caller `cache` ignored).
+  - **Opt-in:** `rawFetch(url, { cache: "force-cache" })` (GET only). This is Fetch RequestCache opt-in — **not** a 30s TTL. Exact TTL still needs `Cache-Control: max-age=…`, Cache Storage timestamps, or Next `revalidate` via `serverRawFetch` profiles.
 - `auth/refresh-upstream-raw.ts`: **`rawPostRefreshUpstream`** — credential refresh POST only; hard-codes `redirect: "error"` + `resolveTrustedOrigin(baseURL)` so `X-Refresh-Token` / `X-Session-Id` never follow cross-origin redirects. Used by BFF + `refreshUpstreamSession`.
 - `server/cache-policy.ts` + `server/server-raw-http.ts`: public cache profiles + cached GET.
   - **`serverRawFetch`** = `assertServerRawFetchOptions` + `resolveServerRawCacheOptions` + `executeFetchCore` (no auth cookies/signal/credentials).
