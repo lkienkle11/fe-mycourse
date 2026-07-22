@@ -496,6 +496,8 @@ Project uses `src/proxy.ts` as locale proxy middleware entry. Keep this file in 
 
 **OAuth callback exclusion (required):** `/auth/discord/callback` and `/auth/x/callback` are locale-less popup relay routes (`src/app/auth/*/callback/`). They must be excluded from the matcher so next-intl does not redirect them to `/vi/auth/...` (which 404s and breaks Discord/X popup login). `NEXT_PUBLIC_*_CALLBACK_URL` values must remain `<origin>/auth/discord/callback` and `<origin>/auth/x/callback` — not locale-prefixed.
 
+**COOP header (Cloudflare / edge proxy):** Do **not** set `Cross-Origin-Opener-Policy: same-origin` on the FE marketing/auth origin if Discord/Google OAuth popups are used. Restrictive COOP can null `window.opener` and break popup `postMessage` / focus return. FE Next config does not emit COOP; verify Transform Rules / Response Headers at Cloudflare (or nginx). Compatible approach: omit COOP, or use a policy that still allows `window.opener` for same-site popups. `ERR_BLOCKED_BY_CLIENT` is typically an ad-blocker/extension; the API reporter **does** record it (network failure) when `isServer()` or development Console / browser Zustand.
+
 Verify locale redirect and OAuth callback reachability:
 
 ```bash

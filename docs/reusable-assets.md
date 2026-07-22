@@ -404,7 +404,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `HEADER_DROPDOWN_ITEMS`
 - **Type**: Constant (`UserMenuGroup[]`)
 - **Path**: `src/constants/common.ts`
-- **Purpose**: Static configuration for the user dropdown menu in the header. Each item may declare `permissions`, optional `permissionMode` (`"all"` default, `"any"` for OR), and optional `titleKey` for translated labels. The `roles` group is listed first, followed by study, account, and session. The role-switch group (`/sysadmin`, `/admin`, `/instructor`) stays permission-gated by role-modify permissions; the older study/account item guards are temporarily commented out in config. Logout group omits permissions (always visible when logged in).
+- **Purpose**: Static configuration for the user dropdown menu in the header. Each item may declare `permissions`, optional `permissionMode` (`"all"` default, `"any"` for OR), and optional `titleKey` for translated labels. Active `HEADER_DROPDOWN_ITEMS`: `roles` + `session`. Study/account groups live in **`HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING`** (same file; typechecked; not rendered) until `/my-courses`, `/my-cart`, `/wishlist`, `/notifications`, and `/account-settings` pages ship — uncomment the spread into `HEADER_DROPDOWN_ITEMS` then (do not delete route constants). Role-switch stays permission-gated; older study/account per-item guards remain commented inside the pending groups. Logout group omits permissions (always visible when logged in).
 - **Scope**: `UserMenuDropdownItems` (via `useFilteredUserMenuGroups`), `user-menu.tsx`, `sidebar-auth-footer.tsx`.
 - **Dependencies**: `UserMenuGroup`, `UserMenuItem` (`src/types/user-menu.ts`), `PERMISSIONS`.
 
@@ -1056,7 +1056,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 ### Asset: reportApiError / browser refresh
 - **Name**: `reportApiError` (file-private), `refreshBrowserSession`
 - **Path**: `src/api/transport/api-transport.ts`, `src/api/auth/browser-auth.ts`
-- **Purpose**: Reporter logs/stores FE-owned safe copy only (never BE body `message`). `ApiRefreshRequiredError` → server safe-log once then rethrow. `refreshBrowserSession()` has no `AbortSignal` (SoT: public auth options omit signal). BFF maps `ApiTimeoutError` → 504.
+- **Purpose**: Reporter classifies expected vs logged failures. Expected = `ApiRefreshRequiredError` only. Guest `GET /me` 401 and `ERR_BLOCKED_BY_CLIENT` are logged. Logged set includes all **4xx**, **5xx**, **abort, network, parse**, timeout, policy, replay. **Console `[API]`:** `isServer()` **OR** `NODE_ENV === "development"`. Production browser silent; Zustand browser-only. No logging feature flags.
 - **Dependencies**: `fetch-error`, `auth-refresh`, `rawPost`.
 
 ### Asset: apiFetch / apiPost / apiPut / apiPatch / apiDelete / apiOptions
@@ -1079,7 +1079,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `apiTransport`
 - **Type**: ApiTransport
 - **Path**: `src/api/transport/api-transport.ts`
-- **Purpose**: Browser authenticated Fetch transport with runtime adapters: server Bearer attach from cookies, refresh eligibility, one retry, reporter matrix for both thrown transport errors and final HTTP errors (`reportApiError` → console + Zustand on browser). Refresh failure attaches a sanitized cause; browser refresh uses absolute same-origin `/api/auth/refresh`. Default timeout 10s; per-request `options.timeout` (ms) overrides transport/`fetch-core` default (e.g. media upload 30s).
+- **Purpose**: Browser authenticated Fetch transport with runtime adapters: server Bearer attach from cookies, refresh eligibility, one retry, reporter matrix (`reportApiError` → sanitized server process log; browser `[API]` Console only when `NODE_ENV === "development"`; browser Zustand always for abnormal). Refresh failure attaches a sanitized cause; browser refresh uses absolute same-origin `/api/auth/refresh`. Default timeout 10s; per-request `options.timeout` (ms) overrides transport/`fetch-core` default (e.g. media upload 30s).
 - **Scope**: Used via `apiFetch`/`apiPost` etc. in `src/api/core/methods.ts` (browser) or `createApiMethods` after FromRequest factories (server).
 - **Dependencies**: `fetch-core`, `browser-auth` / `server-auth`, `useApiError`, `isServer`.
 
@@ -1135,7 +1135,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `toastApiError`, `translateApiErrorCode`, `extractApiError`, `resolveApiErrorMessageKey`
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/api-error.ts` (barrel: `@/lib/utils`)
-- **Purpose**: Unified API error resolver — maps `response.code` → `errors.codes.{code}` i18n key. Never passes BE `message` to UI.
+- **Purpose**: Unified API error resolver — maps `response.code` → `errors.codes.{code}` i18n key. Never passes BE `message` to UI. Development may `console.debug({ code })` only — never BE `message`. Production browser: no custom API Console from this helper.
 - **Scope**: Auth, Me, Media, Taxonomy, Instructor, Course — all `catch` blocks after API calls.
 - **Dependencies**: `src/messages/error-codes.ts`, `ApiErrorCode`.
 

@@ -414,7 +414,7 @@ Trade-off with filesystem cache disabled: **slightly slower cold compile** after
 // src/constants/route.ts
 PUBLIC_ROUTES = {
   home: "/",
-  forgotPassword: "/forgot-password",
+  forgotPassword: "/forgot-password", // constant kept; login Link commented until page exists
   confirmEmail: "/confirm-email",
   logout: "/logout",
 }
@@ -423,7 +423,7 @@ PRIVATE_ROUTES = {
   admin: { ... },
   instructor: { root: "/instructor", courses: "/instructor/courses", ... },
   sysadmin: { ... },
-  account: { ... },
+  account: { ... }, // constants kept; HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING not spread until pages exist
 }
 
 PUBLIC_RESOURCE_ROUTES = { ... }     // dynamic templates for public pages
@@ -435,7 +435,7 @@ PRIVATE_RESOURCE_ROUTES = {
 }
 ```
 
-Runtime href generation is centralized in `src/lib/navigation/routes.ts`:
+Runtime href generation is centralized in `src/lib/navigation/routes.ts`. Keep account/forgot-password constants; temporarily **comment** Link/menu usage (not delete) so Next does not prefetch 404. See `docs/router.md` § Unmounted account / forgot-password paths.
 
 ```ts
 toPublicRoute(PUBLIC_ROUTES.home)
