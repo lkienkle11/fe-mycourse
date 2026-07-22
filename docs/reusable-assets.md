@@ -1039,11 +1039,11 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ### Asset: executeFetchCore / executeFetchCoreOutcome
 - **Name**: `executeFetchCore`, `executeFetchCoreOutcome`
-- **Type**: Native Fetch executor (raw + authenticated modes)
-- **Path**: `src/api/core/fetch-core.ts` (+ `fetch-core-redirect.ts` for server authenticated hops)
-- **Purpose**: Single executor shared by raw helpers and `ApiTransport`. Outcome path is split into file-private `prepareFetchCoreRequest` → `dispatchFetchResponse` → `toFetchCoreOutcome`; redirect hops use `resolveRedirectTargetUrl` / `applyRedirectHopState`. Optional mutation `compress` (default false) gzips JSON POST/PUT/PATCH **once** (body memo across refresh retry); forces `Content-Encoding: gzip` after header merge; gzip is abort/timeout-aware. **Do not change public signatures** when shortening internals.
+- **Type**: Xior-backed Fetch policy executor (raw + authenticated modes)
+- **Path**: `src/api/xior/client.ts` + `src/api/core/fetch-core.ts` (+ `fetch-core-redirect.ts` for server authenticated hops)
+- **Purpose**: Xior 0.8.3 supplies the HTTP lifecycle over Next.js Fetch. Fetch-core remains the single project policy owner for `prepareFetchCoreRequest` → `dispatchFetchResponse` → `toFetchCoreOutcome`, redirect hops, body replay/gzip and typed error metadata. **Do not change public signatures** when shortening internals.
 - **Scope**: `api-transport` (`runAttempt`), `raw-http`, `serverRawFetch`, `executeFetchCore` wrapper.
-- **Dependencies**: `fetch-core-body`, `fetch-helpers`, `fetch-error`, `isServer`.
+- **Dependencies**: `xior`, `fetch-core-body`, `fetch-core-redirect`, `fetch-helpers`, `fetch-error`, `isServer`.
 
 ### Asset: serverRawFetch
 - **Name**: `serverRawFetch<T>(url, options)`
@@ -1077,11 +1077,11 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ### Asset: apiTransport
 - **Name**: `apiTransport`
-- **Type**: ApiTransport
+- **Type**: Xior-backed ApiTransport
 - **Path**: `src/api/transport/api-transport.ts`
-- **Purpose**: Browser authenticated Fetch transport with runtime adapters: server Bearer attach from cookies, refresh eligibility, one retry, reporter matrix (`reportApiError` → sanitized server process log; browser `[API]` Console only when `NODE_ENV === "development"`; browser Zustand always for abnormal). Refresh failure attaches a sanitized cause; browser refresh uses absolute same-origin `/api/auth/refresh`. Default timeout 10s; per-request `options.timeout` (ms) overrides transport/`fetch-core` default (e.g. media upload 30s).
+- **Purpose**: Browser authenticated Xior-backed transport with runtime adapters: server Bearer attach from cookies, refresh eligibility, one retry, reporter matrix (`reportApiError` → sanitized server process log; browser `[API]` Console only when `NODE_ENV === "development"`; browser Zustand always for abnormal). Refresh failure attaches a sanitized cause; browser refresh uses absolute same-origin `/api/auth/refresh`. Default timeout 10s; per-request `options.timeout` (ms) overrides transport/`fetch-core` default (e.g. media upload 30s).
 - **Scope**: Used via `apiFetch`/`apiPost` etc. in `src/api/core/methods.ts` (browser) or `createApiMethods` after FromRequest factories (server).
-- **Dependencies**: `fetch-core`, `browser-auth` / `server-auth`, `useApiError`, `isServer`.
+- **Dependencies**: `xior/client`, `fetch-core`, `browser-auth` / `server-auth`, `useApiError`, `isServer`.
 
 ### Asset: Me API services
 - **Name**: `getMeService`, `patchMeService`, `deleteMeService`, `hardDeleteMeService`, `getMyPermissionsService`, `getMeEndpointKey`

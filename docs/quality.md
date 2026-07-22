@@ -222,7 +222,7 @@ Recommended before PR: **`npm run check-all`** (optionally `npm run fix:biome` o
 | `npm run cycles` | **Pass** | 311 files processed; no circular dependency |
 | `npm run dupl` | **Pass** | **215** files analyzed (UI primitives excluded); **0 clones** (0% duplicated lines) |
 
-_Re-run on 2026-07-20 after Axios→Fetch review fixes: cookie fail-closed, timeout/redirect/Cookie parity, SoT owners, domain callers factories (no FE test suite)._
+_Re-run on 2026-07-22 during Fetch→Xior migration: Xior 0.8.3 exact pin, cookie fail-closed, timeout/redirect/Cookie parity, SoT owners, domain callers factories (no FE test suite)._
 
 **jscpd dedup refactors (2026-05-27):**
 

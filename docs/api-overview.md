@@ -10,7 +10,8 @@ Transport code is grouped by folder (SoT owners stay as separate files inside fo
 
 | Folder | Role |
 |--------|------|
-| `src/api/core/` | Fetch executor, body/helpers/errors, `methods`, `raw-http` |
+| `src/api/core/` | Xior-backed executor, Fetch policy/body/helpers/errors, `methods`, `raw-http` |
+| `src/api/xior/` | Exact-pinned Xior adapter over the Next.js Fetch runtime |
 | `src/api/transport/` | Authenticated `ApiTransport` + browser `ApiMethods` binding |
 | `src/api/auth/` | Refresh eligibility/envelopes + browser/server runtime adapters |
 | `src/api/server/` | `cache-policy` + `serverRawFetch` (server-only) |
@@ -20,7 +21,8 @@ Transport code is grouped by folder (SoT owners stay as separate files inside fo
 ## Layers (paths)
 - `transport/api-transport.ts`: ApiTransport + injectable reporter (browser installs Zustand; server never imports Zustand). **Every authenticated request** hard-codes `cache: "no-store"` (browser and server). Default authenticated timeout is **10s** (`fetch-core` when unset); per-request override via `FetchApiOptions` / `MutationApiOptions`.`timeout` (ms). Optional mutation `compress?: boolean` (default false) — gzip JSON POST/PUT/PATCH only; body memo shared across refresh retry so gzip runs once; no callers enable it yet. Only browser **raw GET** may omit cache; only `serverRawFetch` may use endpoint-bound Next Data Cache.
 - `auth/auth-refresh.ts`: refresh eligibility + `validateRotatedTokens` + exact success-envelope helpers.
-- `core/fetch-core.ts` + `fetch-core-redirect.ts`: native Fetch executor; timeout/abort through body-read; overall redirect deadline; Cookie merge generated→caller.
+- `core/fetch-core.ts` + `fetch-core-redirect.ts`: Fetch policy orchestrator over Xior; timeout/abort through body-read; overall redirect deadline; Cookie merge generated→caller.
+- `xior/client.ts`: Xior 0.8.3 request boundary. It forwards Next.js `cache`/`next` options to the native Fetch runtime and returns the untouched response to the existing metadata/error policy.
   - **`executeFetchCoreOutcome`** orchestrates only: `prepareFetchCoreRequest` → `dispatchFetchResponse` → `readResponseData` → `toFetchCoreOutcome` (helpers stay file-private; export signature unchanged).
   - **`followServerRedirects`**: hop execute + `resolveRedirectTargetUrl` + `applyRedirectHopState`; **await** intermediate body `cancel()` before the next hop or policy throw (301/302/303/307/308 only).
   - Fetch redirect TypeError classification lives only in **`classifyFetchFailure`** (not a dead branch after `executeOnce`).

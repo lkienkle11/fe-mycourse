@@ -23,7 +23,8 @@ Set in `.env` or the deployment environment. Never hard-code these values.
 ```
 src/api/
 ├── index.ts / cache.ts
-├── core/           # fetch-error, helpers, body, redirect, fetch-core, methods, raw-http
+├── core/           # fetch policy/error, helpers, body, redirect, methods, raw-http
+├── xior/           # exact-pinned Xior adapter over the Next.js Fetch runtime
 ├── transport/      # api-transport, browser-api-methods
 ├── auth/           # auth-refresh, auth-runtime, browser-auth, server-auth
 ├── server/         # cache-policy, server-raw-http

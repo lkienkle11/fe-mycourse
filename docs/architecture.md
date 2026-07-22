@@ -23,7 +23,7 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Forms | react-hook-form + zod | 7.x / 4.x | `@hookform/resolvers` bridges the two |
 | i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` (no `ja` routing). Taxonomy **data** labels localize from BE via query `locale` / translation tables — see `docs/taxonomy-admin.md`. |
 | Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup, **3 min** `errorRetryInterval`) for hooks under the provider; `useAuth` sets its own SWR options |
-| HTTP client | Native Fetch (`ApiTransport`) | — | Browser singleton + request-scoped server factories; six `api*` + six `raw*` helpers |
+| HTTP client | Xior 0.8.3 over Next.js Fetch (`ApiTransport`) | exact-pinned `xior` | Browser singleton + request-scoped server factories; six `api*` + six `raw*` helpers |
 | Global state | Zustand | 5.x | Provider-free stores (auth, me, stream event log) |
 | Realtime (client) | BroadcastChannel, SSE, WebSocket, NDJSON fetch | — | See [`docs/delivery.md`](./delivery.md) |
 | Stream libraries | `reconnecting-websocket`, `@microsoft/fetch-event-source` | 4.x / 2.x | Transports in `src/events/` |
@@ -136,7 +136,8 @@ fe/
 │   │
 │   ├── api/
 │   │   ├── index.ts                # Barrel: api* + raw* + ApiTransport (no server-only)
-│   │   ├── core/                   # Fetch executor + methods/raw
+│   │   ├── core/                   # Fetch policy/executor + methods/raw
+│   │   ├── xior/                   # Xior adapter over the Next.js Fetch runtime
 │   │   ├── transport/              # createApiTransport + browserApiMethods
 │   │   ├── auth/                   # refresh + runtime adapters
 │   │   ├── server/                 # cache-policy + serverRawFetch
@@ -144,7 +145,7 @@ fe/
 │   │   └── hooks/                  # SWR hooks
 │   │   ├── methods.ts              # api* helpers + option types → ApiResult<T>
 │   │   ├── fetch-helpers.ts        # Shared header/cookie helpers
-│   │   ├── raw-http.ts             # raw* native Fetch (refresh path)
+│   │   ├── raw-http.ts             # raw* Xior-backed HTTP (refresh path)
 │   │   ├── server-raw-http.ts      # server-only public-cache raw fetch + profiles
 │   │   ├── cache.ts                # (DISABLED) Client IndexedDB + server Map cache layer
 │   │   ├── runtime/                # browser-auth (+ adapter types), server-auth (+ writable methods)
@@ -266,12 +267,12 @@ All HTTP communication and token lifecycle management:
 
 | Symbol | File | Role |
 |--------|------|------|
-| `createApiTransport` | `api/transport/api-transport.ts` | Authenticated Fetch transport factory (+ refresh eligibility) |
+| `createApiTransport` | `api/transport/api-transport.ts` | Authenticated Xior-backed transport factory (+ refresh eligibility) |
 | `apiTransport` | `api/transport/api-transport.ts` | Browser singleton shared by browser callers |
 | browser/server refresh adapters | `api/auth/browser-auth.ts`, `api/auth/server-auth.ts`, `api/auth/refresh-upstream-raw.ts` | Browser proxy + writable server refresh via credential-safe raw helper |
 | `createWritableServerApiMethods` | `api/auth/server-auth.ts` | Server Actions: request-scoped writable `ApiMethods` |
 | `refreshBrowserSession` | `api/auth/browser-auth.ts` | Browser single-flight refresh promise |
-| `rawPost` / `rawFetch` / … | `api/core/raw-http.ts` | Native Fetch helpers → `ApiResult<T>` (no MyCourse auth); raw GET may pass optional `cache` |
+| `rawPost` / `rawFetch` / … | `api/core/raw-http.ts` | Xior-backed helpers → `ApiResult<T>` (no MyCourse auth); raw GET may pass optional `cache` |
 | `apiFetch` / `apiPost` / `apiPut` / `apiDelete` / `apiOptions` | `api/core/methods.ts` | Low-level helpers on `apiTransport` → `ApiResult<T>` |
 | `getMeService` / `patchMeService` / `deleteMeService` / `getMyPermissionsService` | `api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | Me API callers |
 | `toastApiError` / `translateApiErrorCode` | `lib/utils/api-error.ts` | Map `response.code` → `errors.codes.{code}` |

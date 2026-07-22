@@ -293,7 +293,7 @@ Modules migrated: Auth, Me GET errorCode, Media, Taxonomy, Instructor, Course (i
 ```
 Any apiTransport request fails (error response) on client
   ↓
-Fetch transport reporter in src/api/transport/api-transport.ts
+Xior-backed Fetch transport reporter in src/api/transport/api-transport.ts
   -> useApiError.getState().push({ statusCode, appCode, message, url, method })
   ↓
 Error is re-thrown so callers can still catch it locally.

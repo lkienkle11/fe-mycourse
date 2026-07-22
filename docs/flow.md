@@ -229,7 +229,7 @@ sequenceDiagram
   participant AL as AuthLayout (client)
   participant UA as useAuth (SWR)
   participant GM as getMeService
-  participant AX as Fetch (apiTransport)
+  participant AX as Xior over Fetch (apiTransport)
   participant API as Go API
 
   AL->>UA: useAuth()
@@ -271,7 +271,7 @@ const { me, isLoading, error, mutate } = useAuth();
 
 ### 4.1 Authenticated request auth attach
 
-Every authenticated request goes through `createApiTransport` / `apiTransport`:
+Every authenticated request goes through `createApiTransport` / `apiTransport`, whose HTTP attempt is executed by Xior 0.8.3 over the Next.js Fetch runtime:
 
 ```
 Request
