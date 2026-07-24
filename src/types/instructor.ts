@@ -45,6 +45,7 @@ export type InstructorCompanySnapshot = {
 export type InstructorApplicationProfile = InstructorCompanySnapshot & {
   headline: string;
   bio: string;
+  teaching_content_ideas: string;
   years_of_experience: YearsExperienceCode | string;
   current_job_title: string;
   current_job_title_id?: string;
@@ -63,6 +64,7 @@ export type InstructorApplicationProfile = InstructorCompanySnapshot & {
 export type InstructorProfilePayload = {
   headline: string;
   bio: string;
+  teaching_content_ideas: string;
   years_of_experience: number | YearsExperienceCode | string;
   current_job_title: string;
   current_company: string;
@@ -115,6 +117,7 @@ export type MyInstructorApplication = {
 export type SubmitInstructorApplicationPayload = {
   headline?: string;
   bio: string;
+  teaching_content_ideas: string;
   years_of_experience: YearsExperienceCode;
   current_job_title: string;
   current_job_title_id: string;
