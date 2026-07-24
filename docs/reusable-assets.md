@@ -815,6 +815,14 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Taxonomy form dialog, tree editor, submit handlers.
 - **Dependencies**: none.
 
+### Asset: unicodeCodePointLength / truncateUnicodeCodePoints
+- **Name**: `unicodeCodePointLength(value: string): number`, `truncateUnicodeCodePoints(value: string, max: number): string`
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/unicode-length.ts` (also re-exported from `src/lib/utils/index.ts`)
+- **Purpose**: Count / truncate by Unicode **code points** (`Array.from`), matching BE `utf8.RuneCountInString` / `CountRunes`. Prefer over `String.length` (UTF-16 code units) for instructor `bio` (100–2000) and `teaching_content_ideas` (50–500).
+- **Scope**: Become-instructor Zod schema + application form counters / input caps.
+- **Dependencies**: none.
+
 ### Asset: getCookieDomain
 - **Name**: `getCookieDomain(rawDomain?: string): string | undefined`
 - **Type**: Utility function
