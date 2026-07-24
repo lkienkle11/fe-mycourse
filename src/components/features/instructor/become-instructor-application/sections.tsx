@@ -62,9 +62,11 @@ export function BecomeInstructorSidebar({
       <div>
         <h3 className="font-semibold">{t("sidebar.requiredTitle")}</h3>
         <ul className="mt-3 list-inside list-disc text-sm text-muted-foreground">
-          {["req1", "req2", "req3", "req4", "req5", "req6"].map((key) => (
-            <li key={key}>{t(`sidebar.${key}` as "sidebar.req1")}</li>
-          ))}
+          {["req1", "req2", "req3", "req4", "req5", "req6", "req7"].map(
+            (key) => (
+              <li key={key}>{t(`sidebar.${key}` as "sidebar.req1")}</li>
+            ),
+          )}
         </ul>
       </div>
     </>

@@ -9,6 +9,7 @@ import type {
 
 export type FormState = {
   bio: string;
+  teaching_content_ideas: string;
   years_of_experience: YearsExperienceCode;
   current_job_title: string;
   current_job_title_id: string;
@@ -46,6 +47,7 @@ export function applyCompanyFreeText(
 
 export const EMPTY_FORM: FormState = {
   bio: "",
+  teaching_content_ideas: "",
   years_of_experience: "UNDER_1_YEAR",
   current_job_title: "",
   current_job_title_id: "",
@@ -73,6 +75,7 @@ export function formFromApplication(
   if (!profile) return { ...EMPTY_FORM };
   return {
     bio: profile.bio ?? "",
+    teaching_content_ideas: profile.teaching_content_ideas ?? "",
     years_of_experience:
       (profile.years_of_experience as YearsExperienceCode) || "UNDER_1_YEAR",
     current_job_title: profile.current_job_title ?? "",
@@ -111,6 +114,7 @@ export function toSubmitPayload(
   return {
     headline: "",
     bio: form.bio.trim(),
+    teaching_content_ideas: form.teaching_content_ideas.trim(),
     years_of_experience: form.years_of_experience,
     current_job_title: form.current_job_title.trim(),
     current_job_title_id:

@@ -14,6 +14,10 @@ import {
 } from "@/lib/instructor-application/page-state";
 import type { ApplicationFormErrors } from "@/lib/instructor-application/validate-application-form";
 import { cn } from "@/lib/utils";
+import {
+  truncateUnicodeCodePoints,
+  unicodeCodePointLength,
+} from "@/lib/utils/unicode-length";
 import { translateValidationIssueMessage } from "@/lib/utils/validation-message";
 import { CertificateList } from "./certificate-list";
 import { AsyncComboboxField, CompanyComboboxField } from "./combobox-fields";
@@ -145,21 +149,60 @@ export function ApplicationForm({
             value={form.bio}
             readOnly={readonly}
             rows={6}
-            maxLength={2000}
             aria-invalid={Boolean(fieldErrors.bio) || undefined}
             onChange={(e) => {
               clearError("bio");
-              setForm((prev) => ({ ...prev, bio: e.target.value }));
+              const bio = truncateUnicodeCodePoints(e.target.value, 2000);
+              setForm((prev) => ({ ...prev, bio }));
             }}
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            {form.bio.length} / 2000
+            {unicodeCodePointLength(form.bio)} / 2000
           </p>
         </Field>
       </section>
 
       <section className="rounded-md border p-5">
         <h2 className="mb-4 text-lg font-semibold">{t("section3Title")}</h2>
+        <Field
+          label={t("teachingContentIdeas")}
+          required
+          fieldKey="teaching_content_ideas"
+          errorMessage={fieldMessage(
+            "teaching_content_ideas",
+            "teachingContentIdeas",
+          )}
+        >
+          <p className="mb-2 text-sm text-muted-foreground">
+            {t("teachingContentIdeasDescription")}
+          </p>
+          <Textarea
+            value={form.teaching_content_ideas}
+            readOnly={readonly}
+            rows={5}
+            aria-invalid={
+              Boolean(fieldErrors.teaching_content_ideas) || undefined
+            }
+            onChange={(e) => {
+              clearError("teaching_content_ideas");
+              const teaching_content_ideas = truncateUnicodeCodePoints(
+                e.target.value,
+                500,
+              );
+              setForm((prev) => ({
+                ...prev,
+                teaching_content_ideas,
+              }));
+            }}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            {unicodeCodePointLength(form.teaching_content_ideas)} / 500
+          </p>
+        </Field>
+      </section>
+
+      <section className="rounded-md border p-5">
+        <h2 className="mb-4 text-lg font-semibold">{t("section4Title")}</h2>
         <div className="space-y-4">
           <Field
             label={t("cv")}
@@ -287,7 +330,7 @@ export function ApplicationForm({
       </section>
 
       <CollapsibleSection
-        title={t("section4Title")}
+        title={t("section5Title")}
         optional
         expandOnError={hasCertificateErrors}
       >
@@ -301,7 +344,7 @@ export function ApplicationForm({
         />
       </CollapsibleSection>
 
-      <CollapsibleSection title={t("section5Title")} optional>
+      <CollapsibleSection title={t("section6Title")} optional>
         <div className="flex items-center gap-3 rounded-md border p-4">
           <span className="text-sm">
             {form.intro_video_name || t("videoEmpty")}

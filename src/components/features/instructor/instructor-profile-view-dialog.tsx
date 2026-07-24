@@ -129,6 +129,10 @@ export function InstructorProfileViewDialog({
             ) : null}
             <dl className="grid gap-3 text-sm">
               <Field label={t("bio")} value={profile.bio} />
+              <Field
+                label={t("teachingContentIdeas")}
+                value={profile.teaching_content_ideas}
+              />
               {cvUrl ? (
                 <div>
                   <dt className="mb-2 font-medium text-muted-foreground">
