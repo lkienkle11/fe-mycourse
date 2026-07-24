@@ -6,6 +6,7 @@ import {
   optionalLinkedInUrlSchema,
   portfolioLinkItemSchema,
 } from "@/lib/instructor-application/url-validation";
+import { unicodeCodePointLength } from "@/lib/utils/unicode-length";
 
 const yearsExperienceCodeSchema = z.enum([
   "UNDER_1_YEAR",
@@ -14,6 +15,28 @@ const yearsExperienceCodeSchema = z.enum([
   "SIX_TO_TEN_YEARS",
   "OVER_TEN_YEARS",
 ]);
+
+function unicodeLengthSchema(
+  emptyMessage: string,
+  min: number,
+  minMessage: string,
+  max: number,
+  maxMessage: string,
+) {
+  return z
+    .string({ message: emptyMessage })
+    .trim()
+    .superRefine((value, ctx) => {
+      const n = unicodeCodePointLength(value);
+      if (n < min) {
+        ctx.addIssue({ code: "custom", message: minMessage });
+        return;
+      }
+      if (n > max) {
+        ctx.addIssue({ code: "custom", message: maxMessage });
+      }
+    });
+}
 
 const instructorCertificateSchema = z
   .object({
@@ -32,11 +55,20 @@ const instructorCertificateSchema = z
 
 export const instructorApplicationSubmitSchema = z.object({
   headline: z.string().trim().max(100).optional().default(""),
-  bio: z
-    .string({ message: "validation.bio" })
-    .trim()
-    .min(100, { message: "validation.bioMin" })
-    .max(2000, { message: "validation.bioMax" }),
+  bio: unicodeLengthSchema(
+    "validation.bio",
+    100,
+    "validation.bioMin",
+    2000,
+    "validation.bioMax",
+  ),
+  teaching_content_ideas: unicodeLengthSchema(
+    "validation.teachingContentIdeas",
+    50,
+    "validation.teachingContentIdeasMin",
+    500,
+    "validation.teachingContentIdeasMax",
+  ),
   years_of_experience: yearsExperienceCodeSchema,
   current_job_title: z
     .string({ message: "validation.currentJobTitle" })

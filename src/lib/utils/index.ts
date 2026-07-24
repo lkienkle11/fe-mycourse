@@ -90,6 +90,10 @@ export {
 export { useUniqueId } from "./react";
 export { isServer } from "./runtime";
 export { generateSlug, slugifyName } from "./slug";
+export {
+  truncateUnicodeCodePoints,
+  unicodeCodePointLength,
+} from "./unicode-length";
 export { buildQueryParams } from "./url";
 export { pickCharacter } from "./user";
 

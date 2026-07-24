@@ -15,6 +15,7 @@ export const APPLICATION_FORM_FIELD_ORDER: ApplicationFormFieldKey[] = [
   "current_job_title",
   "current_company",
   "bio",
+  "teaching_content_ideas",
   "cv_file_id",
   "linkedin_url",
   "github_url",
