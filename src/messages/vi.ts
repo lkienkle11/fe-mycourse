@@ -650,7 +650,7 @@ const messages = {
         bio: "Kể về bản thân",
         teachingContentIdeas: "Ý tưởng về nội dung cần dạy",
         teachingContentIdeasDescription:
-          "Mô tả các ý tưởng khóa học hoặc dàn ý lớp cụ thể bạn muốn dạy — không chỉ chọn nhóm chủ đề.",
+          "Mô tả các ý tưởng khóa học hoặc dàn ý lớp cụ thể bạn muốn dạy.",
         cv: "CV (PDF)",
         cvEmpty: "Chưa chọn CV",
         chooseCv: "Chọn CV",

@@ -650,7 +650,7 @@ const messages = {
         bio: "Tell us about yourself",
         teachingContentIdeas: "Teaching content ideas",
         teachingContentIdeasDescription:
-          "Describe specific class or course ideas and outlines you want to teach — not only topic categories.",
+          "Describe specific class or course ideas and outlines you want to teach.",
         cv: "CV (PDF)",
         cvEmpty: "No CV selected",
         chooseCv: "Choose CV",
