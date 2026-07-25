@@ -1,5 +1,9 @@
 import { deriveCustomJobTitleId } from "@/lib/instructor-application/combobox";
 import { INSTRUCTOR_PAGE_STATE } from "@/lib/instructor-application/page-state";
+import {
+  createEmptyDeltaString,
+  sanitizeLockedTextDelta,
+} from "@/lib/utils/course-delta";
 import type {
   InstructorCertificate,
   MyInstructorApplication,
@@ -46,7 +50,7 @@ export function applyCompanyFreeText(
 }
 
 export const EMPTY_FORM: FormState = {
-  bio: "",
+  bio: createEmptyDeltaString(),
   teaching_content_ideas: "",
   years_of_experience: "UNDER_1_YEAR",
   current_job_title: "",
@@ -74,7 +78,9 @@ export function formFromApplication(
   const profile = application.latest_submission?.profile;
   if (!profile) return { ...EMPTY_FORM };
   return {
-    bio: profile.bio ?? "",
+    // Sanitize on hydrate: legacy/API-injected Delta may carry media embeds or
+    // font/size/header attrs; without this an unedited resubmit re-sends them.
+    bio: sanitizeLockedTextDelta(profile.bio ?? ""),
     teaching_content_ideas: profile.teaching_content_ideas ?? "",
     years_of_experience:
       (profile.years_of_experience as YearsExperienceCode) || "UNDER_1_YEAR",

@@ -236,7 +236,7 @@ export function Field({
       <div
         className={cn(
           invalid &&
-            "[&_input]:border-destructive [&_input]:ring-3 [&_input]:ring-destructive/20 [&_textarea]:border-destructive [&_textarea]:ring-3 [&_textarea]:ring-destructive/20",
+            "[&_input]:border-destructive [&_input]:ring-3 [&_input]:ring-destructive/20 [&_textarea]:border-destructive [&_textarea]:ring-3 [&_textarea]:ring-destructive/20 [&_.delta-editor-surface]:border-destructive [&_.delta-editor-surface]:ring-3 [&_.delta-editor-surface]:ring-destructive/20",
         )}
         aria-invalid={invalid || undefined}
       >

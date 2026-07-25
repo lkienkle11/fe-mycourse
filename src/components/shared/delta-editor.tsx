@@ -21,6 +21,7 @@ import {
   bindQuillMediaEmbedRemove,
   bindQuillMediaHandlers,
   bindQuillMediaPasteAndDrop,
+  blockQuillClipboardMediaEmbed,
   buildEditorFormats,
   buildToolbarContainer,
   DELTA_VIEWER_QUILL_CONFIG,
@@ -41,14 +42,16 @@ import {
 import { cn } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
 import {
+  coerceToDelta,
   type DeltaMediaEmbed,
   type DeltaShape,
   diffRemovedMediaEmbeds,
   extractMediaEmbedsFromDelta,
   filterDeltaMediaEmbeds,
-  parseDelta,
   stringifyDelta,
+  stripDeltaFormatAttributes,
   stripMediaEmbedsFromDelta,
+  TEXT_DELTA_LOCKED_FORMAT_ATTRIBUTES,
 } from "@/lib/utils/course-delta";
 import {
   classifyMediaEmbedFile,
@@ -68,6 +71,12 @@ export type DeltaEditorProps = {
   mediaEmbedKinds?: readonly MediaEmbedKind[];
   /** Link toolbar for selected text and image embeds. Default false. */
   allowLink?: boolean;
+  /**
+   * Omit font + heading pickers / `font`+`header` formats; strip
+   * `TEXT_DELTA_LOCKED_FORMAT_ATTRIBUTES`; inherit system font.
+   * Default false. Pass `label=""` when an outer Field already renders the label.
+   */
+  lockSystemFont?: boolean;
   label?: string;
   required?: boolean;
   placeholder?: string;
@@ -129,6 +138,7 @@ export function DeltaEditor({
   allowMediaEmbed = true,
   mediaEmbedKinds = DEFAULT_MEDIA_EMBED_KINDS,
   allowLink = false,
+  lockSystemFont = false,
   label,
   required = false,
   placeholder,
@@ -149,6 +159,7 @@ export function DeltaEditor({
       allowMediaEmbed,
       mediaEmbedKinds,
       allowLink,
+      lockSystemFont,
     }),
   );
   const disabledRef = useRef(disabled);
@@ -175,8 +186,9 @@ export function DeltaEditor({
         allowMediaEmbed,
         mediaEmbedKinds,
         allowLink,
+        lockSystemFont,
       }),
-    [allowMediaEmbed, mediaEmbedKinds, allowLink],
+    [allowMediaEmbed, mediaEmbedKinds, allowLink, lockSystemFont],
   );
 
   const editorFormats = useMemo(
@@ -192,7 +204,8 @@ export function DeltaEditor({
     [mediaEmbedKinds],
   );
 
-  const textLabel = label ?? t("lessonTextLabel");
+  const hideLabel = label === "";
+  const textLabel = hideLabel ? "" : (label ?? t("lessonTextLabel"));
   const editorPlaceholder =
     placeholder ??
     (allowMediaEmbed ? t("placeholder") : t("placeholderTextOnly"));
@@ -424,6 +437,9 @@ export function DeltaEditor({
         if (initConfig.mediaEmbedKinds.includes("image")) {
           unbindImageResize = bindQuillImageResize(quill);
         }
+      } else {
+        // Text-only: still block IMG/VIDEO clipboard embeds (no media paste/drop handlers).
+        blockQuillClipboardMediaEmbed(quill);
       }
 
       if (initConfig.allowLink) {
@@ -490,6 +506,12 @@ export function DeltaEditor({
           normalized = filterDeltaMediaEmbeds(
             nextDelta,
             config.mediaEmbedKinds,
+          );
+        }
+        if (config.lockSystemFont) {
+          normalized = stripDeltaFormatAttributes(
+            normalized,
+            TEXT_DELTA_LOCKED_FORMAT_ATTRIBUTES,
           );
         }
         onChangeRef.current(stringifyDelta(normalized));
@@ -580,7 +602,7 @@ export function DeltaEditor({
 
   return (
     <div className={cn("space-y-2", className)}>
-      {required ? (
+      {hideLabel ? null : required ? (
         <RequiredLabel htmlFor="delta-editor">{textLabel}</RequiredLabel>
       ) : (
         <Label htmlFor="delta-editor">{textLabel}</Label>
@@ -592,6 +614,7 @@ export function DeltaEditor({
           "relative min-h-0 flex flex-col overflow-hidden rounded-md border border-input bg-background",
           DELTA_EDITOR_DEFAULT_MAX_HEIGHT_CLASS,
           quillSurfaceClassName,
+          lockSystemFont && "delta-editor-lock-system-font",
           surfaceClassName,
           (disabled || isUploadingMedia) && "pointer-events-none opacity-60",
         )}
@@ -676,7 +699,9 @@ export function DeltaViewer({ value, className }: DeltaViewerProps) {
         },
       });
 
-      quill.setContents(toQuillContents(parseDelta(initialValueRef.current)));
+      quill.setContents(
+        toQuillContents(coerceToDelta(initialValueRef.current)),
+      );
       quill.enable(false);
       quillRef.current = quill;
     })();
@@ -696,7 +721,7 @@ export function DeltaViewer({ value, className }: DeltaViewerProps) {
       return;
     }
 
-    const parsed = parseDelta(value);
+    const parsed = coerceToDelta(value);
     const current = quill.getContents();
     if (JSON.stringify(current.ops) !== JSON.stringify(parsed.ops)) {
       quill.setContents(toQuillContents(parsed), "silent");

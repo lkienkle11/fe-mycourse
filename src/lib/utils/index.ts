@@ -29,6 +29,7 @@ export {
 export type { DeltaMediaEmbed, DeltaOp, DeltaShape } from "./course-delta";
 export {
   coerceToDelta,
+  countDeltaCodePoints,
   createEmptyDelta,
   createEmptyDeltaString,
   diffRemovedMediaEmbeds,
@@ -36,8 +37,11 @@ export {
   extractMediaEmbedsFromDelta,
   extractPlainText,
   parseDelta,
+  sanitizeLockedTextDelta,
   stringifyDelta,
+  stripDeltaFormatAttributes,
   stripMediaEmbedsFromDelta,
+  TEXT_DELTA_LOCKED_FORMAT_ATTRIBUTES,
 } from "./course-delta";
 export { filterDashboardItems } from "./dashboard";
 export { formatUnixDateTime } from "./date";

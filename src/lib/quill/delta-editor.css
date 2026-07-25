@@ -25,6 +25,15 @@
   overflow-y: auto;
 }
 
+/* Instructor bio / locked-font surfaces: inherit app --font-sans; hide font picker if present. */
+.delta-editor-lock-system-font .ql-editor {
+  font-family: inherit;
+}
+
+.delta-editor-lock-system-font .ql-picker.ql-font {
+  display: none;
+}
+
 .ql-font-roboto {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
