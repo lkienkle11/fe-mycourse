@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
+import { DeltaViewer } from "@/components/shared/delta-editor";
 import { PreviewPdf } from "@/components/shared/preview-pdf";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -128,7 +129,15 @@ export function InstructorProfileViewDialog({
               </div>
             ) : null}
             <dl className="grid gap-3 text-sm">
-              <Field label={t("bio")} value={profile.bio} />
+              <div>
+                <dt className="text-muted-foreground">{t("bio")}</dt>
+                <dd className="mt-0.5">
+                  <DeltaViewer
+                    value={profile.bio ?? ""}
+                    className="max-h-[280px]"
+                  />
+                </dd>
+              </div>
               <Field
                 label={t("teachingContentIdeas")}
                 value={profile.teaching_content_ideas}

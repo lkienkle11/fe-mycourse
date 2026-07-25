@@ -6,6 +6,7 @@ import {
   optionalLinkedInUrlSchema,
   portfolioLinkItemSchema,
 } from "@/lib/instructor-application/url-validation";
+import { countDeltaCodePoints } from "@/lib/utils/course-delta";
 import { unicodeCodePointLength } from "@/lib/utils/unicode-length";
 
 const yearsExperienceCodeSchema = z.enum([
@@ -38,6 +39,26 @@ function unicodeLengthSchema(
     });
 }
 
+/** Bio: Quill Delta JSON — length on extracted plain text (matches BE CountDeltaRunes). */
+function deltaUnicodeLengthSchema(
+  emptyMessage: string,
+  min: number,
+  minMessage: string,
+  max: number,
+  maxMessage: string,
+) {
+  return z.string({ message: emptyMessage }).superRefine((value, ctx) => {
+    const n = countDeltaCodePoints(value.trim());
+    if (n < min) {
+      ctx.addIssue({ code: "custom", message: minMessage });
+      return;
+    }
+    if (n > max) {
+      ctx.addIssue({ code: "custom", message: maxMessage });
+    }
+  });
+}
+
 const instructorCertificateSchema = z
   .object({
     title: z.string().trim().min(1).max(120),
@@ -55,7 +76,7 @@ const instructorCertificateSchema = z
 
 export const instructorApplicationSubmitSchema = z.object({
   headline: z.string().trim().max(100).optional().default(""),
-  bio: unicodeLengthSchema(
+  bio: deltaUnicodeLengthSchema(
     "validation.bio",
     100,
     "validation.bioMin",

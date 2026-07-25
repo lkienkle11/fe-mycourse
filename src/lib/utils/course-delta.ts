@@ -1,4 +1,5 @@
 import type { MediaEmbedKind } from "./media";
+import { unicodeCodePointLength } from "./unicode-length";
 
 export type DeltaInsert =
   | string
@@ -28,11 +29,71 @@ export function createEmptyDeltaString(): string {
   return stringifyDelta(createEmptyDelta());
 }
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function attributesFromRaw(
+  raw: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  return isPlainRecord(raw.attributes) ? raw.attributes : undefined;
+}
+
+/**
+ * Keep only ops Quill / helpers can safely consume. Drops `null`, numbers,
+ * empty objects, and unknown embed shapes that older BE counters skipped.
+ */
+function normalizeDeltaOp(raw: unknown): DeltaOp | null {
+  if (!isPlainRecord(raw) || !("insert" in raw)) {
+    return null;
+  }
+
+  const insert = raw.insert;
+  const attributes = attributesFromRaw(raw);
+
+  if (typeof insert === "string") {
+    return attributes ? { insert, attributes } : { insert };
+  }
+
+  if (!isPlainRecord(insert)) {
+    return null;
+  }
+
+  if (typeof insert.image === "string") {
+    const next: DeltaOp = { insert: { image: insert.image } };
+    if (attributes) next.attributes = attributes;
+    return next;
+  }
+  if (typeof insert.video === "string") {
+    const next: DeltaOp = { insert: { video: insert.video } };
+    if (attributes) next.attributes = attributes;
+    return next;
+  }
+  if (typeof insert.document === "string") {
+    const next: DeltaOp = { insert: { document: insert.document } };
+    if (attributes) next.attributes = attributes;
+    return next;
+  }
+
+  return null;
+}
+
+function normalizeDeltaOps(ops: unknown[]): DeltaOp[] {
+  const normalized: DeltaOp[] = [];
+  for (const op of ops) {
+    const next = normalizeDeltaOp(op);
+    if (next) {
+      normalized.push(next);
+    }
+  }
+  return normalized.length > 0 ? normalized : [{ insert: "" }];
+}
+
 export function parseDelta(value: string): DeltaShape {
   try {
-    const parsed = JSON.parse(value) as DeltaShape;
-    if (parsed && Array.isArray(parsed.ops)) {
-      return parsed;
+    const parsed = JSON.parse(value) as unknown;
+    if (isPlainRecord(parsed) && Array.isArray(parsed.ops)) {
+      return { ops: normalizeDeltaOps(parsed.ops) };
     }
   } catch {}
 
@@ -47,9 +108,9 @@ export function coerceToDelta(value: string): DeltaShape {
   }
 
   try {
-    const parsed = JSON.parse(trimmed) as DeltaShape;
-    if (parsed && Array.isArray(parsed.ops)) {
-      return parsed;
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (isPlainRecord(parsed) && Array.isArray(parsed.ops)) {
+      return { ops: normalizeDeltaOps(parsed.ops) };
     }
   } catch {}
 
@@ -67,13 +128,20 @@ export function stringifyDelta(delta: DeltaShape): string {
 
 export function extractPlainText(delta: DeltaShape): string {
   return delta.ops
-    .map((op) => (typeof op.insert === "string" ? op.insert : ""))
+    .map((op) =>
+      op != null && typeof op === "object" && typeof op.insert === "string"
+        ? op.insert
+        : "",
+    )
     .join("");
 }
 
-function isMediaEmbedOp(op: DeltaOp): op is DeltaOp & {
+function isMediaEmbedOp(op: DeltaOp | null | undefined): op is DeltaOp & {
   insert: { image: string } | { video: string } | { document: string };
 } {
+  if (op == null || typeof op !== "object") {
+    return false;
+  }
   return (
     typeof op.insert === "object" &&
     op.insert != null &&
@@ -133,6 +201,39 @@ export function stripMediaEmbedsFromDelta(delta: DeltaShape): DeltaShape {
   return ops.length > 0 ? { ops } : createEmptyDelta();
 }
 
+/** Strip named format attributes (e.g. `font`, `size`) from Delta ops. */
+export function stripDeltaFormatAttributes(
+  delta: DeltaShape,
+  keys: readonly string[],
+): DeltaShape {
+  if (keys.length === 0) {
+    return delta;
+  }
+  const keySet = new Set(keys);
+  const ops = delta.ops.map((op) => {
+    if (!op?.attributes) {
+      return op;
+    }
+    let changed = false;
+    const nextAttrs: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(op.attributes)) {
+      if (keySet.has(key)) {
+        changed = true;
+        continue;
+      }
+      nextAttrs[key] = value;
+    }
+    if (!changed) {
+      return op;
+    }
+    if (Object.keys(nextAttrs).length === 0) {
+      return { insert: op.insert };
+    }
+    return { insert: op.insert, attributes: nextAttrs };
+  });
+  return { ops };
+}
+
 /** Keep only embed ops whose kind is in `allowedKinds`. */
 export function filterDeltaMediaEmbeds(
   delta: DeltaShape,
@@ -162,16 +263,39 @@ export function countNonWhitespace(value: string): number {
 
 /** Count non-whitespace text inside Quill Delta JSON string inserts. */
 export function countDeltaNonWhitespace(raw: string): number {
-  const trimmed = raw.trim();
-  if (!trimmed) {
-    return 0;
-  }
-  try {
-    const parsed = JSON.parse(trimmed) as DeltaShape;
-    if (parsed && Array.isArray(parsed.ops)) {
-      return countNonWhitespace(extractPlainText(parsed));
-    }
-  } catch {}
+  return countNonWhitespace(extractPlainText(coerceToDelta(raw)));
+}
 
-  return countNonWhitespace(trimmed);
+/** Count Unicode code points in Delta string inserts (matches BE CountDeltaRunes). */
+export function countDeltaCodePoints(raw: string): number {
+  return unicodeCodePointLength(extractPlainText(coerceToDelta(raw)));
+}
+
+/**
+ * Single locked-text policy (instructor bio): attributes stripped everywhere —
+ * DeltaEditor normalize, `text-change`, and form hydrate. Mirrors BE
+ * validateBioDelta rejects. Keep in sync when the policy changes.
+ */
+export const TEXT_DELTA_LOCKED_FORMAT_ATTRIBUTES = [
+  "font",
+  "size",
+  "header",
+] as const;
+
+/**
+ * Canonicalize a stored value for locked-text surfaces: coerce legacy plain
+ * text (and drop malformed ops), keep string inserts only, strip locked format
+ * attributes. Used on form hydrate so an unedited resubmit never sends
+ * pre-policy or crash-causing Delta back to the BE.
+ */
+export function sanitizeLockedTextDelta(value: string): string {
+  const delta = coerceToDelta(value);
+  const textOps = delta.ops.filter(
+    (op): op is DeltaOp & { insert: string } => typeof op.insert === "string",
+  );
+  const textOnly: DeltaShape =
+    textOps.length > 0 ? { ops: textOps } : createEmptyDelta();
+  return stringifyDelta(
+    stripDeltaFormatAttributes(textOnly, TEXT_DELTA_LOCKED_FORMAT_ATTRIBUTES),
+  );
 }
