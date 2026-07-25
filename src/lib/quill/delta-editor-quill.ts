@@ -4,7 +4,9 @@ import type { DeltaMediaEmbed, DeltaShape } from "@/lib/utils/course-delta";
 import {
   coerceToDelta,
   filterDeltaMediaEmbeds,
+  stripDeltaFormatAttributes,
   stripMediaEmbedsFromDelta,
+  TEXT_DELTA_LOCKED_FORMAT_ATTRIBUTES,
 } from "@/lib/utils/course-delta";
 import {
   DEFAULT_MEDIA_EMBED_KINDS,
@@ -32,6 +34,11 @@ export type DeltaEditorQuillConfig = {
   allowMediaEmbed: boolean;
   mediaEmbedKinds: readonly MediaEmbedKind[];
   allowLink: boolean;
+  /**
+   * When true: omit font + heading pickers / `font`+`header` formats; strip
+   * `TEXT_DELTA_LOCKED_FORMAT_ATTRIBUTES` (`font`/`size`/`header`) on normalize.
+   */
+  lockSystemFont: boolean;
 };
 
 /** Read-only viewer renders every embed kind plus hyperlinks. */
@@ -39,12 +46,14 @@ export const DELTA_VIEWER_QUILL_CONFIG: DeltaEditorQuillConfig = {
   allowMediaEmbed: true,
   mediaEmbedKinds: ["image", "video", "document"],
   allowLink: true,
+  lockSystemFont: false,
 };
 
 export function resolveDeltaEditorQuillConfig(options: {
   allowMediaEmbed?: boolean;
   mediaEmbedKinds?: readonly MediaEmbedKind[];
   allowLink?: boolean;
+  lockSystemFont?: boolean;
 }): DeltaEditorQuillConfig {
   const allowMediaEmbed = options.allowMediaEmbed ?? true;
   return {
@@ -53,6 +62,7 @@ export function resolveDeltaEditorQuillConfig(options: {
       ? (options.mediaEmbedKinds ?? DEFAULT_MEDIA_EMBED_KINDS)
       : [],
     allowLink: options.allowLink ?? false,
+    lockSystemFont: options.lockSystemFont ?? false,
   };
 }
 
@@ -68,6 +78,16 @@ export const QUILL_FONT_WHITELIST = [
 const TEXT_EDITOR_FORMATS = [
   "header",
   "font",
+  "bold",
+  "italic",
+  "underline",
+  "strike",
+  "list",
+  "bullet",
+] as const;
+
+// No `header`: headings change font size, which locked-font surfaces forbid.
+const TEXT_EDITOR_FORMATS_LOCKED_FONT = [
   "bold",
   "italic",
   "underline",
@@ -325,7 +345,11 @@ export function annotateEmbedAtIndex(
 }
 
 export function buildEditorFormats(config: DeltaEditorQuillConfig): string[] {
-  const formats: string[] = [...TEXT_EDITOR_FORMATS];
+  const formats: string[] = [
+    ...(config.lockSystemFont
+      ? TEXT_EDITOR_FORMATS_LOCKED_FONT
+      : TEXT_EDITOR_FORMATS),
+  ];
   if (config.allowLink) {
     formats.push(LINK_FORMAT, LINK_COLOR_FORMAT);
   }
@@ -349,12 +373,11 @@ function mediaToolbarItems(kinds: readonly MediaEmbedKind[]): MediaEmbedKind[] {
 }
 
 export function buildToolbarContainer(config: DeltaEditorQuillConfig) {
-  const rows: unknown[] = [
-    TEXT_TOOLBAR_HEADER,
-    TEXT_TOOLBAR_FONT,
-    TEXT_TOOLBAR_INLINE,
-    TEXT_TOOLBAR_LISTS,
-  ];
+  const rows: unknown[] = [];
+  if (!config.lockSystemFont) {
+    rows.push(TEXT_TOOLBAR_HEADER, TEXT_TOOLBAR_FONT);
+  }
+  rows.push(TEXT_TOOLBAR_INLINE, TEXT_TOOLBAR_LISTS);
 
   if (config.allowLink) {
     rows.push(["link", { linkColor: [...LINK_COLOR_PALETTE] }]);
@@ -528,11 +551,19 @@ export function normalizeDeltaForEditor(
   raw: string,
   config: DeltaEditorQuillConfig,
 ): ReturnType<typeof coerceToDelta> {
-  const parsed = coerceToDelta(raw);
+  let parsed = coerceToDelta(raw);
   if (!config.allowMediaEmbed) {
-    return stripMediaEmbedsFromDelta(parsed);
+    parsed = stripMediaEmbedsFromDelta(parsed);
+  } else {
+    parsed = filterDeltaMediaEmbeds(parsed, config.mediaEmbedKinds);
   }
-  return filterDeltaMediaEmbeds(parsed, config.mediaEmbedKinds);
+  if (config.lockSystemFont) {
+    parsed = stripDeltaFormatAttributes(
+      parsed,
+      TEXT_DELTA_LOCKED_FORMAT_ATTRIBUTES,
+    );
+  }
+  return parsed;
 }
 
 export function bindQuillMediaHandlers(
@@ -556,7 +587,7 @@ export function bindQuillMediaHandlers(
 }
 
 /** Block Quill from embedding pasted HTML images/videos (base64 or external URLs). */
-function blockQuillClipboardMediaEmbed(quill: Quill): void {
+export function blockQuillClipboardMediaEmbed(quill: Quill): void {
   const Delta = getQuill().import("delta") as typeof import("quill").Delta;
 
   quill.clipboard.addMatcher("IMG", () => new Delta());

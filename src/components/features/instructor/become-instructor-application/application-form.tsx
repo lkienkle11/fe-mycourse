@@ -2,6 +2,7 @@
 
 import { Plus, X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { DeltaEditor } from "@/components/shared/delta-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +14,7 @@ import {
   type InstructorApplicationPageState,
 } from "@/lib/instructor-application/page-state";
 import type { ApplicationFormErrors } from "@/lib/instructor-application/validate-application-form";
-import { cn } from "@/lib/utils";
+import { cn, countDeltaCodePoints } from "@/lib/utils";
 import {
   truncateUnicodeCodePoints,
   unicodeCodePointLength,
@@ -145,19 +146,22 @@ export function ApplicationForm({
           fieldKey="bio"
           errorMessage={fieldMessage("bio", "bio")}
         >
-          <Textarea
+          <DeltaEditor
             value={form.bio}
-            readOnly={readonly}
-            rows={6}
-            aria-invalid={Boolean(fieldErrors.bio) || undefined}
-            onChange={(e) => {
+            label=""
+            disabled={readonly}
+            allowMediaEmbed={false}
+            lockSystemFont
+            surfaceClassName="max-h-[320px]"
+            onChange={(value) => {
               clearError("bio");
-              const bio = truncateUnicodeCodePoints(e.target.value, 2000);
-              setForm((prev) => ({ ...prev, bio }));
+              // No live-truncate of Delta (avoids breaking formatting). Counter + Zod/BE enforce 2000.
+              // Rejecting here would desync Quill from controlled value; mirror course about_course.
+              setForm((prev) => ({ ...prev, bio: value }));
             }}
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            {unicodeCodePointLength(form.bio)} / 2000
+            {countDeltaCodePoints(form.bio)} / 2000
           </p>
         </Field>
       </section>

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
+import { DeltaViewer } from "@/components/shared/delta-editor";
 import { PreviewPdf } from "@/components/shared/preview-pdf";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -128,7 +129,15 @@ export function InstructorProfileViewDialog({
               </div>
             ) : null}
             <dl className="grid gap-3 text-sm">
-              <Field label={t("bio")} value={profile.bio} />
+              <div>
+                <dt className="text-muted-foreground">{t("bio")}</dt>
+                <dd className="mt-0.5">
+                  <DeltaViewer
+                    value={profile.bio ?? ""}
+                    className="max-h-[280px]"
+                  />
+                </dd>
+              </div>
               <Field
                 label={t("teachingContentIdeas")}
                 value={profile.teaching_content_ideas}
@@ -182,8 +191,11 @@ export function InstructorProfileViewDialog({
                   value={companyProfile.current_company_location}
                 />
               ) : null}
-              <Field label={t("linkedin")} value={profile.linkedin_url ?? ""} />
-              <Field label={t("github")} value={profile.github_url ?? ""} />
+              <LinkField
+                label={t("linkedin")}
+                href={profile.linkedin_url ?? ""}
+              />
+              <LinkField label={t("github")} href={profile.github_url ?? ""} />
               {topics?.length ? (
                 <div>
                   <dt className="font-medium text-muted-foreground">
@@ -219,7 +231,16 @@ export function InstructorProfileViewDialog({
                   </dt>
                   <dd className="mt-1 list-inside list-disc">
                     {profile.portfolio_links.map((link) => (
-                      <li key={link}>{link}</li>
+                      <li key={link}>
+                        <a
+                          href={link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="break-all text-primary underline"
+                        >
+                          {link}
+                        </a>
+                      </li>
                     ))}
                   </dd>
                 </div>
@@ -278,6 +299,26 @@ function Field({ label, value }: { label: string; value: string }) {
     <div>
       <dt className="font-medium text-muted-foreground">{label}</dt>
       <dd className="mt-0.5 whitespace-pre-wrap">{value}</dd>
+    </div>
+  );
+}
+
+/** External URL field — same open-in-new-tab pattern as certificate credential_url. */
+function LinkField({ label, href }: { label: string; href: string }) {
+  if (!href) return null;
+  return (
+    <div>
+      <dt className="font-medium text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5">
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="break-all text-primary underline"
+        >
+          {href}
+        </a>
+      </dd>
     </div>
   );
 }

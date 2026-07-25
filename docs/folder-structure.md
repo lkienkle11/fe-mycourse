@@ -180,6 +180,8 @@ src/components/
 │                           #   DeltaEditor, DeltaEditorLinkDialog, DeltaViewer, SortableList (TouchSensor mobile),
 │                           #   SortableTreeEditor, PreviewPdf (dynamic client-only) + preview-pdf-viewer,
 │                           #   SearchBar (stub), ImageFileField
+│                           #   Consumers: course editor + become-instructor bio (restricted DeltaEditor) +
+│                           #   InstructorProfileViewDialog bio (DeltaViewer)
 ├── providers/
 │   ├── app-providers.tsx   # SWRConfig + EventsStreamProvider
 │   │                       # + MeSwrSync (useSyncMeFromAuth)
@@ -459,7 +461,7 @@ src/lib/
 │   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractApiError
 │   ├── auth-action.ts      # finalizeAuthLoginAction, mapAuthApiError — shared login-session cookie finalizer
 │   ├── validation-message.ts # resolveValidationMessage, toastValidationError, firstValidationMessageKey
-│   ├── course-delta.ts       # Quill Delta parse/stringify/text helpers + countDeltaNonWhitespace
+│   ├── course-delta.ts       # Quill Delta parse/stringify/text helpers + countDeltaNonWhitespace + countDeltaCodePoints + stripDeltaFormatAttributes + sanitizeLockedTextDelta (TEXT_DELTA_LOCKED_FORMAT_ATTRIBUTES policy)
 │   ├── course.ts             # createCourseBasicInfoState, createCourseSubLessonFormState, buildSubLessonEstimatedDurationPayload, validateSubLessonDurationForm, validateSubLessonFormContent, validateCourseSubmitReadiness, applyQuizAllowMultipleChange, applyQuizOptionCorrectChange, rootOutlineStableId, selectedIdsToMap
 │   ├── duration.ts           # formatDurationMs, parseDurationPartsToMs, splitMsToDurationParts (curriculum estimated_duration_ms)
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
