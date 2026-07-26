@@ -414,7 +414,7 @@ src/constants/
 │   ├── index.ts            # Data-only barrel
 │   ├── metadata.ts         # Site defaults, OG dimensions, title/description limits
 │   ├── routes.ts           # SEO_INDEXABLE_PUBLIC_ROUTE_KEYS + planned signed-in home path
-│   ├── rendering.ts        # SEO_RENDERING_MODE + SEO_ISR_HINTS
+│   ├── rendering.ts        # SEO_RENDERING_MODE + SEO_ISR_HINTS + TEMPORARY dormant env cache flag
 │   ├── image.ts            # Image sizes presets + font CWV owner
 │   └── robots.ts           # Indexable/noindex/private-app Metadata robots values
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
@@ -605,7 +605,8 @@ src/lib/
 │   ├── index.ts                 # optional barrel
 │   ├── ranking/                 # Runtime Organization/Course/Person/Breadcrumb/Article/Video/FAQ builders
 │   └── data/
-│       └── seo-fetch.ts         # thin wrap → serverRawFetch + cache-policy
+│       ├── seo-fetch.ts                 # thin wrap → serverRawFetch + cache-policy
+│       └── temporary-cache-policy.ts    # TEMPORARY dormant: dev no-cache / prod 60s (flag off)
 ├── performance/
 │   ├── image-seo.ts
 │   └── resource-hints.ts

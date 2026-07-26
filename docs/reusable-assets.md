@@ -1392,6 +1392,13 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Typed consumer of `serverRawFetch` + fail-closed `cache-policy`.
 - **Reuse Rule**: Never create a second public GET stack; do not register production profiles here.
 
+### Asset: SEO_TEMPORARY_ENV_CACHE_POLICY (dormant)
+- **Name**: `SEO_TEMPORARY_ENV_CACHE_POLICY` / `resolveSeoTemporaryRevalidateSeconds`
+- **Type**: Data-only flag + dormant runtime helper
+- **Path**: `src/constants/seo/rendering.ts`, `src/lib/seo/data/temporary-cache-policy.ts`
+- **Purpose**: Placeholder for a future env-split revalidate hint — development refresh immediately (`false`), production temporary `60`s. **`enabled: false` now** — not wired to pages/`seoFetch`/cache profiles.
+- **Reuse Rule**: Do not delete this block. Do not flip `enabled` without an explicit wiring decision. Replace only when a permanent ISR/cache policy lands.
+
 ### Asset: image SEO presets / resource hints
 - **Path**: runtime helpers in `src/lib/performance/image-seo.ts`, `resource-hints.ts`; values in `src/constants/seo/image.ts`; contracts in `src/types/seo/performance.ts`
 - **Purpose**: sizes/LCP/CLS policy constants from home `course-card` / hero patterns; hint builders not injected.
