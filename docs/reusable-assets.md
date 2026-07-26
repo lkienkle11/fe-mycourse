@@ -1346,3 +1346,58 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - Purpose: Shared same-site cookie policy enum type.
 - Reusability scope: Cookie option definitions.
 - Dependencies: none.
+
+
+---
+
+## SEO / Performance / Security web (unused foundation — 2026-07-25)
+
+> Check [`seo-ranking-setup.md`](./seo-ranking-setup.md) before adding another metadata/JSON-LD/fetch helper. These assets sit on existing `serverRawFetch`, `cache-policy`, `route.ts`, `homeHref`/`getPathname`, `truncateUnicodeCodePoints`, `extractPlainText`, domain types, and `fetch-error` redact — do not fork them.
+
+### Asset: buildPageMetadata
+- **Name**: `buildPageMetadata`
+- **Type**: Pure factory → Next.js `Metadata`
+- **Path**: `src/lib/seo/build-page-metadata.ts` (+ runtime helpers under `src/lib/seo/**`; contracts under `src/types/seo/**`; policy values under `src/constants/seo/**`)
+- **Purpose**: Synthetic title/description/OG/Twitter/robots/canonical/hreflang from `SeoPageInput`. OG/Twitter **images omitted** until a real `SeoImage` is supplied (no `/og-default.png` placeholder).
+- **Dependencies**: `site-config` (pure `SITE_URL` origin), `routing`/`getPathname`, `truncateUnicodeCodePoints`, nav builders.
+- **Reuse Rule**: Call this from future `generateMetadata`; do not hand-copy OG tags per page. **Unused** this phase. Sitemap defaults use `SEO_INDEXABLE_PUBLIC_ROUTE_KEYS` (`home` only) — not raw `PUBLIC_ROUTES`.
+
+### Asset: flattenRouteTreePaths
+- **Name**: `flattenRouteTreePaths`
+- **Type**: Pure helper
+- **Path**: `src/lib/navigation/flatten-route-tree.ts`
+- **Purpose**: Recursively collect string paths from nested route-constant objects.
+- **Scope**: `crawl-policy.ts`, `sitemap-builder.ts` (private path listing).
+- **Reuse Rule**: Do not copy another flatten recursion; import this helper.
+
+### Asset: SEO_INDEXABLE_PUBLIC_ROUTE_KEYS
+- **Name**: `SEO_INDEXABLE_PUBLIC_ROUTE_KEYS` / `listSeoIndexablePathnames` / `robotsModeForPublicRouteKey`
+- **Type**: Allow-list + helpers
+- **Path**: value in `src/constants/seo/routes.ts`; runtime helpers in `src/lib/seo/indexable-routes.ts` and `src/lib/seo/robots-presets.ts`; derived key type in `src/types/seo/metadata.ts`
+- **Purpose**: Separate publicly routable `PUBLIC_ROUTES` from SEO-indexable keys (currently `home` only). Auth public routes stay `noindex` and out of default sitemap.
+- **Reuse Rule**: Extend the allow-list deliberately; never feed raw `Object.values(PUBLIC_ROUTES)` into sitemap defaults.
+
+### Asset: JsonLd + ranking builders
+- **Name**: `JsonLd`, `buildOrganizationJsonLd`, `buildCourseJsonLd`, …
+- **Type**: Server React helper + pure builders
+- **Path**: `src/lib/seo/json-ld.tsx`, `src/lib/seo/ranking/*.ts`, `src/types/seo/ranking.ts`, `src/lib/security/web/sanitize-json-ld.ts`
+- **Purpose**: Schema.org JSON-LD from real domain types only.
+- **Dependencies**: `src/types/course|instructor|…`, `extractPlainText` when Delta text is supplied.
+- **Reuse Rule**: No mock home cards; fail closed on missing required fields.
+
+### Asset: seoFetch
+- **Name**: `seoFetch`
+- **Type**: Server-only thin wrapper
+- **Path**: `src/lib/seo/data/seo-fetch.ts`; rendering constants in `src/constants/seo/rendering.ts`; data contracts in `src/types/seo/data.ts`
+- **Purpose**: Typed consumer of `serverRawFetch` + fail-closed `cache-policy`.
+- **Reuse Rule**: Never create a second public GET stack; do not register production profiles here.
+
+### Asset: image SEO presets / resource hints
+- **Path**: runtime helpers in `src/lib/performance/image-seo.ts`, `resource-hints.ts`; values in `src/constants/seo/image.ts`; contracts in `src/types/seo/performance.ts`
+- **Purpose**: sizes/LCP/CLS policy constants from home `course-card` / hero patterns; hint builders not injected.
+- **Reuse Rule**: No duplicate `next/image` wrapper this phase.
+
+### Asset: crawl-policy / redact-client-payload / security-headers-presets
+- **Path**: `src/lib/security/web/*`
+- **Purpose**: Derive private crawl lists from `PRIVATE_ROUTES`; allow-list redact; draft headers align `deploy.md`.
+- **Docs**: [`security-hardening-notes.md`](./security-hardening-notes.md)

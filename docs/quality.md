@@ -51,10 +51,9 @@ Configuration: [`.jscpd.json`](../.jscpd.json). Reports are written to `.jscpd-r
 
 [Knip](https://knip.dev/) builds a **module/dependency graph** for the Next.js app. In this repo it is tuned to report only:
 
-- unused exported **types** under `src/types/**`
 - unused **component/screen files** under `src/components/**` and `src/screen/**`
 
-It does **not** gate unused functions, constants, variables, dependencies, or duplicate exports.
+It does **not** gate unused exported types under `src/types/**` (same `ignoreIssues` posture as other non-UI folders), unused functions, constants, variables, dependencies, or duplicate exports.
 
 Run standalone: **`npm run deadcode`** (alias: `npx knip`). Included in **`test-all`** / **`check-all`** and CI **`test`** job on push to **`dev`**.
 
@@ -68,7 +67,7 @@ Configuration: [`knip.json`](../knip.json). The built-in **Next.js plugin** (ena
 | `ignoreFiles` | `src/**/index.ts` | Barrel `index.ts` not reported as unused **files** — still analyzed for imports |
 | `include` | `types`, `nsTypes`, `files` | **Only** unused exported types and unused component/screen **files** |
 | `exclude` | `exports`, `dependencies`, `files` (elsewhere), … | No unused-function/constant/export, dependency, or duplicate-export gates |
-| `ignoreIssues` | Per-folder map | Restrict **types** to `src/types/**`; restrict **files** to `src/components/**` + `src/screen/**` |
+| `ignoreIssues` | Per-folder map | `src/types/**` ignores `types` / `nsTypes` / `files` (type modules are ownership-gated by ESLint, not Knip unused-type reports); restrict **files** reporting to `src/components/**` + `src/screen/**` |
 | `ignoreDependencies` | Radix/CVA/cmdk/… + `shadcn`, `tailwindcss` | Packages used only from excluded `src/components/ui/**` or root tooling |
 | `ignoreExportsUsedInFile` | `interface`, `type` | Types used only inside the same file (e.g. `ApiPageInfo` in `ApiPaginatedData`) are not flagged |
 
@@ -78,10 +77,9 @@ Configuration: [`knip.json`](../knip.json). The built-in **Next.js plugin** (ena
 
 | Category | Where checked | Meaning |
 |----------|---------------|---------|
-| Unused **types** | `src/types/**` only | Exported `type` / `interface` with no importers |
 | Unused **component files** | `src/components/**`, `src/screen/**` | `.tsx` modules not reachable from App Router entries |
 
-**Not reported:** unused functions, constants, variables, API callers, `dependencies` / `devDependencies`, duplicate exports.
+**Not reported:** unused exported types under `src/types/**`, unused functions, constants, variables, API callers, `dependencies` / `devDependencies`, duplicate exports. Type-folder hygiene stays with ESLint (`src/types/**` type-only) and review.
 
 Debug import chains: `npx knip --trace-export <SymbolName>`.
 
@@ -90,7 +88,6 @@ Debug import chains: `npx knip --trace-export <SymbolName>`.
 | Category | Count |
 |----------|------:|
 | Unused files (components/screens) | 0 |
-| Unused exported types (`src/types/**`) | 0 |
 
 `npm run deadcode` — **PASS**. Verify traces when tuning config: `npx knip --trace-export AuthActions` → `store/auth` importer.
 
@@ -102,7 +99,7 @@ Debug import chains: `npx knip --trace-export <SymbolName>`.
 |------|--------|----------------|
 | **madge** (`cycles`) | No circular dependencies | At least one cycle (prints chain, e.g. `a.ts > b.ts > a.ts`) |
 | **jscpd** (`dupl`) | Duplication **below** `threshold` (80% of analyzed lines) | Duplication at or above threshold |
-| **knip** (`deadcode`) | No unused types (`src/types/**`) or unused component/screen files | At least one finding (see Knip section above) |
+| **knip** (`deadcode`) | No unused component/screen files | At least one finding (see Knip section above) |
 
 jscpd may still **print** clone pairs on success (informational). Failures list clones that exceed the global threshold.
 
@@ -210,7 +207,7 @@ Feature components (tabs, dialogs, pagination blocks, …) belong in `src/compon
 | `npm run test` | **Pass** | Placeholder script; no dedicated frontend test suite is configured yet |
 | `npx tsc --noEmit` | **Pass** | Strict TypeScript |
 | `npm run quality:deps` | **Pass** | Madge + jscpd (see below) |
-| `npm run deadcode` | **Pass** | Knip — 0 unused types / component files (see [Knip section](#knip-deadcode)) |
+| `npm run deadcode` | **Pass** | Knip — 0 unused component/screen files (see [Knip section](#knip-deadcode)); `src/types/**` unused-type reports are ignored |
 | `npm run build` | **Pass** | `next build` (Next.js 16.2.1) |
 
 Recommended before PR: **`npm run check-all`** (optionally `npm run fix:biome` or `npm run format:biome`, then `npx tsc --noEmit` first).
@@ -258,3 +255,8 @@ Do **not** use backend `make check-dupl` or `make check-architecture` in this fr
 | [`folder-structure.md`](./folder-structure.md) | `knip.json` at repo root |
 | [`folder-structure.md`](./folder-structure.md) | `.jscpd.json`, `.jscpd-report/` |
 | [`architecture.md`](./architecture.md) | Stack row for dependency / clone tools |
+
+
+## Unused SEO foundation (intentional)
+
+Shared SEO/performance/security helpers under `src/lib/seo/**`, `src/lib/performance/**`, and `src/lib/security/web/**` are intentionally unused by pages/layouts this phase. Knip ignores `files` under `src/lib/**` and ignores `types` / `nsTypes` / `files` under all of `src/types/**` (including SEO contracts). **Do not** place unused orphans under `src/components/**` (`JsonLd` lives in `src/lib/seo/json-ld.tsx`). Gate remains `npm run check-all`. See [`seo-ranking-setup.md`](./seo-ranking-setup.md).

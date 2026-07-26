@@ -36,7 +36,7 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Commit lint | commitlint | 20.x | Conventional Commits via `lint:commit` script |
 | Dependency graph | madge | 8.x | `npm run cycles` — circular static imports in `src/`; CI via `test-all` → `quality:deps` |
 | Clone detection | jscpd | 4.x | `npm run dupl` — `.jscpd.json` (excludes `src/components/ui/**`); CI via `test-all` → `quality:deps` |
-| Dead-code detection | knip | 6.17.1 | `npm run deadcode` — [`knip.json`](../knip.json): unused types (`src/types/**`) + unused component/screen files; CI via `test-all` |
+| Dead-code detection | knip | 6.17.1 | `npm run deadcode` — [`knip.json`](../knip.json): unused component/screen files (`src/types/**` unused-type reports ignored); CI via `test-all` |
 | ESLint + Biome (CI) | eslint + @biomejs/biome | 9 / 2.x | `npm run test-all` in CI `test` job; `src/constants/**` data-only rules — [`quality.md`](./quality.md) |
 
 ### Fonts
@@ -480,7 +480,7 @@ The cache integration in `apiFetch` is currently commented out (`// TODO: re-ena
 
 Lint (`eslint`, `biome`), `npx tsc --noEmit`, and `npm run build` are the primary local checks (baseline **2026-06-17** — see [`quality.md`](./quality.md)). Import-cycle, duplication, and dead-code gates:
 
-- `npm run deadcode` — Knip ([`knip.json`](../knip.json)): unused types in `src/types/**`; unused modules in `src/components/**` / `src/screen/**` (not functions/constants/deps). **PASS** (0 findings).
+- `npm run deadcode` — Knip ([`knip.json`](../knip.json)): unused modules in `src/components/**` / `src/screen/**` (not functions/constants/deps; `src/types/**` unused-type reports ignored). **PASS** (0 findings).
 - `npm run fix:biome` — safe Biome auto-fix locally (`biome check --write`; unsafe e.g. unused imports need `--unsafe`).
 - `npm run cycles` — Madge circular import detection (uses `tsconfig` path aliases).
 - `npm run dupl` — jscpd clone detection against `src/` (skips shadcn `src/components/ui/**`; see [`quality.md`](./quality.md)).
@@ -499,3 +499,8 @@ On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/
 | [`docs/screens.md`](screens.md) | App Router routes, layouts, and UI surfaces |
 | [`docs/deploy.md`](deploy.md) | Production deployment runbook (Ubuntu 24.04, PM2, Nginx, TLS) |
 | [`../be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md) | Full-stack VPS: Go API, Postgres, Redis, joint Nginx |
+
+
+## SEO foundation layer (unused, 2026-07-25)
+
+Synthetic SEO helpers live under `src/lib/seo|performance|security/web` and **consume** the existing API stack (`serverRawFetch` + empty fail-closed `publicCacheProfiles`). Planned frontend origin is server-side `SITE_URL` for `metadataBase`/canonical — **not** `NEXT_PUBLIC_API_URL`. Details: [`seo-ranking-setup.md`](./seo-ranking-setup.md).

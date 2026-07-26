@@ -88,3 +88,8 @@ All user-facing API failures use `errors.codes.{numericCode}` via `translateApiE
 | Admin/sysadmin course review | Reject reason required (`course.validation.rejectReason`) | `toastApiError` on approve / reject |
 
 See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-admin.md`](./taxonomy-admin.md), [`instructor-admin.md`](./instructor-admin.md), [`media-collection.md`](./media-collection.md), [`modules.md`](./modules.md).
+
+
+## Home SEO foundation (take-note)
+
+Guest home remains mock; signed-in `/home` is planned from Figma only (no route/UI this phase). SEO/performance/security helpers under `src/lib/**` are **unused**. See [`seo-ranking-setup.md`](./seo-ranking-setup.md) § “Tích hợp home dự kiến” and [`screens.md`](./screens.md).

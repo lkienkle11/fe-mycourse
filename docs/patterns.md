@@ -567,3 +567,12 @@ Before writing code for a new feature:
 - [ ] Build runtime URLs through `src/lib/navigation/routes.ts` helpers (no route string interpolation in screens/components)
 - [ ] Add API route constants to `src/constants/api-route.ts`
 - [ ] Update `docs/` after implementation
+
+
+## Synthetic SEO metadata (unused foundation)
+
+- Prefer `buildPageMetadata` over hand-written OG/Twitter per page (when wiring is approved).
+- Public SEO data must go through `seoFetch` → `serverRawFetch` → `cache-policy` (fail-closed while registry empty). Never bypass the registry.
+- Do not fetch SEO-critical HTML content only inside client `useEffect`.
+- JSON-LD builders require real domain-typed fields; never invent ratings/prices from mock UI.
+- See [`seo-ranking-setup.md`](./seo-ranking-setup.md).
