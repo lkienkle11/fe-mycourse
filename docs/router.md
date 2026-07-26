@@ -331,3 +331,15 @@ src/screen/common/taxonomy/taxonomy-list-page.tsx → TaxonomyListPage (shared C
 src/app/[locale]/admin/courses/page.tsx           → route: /vi/admin/courses
 src/screen/common/course/course-review-page.tsx   → CourseReviewPage (shared by admin + sysadmin; `CourseAdminTableActionsMenu` + `DeferredDropdownMenuItem`)
 ```
+
+
+## Planned guest `/` vs signed-in `/home` (take-note)
+
+| Path | Intent | Status |
+| --- | --- | --- |
+| `/` (locale home via `PUBLIC_ROUTES.home`) | Guest marketing home | Exists (mock). Future SEO wire optional. **Only** default SEO-indexable public key today. |
+| `/home` | Signed-in home (Figma) | **Not created** this phase. Index vs noindex TBD; default assume private/personalized → prefer `noindex` until proven public. |
+
+**Public-routable ≠ SEO-indexable:** `forgotPassword` / `confirmEmail` / `logout` (and other non-allow-listed `PUBLIC_ROUTES` keys) stay publicly routable but must use `noindex` and are **excluded** from default sitemap entries (`SEO_INDEXABLE_PUBLIC_ROUTE_KEYS`).
+
+Crawl disallow lists for private app areas must **derive** from `PRIVATE_ROUTES` / `PRIVATE_RESOURCE_ROUTES` via `flattenRouteTreePaths` (`src/lib/navigation/flatten-route-tree.ts` → `src/lib/security/web/crawl-policy.ts`), not a hard-coded second list. Locale: `localePrefix: "always"`. Details: [`seo-ranking-setup.md`](./seo-ranking-setup.md).

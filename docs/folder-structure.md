@@ -355,6 +355,12 @@ src/events/
 ```
 src/types/
 ├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiListQueryParams, ApiEntityStatus, ApiErrorCodeValue
+├── seo/
+│   ├── index.ts            # Type-only barrel
+│   ├── metadata.ts         # Metadata/site/canonical/sitemap/indexable-route contracts
+│   ├── ranking.ts          # JSON-LD object + Organization/Course/Person/Breadcrumb/Article/Video/FAQ inputs
+│   ├── data.ts             # SeoFetchOptions + SeoRenderingMode
+│   └── performance.ts      # Image SEO policy/preset + resource-hint contracts
 ├── dashboard/
 │   └── index.ts            # DashboardItem, DashboardLayoutProps, DashboardRole, shared dashboard page-header types/metadata
 ├── taxonomy/
@@ -404,6 +410,13 @@ Error messages in schemas use **i18n keys** (not hardcoded strings). Resolve in 
 src/constants/
 ├── api-route.ts            # API_PUBLIC_ROUTES (auth incl. google/googleOnetap/discord/x) + API_PRIVATE_ROUTES (me, taxonomy, media, instructor, …)
 ├── api-error-code.ts       # ApiErrorCode — mirrors be/internal/shared/errors/errcode_codes.go (incl. OAuth 4013–4019, 4023–4025; 4018/4020–4022/4026 FE-local)
+├── seo/
+│   ├── index.ts            # Data-only barrel
+│   ├── metadata.ts         # Site defaults, OG dimensions, title/description limits
+│   ├── routes.ts           # SEO_INDEXABLE_PUBLIC_ROUTE_KEYS + planned signed-in home path
+│   ├── rendering.ts        # SEO_RENDERING_MODE + SEO_ISR_HINTS
+│   ├── image.ts            # Image sizes presets + font CWV owner
+│   └── robots.ts           # Indexable/noindex/private-app Metadata robots values
 ├── browse-menu.ts          # BROWSE_MENU_ITEMS — recursive category tree (Figma seed)
 ├── route.ts                # PUBLIC_ROUTES + PRIVATE_ROUTES + PUBLIC_RESOURCE_ROUTES + PRIVATE_RESOURCE_ROUTES (central FE navigation values)
 ├── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (user-menu config values incl. permissions/titleKey; roles group first)
@@ -443,6 +456,7 @@ src/lib/
 ├── navigation/
 │   ├── home.ts             # navigateToHome(router) helper for header/dashboard brand touchpoints
 │   ├── routes.ts           # route builders + shared href constants (public/private/resource)
+│   ├── flatten-route-tree.ts # flattenRouteTreePaths — shared nested route-constant → string[] (crawl + sitemap)
 │   └── dashboard-page-header.ts  # dashboard route metadata resolver (consumes static constants + shared dashboard types)
 ├── quill/
 │   ├── index.ts            # Barrel: ensureQuillLoaded, Quill blots, toolbar, paste/drop, link helpers
@@ -574,3 +588,33 @@ docs/
 ├── quality.md              # ESLint, Biome, Knip / Madge / jscpd; `test-all` (CI) and `check-all` (local)
 └── reusable-assets.md      # Reusable utilities, types, hooks, and constants
 ```
+
+
+### `src/lib/seo/`, `src/lib/performance/`, `src/lib/security/web/` — Unused SEO foundation (2026-07-25)
+
+```
+src/lib/
+├── seo/
+│   ├── site-config.ts
+│   ├── build-page-metadata.ts
+│   ├── canonical.ts
+│   ├── robots-presets.ts
+│   ├── indexable-routes.ts      # Predicates/path builders over constants/seo/routes
+│   ├── sitemap-builder.ts
+│   ├── json-ld.tsx              # JsonLd lives here (not src/components) for Knip unused-files
+│   ├── index.ts                 # optional barrel
+│   ├── ranking/                 # Runtime Organization/Course/Person/Breadcrumb/Article/Video/FAQ builders
+│   └── data/
+│       └── seo-fetch.ts         # thin wrap → serverRawFetch + cache-policy
+├── performance/
+│   ├── image-seo.ts
+│   └── resource-hints.ts
+└── security/
+    └── web/
+        ├── crawl-policy.ts
+        ├── redact-client-payload.ts
+        ├── sanitize-json-ld.ts
+        └── security-headers-presets.ts
+```
+
+See [`seo-ranking-setup.md`](./seo-ranking-setup.md). Not wired to pages/layouts this phase.

@@ -576,3 +576,13 @@ await rawFetch(url, { cache: "force-cache" }); // opt-in browser/HTTP cache mode
 | Manual `Authorization` header | Set automatically by the authenticated transport |
 | Showing `response.message` in UI | Use `toastApiError` / `translateApiErrorCode` with `errors.codes.{code}` |
 | Semantic error keys per module (`auth.errors.*` for API) | API errors use numeric `errors.codes.*` only |
+
+
+## SEO public GET (`seoFetch`) — unused
+
+```ts
+// Future server usage only — requires an approved publicCacheProfiles entry.
+import { seoFetch } from "@/lib/seo/data/seo-fetch";
+```
+
+Rules: GET-only public data; no cookies/Authorization; fail-closed when `cacheProfileId` is unknown/empty registry. Do not use auth transport for SEO public cache. Full notes: [`seo-ranking-setup.md`](./seo-ranking-setup.md).

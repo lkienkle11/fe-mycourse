@@ -139,3 +139,14 @@ _Last audited: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code 
 ## Events module detail
 
 See [`delivery.md`](./delivery.md) and [`folder-structure.md`](./folder-structure.md) (`src/events/` tree).
+
+
+## SEO / Performance / Security web (foundation, unused)
+
+- **SEO contracts**: `src/types/seo/**` — type-only metadata, ranking, fetch/rendering, image-policy, and resource-hint contracts.
+- **SEO policy values**: `src/constants/seo/**` — data-only metadata defaults/limits, indexable route keys, rendering hints, image sizes, and robots presets.
+- **SEO runtime**: `src/lib/seo/**` — metadata factory, site-config validation, canonical/robots/sitemap helpers, JSON-LD + ranking builders, `seoFetch` over `serverRawFetch`.
+- **Performance**: `src/lib/performance/**` — image sizes/LCP policy, resource-hint builders (not injected).
+- **Security web**: `src/lib/security/web/**` — crawl policy from route constants, client redact, JSON-LD sanitize, draft headers.
+- **Docs**: [`seo-ranking-setup.md`](./seo-ranking-setup.md), [`security-hardening-notes.md`](./security-hardening-notes.md).
+- **Non-goals this phase**: no page/layout wire; no `/home` route; no `publicCacheProfiles` entries.

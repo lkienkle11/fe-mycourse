@@ -35,7 +35,7 @@
     "src/messages/**": ["types", "nsTypes", "files"],
     "src/schema/**": ["types", "nsTypes", "files"],
     "src/store/**": ["types", "nsTypes", "files"],
-    "src/types/**": ["files"],
+    "src/types/**": ["types", "nsTypes", "files"],
     "src/components/**": ["types", "nsTypes"],
     "src/screen/**": ["types", "nsTypes"]
   },

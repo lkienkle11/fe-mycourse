@@ -693,7 +693,7 @@ Planned: `deploy-main.yml` on push to **`main`**, reload **`mycourse-web-prod`**
 
 | Job | Responsibility |
 |-----|----------------|
-| `test` | Checkout, Node 22 (`cache: npm`), `npm ci` + **`npm run test-all`** — fails on ESLint, Biome, Knip (`deadcode`: unused types + component files), cycles, jscpd threshold, or placeholder `test` step |
+| `test` | Checkout, Node 22 (`cache: npm`), `npm ci` + **`npm run test-all`** — fails on ESLint, Biome, Knip (`deadcode`: unused component/screen files), cycles, jscpd threshold, or placeholder `test` step |
 | `build` | After `test`: `npm ci` + `npm run build`, then upload `frontend-runtime` artifact (`.next` + `public`) |
 | `deploy` | After `build`: download artifact, SSH git sync (`stash`/`checkout`/`pull`) + `npm ci`, `rsync` `.next` + `public`, then PM2 reload/start |
 
@@ -942,3 +942,13 @@ Full reference: **[`docs/docker.md`](docker.md)** — `NEXT_PUBLIC_*` build-args
 ---
 
 *For the full-stack VPS setup (Go API, Postgres, Redis, joint Nginx, CI/CD), always use **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** as the primary reference. Use this document for frontend-specific concerns only.*
+
+
+## Planned SITE_URL (take-note — not configured this phase)
+
+Future **server-side only** `SITE_URL` must be a pure absolute `https://` frontend **origin** (scheme + host [+ optional port], pathname `/` or empty, **no** username/password, **no** query, **no** hash, no trailing slash after normalize). It feeds `metadataBase`, canonical, hreflang, sitemap, and absolute OG URLs via `src/lib/seo/site-config.ts`.
+
+- Reject values like `https://example.com/app` or `https://example.com?x=1` — do not silently strip path/query into a different origin contract.
+- Do **not** treat `NEXT_PUBLIC_API_URL` or `NEXT_PUBLIC_SITE_URL` as the site canonical origin.
+- This phase does **not** change `.env`, `.env.example`, nginx, or PM2.
+- Existing nginx security headers (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`) remain the deploy baseline; FE `security-headers-presets.ts` is an inactive draft aligned with them. See [`seo-ranking-setup.md`](./seo-ranking-setup.md) and [`security-hardening-notes.md`](./security-hardening-notes.md).
