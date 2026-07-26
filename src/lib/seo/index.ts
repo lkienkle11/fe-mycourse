@@ -4,6 +4,8 @@ export {
   localizedPathname,
   toAbsoluteUrl,
 } from "@/lib/seo/canonical";
+/** TEMPORARY dormant — keep until permanent ISR policy; currently returns null. */
+export { resolveSeoTemporaryRevalidateSeconds } from "@/lib/seo/data/temporary-cache-policy";
 export {
   isSeoIndexablePublicRouteKey,
   listSeoIndexablePathnames,
