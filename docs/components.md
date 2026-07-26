@@ -325,3 +325,10 @@ const t = useTranslations("auth"); // namespace matches src/messages/*.ts key
 ```
 
 Add new strings to both `en.ts` and `vi.ts` — never hard-code display strings.
+
+
+### JsonLd (`src/lib/seo/json-ld.tsx`)
+
+- **Placement:** under `src/lib/seo/` (not `src/components/**`) so an unused file does not fail Knip `files` on components.
+- **Role:** server-friendly JSON-LD `<script type="application/ld+json">` with `<` → `\u003c` escape; consumes ranking builders.
+- **Status:** unused this phase. See [`seo-ranking-setup.md`](./seo-ranking-setup.md).

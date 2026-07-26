@@ -507,3 +507,8 @@ Symbol and edge counts change as the codebase grows. Refresh the local graph wit
 | Production deploy, env vars, Nginx | [`docs/deploy.md`](deploy.md) |
 | API contracts and BE response envelopes | [`README.md`](../README.md) |
 | Instructor admin routes, permissions, API | [`docs/instructor-admin.md`](instructor-admin.md) |
+
+
+## Planned signed-in home `/home` (Figma take-note)
+
+Not implemented. Structure (hero, topic chips, “Based on your interest”, “Trending Course”, cards, promo slot) is documented in [`seo-ranking-setup.md`](./seo-ranking-setup.md). Do not emit Course/Offer JSON-LD from Figma illustration data.

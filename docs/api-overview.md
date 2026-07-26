@@ -141,3 +141,8 @@ See `docs/api-using.md` § API error i18n.
 - Use constants from `src/constants/api-route.ts`.
 - Use `raw*` helpers only for refresh/low-level paths.
 - `refreshBrowserSession` has **no** `AbortSignal` parameter — authenticated public options intentionally omit signal; adapter single-flight only.
+
+
+## SEO fetch consumer (unused)
+
+`src/lib/seo/data/seo-fetch.ts` is a thin typed consumer of `serverRawFetch` + `cache-policy`. It does **not** add a parallel HTTP stack and does **not** register production cache profiles. See [`seo-ranking-setup.md`](./seo-ranking-setup.md) and [`api-using.md`](./api-using.md).
