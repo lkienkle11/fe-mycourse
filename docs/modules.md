@@ -148,5 +148,6 @@ See [`delivery.md`](./delivery.md) and [`folder-structure.md`](./folder-structur
 - **SEO runtime**: `src/lib/seo/**` — metadata factory, site-config validation, canonical/robots/sitemap helpers, JSON-LD + ranking builders, `seoFetch` over `serverRawFetch`, TEMPORARY dormant env cache helper (`temporary-cache-policy.ts`, flag off).
 - **Performance**: `src/lib/performance/**` — image sizes/LCP policy, resource-hint builders (not injected).
 - **Security web**: `src/lib/security/web/**` — crawl policy from route constants, client redact, JSON-LD sanitize, draft headers.
+- **Signed-in home (temporary)**: `PRIVATE_ROUTES.home` → `src/app/[locale]/(web)/home/page.tsx` + `SignedInHomePage`; robots `privateApp`; no Figma UI / no API yet.
 - **Docs**: [`seo-ranking-setup.md`](./seo-ranking-setup.md), [`security-hardening-notes.md`](./security-hardening-notes.md).
-- **Non-goals this phase**: no page/layout wire; no `/home` route; no `publicCacheProfiles` entries.
+- **Non-goals remaining**: no broad page/layout SEO wire; no `publicCacheProfiles` entries; no full Figma `/home`.

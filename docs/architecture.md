@@ -110,7 +110,8 @@ fe/
 │   │
 │   ├── screen/                     # Page-level screen components (async server components)
 │   │   ├── index.ts                # Barrel: common + admin + instructor + sysadmin
-│   │   ├── common/home/page.tsx    # HomePage
+│   │   ├── common/home/page.tsx    # HomePage (guest)
+│   │   ├── common/home/signed-in-home-page.tsx  # SignedInHomePage (temporary /home)
 │   │   ├── admin/page.tsx          # AdminDashboardPage
 │   │   ├── instructor/page.tsx
 │   │   └── sysadmin/page.tsx

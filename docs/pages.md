@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-07-06 — Roster `?portfolioId=` modal; Profiles screen removed. Prior: become-instructor route._
+_Last audited: 2026-07-26 — temporary signed-in `/{locale}/home`. Prior: 2026-07-06 roster `?portfolioId=` modal; Profiles screen removed; become-instructor route._
 
 ## Current pages
 
@@ -8,6 +8,7 @@ _Last audited: 2026-07-06 — Roster `?portfolioId=` modal; Profiles screen remo
 |-----|------------|------------------|--------|
 | `/` | `src/app/page.tsx` | Redirect → `/vi` (default locale) | Implemented |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | `HomePage` (`src/screen/common/home/page.tsx`) | Implemented |
+| `/{locale}/home` | `src/app/[locale]/(web)/home/page.tsx` | `SignedInHomePage` — login-required temporary placeholder (`PRIVATE_ROUTES.home`); no route metadata | Temporary |
 | `/{locale}/become-instructor` | `src/app/[locale]/(web)/become-instructor/page.tsx` | `BecomeInstructorPage` — instructor application (states A–H) | Implemented (see `docs/instructor-application.md`) |
 | `/{locale}/confirm-email` | `src/app/[locale]/(web)/confirm-email/page.tsx` | `ConfirmEmailContent` → `confirmAction` | Implemented |
 | `/{locale}/logout` | `src/app/[locale]/(web)/logout/page.tsx` | `LogoutContent` → `logoutAction` (+ cross-tab `broadcast:logout`) | Implemented |
@@ -56,10 +57,10 @@ _Last audited: 2026-07-06 — Roster `?portfolioId=` modal; Profiles screen remo
 | Logout | Dedicated page `/{locale}/logout` (also linked from user menu) |
 
 Route constants:
-- `PUBLIC_ROUTES` (`src/constants/route.ts`): public/no-login routes (`home`, `forgotPassword`, `confirmEmail`, `logout`, **`becomeInstructor`**)
-- `PRIVATE_ROUTES` (`src/constants/route.ts`): login-required routes (`admin`, `instructor`, `sysadmin`, `account`)
+- `PUBLIC_ROUTES` (`src/constants/route.ts`): public/no-login routes (`home` → `/`, `forgotPassword`, `confirmEmail`, `logout`, **`becomeInstructor`**)
+- `PRIVATE_ROUTES` (`src/constants/route.ts`): login-required routes (`home` → `/home`, `admin`, `instructor`, `sysadmin`, `account`)
 - `PUBLIC_RESOURCE_ROUTES` / `PRIVATE_RESOURCE_ROUTES` (`src/constants/route.ts`): dynamic templates (`:param`) for resource pages
-- Route builders/helpers live in `src/lib/navigation/routes.ts` (for example `instructorCourseEditorHref(courseId)` for `/instructor/courses/:courseId/info` and `instructorCourseEditorTabHref(courseId, tab)` for the route-backed editor tabs)
+- Route builders/helpers live in `src/lib/navigation/routes.ts` (for example `signedInHomeHref`, `instructorCourseEditorHref(courseId)` for `/instructor/courses/:courseId/info` and `instructorCourseEditorTabHref(courseId, tab)` for the route-backed editor tabs)
 
 No `auth.login` / `auth.signup` route constants (login/signup stay modal-only).
 
@@ -68,6 +69,8 @@ No `auth.login` / `auth.signup` route constants (login/signup stay modal-only).
 | Area | Status |
 |------|--------|
 | Login / Signup pages | Modal-only (`LoginSignupPopup`), no dedicated route pages |
+| Guest home `/` | Marketing mock `HomePage` |
+| Signed-in home `/home` | Temporary placeholder + client auth gate; Figma UI not shipped |
 | Admin pages | Implemented: dashboard shell, taxonomy, instructors, course review |
 | Instructor pages | Implemented: dashboard shell, courses list/editor, tickets |
 | Sysadmin pages | Implemented: dashboard shell, taxonomy, instructors, course review |
@@ -92,4 +95,4 @@ See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-ad
 
 ## Home SEO foundation (take-note)
 
-Guest home remains mock; signed-in `/home` is planned from Figma only (no route/UI this phase). SEO/performance/security helpers under `src/lib/**` are **unused**. See [`seo-ranking-setup.md`](./seo-ranking-setup.md) § “Tích hợp home dự kiến” and [`screens.md`](./screens.md).
+Guest home remains mock. Signed-in `/home` exists as a **temporary** login-required placeholder (`SignedInHomePage`); full Figma UI and API data are later work. The route ships **without** page metadata (product decision); crawl disallow derives from `PRIVATE_ROUTES`. SEO/performance helpers under `src/lib/**` remain unused by pages. See [`seo-ranking-setup.md`](./seo-ranking-setup.md) § “Tích hợp home” and [`screens.md`](./screens.md).

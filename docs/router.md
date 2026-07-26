@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-07-22 (unmounted account/forgot-password: keep route constants; comment Link/menu usage to block prefetch). Prior: OAuth COOP note; OAuth callback middleware bypass._
+_Last audited: 2026-07-26 (temporary signed-in `/home` under `(web)` + `PRIVATE_ROUTES.home`). Prior: 2026-07-22 unmounted account/forgot-password; OAuth COOP; OAuth callback middleware bypass._
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
 
@@ -77,7 +77,8 @@ export const config = {
 /auth/x/callback        → src/app/auth/x/callback/page.tsx  X OAuth popup callback (locale-less; retained, not wired to modal)
 /[locale]/              → src/app/[locale]/layout.tsx     NextIntlClientProvider + AppProviders
 /[locale]/              → src/app/[locale]/(web)/layout.tsx  Header + main + Footer
-/[locale]/              → src/app/[locale]/(web)/page.tsx    HomePage
+/[locale]/              → src/app/[locale]/(web)/page.tsx    HomePage (guest marketing)
+/[locale]/home          → src/app/[locale]/(web)/home/page.tsx  SignedInHomePage (login-required, temporary placeholder)
 /[locale]/become-instructor → src/app/[locale]/(web)/become-instructor/page.tsx  BecomeInstructorPage
 /[locale]/confirm-email → src/app/[locale]/(web)/confirm-email/page.tsx  Email confirm
 /[locale]/logout        → src/app/[locale]/(web)/logout/page.tsx         Logout
@@ -141,6 +142,8 @@ src/app/[locale]/
 |-----|-----------|--------|--------|
 | `/vi` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
 | `/en` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
+| `/vi/home` | `[locale]/(web)/home/page.tsx` | `SignedInHomePage` — login-required temporary placeholder (Figma UI not shipped) | ✅ Temporary |
+| `/en/home` | same | same | ✅ Temporary |
 | `/auth/discord/callback?code=…&state=…` | `app/auth/discord/callback/page.tsx` | `DiscordOAuthCallbackPage` (locale-less, English-only) — `postMessage` `code`/`state`/`error` to `window.opener`, then `window.close()`; fallback copy + Back-to-home link when opened without an opener | ✅ Implemented |
 | `/auth/x/callback?code=…&state=…` | `app/auth/x/callback/page.tsx` | `XOAuthCallbackPage` (locale-less, English-only, retained) — same relay pattern for X OAuth; not wired to login/signup popup | ✅ Implemented |
 | `/vi/confirm-email?token=…` | `[locale]/(web)/confirm-email/page.tsx` | `ConfirmEmailContent` | ✅ Implemented |
@@ -183,8 +186,8 @@ src/app/[locale]/
 
 Temporary classification for app navigation:
 
-- **Public routes (no login required):** `PUBLIC_ROUTES.home`, `PUBLIC_ROUTES.forgotPassword`, `PUBLIC_ROUTES.confirmEmail`, `PUBLIC_ROUTES.logout`, `PUBLIC_ROUTES.becomeInstructor` (page requires login at runtime — State A shows login CTA).
-- **Private routes (login required):** all entries under `PRIVATE_ROUTES` (`admin`, `instructor`, `sysadmin`, `account` groups).
+- **Public routes (no login required):** `PUBLIC_ROUTES.home` (`/`), `PUBLIC_ROUTES.forgotPassword`, `PUBLIC_ROUTES.confirmEmail`, `PUBLIC_ROUTES.logout`, `PUBLIC_ROUTES.becomeInstructor` (page requires login at runtime — State A shows login CTA).
+- **Private routes (login required):** all entries under `PRIVATE_ROUTES` including `PRIVATE_ROUTES.home` (`/home`), plus `admin`, `instructor`, `sysadmin`, and `account` groups.
 - **Resource routes (dynamic params `:param`):**
   - `PUBLIC_RESOURCE_ROUTES` for public dynamic routes.
   - `PRIVATE_RESOURCE_ROUTES` for authenticated dynamic routes.
@@ -202,7 +205,7 @@ This classification is defined in `src/constants/route.ts` and used by shared me
 Root layout            (src/app/layout.tsx)
   └─ Locale layout     (src/app/[locale]/layout.tsx)
         ├─ Web layout  (src/app/[locale]/(web)/layout.tsx)
-        │     └─ Page  (HomePage, confirm-email, logout)
+        │     └─ Page  (HomePage, SignedInHomePage `/home`, become-instructor, confirm-email, logout)
         ├─ Admin layout (DashboardLayout + admin items)
         ├─ Instructor layout
         └─ Sysadmin layout
@@ -333,12 +336,16 @@ src/screen/common/course/course-review-page.tsx   → CourseReviewPage (shared b
 ```
 
 
-## Planned guest `/` vs signed-in `/home` (take-note)
+## Guest `/` vs signed-in `/home`
 
 | Path | Intent | Status |
 | --- | --- | --- |
-| `/` (locale home via `PUBLIC_ROUTES.home`) | Guest marketing home | Exists (mock). Future SEO wire optional. **Only** default SEO-indexable public key today. |
-| `/home` | Signed-in home (Figma) | **Not created** this phase. Index vs noindex TBD; default assume private/personalized → prefer `noindex` until proven public. |
+| `/` (locale home via `PUBLIC_ROUTES.home`) | Guest marketing home | Exists (mock). Future SEO wire optional. **Only** default SEO-indexable public key today. `homeHref` still points here. |
+| `/home` (`PRIVATE_ROUTES.home`) | Signed-in homepage | **Temporary route shipped.** `(web)` shell + client auth gate; placeholder UI (no Figma sections, no API fetch, **no route metadata**). Crawl disallow derives from `PRIVATE_ROUTES` (includes `/home`). Full Figma layout is a later task. |
+
+**Auth gate:** guests on `/home` see a login CTA that opens the existing login modal with `nextLink=/home` (same modal pattern as become-instructor State A). No dedicated login page.
+
+**Href helpers:** `homeHref` = public `/`; `signedInHomeHref` = private `/home`. Logo / `navigateToHome` still use `homeHref` until product decides brand-home should follow auth state.
 
 **Public-routable ≠ SEO-indexable:** `forgotPassword` / `confirmEmail` / `logout` (and other non-allow-listed `PUBLIC_ROUTES` keys) stay publicly routable but must use `noindex` and are **excluded** from default sitemap entries (`SEO_INDEXABLE_PUBLIC_ROUTE_KEYS`).
 

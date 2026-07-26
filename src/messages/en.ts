@@ -31,6 +31,16 @@ const messages = {
     search: {
       placeholder: "What do you want to learn today?",
     },
+    signedIn: {
+      title: "Welcome back",
+      temporaryNotice:
+        "This signed-in homepage is temporary. Personalized recommendations will arrive here later.",
+      loginRequired: {
+        title: "Sign in to continue",
+        description: "This page is available after you sign in.",
+        login: "Sign in",
+      },
+    },
   },
   commonHeader: {
     title: "MyCourses.io",

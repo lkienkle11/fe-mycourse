@@ -59,10 +59,12 @@ src/app/
 └── [locale]/               # Dynamic locale segment — value: "en" | "vi"
     ├── layout.tsx          # Locale layout: wraps in NextIntlClientProvider + AppProviders
     ├── not-found.tsx       # Locale-level 404 → NotFoundPage (inherits providers from layout)
-    ├── (web)/              # Route group: public marketing pages (no prefix in URL)
+    ├── (web)/              # Route group: marketing + signed-in home shell (no prefix in URL)
     │   ├── layout.tsx      # Web shell: Header + GoogleOneTapHost + GSI script + <main> + Footer
     │   ├── not-found.tsx   # Web 404 → NotFoundPage showHeader={false}
-    │   ├── page.tsx        # Home → HomePage
+    │   ├── page.tsx        # Guest home → HomePage
+    │   ├── home/page.tsx   # Signed-in home → SignedInHomePage (temporary, login-required)
+    │   ├── become-instructor/page.tsx
     │   ├── confirm-email/page.tsx
     │   └── logout/page.tsx
     ├── admin/              # Admin dashboard (RoleDashboardLayout -> DashboardLayout)
@@ -118,7 +120,8 @@ src/screen/
 │   │   ├── instructor-expertise-page.tsx
 │   │   └── instructor-tickets-admin-page.tsx
 │   ├── home/
-│   │   └── page.tsx        # HomePage — assembles all home section components
+│   │   ├── page.tsx                 # HomePage — guest marketing sections
+│   │   └── signed-in-home-page.tsx  # SignedInHomePage — temporary login-required /home
 │   ├── not-found/
 │   │   ├── index.ts
 │   │   └── not-found-page.tsx  # NotFoundPage — localized 404 (image, i18n copy, CTA)
@@ -413,7 +416,7 @@ src/constants/
 ├── seo/
 │   ├── index.ts            # Data-only barrel
 │   ├── metadata.ts         # Site defaults, OG dimensions, title/description limits
-│   ├── routes.ts           # SEO_INDEXABLE_PUBLIC_ROUTE_KEYS + planned signed-in home path
+│   ├── routes.ts           # SEO_INDEXABLE_PUBLIC_ROUTE_KEYS + SIGNED_IN_HOME_PATH (/home)
 │   ├── rendering.ts        # SEO_RENDERING_MODE + SEO_ISR_HINTS + TEMPORARY dormant env cache flag
 │   ├── image.ts            # Image sizes presets + font CWV owner
 │   └── robots.ts           # Indexable/noindex/private-app Metadata robots values
@@ -454,7 +457,7 @@ src/lib/language/
 ```
 src/lib/
 ├── navigation/
-│   ├── home.ts             # navigateToHome(router) helper for header/dashboard brand touchpoints
+│   ├── home.ts             # navigateToHome(router) + re-exports homeHref / signedInHomeHref
 │   ├── routes.ts           # route builders + shared href constants (public/private/resource)
 │   ├── flatten-route-tree.ts # flattenRouteTreePaths — shared nested route-constant → string[] (crawl + sitemap)
 │   └── dashboard-page-header.ts  # dashboard route metadata resolver (consumes static constants + shared dashboard types)
