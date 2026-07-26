@@ -7,6 +7,8 @@ export const PUBLIC_ROUTES = {
 } as const;
 
 export const PRIVATE_ROUTES = {
+  /** Signed-in homepage (temporary placeholder UI until Figma home ships). */
+  home: "/home",
   admin: {
     root: "/admin",
     users: "/admin/users",

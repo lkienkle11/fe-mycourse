@@ -7,7 +7,7 @@ import { PRIVATE_RESOURCE_ROUTES, PRIVATE_ROUTES } from "@/constants/route";
 import { flattenRouteTreePaths } from "@/lib/navigation/flatten-route-tree";
 import { listSeoIndexablePathnames } from "@/lib/seo/indexable-routes";
 
-export { PLANNED_SIGNED_IN_HOME_PATH } from "@/constants/seo/routes";
+export { SIGNED_IN_HOME_PATH } from "@/constants/seo/routes";
 
 /** Unique sorted private app path prefixes for robots Disallow. */
 export function privateCrawlDisallowPaths(): string[] {
@@ -33,9 +33,9 @@ export function publicCrawlAllowPaths(): string[] {
 }
 
 /**
- * Planned signed-in home — not in PUBLIC_ROUTES yet.
- * Prefer noindex until personalization/private content is ruled out.
+ * Signed-in `/home` is personalized-shaped — keep privateApp / noindex
+ * until product proves a public, non-personalized slice is safe to index.
  */
-export function plannedSignedInHomeRobotsMode(): "privateApp" {
+export function signedInHomeRobotsMode(): "privateApp" {
   return "privateApp";
 }

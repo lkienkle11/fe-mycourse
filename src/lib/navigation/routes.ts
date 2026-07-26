@@ -89,6 +89,7 @@ export function instructorCourseEditorTabHref(
 }
 
 export const homeHref = toPublicRoute(publicRoutes.home);
+export const signedInHomeHref = toPrivateRoute(privateRoutes.home);
 export const forgotPasswordHref = toPublicRoute(publicRoutes.forgotPassword);
 export const confirmEmailHref = toPublicRoute(publicRoutes.confirmEmail);
 export const logoutHref = toPublicRoute(publicRoutes.logout);

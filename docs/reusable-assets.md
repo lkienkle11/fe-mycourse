@@ -192,8 +192,8 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `PRIVATE_ROUTES`
 - **Type**: Constant object
 - **Path**: `src/constants/route.ts`
-- **Purpose**: FE private route map (login-required) grouped by module: `admin`, `instructor`, `sysadmin`, and account surfaces.
-- **Scope**: dashboard menus, user menu links, instructor/admin/sysadmin navigation.
+- **Purpose**: FE private route map (login-required) grouped by module: top-level `home` (`/home`), plus `admin`, `instructor`, `sysadmin`, and account surfaces.
+- **Scope**: signed-in homepage, dashboard menus, user menu links, instructor/admin/sysadmin navigation.
 - **Dependencies**: none.
 
 ### Asset: PUBLIC_RESOURCE_ROUTES / PRIVATE_RESOURCE_ROUTES
@@ -215,12 +215,12 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: screens, shared menu/sidebar constants, navigation helpers.
 - **Dependencies**: `PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`, `buildQueryParams`.
 
-### Asset: pre-built navigation hrefs (`homeHref`, `logoutHref`, `adminCoursesHref`, ...)
-- **Name**: `homeHref`, `forgotPasswordHref`, `logoutHref`, `adminRootHref`, `instructorCoursesHref`, `sysadminCoursesAllHref`, `sysadminCoursesReviewingHref`, `sysadminCoursesTrashHref`, `sysadminCourseReviewPreviewHref`, `accountMyCoursesHref`, ...
+### Asset: pre-built navigation hrefs (`homeHref`, `signedInHomeHref`, `logoutHref`, `adminCoursesHref`, ...)
+- **Name**: `homeHref`, `signedInHomeHref`, `forgotPasswordHref`, `logoutHref`, `adminRootHref`, `instructorCoursesHref`, `sysadminCoursesAllHref`, `sysadminCoursesReviewingHref`, `sysadminCoursesTrashHref`, `sysadminCourseReviewPreviewHref`, `accountMyCoursesHref`, ...
 - **Type**: Constant strings
 - **Path**: `src/lib/navigation/routes.ts`
-- **Purpose**: Shared route outputs generated from route builders to avoid duplicated conversion in call sites.
-- **Scope**: auth components, header/user menu constants, dashboard constants.
+- **Purpose**: Shared route outputs generated from route builders to avoid duplicated conversion in call sites. `homeHref` = public guest `/`; `signedInHomeHref` = private `/home`.
+- **Scope**: auth components, header/user menu constants, dashboard constants, signed-in home route.
 - **Dependencies**: route builder functions in same module.
 
 ### Asset: `instructorCourseEditorHref(courseId)` / `instructorCourseEditorTabHref(courseId, tab)`
