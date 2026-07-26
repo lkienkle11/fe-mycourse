@@ -5,4 +5,5 @@ export type * from "./course";
 export type * from "./dashboard";
 export type * from "./events";
 export type * from "./permissions";
+export type * from "./seo";
 export type * from "./user-menu";
