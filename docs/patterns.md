@@ -575,4 +575,5 @@ Before writing code for a new feature:
 - Public SEO data must go through `seoFetch` → `serverRawFetch` → `cache-policy` (fail-closed while registry empty). Never bypass the registry.
 - Do not fetch SEO-critical HTML content only inside client `useEffect`.
 - JSON-LD builders require real domain-typed fields; never invent ratings/prices from mock UI.
+- Keep the TEMPORARY dormant env cache hint (`SEO_TEMPORARY_ENV_CACHE_POLICY` + `resolveSeoTemporaryRevalidateSeconds`) until a permanent policy replaces it — leave `enabled: false` unless deliberately wiring revalidate.
 - See [`seo-ranking-setup.md`](./seo-ranking-setup.md).

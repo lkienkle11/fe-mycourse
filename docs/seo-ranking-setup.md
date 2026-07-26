@@ -124,6 +124,7 @@ Optional barrel: `src/lib/seo/index.ts` (Knip `ignoreFiles` covers `**/index.ts`
 - `src/constants/seo/rendering.ts` exposes named rendering values; `SeoRenderingMode` is derived in `src/types/seo/data.ts`.
 - `seoFetch` is a typed thin wrapper over `serverRawFetch` + cache-policy. With an empty registry it **fail-closes** (`cache-profile-unknown`). No second fetch stack. No production profile registration this phase.
 - Authenticated / personalized `/home` data must not use public cache. SEO HTML content must not rely only on client `useEffect` fetches for crawlers.
+- **TEMPORARY dormant env cache hint (keep — do not delete):** `SEO_TEMPORARY_ENV_CACHE_POLICY` in `src/constants/seo/rendering.ts` plus `resolveSeoTemporaryRevalidateSeconds()` in `src/lib/seo/data/temporary-cache-policy.ts`. Flag `enabled` is **`false`** — no effect on pages/`seoFetch`/`publicCacheProfiles` this phase. When deliberately enabled later: development → `false` (immediate refresh / no ISR hold); production → `60` seconds temporary revalidate. Replace only after a permanent cache policy is approved.
 
 ## Performance
 

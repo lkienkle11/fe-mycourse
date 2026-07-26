@@ -145,7 +145,7 @@ See [`delivery.md`](./delivery.md) and [`folder-structure.md`](./folder-structur
 
 - **SEO contracts**: `src/types/seo/**` — type-only metadata, ranking, fetch/rendering, image-policy, and resource-hint contracts.
 - **SEO policy values**: `src/constants/seo/**` — data-only metadata defaults/limits, indexable route keys, rendering hints, image sizes, and robots presets.
-- **SEO runtime**: `src/lib/seo/**` — metadata factory, site-config validation, canonical/robots/sitemap helpers, JSON-LD + ranking builders, `seoFetch` over `serverRawFetch`.
+- **SEO runtime**: `src/lib/seo/**` — metadata factory, site-config validation, canonical/robots/sitemap helpers, JSON-LD + ranking builders, `seoFetch` over `serverRawFetch`, TEMPORARY dormant env cache helper (`temporary-cache-policy.ts`, flag off).
 - **Performance**: `src/lib/performance/**` — image sizes/LCP policy, resource-hint builders (not injected).
 - **Security web**: `src/lib/security/web/**` — crawl policy from route constants, client redact, JSON-LD sanitize, draft headers.
 - **Docs**: [`seo-ranking-setup.md`](./seo-ranking-setup.md), [`security-hardening-notes.md`](./security-hardening-notes.md).
