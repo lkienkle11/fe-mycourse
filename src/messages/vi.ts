@@ -32,6 +32,16 @@ const messages = {
     search: {
       placeholder: "Bạn muốn học gì hôm nay?",
     },
+    signedIn: {
+      title: "Chào mừng trở lại",
+      temporaryNotice:
+        "Trang chủ sau đăng nhập đang tạm thời. Gợi ý cá nhân hóa sẽ được thêm sau.",
+      loginRequired: {
+        title: "Đăng nhập để tiếp tục",
+        description: "Trang này chỉ dành cho tài khoản đã đăng nhập.",
+        login: "Đăng nhập",
+      },
+    },
   },
   commonHeader: {
     title: "MyCourses.io",
