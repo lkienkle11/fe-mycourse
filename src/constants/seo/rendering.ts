@@ -11,3 +11,18 @@ export const SEO_ISR_HINTS = {
   /** Published catalogue cards — only after a public cache profile is approved. */
   catalogue: 60,
 } as const;
+
+/**
+ * TEMPORARY dormant env cache flag — KEEP (do not delete).
+ *
+ * Intent (when deliberately enabled later):
+ * - development / non-production → no ISR hold (`revalidate: false`, refresh immediately)
+ * - production → temporary `productionRevalidateSeconds` (60)
+ *
+ * `enabled: false` now → no effect on pages, `seoFetch`, or `publicCacheProfiles`.
+ * Replace only after a permanent cache / ISR policy is approved.
+ */
+export const SEO_TEMPORARY_ENV_CACHE_POLICY = {
+  enabled: false,
+  productionRevalidateSeconds: 60,
+} as const;
