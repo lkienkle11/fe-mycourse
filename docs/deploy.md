@@ -910,7 +910,8 @@ sudo nginx -t                  # valid config after certbot edits?
 | Root layout | `src/app/layout.tsx` | Fonts (Roboto, Gilroy, GeistMono), Toaster |
 | Locale layout | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider` + `AppProviders` (SWR) |
 | Web shell layout | `src/app/[locale]/(web)/layout.tsx` | `Header` + `<main>` + `Footer` (from `@/components/common`) |
-| Home screen | `src/screen/common/home/page.tsx` | Assembles 7 marketing sections |
+| Home screen (guest) | `src/screen/common/home/page.tsx` | Assembles 7 marketing sections |
+| Signed-in home (temporary) | `src/screen/common/home/signed-in-home-page.tsx` | Login-required placeholder at `/{locale}/home` |
 | API client transport | `src/api/transport/api-transport.ts`, `src/api/xior/client.ts` | Xior 0.8.3 over Next.js Fetch + runtime auth + refresh |
 | API helpers | `src/api/core/methods.ts` | `apiFetch`, `apiPost`, `apiPut`, `apiDelete`, `apiOptions` → `ApiResult<T>` |
 | Raw HTTP + barrel | `src/api/core/raw-http.ts`, `src/api/xior/client.ts`, `src/api/index.ts` | Xior-backed `raw*`; `index.ts` re-exports `api*` + `raw*` |

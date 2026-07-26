@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-07-10 (Homepage sections use `public/assets/images/home` static assets). Prior: 2026-07-08 (Discord + Google on login/signup popup; Discord callback route; X OAuth code retained)._
+_Last audited: 2026-07-26 (temporary signed-in `/home` route + SignedInHomePage). Prior: 2026-07-10 Homepage sections use `public/assets/images/home` static assets; 2026-07-08 Discord + Google on login/signup popup._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -129,7 +129,7 @@ Each layout layer adds a concern without re-rendering the parent:
 
 **File:** `src/screen/common/home/page.tsx` — async Server Component.
 
-Assembles the marketing landing page from seven section components, all living under `src/components/home/`:
+Assembles the **guest** marketing landing page from seven section components, all living under `src/components/home/`:
 
 ```
 HomePage (server)
@@ -509,6 +509,13 @@ Symbol and edge counts change as the codebase grows. Refresh the local graph wit
 | Instructor admin routes, permissions, API | [`docs/instructor-admin.md`](instructor-admin.md) |
 
 
-## Planned signed-in home `/home` (Figma take-note)
+## Signed-in home `/home` (temporary)
 
-Not implemented. Structure (hero, topic chips, “Based on your interest”, “Trending Course”, cards, promo slot) is documented in [`seo-ranking-setup.md`](./seo-ranking-setup.md). Do not emit Course/Offer JSON-LD from Figma illustration data.
+**File:** `src/screen/common/home/signed-in-home-page.tsx` — client component.
+
+**Route:** `src/app/[locale]/(web)/home/page.tsx` → `PRIVATE_ROUTES.home` (`/home`).
+
+- Login-required: while `useGetMe` loads, show a spinner; guests see a login CTA that calls `openLoginModal(PRIVATE_ROUTES.home)` (reuse login modal + `nextLink`, same idea as become-instructor State A).
+- Authenticated users see a **temporary placeholder** (title + short notice). No Figma hero/chips/course grids, no API fetch.
+- **No route metadata** (`generateMetadata` intentionally omitted per product decision). Crawl protection derives from `PRIVATE_ROUTES` disallow lists. Do not emit Course/Offer JSON-LD from illustration data.
+- Full Figma signed-in layout remains documented in [`seo-ranking-setup.md`](./seo-ranking-setup.md) for a later implementation pass.

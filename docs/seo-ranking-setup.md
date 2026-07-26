@@ -1,10 +1,10 @@
 # SEO / Ranking / Performance / Security foundation
 
-_Last audited: 2026-07-25 (unused shared helpers; not wired to pages/layouts)._
+_Last audited: 2026-07-26 (temporary signed-in `/home` under `(web)` + `PRIVATE_ROUTES.home`; most SEO helpers still unused by other pages)._
 
-Source of truth for the **unused** SEO foundation under `src/types/seo/**`, `src/constants/seo/**`, `src/lib/seo/**`, `src/lib/performance/**`, and `src/lib/security/web/**`. Companion FE security notes: [`security-hardening-notes.md`](./security-hardening-notes.md). BE intent (take-note only): [`be-mycourse/docs/security-public-seo-notes.md`](../../be-mycourse/docs/security-public-seo-notes.md).
+Source of truth for the SEO foundation under `src/types/seo/**`, `src/constants/seo/**`, `src/lib/seo/**`, `src/lib/performance/**`, and `src/lib/security/web/**`. Companion FE security notes: [`security-hardening-notes.md`](./security-hardening-notes.md). BE intent (take-note only): [`be-mycourse/docs/security-public-seo-notes.md`](../../be-mycourse/docs/security-public-seo-notes.md).
 
-**Status:** helpers exist for future `generateMetadata` / JSON-LD / crawl policy. They are **not** imported from `layout.tsx`, route `page.tsx`, `app/sitemap.ts`, or `app/robots.ts` in this phase.
+**Status:** helpers exist for future `generateMetadata` / JSON-LD / crawl policy. They are **not** imported from `layout.tsx`, route `page.tsx`, `app/sitemap.ts`, or `app/robots.ts` in this phase. The temporary `/{locale}/home` route ships **without** page metadata; its crawl protection comes from `PRIVATE_ROUTES` disallow derivation only.
 
 ---
 
@@ -12,7 +12,7 @@ Source of truth for the **unused** SEO foundation under `src/types/seo/**`, `src
 
 - Next.js **16.2.1**, App Router + `next-intl` (`localePrefix: "always"`); root `/` redirects to the default locale.
 - Root metadata today is title/description only in `src/app/layout.tsx` — no OG/Twitter/JSON-LD/sitemap/robots under `src/`.
-- Guest home uses **mock** course data; signed-in `/home` does **not** exist yet.
+- Guest home uses **mock** course data. Signed-in `/home` exists as a **temporary** login-required placeholder (`PRIVATE_ROUTES.home`); Figma UI and personalized API data are not shipped.
 - BE has **no** public anonymous course catalogue (`be-mycourse/docs/modules.md` Planned). `learner-courses*` requires JWT + `course:read` — not for SEO public cache.
 - No frontend site origin env yet. Do not hard-code a domain. Do not use `NEXT_PUBLIC_API_URL` as canonical/`metadataBase`. Future server-side `SITE_URL` is documented in [`deploy.md`](./deploy.md) only (env files / nginx / PM2 unchanged this phase).
 
@@ -62,6 +62,7 @@ Agents must not confuse **reuse** (A) with **new files** (B) or **forbidden work
 | N4 | `src/lib/seo/canonical.ts` | Absolute canonical from site origin + pathname | N2, A7, A8, A9 |
 | N5 | `src/lib/seo/robots-presets.ts` | `indexable` / `noindex` / `privateApp` + `robotsModeForPublicRouteKey` | N1, `indexable-routes` |
 | N5b | `src/lib/seo/indexable-routes.ts` | Runtime predicates/pathname helpers over `src/constants/seo/routes.ts` (`home` only) | A6, N1–N1b |
+| N5c | `src/constants/seo/routes.ts` `SIGNED_IN_HOME_PATH` | Constant `/home` aligned with `PRIVATE_ROUTES.home` (not SEO-indexable) | A6 |
 | N6 | `src/lib/seo/sitemap-builder.ts` | Pure sitemap builder; default pathnames = SEO-indexable only | A6, A6b, N5b, A7, A8 |
 | N7 | `src/lib/seo/ranking/*.ts` | Organization / Course / Person / Breadcrumb / Article / Video / FAQ builders | A14 |
 | N8 | `src/lib/seo/json-ld.tsx` | Server JSON-LD script + `\u003c` escape | N7 |
@@ -88,9 +89,9 @@ Optional barrel: `src/lib/seo/index.ts` (Knip `ignoreFiles` covers `**/index.ts`
 
 ### C) Forbidden this phase
 
-- Wire into `layout.tsx` / pages; create `app/sitemap.ts`, `app/robots.ts`, `opengraph-image.tsx`.
+- Wire SEO helpers broadly into `layout.tsx` / guest pages; create `app/sitemap.ts`, `app/robots.ts`, `opengraph-image.tsx`.
 - Change `next.config.ts`, `.env`, `.env.example`, nginx, PM2.
-- Create or edit routes `/` or `/home` / Figma UI.
+- Replace guest `/` marketing home or ship full Figma signed-in `/home` UI / personalized API data (temporary `/home` placeholder + `privateApp` metadata is allowed).
 - Register `publicCacheProfiles`; call production APIs; build JSON-LD from home mock data.
 - Add packages: `schema-dts`, `react-schemaorg`, `@next/bundle-analyzer`.
 - Duplicate fetch / cache / route-list / slugger / truncate stacks; `OptimizedImage` wrapper; new `middleware.ts`; new font loader.
@@ -138,20 +139,18 @@ See [`security-hardening-notes.md`](./security-hardening-notes.md). Crawl policy
 
 ---
 
-## Tích hợp home dự kiến
+## Tích hợp home
 
-> Take-note only. **Do not** create, edit, or wire `/` or `/home` in this phase.
+### Ý định route (current)
 
-### Ý định route
-
-| Route dự kiến | Đối tượng | Dữ liệu hiện tại | Ghi chú index sau này |
+| Route | Đối tượng | Dữ liệu hiện tại | Index |
 | --- | --- | --- | --- |
-| `/` | Khách chưa đăng nhập | UI home client tạm thời, mock/static, chưa fetch API (API chưa ổn định). | Dự kiến dùng SEO/ranking khi user cho phép wire. |
-| `/home` | Người đã đăng nhập | Home riêng theo Figma; tạm thời không fetch API. Route **chưa tồn tại**. | Dự kiến dùng helper SEO/hiệu năng; phải quyết định `index` vs `noindex` khi biết nội dung có cá nhân hóa/private hay không. **Không mặc định index.** |
+| `/` (`PUBLIC_ROUTES.home`) | Khách chưa đăng nhập | UI home marketing mock/static, chưa fetch API. | SEO-indexable allow-list key `home` (wire later). |
+| `/home` (`PRIVATE_ROUTES.home`) | Người đã đăng nhập | **Temporary** placeholder + client auth gate; no API; no Figma sections. | **`privateApp` / noindex** via route `generateMetadata`. Included in crawl disallow through `PRIVATE_ROUTES`. |
 
-Locale note: with `localePrefix: "always"`, user-facing paths are like `/vi` / `/en`. Confirm final public URL shape before shipping canonical / hreflang / sitemap.
+Locale note: with `localePrefix: "always"`, user-facing paths are `/vi`, `/en`, `/vi/home`, `/en/home`.
 
-### Nội dung `/home` theo Figma (take-note)
+### Nội dung `/home` theo Figma (later — not this temporary ship)
 
 Figma file `Mh8LEZPNctm96sQhhTNRJD`, signed-in home frame (e.g. node `4990:51595`). Verified visually 2026-07-25:
 
@@ -185,11 +184,12 @@ Synthetic metadata factory, OG/Twitter, JSON-LD, sitemap/robots builders, render
 
 ---
 
-## Wiring checklist (future phase — not this phase)
+## Wiring checklist (future phase)
 
 1. Approve `SITE_URL` and document in env/deploy.
-2. Call `buildPageMetadata` from selected `generateMetadata` owners.
+2. Call `buildPageMetadata` from selected `generateMetadata` owners (guest `/` and `/home` both still unwired — `/home` intentionally has no route metadata yet).
 3. Add reviewed `publicCacheProfiles` entries before any `seoFetch` production use.
-4. Decide `/home` robots (`privateApp` vs selective index of public slices only).
+4. Keep `/home` on `privateApp` unless product proves a public, non-personalized slice is safe to index.
 5. Add `app/sitemap.ts` / `app/robots.ts` consumers of the pure builders.
 6. Wire `JsonLd` only with real published DTOs.
+7. Replace temporary `/home` placeholder with Figma signed-in layout when product/API are ready.
