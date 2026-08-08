@@ -48,9 +48,6 @@ next-env.d.ts
 .cursor/mcp.json
 .gitnexus
 
-AGENTS.md
-CLAUDE.md
-
 # jscpd duplicate-detection reports
 .jscpd-report/
 
