@@ -11,6 +11,8 @@ Full directory tree with purpose of every folder. Keep this file updated wheneve
 
 ```
 fe-mycourse/
+├── AGENTS.md               # Canonical version-controlled agent instructions
+├── CLAUDE.md               # Claude entry point; imports AGENTS.md via @AGENTS.md
 ├── src/                    # All application source code
 ├── public/                 # Static assets served as-is (images, icons, favicons)
 ├── docs/                   # Project documentation (this folder)
