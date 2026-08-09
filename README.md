@@ -56,7 +56,7 @@ The `docs/` folder is the **primary and authoritative documentation source** for
 - If `docs/` is missing information or outdated → re-run discovery and **update `docs/` before proceeding**.
 - Always sync `docs/` after completing any task that changes architecture, APIs, data flow, components, patterns, or reusable assets.
 - `docs/reusable-assets.md` must be checked before proposing any new utility, hook, type, or helper to avoid duplication.
-- `AGENTS.md` and `CLAUDE.md` are version-controlled agent guidance. `CLAUDE.md` imports the complete canonical rules from `AGENTS.md` through `@AGENTS.md`.
+- `AGENTS.md`, `CLAUDE.md`, and `.claude/` are version-controlled agent guidance. `CLAUDE.md` imports the complete canonical rules from `AGENTS.md` through `@AGENTS.md`; `.claude/` contains the shared commands and skills used by Claude-compatible agents.
 
 ## Documentation in this repo
 
