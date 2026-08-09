@@ -43,7 +43,6 @@ next-env.d.ts
 
 # Agent skills (npx skills add supabase/agent-skills, etc.)
 .agents/skills/
-.claude/skills/
 .windsurf/skills/
 .cursor/mcp.json
 .gitnexus
