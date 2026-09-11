@@ -23,6 +23,7 @@ export interface MeResponse {
   is_disabled: boolean;
   created_at: number;
   permissions: string[];
+  roles: string[];
 }
 
 export interface LoginResponse {

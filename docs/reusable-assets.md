@@ -103,7 +103,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `MeResponse`
 - **Type**: Interface
 - **Path**: `src/types/auth/auth.ts`
-- **Purpose**: Shape of the current user returned by `GET /api/v1/me` — mirrors `be/dto/auth.go MeResponse`.
+- **Purpose**: Shape of the current user returned by `GET /api/v1/me` — mirrors `be/dto/auth.go MeResponse`, including authoritative `permissions: string[]` and display-only `roles: string[]`.
 - **Scope**: `useAuth`, `useMeStore`, any component that reads the current user.
 - **Dependencies**: none.
 
@@ -260,8 +260,8 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `ROLES`
 - **Type**: Constant object
 - **Path**: `src/constants/roles.ts`
-- **Purpose**: Role name literals (`sysadmin`, `admin`, `instructor`, `learner`) — mirror BE `role:"..."` tags. Use with permission checks; `/me` does not return roles yet.
-- **Scope**: Future role-based UI; documentation only until BE exposes roles on `MeResponse`.
+- **Purpose**: Known role name literals (`sysadmin`, `admin`, `instructor`, `learner`) — mirror BE `role:"..."` tags. `/me` now returns display-only role names, including possible unknown names; these constants do not narrow the API contract or authorize access.
+- **Scope**: Optional display comparisons against known roles. Permission gates remain authoritative and must not derive access from `MeResponse.roles`.
 - **Dependencies**: none.
 
 ### Asset: Permission types (`PermissionName`, `PermissionId`, `RoleName`, …)
