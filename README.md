@@ -92,15 +92,15 @@ Enforcement is **remote-only** (GitHub Actions): any pull request **into `main`*
 
 | Environment | Branch trigger (planned) | Workflow file | PM2 app | Status |
 |-------------|--------------------------|---------------|---------|--------|
-| **Dev** | `push` → **`dev`** | [`.github/workflows/deploy-dev.yml`](.github/workflows/deploy-dev.yml) | `mycourse-web-dev` | **Implemented** |
+| **Dev** | `push` → **`dev`** | [`.github/workflows/deploy-dev.yml`](.github/workflows/deploy-dev.yml) | `mycourse-web-dev` | **Test/build active; automatic deploy paused** |
 | **Staging** | `push` → **`staging`** *(planned)* | `.github/workflows/deploy-staging.yml` *(not in repo)* | `mycourse-web-staging` | **Placeholder secrets only** — deploy manually or add workflow later |
 | **Production** | `push` → **`main`** *(planned)* | `.github/workflows/deploy-main.yml` *(not in repo)* | `mycourse-web-prod` | **Placeholder secrets only** — deploy manually or add workflow later |
 
-Pushes to feature branches or pull requests **do not** run any deploy workflow today. Only **`dev`** is wired in CI.
+Pushes to feature branches or pull requests do not run this workflow. Pushes to **`dev`** run **test → build** and upload the runtime artifact; the complete deploy job is temporarily commented, so CI does not contact or modify the VPS.
 
 Secrets are stored under **Repository → Settings → Secrets and variables → Actions**. Names ending in `_DEV`, `_STG`, or `_MAIN` are **per-environment**; each suffix is read only when the matching deploy workflow runs on its branch (today: **`_DEV` only** on `dev` pushes).
 
-#### Dev — implemented (`deploy-dev.yml`, branch `dev`)
+#### Dev — test/build active, deploy paused (`deploy-dev.yml`, branch `dev`)
 
 | Secret | Injected as (build `env`) | Example placeholder |
 |--------|---------------------------|---------------------|
@@ -149,7 +149,7 @@ Reserve these for a future **`main`** branch workflow. Until then, use **`.env.p
 | `NEXT_PUBLIC_X_CLIENT_ID_MAIN` *(optional)* | `NEXT_PUBLIC_X_CLIENT_ID` | `YOUR_X_CLIENT_ID_MAIN` |
 | `NEXT_PUBLIC_X_CALLBACK_URL_MAIN` *(optional)* | `NEXT_PUBLIC_X_CALLBACK_URL` | `https://www.example.com/auth/x/callback` |
 
-> **Dev SSH note:** `deploy-dev.yml` uses shared `SSH_HOST` / `SSH_USER` (no `_DEV` suffix). Staging/production placeholders use `SSH_HOST_STG` / `SSH_USER_STG` and `SSH_HOST_MAIN` / `SSH_USER_MAIN` when hosts differ; on a single VPS you may reuse the same `SSH_*` secrets.
+> **Dev SSH note:** The retained commented deploy job uses shared `SSH_HOST` / `SSH_USER` (no `_DEV` suffix) when automatic deployment is restored. Staging/production placeholders use `SSH_HOST_STG` / `SSH_USER_STG` and `SSH_HOST_MAIN` / `SSH_USER_MAIN` when hosts differ; on a single VPS you may reuse the same `SSH_*` secrets.
 
 Full mapping, workflow YAML, and VPS steps: [`docs/deploy.md` Appendix G](docs/deploy.md#appendix-g--cicd-github-actions).
 
