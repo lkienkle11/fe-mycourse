@@ -32,7 +32,7 @@ fe-mycourse/
 ├── docker/                 # compose.*.yml + stack.*.yml
 ├── scripts/docker/         # compose-up/down, build, health (*.sh, *.ps1, *.cmd for Windows 10/11)
 ├── .dockerignore
-├── .github/workflows/      # CI: enforce-main-from-dev.yml, deploy-dev.yml (test → build → deploy)
+├── .github/workflows/      # CI: enforce-main-from-dev.yml; deploy-dev.yml runs test → build with deploy temporarily commented
 ├── .jscpd.json             # jscpd config (npm run dupl); ignores src/components/ui/** (shadcn upstream)
 ├── knip.json               # Knip: full import graph; ignoreFiles for barrels; types + component files gate
 ├── .jscpd-report/          # jscpd JSON reports (gitignored)
