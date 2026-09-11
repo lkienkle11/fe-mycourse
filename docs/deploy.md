@@ -23,7 +23,7 @@ This is the **frontend** deployment runbook for the MyCourse Next.js application
 | Optional env var | `AUTH_COOKIE_DOMAIN` (needed when FE and API are on different subdomains) |
 | Optional stream env | `NEXT_PUBLIC_STREAM_SSE_URL`, `NEXT_PUBLIC_STREAM_WS_URL`, `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` (see [Variable reference table](#variable-reference-table)) |
 | Node.js version | 22 LTS (match [backend deploy guide](../../be-mycourse/docs/deploy.md)) |
-| GitHub Actions | **Dev:** push **`dev`** → `deploy-dev.yml`. **Staging / prod:** placeholder `*_STG` / `*_MAIN` secrets — workflows not in repo ([Appendix G](#appendix-g--cicd-github-actions)) |
+| GitHub Actions | **Dev:** push **`dev`** → `deploy-dev.yml` test/build; automatic deploy temporarily paused. **Staging / prod:** placeholder `*_STG` / `*_MAIN` secrets — workflows not in repo ([Appendix G](#appendix-g--cicd-github-actions)) |
 
 > **PM2 process names:** This runbook uses **`mycourse-web`** in examples for a single manual app. The repo’s **`ecosystem.config.cjs`** and **GitHub Actions** use **`mycourse-web-dev`** (and staging/prod siblings). Use the name that matches `pm2 list` on your server (e.g. `pm2 logs mycourse-web-dev`).
 
@@ -620,7 +620,7 @@ File: **`.github/workflows/enforce-main-from-dev.yml`**. Trigger: **pull request
 
 File: **`.github/workflows/deploy-dev.yml`**. Trigger: **push to `dev`**. Concurrency: `fe-deploy-${{ github.ref }}` with **`cancel-in-progress: true`**.
 
-This workflow now uses a hybrid model: **`build`** creates frontend bundle outputs on the runner (`.next`, `public`) and uploads them as **`frontend-runtime`** artifact (`include-hidden-files: true` is required so hidden `.next` is included); **`deploy`** downloads that artifact, verifies required paths/files exist, syncs git metadata on VPS, runs `npm ci` on VPS, then `rsync`s `.next` and `public` into `DEPLOY_PATH_DEV` before PM2 reload. CI still runs **`test` → `build` → `deploy`**. Because the deployed bundle is built in CI, ensure `NEXT_PUBLIC_API_URL` (and any other `NEXT_PUBLIC_*`) is available in the CI build environment.
+The active workflow runs **`test` → `build`**. The build job creates frontend bundle outputs on the runner (`.next`, `public`) and uploads them as the **`frontend-runtime`** artifact (`include-hidden-files: true` is required so hidden `.next` is included). Automatic VPS deployment is temporarily paused: the complete **`deploy`** job remains commented, so artifact download/verification, SSH, server Git synchronization, VPS `npm ci`, runtime `rsync`, and PM2 reload do not run. The commented block is the authoritative restoration source. Because the bundle is built in CI, `NEXT_PUBLIC_API_URL` and other required `NEXT_PUBLIC_*` values must remain available in the CI build environment.
 
 ### GitHub Actions secrets by environment
 
@@ -628,13 +628,13 @@ Configure under **GitHub → Repository → Settings → Secrets and variables �
 
 | Environment | Branch trigger | Workflow | PM2 app | In repo today |
 |-------------|----------------|----------|---------|---------------|
-| **Dev** | `push` → **`dev`** | `.github/workflows/deploy-dev.yml` | `mycourse-web-dev` | Yes |
+| **Dev** | `push` → **`dev`** | `.github/workflows/deploy-dev.yml` | `mycourse-web-dev` | Test/build active; deploy paused |
 | **Staging** | `push` → **`staging`** *(planned)* | `.github/workflows/deploy-staging.yml` | `mycourse-web-staging` | No — placeholder secret names only |
 | **Production** | `push` → **`main`** *(planned)* | `.github/workflows/deploy-main.yml` | `mycourse-web-prod` | No — placeholder secret names only |
 
 Each environment uses its own `*_DEV` / `*_STG` / `*_MAIN` secrets. **Only `deploy-dev.yml` exists today** — `_STG` and `_MAIN` names are reserved for future workflows; until then use server env files (`.env.staging`, `.env.prod`) and manual deploy per [Step 8](#step-8--install-dependencies-and-build).
 
-#### Dev — implemented
+#### Dev — test/build active, deploy paused
 
 Workflow: `.github/workflows/deploy-dev.yml` (push to `dev`).
 
@@ -687,7 +687,7 @@ Planned: `deploy-main.yml` on push to **`main`**, reload **`mycourse-web-prod`**
 | `NEXT_PUBLIC_X_CLIENT_ID_MAIN` *(optional)* | `NEXT_PUBLIC_X_CLIENT_ID` | `YOUR_X_CLIENT_ID_MAIN` |
 | `NEXT_PUBLIC_X_CALLBACK_URL_MAIN` *(optional)* | `NEXT_PUBLIC_X_CALLBACK_URL` | `https://www.example.com/auth/x/callback` |
 
-> **SSH naming:** Dev workflow uses `SSH_HOST` / `SSH_USER` (no suffix). Staging/production placeholders use `SSH_HOST_STG` / `SSH_USER_STG` and `SSH_HOST_MAIN` / `SSH_USER_MAIN` when deploy targets differ; on one VPS you may reuse the same `SSH_*` values.
+> **SSH naming:** The retained commented dev deploy job uses `SSH_HOST` / `SSH_USER` (no suffix) when restored. Staging/production placeholders use `SSH_HOST_STG` / `SSH_USER_STG` and `SSH_HOST_MAIN` / `SSH_USER_MAIN` when deploy targets differ; on one VPS you may reuse the same `SSH_*` values.
 
 ### Job structure
 
@@ -695,7 +695,7 @@ Planned: `deploy-main.yml` on push to **`main`**, reload **`mycourse-web-prod`**
 |-----|----------------|
 | `test` | Checkout, Node 22 (`cache: npm`), `npm ci` + **`npm run test-all`** — fails on ESLint, Biome, Knip (`deadcode`: unused component/screen files), cycles, jscpd threshold, or placeholder `test` step |
 | `build` | After `test`: `npm ci` + `npm run build`, then upload `frontend-runtime` artifact (`.next` + `public`) |
-| `deploy` | After `build`: download artifact, SSH git sync (`stash`/`checkout`/`pull`) + `npm ci`, `rsync` `.next` + `public`, then PM2 reload/start |
+| `deploy` | **Paused:** complete job retained as comments; when restored, runs after `build`, downloads the artifact, performs SSH git sync + `npm ci`, `rsync`s `.next` + `public`, then reloads/starts PM2 |
 
 ### Workflow (matches repo)
 
@@ -764,61 +764,61 @@ jobs:
             public
           retention-days: 1
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Download frontend runtime artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-runtime
-          path: frontend-runtime
+#   deploy:
+#     runs-on: ubuntu-latest
+#     needs: build
+#     steps:
+#       - name: Download frontend runtime artifact
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: frontend-runtime
+#           path: frontend-runtime
 
-      - name: Verify runtime artifact contents
-        run: |
-          test -d frontend-runtime/.next
-          test -d frontend-runtime/public
+#       - name: Verify runtime artifact contents
+#         run: |
+#           test -d frontend-runtime/.next
+#           test -d frontend-runtime/public
 
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+#       - name: Setup SSH Agent
+#         uses: webfactory/ssh-agent@v0.9.0
+#         with:
+#           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Add Server to known_hosts
-        run: ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+#       - name: Add Server to known_hosts
+#         run: ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Sync git metadata on server
-        run: |
-          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.DEPLOY_PATH_DEV }} && \
-            git stash -u && \
-            git checkout dev && \
-            git pull && \
-            npm ci"
+#       - name: Sync git metadata on server
+#         run: |
+#           ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.DEPLOY_PATH_DEV }} && \
+#             git stash -u && \
+#             git checkout dev && \
+#             git pull && \
+#             npm ci"
 
-      - name: Sync runtime build outputs to server
-        run: |
-          rsync -az --delete "frontend-runtime/.next/" \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH_DEV }}/.next/"
-          rsync -az --delete "frontend-runtime/public/" \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH_DEV }}/public/"
+#       - name: Sync runtime build outputs to server
+#         run: |
+#           rsync -az --delete "frontend-runtime/.next/" \
+#             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH_DEV }}/.next/"
+#           rsync -az --delete "frontend-runtime/public/" \
+#             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH_DEV }}/public/"
 
-      - name: Reload PM2 on server
-        run: |
-          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.DEPLOY_PATH_DEV }} && \
-            (export DEPLOY_PATH='${{ secrets.DEPLOY_PATH_DEV }}'; pm2 reload ecosystem.config.cjs --only mycourse-web-dev --update-env || pm2 start ecosystem.config.cjs --only mycourse-web-dev --update-env)"
+#       - name: Reload PM2 on server
+#         run: |
+#           ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.DEPLOY_PATH_DEV }} && \
+#             (export DEPLOY_PATH='${{ secrets.DEPLOY_PATH_DEV }}'; pm2 reload ecosystem.config.cjs --only mycourse-web-dev --update-env || pm2 start ecosystem.config.cjs --only mycourse-web-dev --update-env)"
 ```
 
 ### Notes
 
 - **`DEPLOY_PATH_DEV` / `DEPLOY_PATH_STG` / `DEPLOY_PATH_MAIN`** — frontend checkout roots per PM2 app in `ecosystem.config.cjs`. Only `DEPLOY_PATH_DEV` is used by CI today; `_STG` / `_MAIN` are for planned workflows or manual PM2 on the server.
 - **`NEXT_PUBLIC_*_DEV` / `*_STG` / `*_MAIN`** — build-time OAuth/API values baked into the client bundle per environment. Only `*_DEV` secrets are consumed by `deploy-dev.yml` on **`dev`** pushes. Empty Google at dev build → FE-local `4020`; empty Discord → `4026`. Staging/production placeholders follow the same mapping when those workflows are added.
-- **Runtime artifact source** — `deploy` uses CI artifact (`frontend-runtime`) for `.next` and `public`; dependency install still runs on VPS via `npm ci`.
+- **Runtime artifact source** — the active build uploads `frontend-runtime`; when deploy is restored, the retained job uses it for `.next` and `public` and installs dependencies on the VPS via `npm ci`.
 - **Hidden build directory** — `.next` is hidden; `upload-artifact` must set `include-hidden-files: true` or deploy sync fails with missing `frontend-runtime/.next`.
-- **Dependencies on VPS** — `npm ci` runs after `git pull` on VPS, so `node_modules` is recreated from lockfile on the target host.
+- **Dependencies on VPS** — while automatic deploy is paused, CI does not run `npm ci` on the VPS. The retained job does so after `git pull` when restored.
 - **`NEXT_PUBLIC_*` in CI** — because build happens on runner, these variables must exist in CI (secrets/vars). Changing them requires a new CI build to refresh the client bundle.
 - **Default PM2 env files** — `mycourse-web-dev` reads `.env.local`, `mycourse-web-staging` reads `.env.staging`, `mycourse-web-prod` reads `.env.prod` unless you override with `DEPLOY_ENV_FILE_DEV/STG/MAIN`.
 - **`AUTH_COOKIE_DOMAIN`** — runtime / server-side for cookies; keep on the server, not required in GitHub Actions for this workflow.
-- **Backend CI** — **`test` → `build` → `deploy`**, branch **`master`**, **`make test-all`** in **`test`**, **`rsync`** binary to `DEPLOY_PATH_DEV/bin/` — see [backend Appendix C](../../be-mycourse/docs/deploy.md#appendix-c--cicd-with-github-actions).
+- **Backend CI** — branch **`master`** currently runs **`test` → `build`** with its complete deploy job also paused as comments — see [backend Appendix C](../../be-mycourse/docs/deploy.md#appendix-c--cicd-with-github-actions).
 - **Frontend quality in CI** — [`docs/quality.md`](./quality.md) (`test-all`, `check-all`, `deadcode`, `cycles`, `dupl`, `quality:deps`, `lint`, `biome`). Local only: `fix:biome`, `format:biome`.
 
 ---

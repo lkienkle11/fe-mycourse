@@ -238,9 +238,9 @@ _Re-run on 2026-07-22 during Fetch→Xior migration: Xior 0.8.3 exact pin, cooki
 
 | Stage | Job | What runs |
 |-------|-----|-----------|
-| **CI (`dev` deploy)** | `test` | `npm ci`, **`npm run test-all`** (`lint` → `biome` → `test` → `deadcode` → `quality:deps`) |
-| **CI (`dev` deploy)** | `build` | `npm ci`, `npm run build` (after `test` passes) |
-| **CI (`dev` deploy)** | `deploy` | SSH → VPS `npm ci` + `npm run build` + `npm prune --omit=dev` + PM2 reload (quality checks are **not** re-run on the server) |
+| **CI (`dev`)** | `test` | `npm ci`, **`npm run test-all`** (`lint` → `biome` → `test` → `deadcode` → `quality:deps`) |
+| **CI (`dev`)** | `build` | `npm ci`, `npm run build` (after `test` passes), then upload `.next` + `public` as `frontend-runtime` |
+| **CI (`dev`, paused)** | `deploy` | Complete job retained as comments; SSH, VPS `npm ci`, runtime `rsync`, and PM2 reload do not run until automatic deployment is intentionally restored |
 | **Recommended local** | — | **`npm run check-all`** (= `test-all` + `build`); optionally `fix:biome` / `format:biome` and `npx tsc --noEmit` first |
 
 Do **not** use backend `make check-dupl` or `make check-architecture` in this frontend repo — use the npm scripts above instead.
