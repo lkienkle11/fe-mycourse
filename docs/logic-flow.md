@@ -196,7 +196,8 @@ LoginContent ↔ SignupContent:
 ## 6. Authorization / Permission Check Pattern
 
 ```
-Source: GET /api/v1/me → MeResponse.permissions → useSyncMeFromAuth → useGetMe().mePermissions (string[])
+Authorization source: GET /api/v1/me → MeResponse.permissions → useSyncMeFromAuth → useGetMe().mePermissions (string[])
+Display-only projection: GET /api/v1/me → MeResponse.roles (string[]; BE order preserved, unknown names allowed) → retained on useGetMe().me; never used by permission gates
 
 Constants: PERMISSIONS, PERMISSION_IDS, ROLES, HEADER_DROPDOWN_ITEMS (+ per-item permissions / titleKey)  [src/constants/]
 Types: PermissionName, PermissionRequirement, PermissionCheckMode  [src/types/permissions/]

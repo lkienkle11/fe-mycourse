@@ -101,7 +101,7 @@ _Last audited: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code 
 - **Utils**: `src/lib/utils/dashboard.ts` — `filterDashboardItems` wraps `filterPermissionNavTree` for `DashboardItem[]`.
 - **Hooks**: `src/hooks/auth/use-permissions.ts` — `useHasPermission`, `useHasAll/AnyPermissions`, `useSatisfiesPermissions`, `useFilteredUserMenuGroups`, `useFilteredDashboardItems` over `useGetMe().mePermissions`.
 - **UI**: `PermissionGate` (`src/components/shared/permission-gate.tsx`); user menu via `useFilteredUserMenuGroups` in `UserMenuDropdownItems`; dashboard sidebar via `useFilteredDashboardItems` in `DashboardLayout`.
-- **Note**: `MeResponse` has `permissions: string[]` only; no `roles[]` on `/me` yet — gate UI by permission, not role name alone.
+- **Note**: `MeResponse` has authoritative `permissions: string[]` plus display-only `roles: string[]`; `/me` preserves the BE-provided role order and may include unknown role names. Gate UI by permission, never by role name alone.
 
 ## Me API module
 
