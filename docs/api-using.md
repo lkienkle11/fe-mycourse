@@ -307,10 +307,12 @@ Callers in `src/api/callers/course/course-factory.ts (+ course-browser.ts)`:
 |---------|--------|------|-------|
 | `listCourseCollaboratorsService` | GET | `/api/v1/courses/:courseId/collaborators` | Paginated (`page`, `per_page`, optional `search`); returns `ApiPaginatedData<CourseCollaborator[]>` |
 | `listCourseInstructorCandidatesService` | GET | `/api/v1/courses/:courseId/instructor-candidates` | Requires `course_collaborator_candidate:read` (P67); owner-only on BE; paginated picker source |
-| `addCourseCollaboratorsBulkService` | POST | `/api/v1/courses/:courseId/collaborators/bulk` | Bulk add; returns `added` + `failed[]` |
+| `addCourseCollaboratorsBulkService` | POST | `/api/v1/courses/:courseId/collaborators/bulk` | Bulk add: optional `role` accepts only `EDITOR` (the BE default when omitted); returns `added` + `failed[]` |
 | `removeCourseCollaboratorService` | DELETE | `/api/v1/courses/:courseId/collaborators/:userId` | |
 
 Hooks: `useCourseCollaborators`, `useCourseInstructorCandidates` in `src/api/hooks/course/`. Filter params reuse `ApiListQueryParams` (`page`, `per_page`, `search`). Picker API requires **`course_collaborator_candidate:read` (P67)**. Bulk add partial-success UX uses `finalizeBulkUserPickerSubmit` (`src/lib/utils/user-picker-bulk-submit.ts`) via `useCourseCollaboratorActions`. UI: `CourseCollaboratorsTab`, `CourseCollaboratorPickerDialog` (closes only after successful multi-add; errors keep dialog open; `PermissionGate` on add/picker for owners).
+
+`AddCollaboratorsBulkPayload.role` represents only the assignable request role (`EDITOR`); `CourseCollaboratorRole` in course and collaborator responses still represents `OWNER` and `EDITOR` for display. Bulk add cannot assign `OWNER`.
 
 ### Course-admin (sysadmin catalog + trash)
 
