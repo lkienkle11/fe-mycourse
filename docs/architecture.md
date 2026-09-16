@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-06-17 (Turbopack dev tuning, `clean:next` / `dev:clean` scripts)._
+_Last audited: 2026-09-16 (Technology Stack: added Jest/RTL/MSW unit/integration tests and Playwright browser tests rows; Quality gates section and Related Docs updated for `e2e-browser.yml` and `testing.md` — see `docs/testing.md`). Prior: 2026-06-17 (Turbopack dev tuning, `clean:next` / `dev:clean` scripts)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -38,6 +38,8 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Clone detection | jscpd | 4.x | `npm run dupl` — `.jscpd.json` (excludes `src/components/ui/**`); CI via `test-all` → `quality:deps` |
 | Dead-code detection | knip | 6.17.1 | `npm run deadcode` — [`knip.json`](../knip.json): unused component/screen files (`src/types/**` unused-type reports ignored); CI via `test-all` |
 | ESLint + Biome (CI) | eslint + @biomejs/biome | 9 / 2.x | `npm run test-all` in CI `test` job; `src/constants/**` data-only rules — [`quality.md`](./quality.md) |
+| Unit/integration tests | Jest (via `next/jest`) + React Testing Library + MSW | 30.5.1 / 16.3.3 / 2.11.1 (exact) | `npm test` — Node project (auth/transport/refresh-route) + jsdom project (everything else); CI via `test-all` — [`testing.md`](./testing.md) |
+| Browser tests | Playwright (Chromium) | 1.63.0 (exact) | `npm run test:e2e` — loopback fixture backend (`e2e/fixtures/server.mjs`) + fixture-configured `next build`/`next start`; CI via `.github/workflows/e2e-browser.yml` — [`testing.md`](./testing.md) |
 
 ### Fonts
 
@@ -487,7 +489,7 @@ Lint (`eslint`, `biome`), `npx tsc --noEmit`, and `npm run build` are the primar
 - `npm run dupl` — jscpd clone detection against `src/` (skips shadcn `src/components/ui/**`; see [`quality.md`](./quality.md)).
 - `npm run quality:deps` — Madge + jscpd in sequence.
 
-On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs **`npm run test-all`** in the **`test`** job, then **`npm run build`** in **`build`** (same pattern as backend **`make test-all`** → **`build`** in `be-mycourse`). Locally, use **`npm run check-all`** (FE) or **`make check-all`** (BE) for the full pre-PR gate.
+On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs **`npm run test-all`** in the **`test`** job, then **`npm run build`** in **`build`** (same pattern as backend **`make test-all`** → **`build`** in `be-mycourse`). On pull requests to **`dev`**/**`main`** and pushes to **`dev`**, [`.github/workflows/e2e-browser.yml`](../.github/workflows/e2e-browser.yml) additionally runs `test-all` then the Playwright browser suite (`npm run test:e2e`) against a fixture-configured production build — see [`testing.md`](./testing.md). Locally, use **`npm run check-all`** (FE) or **`make check-all`** (BE) for the full pre-PR gate, plus **`npm run test:e2e`** for browser coverage.
 
 ---
 
@@ -496,6 +498,7 @@ On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/
 | Doc | Contents |
 |-----|----------|
 | [`docs/quality.md`](quality.md) | Madge / jscpd scripts, thresholds, baseline results |
+| [`docs/testing.md`](testing.md) | Jest (Node/jsdom) + Playwright harness, behavior matrix, `test:e2e` lifecycle |
 | [`docs/flow.md`](flow.md) | Auth and API execution flows with sequence diagrams |
 | [`docs/screens.md`](screens.md) | App Router routes, layouts, and UI surfaces |
 | [`docs/deploy.md`](deploy.md) | Production deployment runbook (Ubuntu 24.04, PM2, Nginx, TLS) |

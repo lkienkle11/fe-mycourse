@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-06-17 (`server-only` 0.0.1 runtime; `knip` 6.17.1 dev; lockfile pinned)._
+_Last audited: 2026-09-16 (`server-only` 0.0.1 runtime; `knip` 6.17.1 dev; testing stack added — `jest` 30.5.1, `@playwright/test` 1.63.0, `msw` 2.11.1, `undici` 8.10.2, `@testing-library/*` — all exact-pinned; lockfile pinned)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -156,6 +156,26 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 
 ## Dev Dependencies
 
+### Testing (Jest / Testing Library / MSW / Playwright)
+
+See [`docs/testing.md`](./testing.md) for the full harness explanation (why each package is pinned exact, jsdom/Node split, known Jest/SWC limitations, CORS on the Playwright fixture backend). All versions below are **exact / pinned** (no `^`), consistent with Usage Rule 10 below — installed with `npm install --save-exact <pkg>@<version>`, then `npm install` to keep `package-lock.json`'s root `devDependencies` entries exact too.
+
+| Package | Version | Role |
+|---------|---------|------|
+| `jest` | 30.5.1 (exact) | Test runner, via `next/jest` (`jest.config.ts`); `npm test` / `test:watch` / `test:coverage`; CI via `test-all` |
+| `jest-environment-jsdom` | 30.5.1 (exact) | jsdom test environment (client component/hook tests) |
+| `@types/jest` | 30.0.0 (exact) | Type definitions for Jest globals (`@jest/globals`) |
+| `@testing-library/react` | 16.3.3 (exact) | Render/query React components under jsdom (`renderWithProviders`) |
+| `@testing-library/jest-dom` | 7.0.1 (exact) | `expect` DOM matchers — imported via its `/jest-globals` entry for correct `@jest/globals` typing |
+| `@testing-library/user-event` | 14.6.7 (exact) | Realistic user interaction simulation (click/type/etc.) |
+| `msw` | 2.11.1 (exact, pinned below latest) | HTTP interception in Jest integration tests and the Playwright fixture backend's browser-side calls; pinned below `2.12.0` because `@mswjs/interceptors`/`msw` itself started depending on the ESM-only `rettime` package there, which `next/jest`'s SWC transform cannot consume (its default node_modules ignore rule cannot be relaxed) |
+| `undici` | 8.10.2 (exact) | Fetch API polyfill (`fetch`/`Request`/`Response`/`Headers`/`FormData`) for jsdom, which implements neither |
+| `@playwright/test` | 1.63.0 (exact) | Browser test runner (`playwright.config.ts`, `e2e/`) — Chromium only; `npm run test:e2e` |
+
+---
+
+### Tooling
+
 | Package | Version | Role |
 |---------|---------|------|
 | `typescript` | ^5 | Strict TypeScript compilation |
@@ -174,7 +194,7 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 | `shadcn` | 4.2.0 | CLI tool for adding shadcn/ui components to `src/components/ui/` |
 | `madge` | 8.0.0 | Circular dependency analysis — `npm run cycles` / `cycles:json`; CI via `test-all` → `quality:deps` |
 | `jscpd` | 4.2.4 | Clone detection — `npm run dupl` (`.jscpd.json`, excludes shadcn `src/components/ui/**`); CI via `test-all` → `quality:deps` |
-| `knip` | 6.17.1 | Dead-code gate — `npm run deadcode`; [`knip.json`](../knip.json) checks unused types + component/screen files only; CI via `test-all` |
+| `knip` | 6.17.1 | Dead-code gate — `npm run deadcode`; [`knip.json`](../knip.json) checks unused types + component/screen files only; CI via `test-all`. `entry` also lists `src/test-support/jest.setup.node.ts` (Knip's Jest plugin only auto-detects the literal `jest.config.{ext}` filename and reads whichever `JEST_PROJECT` branch is default, so the Node-only setup file needs an explicit entry) |
 
 ---
 
@@ -198,4 +218,5 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 8. **Stream events**: Subscribe with `hooks/events/*`; send WS via `postSocketOutbound`, broadcast via `postBroadcastOutbound`. Do not add a second WebSocket/SSE library without updating [`delivery.md`](./delivery.md).
 9. **Server-only modules**: Use runtime dep `server-only` (0.0.1) with `import "server-only"` at file top (e.g. `auth-session.ts`). Never re-export from client-safe barrels (`@/lib/utils`).
 10. **Dead-code gate**: Dev dep `knip` (6.17.1) — `npm run deadcode`; config [`knip.json`](../knip.json). Pin versions; install Xior with `npm install --save-exact xior@0.8.3`, then run `npm ci` to verify the lockfile is reproducible.
-11. **Quality gates**: Run **`npm run check-all`** before PRs (or **`npm run test-all`** to match CI without build). CI on **`dev`** enforces `test-all` in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.
+11. **Quality gates**: Run **`npm run check-all`** before PRs (or **`npm run test-all`** to match CI without build). CI on **`dev`** enforces `test-all` in [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) `test` job, and browser tests in [`.github/workflows/e2e-browser.yml`](../.github/workflows/e2e-browser.yml) on PRs and `dev` pushes. See [`quality.md`](./quality.md). Do not use backend `make check-dupl`.
+12. **Testing stack**: Jest/RTL/MSW/Playwright/undici versions above are **all exact-pinned** — always `npm install --save-exact <pkg>@<version>` for a new test dependency, never a bare `npm install <pkg>` (which defaults to a `^` range). Do not add a second test runner, a second HTTP-mock library, or a second browser-automation library without updating this file and [`testing.md`](./testing.md) — check the Testing subsection above first.

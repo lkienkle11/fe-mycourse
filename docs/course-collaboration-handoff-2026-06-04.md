@@ -176,7 +176,7 @@ Backend companion doc:
 
 Current limitation:
 
-- there is still no dedicated frontend test suite; `npm run test` is currently a placeholder command used to keep local and CI validation flows stable
+- there is still no dedicated frontend test suite; `npm run test` is currently a placeholder command used to keep local and CI validation flows stable (true as of this checkpoint's date; **superseded 2026-09-16** — a real Jest + Playwright suite now exists, see [`testing.md`](./testing.md))
 
 ### Passed with one pre-existing warning
 

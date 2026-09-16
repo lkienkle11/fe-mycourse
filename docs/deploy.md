@@ -1,6 +1,6 @@
 # Deploying MyCourse Frontend on Ubuntu 24.04
 
-_Last audited: 2026-07-09 (CI secrets: dev implemented + stg/main placeholder names). Prior: 2026-07-09 (GitHub Actions secrets list + workflow YAML snippet). Prior: 2026-06-17._
+_Last audited: 2026-09-16 (added `e2e-browser.yml` browser-test workflow — runs on PRs unlike `deploy-dev.yml`; `test` job now runs the real Jest suite, not a placeholder — see `docs/testing.md`). Prior: 2026-07-09 (CI secrets: dev implemented + stg/main placeholder names); 2026-07-09 (GitHub Actions secrets list + workflow YAML snippet); 2026-06-17._
 
 
 This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.
@@ -23,7 +23,7 @@ This is the **frontend** deployment runbook for the MyCourse Next.js application
 | Optional env var | `AUTH_COOKIE_DOMAIN` (needed when FE and API are on different subdomains) |
 | Optional stream env | `NEXT_PUBLIC_STREAM_SSE_URL`, `NEXT_PUBLIC_STREAM_WS_URL`, `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` (see [Variable reference table](#variable-reference-table)) |
 | Node.js version | 22 LTS (match [backend deploy guide](../../be-mycourse/docs/deploy.md)) |
-| GitHub Actions | **Dev:** push **`dev`** → `deploy-dev.yml` test/build; automatic deploy temporarily paused. **Staging / prod:** placeholder `*_STG` / `*_MAIN` secrets — workflows not in repo ([Appendix G](#appendix-g--cicd-github-actions)) |
+| GitHub Actions | **Dev:** push **`dev`** → `deploy-dev.yml` test/build; automatic deploy temporarily paused. **Staging / prod:** placeholder `*_STG` / `*_MAIN` secrets — workflows not in repo. **Browser tests:** `e2e-browser.yml` runs on PRs to `dev`/`main` and pushes to `dev` (separate from `deploy-dev.yml`) — see [`testing.md`](./testing.md) ([Appendix G](#appendix-g--cicd-github-actions)) |
 
 > **PM2 process names:** This runbook uses **`mycourse-web`** in examples for a single manual app. The repo’s **`ecosystem.config.cjs`** and **GitHub Actions** use **`mycourse-web-dev`** (and staging/prod siblings). Use the name that matches `pm2 list` on your server (e.g. `pm2 logs mycourse-web-dev`).
 
@@ -622,6 +622,14 @@ File: **`.github/workflows/deploy-dev.yml`**. Trigger: **push to `dev`**. Concur
 
 The active workflow runs **`test` → `build`**. The build job creates frontend bundle outputs on the runner (`.next`, `public`) and uploads them as the **`frontend-runtime`** artifact (`include-hidden-files: true` is required so hidden `.next` is included). Automatic VPS deployment is temporarily paused: the complete **`deploy`** job remains commented, so artifact download/verification, SSH, server Git synchronization, VPS `npm ci`, runtime `rsync`, and PM2 reload do not run. The commented block is the authoritative restoration source. Because the bundle is built in CI, `NEXT_PUBLIC_API_URL` and other required `NEXT_PUBLIC_*` values must remain available in the CI build environment.
 
+---
+
+### Browser tests (separate workflow, runs on PRs too)
+
+File: **`.github/workflows/e2e-browser.yml`**. Triggers: **pull requests** into `dev`/`main`, and **push to `dev`**. Concurrency: `fe-e2e-${{ github.ref }}` with **`cancel-in-progress: true`**. Unlike `deploy-dev.yml`, this workflow **does** run on pull requests.
+
+Steps: `npm ci` → `npm run test-all` (same gate as `deploy-dev.yml`'s `test` job) → `npx playwright install --with-deps chromium` → `npm run test:e2e` (starts the loopback fixture backend in `e2e/fixtures/server.mjs`, builds the Next app with `NEXT_PUBLIC_API_URL` pointed at it, starts `next start`, runs Playwright against Chromium, tears down both processes on success or failure). On failure, `playwright-report/` and `test-results/` are uploaded as an artifact. No secrets required — the fixture backend serves only synthetic accounts/tokens. See [`testing.md`](./testing.md) for the full harness. Hosted-run verification on GitHub's own infrastructure is pending until a real run is observed.
+
 ### GitHub Actions secrets by environment
 
 Configure under **GitHub → Repository → Settings → Secrets and variables → Actions**.
@@ -693,9 +701,11 @@ Planned: `deploy-main.yml` on push to **`main`**, reload **`mycourse-web-prod`**
 
 | Job | Responsibility |
 |-----|----------------|
-| `test` | Checkout, Node 22 (`cache: npm`), `npm ci` + **`npm run test-all`** — fails on ESLint, Biome, Knip (`deadcode`: unused component/screen files), cycles, jscpd threshold, or placeholder `test` step |
+| `test` | Checkout, Node 22 (`cache: npm`), `npm ci` + **`npm run test-all`** — fails on ESLint, Biome, a Jest test failure (real suite — see [`testing.md`](./testing.md)), Knip (`deadcode`: unused component/screen files), cycles, or jscpd threshold |
 | `build` | After `test`: `npm ci` + `npm run build`, then upload `frontend-runtime` artifact (`.next` + `public`) |
 | `deploy` | **Paused:** complete job retained as comments; when restored, runs after `build`, downloads the artifact, performs SSH git sync + `npm ci`, `rsync`s `.next` + `public`, then reloads/starts PM2 |
+
+`e2e-browser.yml`'s single job runs the same `test-all` gate, then Playwright — see "Browser tests" above.
 
 ### Workflow (matches repo)
 
@@ -820,6 +830,7 @@ jobs:
 - **`AUTH_COOKIE_DOMAIN`** — runtime / server-side for cookies; keep on the server, not required in GitHub Actions for this workflow.
 - **Backend CI** — branch **`master`** currently runs **`test` → `build`** with its complete deploy job also paused as comments — see [backend Appendix C](../../be-mycourse/docs/deploy.md#appendix-c--cicd-with-github-actions).
 - **Frontend quality in CI** — [`docs/quality.md`](./quality.md) (`test-all`, `check-all`, `deadcode`, `cycles`, `dupl`, `quality:deps`, `lint`, `biome`). Local only: `fix:biome`, `format:biome`.
+- **Frontend test harness** — [`docs/testing.md`](./testing.md) (Jest Node/jsdom + Playwright, `test:e2e` lifecycle, the fixture backend behind `e2e-browser.yml`).
 
 ---
 

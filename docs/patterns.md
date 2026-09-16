@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-06-29 (SearchableSelect `useApiInfiniteListQuery` + `getRowKey` page-merge dedupe). Prior: shared `deferDropdownAction` + `DeferredDropdownMenuItem` for menu→dialog flows (2026-06-26)._
+_Last audited: 2026-09-16 (Adding New Features Checklist: added a test-coverage checklist item pointing to `testing.md` and `src/test-support/`). Prior: 2026-06-29 (SearchableSelect `useApiInfiniteListQuery` + `getRowKey` page-merge dedupe); shared `deferDropdownAction` + `DeferredDropdownMenuItem` for menu→dialog flows (2026-06-26)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -557,6 +557,7 @@ Before writing code for a new feature:
 - [ ] Read `docs/` — check architecture, flow, components, patterns
 - [ ] Run `npx gitnexus analyze --force` — understand impact
 - [ ] Before PR: **`npm run check-all`** (CI `test` on `dev` runs **`npm run test-all`**) — optionally `npm run fix:biome` first; see [`quality.md`](./quality.md)
+- [ ] If the change touches a behavior in the [`testing.md`](./testing.md) matrix (auth, permissions, collaborator/outline actions, shared queries, forms), colocate a `*.test.ts(x)` next to the source and reuse `src/test-support/` helpers (`renderWithProviders`, `mock-app-router`, MSW `server`) — do not add `jest.mock()` (does not hoist under this project's `next/jest` transform, see `testing.md`)
 - [ ] Reuse utilities from `src/lib/utils/` (barrel) or direct paths for server-only files (`auth-session.ts`)
 - [ ] Place server data fetching in `src/api/callers/<domain>/`
 - [ ] Place SWR hooks in `src/api/hooks/<domain>/`

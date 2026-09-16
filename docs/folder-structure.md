@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained). Prior: 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
+_Last audited: 2026-09-16 (added `e2e/`, `src/test-support/`, `scripts/e2e-lifecycle.mjs`, `jest.config.ts`, `playwright.config.ts`; `src/**/*.test.ts(x)` colocated test files across the source tree — see `docs/testing.md`). Prior: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained); 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -14,13 +14,16 @@ fe-mycourse/
 ├── AGENTS.md               # Canonical version-controlled agent instructions
 ├── CLAUDE.md               # Claude entry point; imports AGENTS.md via @AGENTS.md
 ├── .claude/                # Version-controlled Claude commands and agent skills
-├── src/                    # All application source code
+├── src/                    # All application source code (unit/integration *.test.ts(x) colocated next to source — see docs/testing.md)
+├── e2e/                    # Playwright browser tests — fixtures/server.mjs (loopback fixture backend), tests/*.spec.ts, support/ (see docs/testing.md)
 ├── public/                 # Static assets served as-is (images, icons, favicons)
 ├── docs/                   # Project documentation (this folder)
 ├── node_modules/           # npm dependencies (not committed)
-├── next.config.ts          # Next.js + next-intl plugin; Turbopack dev tuning (see docs/architecture.md#development-server)
+├── next.config.ts          # Next.js + next-intl plugin; Turbopack dev tuning (see docs/architecture.md#development-server); transpilePackages for ESM-only test deps (see docs/testing.md)
+├── jest.config.ts          # Jest via next/jest — Node + jsdom projects, driven by JEST_PROJECT env var (see docs/testing.md)
+├── playwright.config.ts    # Playwright — Chromium only, serial (see docs/testing.md)
 ├── components.json         # shadcn/ui configuration
-├── biome.json              # Biome linter/formatter configuration
+├── biome.json              # Biome linter/formatter configuration — includes src/**, e2e/**, scripts/**
 ├── eslint.config.mjs       # ESLint: Next.js + src/constants/** + src/types/** rules (see docs/quality.md)
 ├── commitlint.config.cjs    # Conventional Commits lint configuration
 ├── tsconfig.json           # TypeScript compiler options (strict mode, path aliases)
@@ -31,11 +34,15 @@ fe-mycourse/
 ├── Dockerfile              # Multi-stage Node 22 image: npm ci → build → prune --omit=dev (see docs/docker.md)
 ├── docker/                 # compose.*.yml + stack.*.yml
 ├── scripts/docker/         # compose-up/down, build, health (*.sh, *.ps1, *.cmd for Windows 10/11)
+├── scripts/e2e-lifecycle.mjs # test:e2e process lifecycle — fixture backend + fixture-configured build/start + Playwright, teardown on pass or fail
 ├── .dockerignore
-├── .github/workflows/      # CI: enforce-main-from-dev.yml; deploy-dev.yml runs test → build with deploy temporarily commented
+├── .github/workflows/      # CI: enforce-main-from-dev.yml; deploy-dev.yml runs test → build with deploy temporarily commented; e2e-browser.yml runs test-all + Playwright on PRs to dev/main and dev pushes
 ├── .jscpd.json             # jscpd config (npm run dupl); ignores src/components/ui/** (shadcn upstream)
-├── knip.json               # Knip: full import graph; ignoreFiles for barrels; types + component files gate
+├── knip.json               # Knip: full import graph; ignoreFiles for barrels; types + component files gate; entry includes src/test-support/jest.setup.node.ts
 ├── .jscpd-report/          # jscpd JSON reports (gitignored)
+├── coverage/                # Jest coverage reports (gitignored) — npm run test:coverage
+├── test-results/           # Playwright run artifacts: screenshots, video, traces (gitignored)
+├── playwright-report/      # Playwright HTML report (gitignored)
 └── README.md               # Project overview and quick-start guide
 ```
 
@@ -592,7 +599,42 @@ docs/
 ├── patterns.md             # Coding patterns and conventions
 ├── dependencies.md         # Key libraries and their roles
 ├── quality.md              # ESLint, Biome, Knip / Madge / jscpd; `test-all` (CI) and `check-all` (local)
+├── testing.md              # Jest (Node/jsdom) + Playwright harness, behavior matrix, `test:e2e` lifecycle
 └── reusable-assets.md      # Reusable utilities, types, hooks, and constants
+```
+
+## `src/test-support/` — Jest test fixtures and helpers
+
+Test-only code, never imported by production source (verified via `npm run deadcode` / build). See [`docs/testing.md`](./testing.md) for the full explanation of why each file exists.
+
+```
+src/test-support/
+├── render.tsx                    # renderWithProviders — real next-intl messages + isolated per-test SWR cache
+├── render.test.tsx               # Smoke test for the render helper + MSW wiring
+├── mock-app-router.tsx           # Stub Next AppRouterContext for components calling useRouter()
+├── reset-stores.ts               # Resets Zustand auth/me store state between tests
+├── fixtures/
+│   └── auth.ts                   # buildMeResponse — synthetic MeResponse factory
+├── msw/
+│   └── server.ts                 # Shared MSW server (no default handlers)
+├── jest.setup.ts                 # setupFilesAfterEnv (both projects) — MSW start/stop, store reset, RTL cleanup, jsdom polyfills (ResizeObserver, matchMedia, pointer-capture, scrollIntoView)
+├── jest.setup.node.ts            # Node setupFiles — removes Node's unconfigured localStorage (breaks MSW's Node CookieStore)
+├── jest.setup.jsdom-encoding.ts  # jsdom setupFiles (1st) — TextEncoder/TextDecoder/Web Streams from node:*
+└── jest.setup.jsdom-fetch.ts     # jsdom setupFiles (2nd) — fetch/Request/Response/Headers/FormData from undici
+```
+
+## `e2e/` — Playwright browser tests
+
+```
+e2e/
+├── fixtures/
+│   └── server.mjs                # Loopback HTTP fixture backend (plain node:http, no framework) — auth, /me, course detail/collaborators/candidates (2 seeded outline sections)/sections-reorder/leases, taxonomy lists; CORS headers for cross-origin browser calls
+├── support/
+│   └── fixture-client.ts         # resetFixtures() / revokeSession() helpers + FIXTURE_USERS
+└── tests/
+    ├── auth.spec.ts              # login/logout/expired-session/forbidden journeys
+    ├── course-editing.spec.ts    # collaborator submission through the real picker UI; keyboard-driven outline section reorder (@dnd-kit KeyboardSensor)
+    └── locale-404.spec.ts        # valid locale / unknown route / unsupported locale
 ```
 
 
