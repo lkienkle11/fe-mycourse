@@ -86,7 +86,7 @@ export type CourseCollaborator = {
 
 export type AddCollaboratorsBulkPayload = {
   user_ids: string[];
-  role?: CourseCollaboratorRole;
+  role?: "EDITOR";
 };
 
 export type AddCollaboratorsBulkFailure = {

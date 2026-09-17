@@ -4,6 +4,9 @@
     "src/**/*.{ts,tsx,js,jsx}",
     "!src/components/ui/**"
   ],
+  "entry": [
+    "src/test-support/jest.setup.node.ts"
+  ],
   "ignoreFiles": [
     "src/**/index.ts"
   ],

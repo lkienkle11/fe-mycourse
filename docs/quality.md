@@ -1,6 +1,6 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-06-17 (`deadcode`/Knip in `test-all` / `check-all`; CI `test` job uses `test-all`)._
+_Last audited: 2026-09-16 (`test` now runs the real Jest suite — see [`docs/testing.md`](./testing.md); `deadcode`/Knip in `test-all` / `check-all`; CI `test` job uses `test-all`)._
 
 Checks for **dead code** (Knip), **circular imports** (Madge), **duplicate code** (jscpd), **ESLint**, and **Biome** under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs **`npm run test-all`** in the **`test`** job (`lint` → `biome` → `test` → `deadcode` → `quality:deps`), then **`npm run build`** in a separate **`build`** job (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 
@@ -32,7 +32,9 @@ Checks for **dead code** (Knip), **circular imports** (Madge), **duplicate code*
 | `lint:biome` | `biome check .` | Biome check (included in `test-all` / `check-all`; CI via `test-all`) |
 | `fix:biome` | `biome check --write .` | Apply **safe** Biome fixes locally (not in CI); unsafe fixes (e.g. remove unused imports) need `biome check --write --unsafe .` |
 | `format:biome` | `biome format --write .` | Format only (local; not in `test-all`) |
-| `test` | `node -e "console.log('No frontend test suite is configured yet.')"` | Placeholder command so CI/local verification can run a stable `npm run test` step while no dedicated FE suite exists yet |
+| `test` | `JEST_PROJECT=node jest --ci && jest --ci --forceExit` | Runs the Jest suite (Node project, then jsdom project) via `next/jest`; see [`docs/testing.md`](./testing.md) for the behavior matrix, coverage, and why jsdom needs `--forceExit` |
+| `test:watch` | `jest --watch` | Local interactive mode (jsdom project) |
+| `test:coverage` | `JEST_PROJECT=node jest --ci --coverage && jest --ci --coverage --forceExit` | Selected-scope coverage reports under `coverage/node/` and `coverage/jsdom/` |
 | `cycles` | `madge --circular … src` | Detect circular **static** import chains under `src/` |
 | `cycles:json` | Same + `--json` | JSON output for tooling |
 | `dupl` | `jscpd src --config .jscpd.json` | Duplicate code detection (excludes paths in `ignore`; see below) |
@@ -128,7 +130,7 @@ jscpd may still **print** clone pairs on success (informational). Failures list 
 
 ## ESLint (`eslint.config.mjs`)
 
-Extends **`eslint-config-next`** (`core-web-vitals` + `typescript`). Global ignores: `.next/**`, `out/**`, `build/**`, `.jscpd-report/**`, `next-env.d.ts`.
+Extends **`eslint-config-next`** (`core-web-vitals` + `typescript`). Global ignores: `.next/**`, `out/**`, `build/**`, `.jscpd-report/**`, `next-env.d.ts`. Test-artifact directories (`coverage/`, `test-results/`, `playwright-report/`) are not added to ESLint's ignore list; they are excluded from Git via `.gitignore` and are not present on a fresh checkout, so ESLint never encounters them in CI.
 
 Project-wide `max-lines` is enabled with:
 
@@ -204,7 +206,7 @@ Feature components (tabs, dialogs, pagination blocks, …) belong in `src/compon
 | `npm run biome` | **Pass** | Alias to `lint:biome` |
 | `npm run lint:biome` | **Pass** | No warnings after Biome override update for `src/components/ui/**` (`noDocumentCookie` set to `off`) |
 | `npm run lint` | **Pass** | ESLint; `src/constants/**` data-only; `src/types/**` type-only |
-| `npm run test` | **Pass** | Placeholder script; no dedicated frontend test suite is configured yet |
+| `npm run test` | **Pass** (as of 2026-06-08) | Placeholder script at the time — **superseded 2026-09-16**: `test` now runs the real Jest suite (Node + jsdom), see [`testing.md`](./testing.md) |
 | `npx tsc --noEmit` | **Pass** | Strict TypeScript |
 | `npm run quality:deps` | **Pass** | Madge + jscpd (see below) |
 | `npm run deadcode` | **Pass** | Knip — 0 unused component/screen files (see [Knip section](#knip-deadcode)); `src/types/**` unused-type reports are ignored |
@@ -219,7 +221,7 @@ Recommended before PR: **`npm run check-all`** (optionally `npm run fix:biome` o
 | `npm run cycles` | **Pass** | 311 files processed; no circular dependency |
 | `npm run dupl` | **Pass** | **215** files analyzed (UI primitives excluded); **0 clones** (0% duplicated lines) |
 
-_Re-run on 2026-07-22 during Fetch→Xior migration: Xior 0.8.3 exact pin, cookie fail-closed, timeout/redirect/Cookie parity, SoT owners, domain callers factories (no FE test suite)._
+_Re-run on 2026-07-22 during Fetch→Xior migration: Xior 0.8.3 exact pin, cookie fail-closed, timeout/redirect/Cookie parity, SoT owners, domain callers factories (FE test suite did not exist yet at that time — see [`testing.md`](./testing.md) for the suite added 2026-09-16)._
 
 **jscpd dedup refactors (2026-05-27):**
 
@@ -241,7 +243,8 @@ _Re-run on 2026-07-22 during Fetch→Xior migration: Xior 0.8.3 exact pin, cooki
 | **CI (`dev`)** | `test` | `npm ci`, **`npm run test-all`** (`lint` → `biome` → `test` → `deadcode` → `quality:deps`) |
 | **CI (`dev`)** | `build` | `npm ci`, `npm run build` (after `test` passes), then upload `.next` + `public` as `frontend-runtime` |
 | **CI (`dev`, paused)** | `deploy` | Complete job retained as comments; SSH, VPS `npm ci`, runtime `rsync`, and PM2 reload do not run until automatic deployment is intentionally restored |
-| **Recommended local** | — | **`npm run check-all`** (= `test-all` + `build`); optionally `fix:biome` / `format:biome` and `npx tsc --noEmit` first |
+| **CI (PRs to `dev`/`main`, pushes to `dev`)** | `e2e` (`.github/workflows/e2e-browser.yml`) | `npm ci` → `npm run test-all` → `npx playwright install --with-deps chromium` → `npm run test:e2e` (fixture backend + fixture-configured `next build`/`next start` + Playwright); uploads `playwright-report`/`test-results` on failure. Hosted-CI verification is pending until a real run is observed. |
+| **Recommended local** | — | **`npm run check-all`** (= `test-all` + `build`); optionally `fix:biome` / `format:biome` and `npx tsc --noEmit` first. Run `npm run test:e2e` separately for browser coverage (see [`docs/testing.md`](./testing.md)). |
 
 Do **not** use backend `make check-dupl` or `make check-architecture` in this frontend repo — use the npm scripts above instead.
 
@@ -251,10 +254,11 @@ Do **not** use backend `make check-dupl` or `make check-architecture` in this fr
 
 | Doc | Contents |
 |-----|----------|
-| [`dependencies.md`](./dependencies.md) | `knip.json`, `knip`, `madge`, `jscpd` devDependencies |
+| [`dependencies.md`](./dependencies.md) | `knip.json`, `knip`, `madge`, `jscpd` devDependencies; Testing subsection (Jest/RTL/MSW/Playwright, all exact-pinned) |
 | [`folder-structure.md`](./folder-structure.md) | `knip.json` at repo root |
 | [`folder-structure.md`](./folder-structure.md) | `.jscpd.json`, `.jscpd-report/` |
-| [`architecture.md`](./architecture.md) | Stack row for dependency / clone tools |
+| [`architecture.md`](./architecture.md) | Stack row for dependency / clone tools, plus Testing/Browser tests rows |
+| [`testing.md`](./testing.md) | Full Jest + Playwright harness — behavior matrix, fixtures, `test:e2e` lifecycle |
 
 
 ## Unused SEO foundation (intentional)
