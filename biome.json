@@ -4,7 +4,10 @@
     "includes": [
       "public/**",
       "src/**",
+      "e2e/**",
+      "scripts/**",
       "next.config.ts",
+      "playwright.config.ts",
       "commitlint.config.cjs",
       "biome.json"
     ],

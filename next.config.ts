@@ -6,6 +6,25 @@ import createNextIntlPlugin from "next-intl/plugin";
 /** Lock Turbopack to this app root (avoids watching sibling monorepo / multi-root workspaces). */
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig: NextConfig = {
+  /**
+   * `uuid`@14 and `next-intl`'s client entry ship ESM-only files. Next's
+   * bundlers already handle that, but `next/jest` only lets Jest transform
+   * node_modules packages listed here (it refuses to relax its own default
+   * ignore rule otherwise), so this is also required for `src/lib/utils/uuid.ts`
+   * and any `next-intl` client import to be importable from a Jest test.
+   */
+  transpilePackages: [
+    "uuid",
+    "next-intl",
+    "use-intl",
+    "@formatjs/fast-memoize",
+    "@formatjs/icu-messageformat-parser",
+    "@formatjs/icu-skeleton-parser",
+    "@formatjs/intl-localematcher",
+    "intl-messageformat",
+    "@schummar/icu-type-parser",
+    "icu-minify",
+  ],
   turbopack: {
     root: projectRoot,
     resolveAlias: {

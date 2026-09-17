@@ -50,5 +50,11 @@ next-env.d.ts
 # jscpd duplicate-detection reports
 .jscpd-report/
 
+# Playwright (test:e2e) artifacts
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 .commandcode/
 .context/

@@ -42,10 +42,14 @@ Project defaults in `next.config.ts`: **4 GB** Turbopack memory cap, **filesyste
 | `npm run dupl` | Duplicate code check (jscpd; excludes shadcn `src/components/ui/**`) |
 | `npm run deadcode` | Dead-code check (Knip; [`knip.json`](knip.json) — unused types in `src/types/**` + unused files in `src/components/**` / `src/screen/**`) |
 | `npm run quality:deps` | `cycles` then `dupl` (part of `test-all` / `check-all`) |
+| `npm run test` | Jest — Node project (auth/transport/refresh-route) then jsdom project (everything else), `--ci` |
+| `npm run test:watch` | Jest jsdom project in watch mode (local interactive) |
+| `npm run test:coverage` | Jest, both projects, `--coverage` → `coverage/node/` + `coverage/jsdom/` (gitignored) |
+| `npm run test:e2e` | Playwright browser tests — starts the loopback fixture backend, builds/starts the Next app against it, runs Chromium, tears down on pass or fail |
 | `npm run test-all` | `lint` → `biome` → `test` → `deadcode` → `quality:deps` — **CI `test` job on `dev`** |
 | `npm run check-all` | `test-all` + `build` — recommended **pre-PR local gate** |
 
-**Pre-PR local gate:** `npm run check-all` (optionally `npm run fix:biome` or `npm run format:biome`, then `npx tsc --noEmit` before it) — details in [`docs/quality.md`](docs/quality.md).
+**Pre-PR local gate:** `npm run check-all` (optionally `npm run fix:biome` or `npm run format:biome`, then `npx tsc --noEmit` before it), then `npm run test:e2e` for browser coverage — details in [`docs/quality.md`](docs/quality.md) and [`docs/testing.md`](docs/testing.md).
 
 ## Documentation Convention (Mandatory)
 
@@ -72,7 +76,8 @@ The `docs/` folder is the **primary and authoritative documentation source** for
 | [`docs/patterns.md`](docs/patterns.md) | Coding conventions — naming, styling (`cn()`), state management rules, form patterns, i18n, TypeScript patterns |
 | [`docs/logic-flow.md`](docs/logic-flow.md) | Execution flows — login, token refresh, Me fetch, form submission, auth modal state, permission checks, i18n, API error capture |
 | [`docs/dependencies.md`](docs/dependencies.md) | All runtime and dev dependencies — versions, roles, and usage rules |
-| [`docs/quality.md`](docs/quality.md) | ESLint, Biome, Knip / Madge / jscpd gates; `test-all` (CI) and `check-all` (local pre-PR) |
+| [`docs/quality.md`](docs/quality.md) | ESLint, Biome, Knip / Madge / jscpd gates; `test-all` (CI) and `check-all` (local pre-PR); browser CI (`e2e-browser.yml`) |
+| [`docs/testing.md`](docs/testing.md) | Jest (Node/jsdom) + Playwright harness — behavior matrix, fixtures/MSW, `test:e2e` lifecycle, known Jest/SWC and jsdom limitations and their fixes |
 | [`docs/seo-ranking-setup.md`](docs/seo-ranking-setup.md) | **SEO / ranking / performance / security foundation** — unused helpers under `src/lib/seo|performance|security/web`; A/B/C reuse tables; planned `/` vs `/home` take-note |
 | [`docs/security-hardening-notes.md`](docs/security-hardening-notes.md) | FE crawl/redact/JSON-LD sanitize/header draft helpers + link to BE public-SEO notes |
 | [`docs/reusable-assets.md`](docs/reusable-assets.md) | All reusable utilities, hooks, types, schemas, stores, constants, API callers, and Server Actions |
@@ -96,7 +101,9 @@ Enforcement is **remote-only** (GitHub Actions): any pull request **into `main`*
 | **Staging** | `push` → **`staging`** *(planned)* | `.github/workflows/deploy-staging.yml` *(not in repo)* | `mycourse-web-staging` | **Placeholder secrets only** — deploy manually or add workflow later |
 | **Production** | `push` → **`main`** *(planned)* | `.github/workflows/deploy-main.yml` *(not in repo)* | `mycourse-web-prod` | **Placeholder secrets only** — deploy manually or add workflow later |
 
-Pushes to feature branches or pull requests do not run this workflow. Pushes to **`dev`** run **test → build** and upload the runtime artifact; the complete deploy job is temporarily commented, so CI does not contact or modify the VPS.
+Pushes to feature branches or pull requests do not run **`deploy-dev.yml`**. Pushes to **`dev`** run **test → build** and upload the runtime artifact; the complete deploy job is temporarily commented, so CI does not contact or modify the VPS.
+
+**Browser tests** run separately in [`.github/workflows/e2e-browser.yml`](.github/workflows/e2e-browser.yml): on pull requests into **`dev`**/**`main`** *and* on pushes to **`dev`** — this one *does* run on PRs. It installs dependencies, runs `npm run test-all`, provisions Chromium, then `npm run test:e2e` (loopback fixture backend + fixture-configured `next build`/`next start` + Playwright), uploading `playwright-report`/`test-results` on failure. See [`docs/testing.md`](docs/testing.md). Hosted-run verification on GitHub's own infrastructure is pending until a real run is observed.
 
 Secrets are stored under **Repository → Settings → Secrets and variables → Actions**. Names ending in `_DEV`, `_STG`, or `_MAIN` are **per-environment**; each suffix is read only when the matching deploy workflow runs on its branch (today: **`_DEV` only** on `dev` pushes).
 

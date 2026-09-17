@@ -61,7 +61,7 @@ _Last audited: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code 
 
 ## Course module
 
-- **Types**: `src/types/course.ts` — version status, `CourseDetail.last_rejection_reason`, outline nodes (`estimated_duration_ms` on section/lesson/sub-lesson), collaborators, leases, learner progress, request payloads (`UpsertCourseSubLessonPayload.estimated_duration_ms` optional for TEXT/QUIZ).
+- **Types**: `src/types/course.ts` — version status, `CourseDetail.last_rejection_reason`, outline nodes (`estimated_duration_ms` on section/lesson/sub-lesson), collaborators, leases, learner progress, request payloads (`UpsertCourseSubLessonPayload.estimated_duration_ms` optional for TEXT/QUIZ). `AddCollaboratorsBulkPayload.role` is optional `EDITOR` only; response `CourseCollaboratorRole` remains `OWNER | EDITOR`.
 - **API**: `src/api/callers/course/course-factory.ts (+ course-browser.ts)` (`getCourseDetailKey` / `getCourseDetailService` accept `{ includeOutline?: boolean }` → query `include_outline=false` when omitted on info/collaborators tabs; `deleteCourseSectionService` → `DELETE /api/v1/courses/:courseId/sections/:sectionId`, returns updated `CourseSection[]`), `src/api/hooks/course/useCourses.ts` (`useCourseDetail(courseId, { includeOutline })`); routes under `API_PRIVATE_ROUTES.course`.
 - **UI**:
   - `src/screen/instructor/courses/page.tsx` — editable course list + create/delete owner flow
