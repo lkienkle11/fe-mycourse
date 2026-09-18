@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { LoginSignupPopup } from "@/components/common/auth-menu/auth/login-signup-popup";
 import { HeaderDashboard } from "@/components/common/header/header-dashboard";
 import { LocaleSwitcher } from "@/components/common/header/locale-switcher";
+import { StatusErrorPage } from "@/components/shared/status-error-page";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -33,7 +34,6 @@ import type { DashboardLayoutProps } from "@/types/dashboard";
 
 import { DashboardPageHeader } from "./dashboard-page-header";
 import { DashboardSidebar } from "./dashboard-sidebar";
-import { DashboardUnauthorized } from "./dashboard-unauthorized";
 
 /** Aligns with `HeaderDashboard` `h-16`. Override fixed sidebar via `Sidebar` `className` only. */
 const DASHBOARD_SIDEBAR_CLASSNAME =
@@ -176,7 +176,7 @@ export function DashboardLayout({
   onKeyDown,
   onKeyUp,
 }: DashboardLayoutProps) {
-  const { isLoading: meLoading } = useGetMe();
+  const { me, isLoading: meLoading } = useGetMe();
   const isLoading = isLoadingProp ?? meLoading;
   const satisfiesLayout = useSatisfiesPermissions({
     permissions,
@@ -202,7 +202,10 @@ export function DashboardLayout({
       <>
         <div className="flex min-h-svh flex-col">
           <HeaderDashboard trailing={<DashboardHeaderLocale />} />
-          <DashboardUnauthorized />
+          <StatusErrorPage
+            variant={me ? "forbidden" : "unauthorized"}
+            fillViewport
+          />
         </div>
         <LoginSignupPopup />
       </>
