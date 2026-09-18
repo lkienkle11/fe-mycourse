@@ -164,7 +164,7 @@ src/components/
 ├── common/                 # Layout-level components shared across all pages
 │   ├── index.ts            # Barrel: re-exports auth-menu, dashboard, footer, header
 │   ├── dashboard/          # dashboard-layout.tsx, dashboard-page-header.tsx,
-│   │                       # role-dashboard-layout.tsx, DashboardSidebar, DashboardUnauthorized
+│   │                       # role-dashboard-layout.tsx, DashboardSidebar, DashboardUnauthorized (deprecated, unused)
 │   ├── header/             # header.tsx, header-dashboard, browse-nav, browse-sidebar-menu, header-mobile-bar, header-mobile-sidebar,
 │   │                       # sidebar-auth-footer, locale-switcher, index.ts
 │   │                       # index barrel: browse-nav, header, header-mobile-bar, header-mobile-sidebar, sidebar-auth-footer
