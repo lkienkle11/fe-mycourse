@@ -1,4 +1,6 @@
+export type { StatusErrorVariant } from "./api-error";
 export {
+  classifyApiError,
   extractApiError,
   resolveApiErrorMessageKey,
   toastApiError,

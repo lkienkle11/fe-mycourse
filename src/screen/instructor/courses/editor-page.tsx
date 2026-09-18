@@ -27,6 +27,7 @@ import { CourseOutlineTab } from "@/components/features/course/course-editor-out
 import { CourseEditorReviewHistoryTab } from "@/components/features/course/course-editor-review-history-tab";
 import { CourseStatusBadge } from "@/components/features/course/course-status-badge";
 import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
+import { StatusErrorPage } from "@/components/shared/status-error-page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +47,7 @@ import {
   instructorCoursesHref,
   instructorRootHref,
 } from "@/lib/navigation/routes";
+import { classifyApiError } from "@/lib/utils/api-error";
 import { courseEditorTabs } from "@/lib/utils/course";
 import type { CourseEditorTab } from "@/types/course";
 
@@ -88,7 +90,7 @@ export function InstructorCourseEditorPage({
   const tToast = useTranslations("course.editor.toast");
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const { data, isLoading, mutate } = useCourseDetail(courseId);
+  const { data, error, isLoading, mutate } = useCourseDetail(courseId);
   const editableVersion = data?.draft_version;
   const liveVersion = data?.live_version;
   const activeVersion = editableVersion ?? liveVersion;
@@ -286,6 +288,19 @@ export function InstructorCourseEditorPage({
   }
 
   if (!data || !activeVersion) {
+    const variant = classifyApiError(error);
+    if (variant !== "unknown") {
+      return (
+        <StatusErrorPage
+          variant={variant}
+          action={{
+            label: tCommon("backToCourses"),
+            href: instructorCoursesHref,
+          }}
+        />
+      );
+    }
+
     return (
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">{tCommon("notLoaded")}</p>
