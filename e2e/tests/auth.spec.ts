@@ -27,7 +27,8 @@ test.describe("Auth journey", () => {
     await expect(page.getByText("Oops! We can't find that page")).toHaveCount(
       0,
     );
-    await expect(page.getByText("Access denied")).toBeVisible({
+    // Not authenticated yet — dashboard gate shows the `unauthorized` variant.
+    await expect(page.getByText("Sign in required")).toBeVisible({
       timeout: 15_000,
     });
 

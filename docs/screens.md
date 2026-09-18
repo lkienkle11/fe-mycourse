@@ -284,7 +284,7 @@ DashboardLayout (authorized)
 │                 └── role page content
 └── LoginSignupPopup (when authorized)
 
-Unauthorized: HeaderDashboard + trailing locale (lg+) + DashboardUnauthorized (no sidebar)
+Denied: HeaderDashboard + trailing locale (lg+) + StatusErrorPage (no sidebar) — variant `forbidden` when `useGetMe().me` is set, `unauthorized` otherwise
 ```
 
 The visible dashboard page heading is now **layout-owned**, not page-owned:

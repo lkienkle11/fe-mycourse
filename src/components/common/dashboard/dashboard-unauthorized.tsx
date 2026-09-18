@@ -2,7 +2,11 @@
 
 import { useTranslations } from "next-intl";
 
-/** Shown when layout-level dashboard permissions are not satisfied. */
+/**
+ * @deprecated Superseded by `StatusErrorPage` (`forbidden`/`unauthorized` variant), which
+ * `DashboardLayout` now renders directly for a layout-level permission denial. Kept only for
+ * reference; do not wire this into new code.
+ */
 export function DashboardUnauthorized() {
   const t = useTranslations("dashboard");
 
