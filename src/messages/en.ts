@@ -190,6 +190,36 @@ const messages = {
   },
   errors: {
     codes: errorCodesEn,
+    statusPage: {
+      unauthorized: {
+        title: "Sign in required",
+        description: "Your session has expired. Please sign in again.",
+      },
+      forbidden: {
+        title: "Access denied",
+        description: "You do not have permission to view this content.",
+      },
+      "server-error": {
+        title: "Server error",
+        description:
+          "Something went wrong on our end. Please try again shortly.",
+      },
+      network: {
+        title: "You're offline",
+        description:
+          "We couldn't reach the server. Check your connection and try again.",
+      },
+      action: {
+        backToHome: "Back to homepage",
+      },
+    },
+    boundary: {
+      title: "Oops, something went wrong",
+      description:
+        "Something unexpected happened on our end. You can try again, or head back to the homepage.",
+      retry: "Try again",
+      backToHome: "Back to homepage",
+    },
   },
   me: {
     validation: {

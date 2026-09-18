@@ -190,6 +190,35 @@ const messages = {
   },
   errors: {
     codes: errorCodesVi,
+    statusPage: {
+      unauthorized: {
+        title: "Yêu cầu đăng nhập",
+        description: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      },
+      forbidden: {
+        title: "Không có quyền truy cập",
+        description: "Bạn không có quyền xem nội dung này.",
+      },
+      "server-error": {
+        title: "Lỗi máy chủ",
+        description: "Đã xảy ra lỗi từ phía chúng tôi. Vui lòng thử lại sau.",
+      },
+      network: {
+        title: "Bạn đang ngoại tuyến",
+        description:
+          "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng và thử lại.",
+      },
+      action: {
+        backToHome: "Quay về trang chủ",
+      },
+    },
+    boundary: {
+      title: "Ối, đã có lỗi xảy ra",
+      description:
+        "Đã có lỗi ngoài dự kiến xảy ra từ phía chúng tôi. Bạn có thể thử lại, hoặc quay về trang chủ.",
+      retry: "Thử lại",
+      backToHome: "Quay về trang chủ",
+    },
   },
   me: {
     validation: {

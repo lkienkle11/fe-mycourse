@@ -381,6 +381,29 @@ setServerError(translateApiErrorCode(tErrors, result.code));
 - BE has **no** taxonomy/course/instructor-specific numeric codes — those modules reuse shared `2xxx`/`3xxx` (and media also `9011`–`9019`, including `R2BucketNotConfigured = 9019`).
 - Do **not** use semantic per-module API keys (`auth.errors.emailAlreadyExists`, `media.upload.errors.*` for API responses, etc.).
 
+### Full-page variant (primary data-load failures)
+
+`toastApiError` above is for a **mutation** error (user-initiated action — save, delete, submit) where the rest of the screen stays usable. When a screen's **primary data request** fails (the read that the whole screen depends on — e.g. `useCourseDetail`), render a full-page state instead of a toast, so the failure reason is visible instead of leaving stale/empty content on screen:
+
+```ts
+import { StatusErrorPage } from "@/components/shared/status-error-page";
+import { classifyApiError } from "@/lib/utils/api-error";
+
+const { data, error, isLoading } = useSomeDetailQuery(id);
+
+if (!data) {
+  const variant = classifyApiError(error);
+  if (variant !== "unknown") {
+    return <StatusErrorPage variant={variant} />;
+  }
+  // fall back to the screen's existing generic "could not load" state
+}
+```
+
+- `classifyApiError` maps `ApiNetworkError`/`ApiTimeoutError` → `network`, an `ApiHttpError` with `response.status` 401/403/5xx → `unauthorized`/`forbidden`/`server-error`, everything else (including a 404 or 429 response) → `"unknown"`. The status→variant mapping is a table (`HTTP_STATUS_RULES` in `api-error.ts`), not an `if`/`else` chain — add a status code there, not a new branch, when a new variant is needed.
+- Use the toast pattern (`toastApiError`) for mutations; use `StatusErrorPage` + `classifyApiError` for a primary data-load failure. Do not toast a primary-load failure and do not full-page a mutation failure.
+- See `src/screen/instructor/courses/editor-page.tsx` for the first real consumer, and [`docs/screens.md`](screens.md#status-error-page-statuserrorpage) for the four variants.
+
 ---
 
 ## 7. Internationalization (i18n) Pattern

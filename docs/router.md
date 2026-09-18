@@ -95,11 +95,24 @@ export const config = {
 /[locale]/sysadmin/instructors/{roster,approvals,profiles,expertise,tickets}  → same shared screens
 /[locale]/* (unknown)     → not-found.tsx chain → NotFoundPage (see 404 section below)
 /_not-found (global)      → src/app/not-found.tsx → NotFoundPage + explicit NextIntlClientProvider + AppProviders
+/[locale]/* (render error) → src/app/[locale]/error.tsx → StatusErrorPage (recoverable, see Error Boundaries below)
+/* (fatal error)          → src/app/global-error.tsx → locale-aware branded fallback (see Error Boundaries below)
 ```
 
 ### Route Groups
 
 `(web)` is a [Next.js route group](https://nextjs.org/docs/app/building-your-application/routing/route-groups) — the parentheses mean it does NOT appear in the URL. It applies the web shell layout (Header/Footer) to all pages inside.
+
+### Error Boundaries (error.tsx / global-error.tsx)
+
+Distinct from the 404 chain below — these catch a component **throwing** during render, not a route that doesn't match.
+
+| File | When it runs | Provider / chrome |
+|------|--------------|-------------------|
+| `src/app/[locale]/error.tsx` | A component under any of `(web)`, `admin`, `instructor`, `sysadmin` throws during render | Inherits `NextIntlClientProvider` + `AppProviders` from `[locale]/layout.tsx` — renders `StatusErrorPage` (generic message) with a retry action calling `reset()` |
+| `src/app/global-error.tsx` | An error escapes every segment boundary, including a failure in the root layout itself | Owns its own minimal `<html>`/`<body>` — no `NextIntlClientProvider`, no data fetching, plain inline styles (deliberately cannot itself throw). Still locale-aware without that provider: `errors.boundary` copy is imported directly from `src/messages/{en,vi}.ts` (plain objects, no React context needed) and the locale is read from the URL's first path segment via `useSyncExternalStore` (SSR-safe, no hydration mismatch), falling back to `routing.defaultLocale` for an unrecognized/missing segment. |
+
+One `error.tsx` at `[locale]/error.tsx` covers all four route groups instead of duplicating the same boundary four times; add a group-specific `error.tsx` later only if a group needs bespoke recovery UI.
 
 ### Locale-less OAuth callbacks
 
@@ -247,6 +260,8 @@ Screen: `src/screen/common/not-found/not-found-page.tsx` (`NotFoundPage`).
 - Illustration: `@public/assets/images/common/thumbnail-page-not-found.png`
 
 Manual test URLs: `/vi/this-route-does-not-exist`, `/en/this-route-does-not-exist`.
+
+This is the route-not-found case only — a route that doesn't match. A component throwing during render on a route that *does* match is caught by `error.tsx` / `global-error.tsx` instead; see [Error Boundaries](#error-boundaries-errortsx--global-errortsx) above.
 
 ---
 

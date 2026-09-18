@@ -371,6 +371,18 @@ async function handle(req, res) {
       return json(res, 200, envelope(0, "ok", buildCourseDetail()));
     }
 
+    /** Fixed course id an authenticated request always gets denied on — exercises `StatusErrorPage`'s forbidden variant. */
+    if (
+      method === "GET" &&
+      pathname === "/api/v1/courses/course-fixture-forbidden"
+    ) {
+      const session = authFromCookie(req);
+      if (!session || session.revoked) {
+        return json(res, 401, envelope(3002, "Unauthorized", null));
+      }
+      return json(res, 403, envelope(4030, "Forbidden", null));
+    }
+
     if (
       method === "GET" &&
       pathname === `/api/v1/courses/${COURSE_ID}/collaborators`

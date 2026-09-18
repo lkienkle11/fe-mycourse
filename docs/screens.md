@@ -171,6 +171,33 @@ NotFoundPage (server)
 
 ---
 
+## Status Error Page (`StatusErrorPage`)
+
+**File:** `src/components/shared/status-error-page.tsx` — client component.
+
+A shared full-page state for a *classified API failure*, distinct from `NotFoundPage` above (which is the route-level 404 for a URL that doesn't match anything). `StatusErrorPage` is for a route that **does** match but whose primary data request failed — access denied, session expired, a backend error, or the backend being unreachable. A 404 response from the primary request is **not** one of its variants (see classification helper below) — it is out of scope for this component and falls back to the caller's own generic message.
+
+**Variants** (`variant` prop, one `lucide-react` icon + i18n title/description each):
+
+| Variant | When | Icon |
+|---------|------|------|
+| `unauthorized` | Primary request returns 401 | `ShieldAlertIcon` |
+| `forbidden` | Primary request returns 403 | `ShieldXIcon` |
+| `server-error` | Primary request returns any 5xx (500–599) | `ServerCrashIcon` |
+| `network` | Transport-level failure, no response received (`ApiNetworkError` or `ApiTimeoutError`) | `WifiOffIcon` |
+
+Optional `title` / `description` / `action` props override the variant's default copy and CTA (see `src/screen/instructor/courses/editor-page.tsx` for an override that swaps the default "Back to homepage" action for "Back to courses").
+
+**`fillViewport` prop** (default `false`): the card is always centered inside its wrapper, but the wrapper's height depends on this flag — `min-h-[50vh]` (embed-safe default, used by `editor-page.tsx` so the fallback doesn't overflow the dashboard shell's own content area) vs. `min-h-[calc(100svh-4rem)]` when `true` (matches `NotFoundPage`'s convention for a page's entire body, so a page's footer lands at the bottom of the screen instead of right under the card). Pass `fillViewport` only when this component is the sole content between a page's header and footer.
+
+**Classification helper:** `classifyApiError(error)` in `src/lib/utils/api-error.ts` maps a caught error to a `StatusErrorVariant | "unknown"` via an ordered `HTTP_STATUS_RULES` lookup table (exact-status entries for 401/403, a 500–599 range entry for `server-error`) — a new status code is a new table entry, not a new `if`/`else` branch. `ApiNetworkError`/`ApiTimeoutError` (no HTTP response received) both map to `network`. Everything else (including a 404 or 429 response, or any status without a rule) resolves to `"unknown"`; a screen falls back to its own generic message on `"unknown"` rather than guessing a variant.
+
+**Consumer:** `InstructorCourseEditorPage` (`src/screen/instructor/courses/editor-page.tsx`) reads `error` from `useCourseDetail`, classifies it, and renders the matching variant before falling back to the existing generic "could not load" message.
+
+**Also used by:** `src/app/[locale]/error.tsx` (segment-level render-error boundary — see [`docs/router.md`](router.md#error-boundaries-errortsx--global-errortsx)), passing its own generic title/description/retry copy rather than one of the four API-failure variants.
+
+---
+
 ## Global Chrome
 
 ### BecomeInstructorPromoBanner
