@@ -30,7 +30,7 @@
 - [x] 5.1 Run the frontend's full check suite (`npm run check-all`) and fix any type, lint, or test failures introduced by this change — re-run again after group 6 (task 6.4)
 - [x] 5.2 Run `openspec validate unify-dashboard-forbidden-ui --strict` and resolve any reported issues — passed after group 6
 - [x] 5.3 Run `gitnexus_detect_changes({scope: "all"})` and confirm the reported changed symbols/files match exactly this task list (2.x/3.x edits + 4.x docs) — investigate and resolve any unexpected symbol before committing. Result: 17 changed symbols across 12 files — the expected `DashboardLayout`/`DashboardUnauthorized` + 5 docs sections, plus `AGENTS.md`/`CLAUDE.md`'s GitNexus symbol-count badge (auto-updated as a side effect of the task-1.1 `npx gitnexus analyze` refresh: 4150→4170 symbols, 10366→10397 relationships). No unexpected app-code symbol found; risk reported `medium` from the 4 `DashboardLayout`-rooted cross-community processes, all expected given the edit. Re-run after group 6 (task 6.4).
-- [ ] 5.4 After committing, re-run `npx gitnexus analyze` (add `--embeddings` if `.gitnexus/meta.json`'s `stats.embeddings` is non-zero) to keep the index current for the next session — not run yet: no commit has been made (commits are only created when the user explicitly asks)
+- [x] 5.4 After committing, re-run `npx gitnexus analyze` (add `--embeddings` if `.gitnexus/meta.json`'s `stats.embeddings` is non-zero) to keep the index current for the next session — completed after the grouped commits; embeddings were `0`, and the standard analysis indexed 4,171 nodes, 10,398 edges, 158 clusters, and 300 flows
 
 ## 6. Reversal: restore `DashboardUnauthorized` as deprecated instead of deleted
 
