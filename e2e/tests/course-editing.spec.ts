@@ -1,24 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { FIXTURE_USERS, resetFixtures } from "../support/fixture-client";
+import { loginAsInstructor } from "../support/auth";
+import { resetFixtures } from "../support/fixture-client";
 
 const COURSE_ID = "course-fixture-1";
 
 test.beforeEach(async ({ page }) => {
   await resetFixtures();
-  await page.goto("/en/instructor");
-  await page.getByRole("button", { name: "Login" }).first().click();
-  await page
-    .getByPlaceholder("Email Address")
-    .fill(FIXTURE_USERS.instructor.email);
-  await page
-    .getByPlaceholder("Password")
-    .fill(FIXTURE_USERS.instructor.password);
-  await page.getByRole("button", { name: "Login" }).last().click();
-  await expect(
-    page.getByRole("button", { name: "Open user menu" }),
-  ).toBeVisible({
-    timeout: 15_000,
-  });
+  await loginAsInstructor(page);
 });
 
 test.describe("Course collaborator journey", () => {
