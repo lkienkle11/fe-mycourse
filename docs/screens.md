@@ -284,7 +284,7 @@ DashboardLayout (authorized)
 │                 └── role page content
 └── LoginSignupPopup (when authorized)
 
-Denied: HeaderDashboard + trailing locale (lg+) + StatusErrorPage (no sidebar) — variant `forbidden` when `useGetMe().me` is set, `unauthorized` otherwise
+Denied: HeaderDashboard (leading: BrandLogoLink className="md:hidden" — logo only, no title, shared with HeaderMobileBar, replaces the burger since there is no sidebar to open) + trailing locale (lg+) + StatusErrorPage (no sidebar) — variant `forbidden` when `useGetMe().me` is set, `unauthorized` otherwise
 ```
 
 The visible dashboard page heading is now **layout-owned**, not page-owned:

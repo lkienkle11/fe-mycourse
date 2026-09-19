@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { LoginSignupPopup } from "@/components/common/auth-menu/auth/login-signup-popup";
+import { BrandLogoLink } from "@/components/common/header/brand-logo-link";
 import { HeaderDashboard } from "@/components/common/header/header-dashboard";
 import { LocaleSwitcher } from "@/components/common/header/locale-switcher";
 import { StatusErrorPage } from "@/components/shared/status-error-page";
@@ -201,7 +202,10 @@ export function DashboardLayout({
     return (
       <>
         <div className="flex min-h-svh flex-col">
-          <HeaderDashboard trailing={<DashboardHeaderLocale />} />
+          <HeaderDashboard
+            leading={<BrandLogoLink className="md:hidden" />}
+            trailing={<DashboardHeaderLocale />}
+          />
           <StatusErrorPage
             variant={me ? "forbidden" : "unauthorized"}
             fillViewport
