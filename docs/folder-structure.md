@@ -165,9 +165,9 @@ src/components/
 │   ├── index.ts            # Barrel: re-exports auth-menu, dashboard, footer, header
 │   ├── dashboard/          # dashboard-layout.tsx, dashboard-page-header.tsx,
 │   │                       # role-dashboard-layout.tsx, DashboardSidebar, DashboardUnauthorized (deprecated, unused)
-│   ├── header/             # header.tsx, header-dashboard, browse-nav, browse-sidebar-menu, header-mobile-bar, header-mobile-sidebar,
+│   ├── header/             # header.tsx, header-dashboard, brand-logo-link, browse-nav, browse-sidebar-menu, header-mobile-bar, header-mobile-sidebar,
 │   │                       # sidebar-auth-footer, locale-switcher, index.ts
-│   │                       # index barrel: browse-nav, header, header-mobile-bar, header-mobile-sidebar, sidebar-auth-footer
+│   │                       # index barrel: become-instructor-promo-banner, brand-logo-link, browse-nav, header, header-dashboard, header-mobile-bar, header-mobile-sidebar, sidebar-auth-footer
 │   │                       # direct imports only: browse-sidebar-menu, locale-switcher
 │   ├── footer/             # Footer (RSC), FooterSocial (client social icons row)
 │   └── auth-menu/          # Full authentication UI cluster:

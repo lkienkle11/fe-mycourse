@@ -124,7 +124,7 @@ fe/
 │   │   │   ├── index.ts            # Barrel: auth-menu, dashboard, footer, header
 │   │   │   ├── dashboard/          # DashboardLayout, RoleDashboardLayout (+ locale chrome helpers), DashboardSidebar, DashboardUnauthorized (deprecated, unused)
 │   │   │   ├── header/             # Header (RSC), HeaderDashboard, HeaderBrowseNav, HeaderMobileBar/Sidebar,
-│   │   │                           # BrowseSidebarMenu, SidebarAuthFooter, LocaleSwitcher
+│   │   │                           # BrandLogoLink, BrowseSidebarMenu, SidebarAuthFooter, LocaleSwitcher
 │   │   │   ├── footer/             # Footer (RSC), FooterSocial (client social icons)
 │   │   │   └── auth-menu/          # AuthLayout, AuthButton, LoginSignupPopup,
 │   │   │                           # LoginContent, SignupContent, UserMenu,
