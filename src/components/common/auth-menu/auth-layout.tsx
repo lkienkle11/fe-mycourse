@@ -4,7 +4,7 @@ import { useGetMe } from "@/hooks";
 import { AuthButton } from "./auth-button";
 import { UserMenu } from "./user-menu";
 
-/** Header auth chrome only — `LoginSignupPopup` is mounted once in `header.tsx`. */
+/** Header auth chrome only — the login/signup modal is rendered by the `@modal` parallel-route slot when `/login`/`/signup` is the active intercepted route (see `login-signup-popup.tsx`). */
 export const AuthLayout = () => {
   const { me, isLoading } = useGetMe();
 

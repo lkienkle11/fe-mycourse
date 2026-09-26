@@ -7,21 +7,44 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { handleAuthSubmit } from "@/actions/auth/auth-client";
 import { Button, Spinner } from "@/components/ui";
-import { useAuthStore } from "@/hooks";
+import { useAuthNextParam } from "@/hooks/auth/use-auth-next-param";
 import { useDiscordLogin } from "@/hooks/auth/use-discord-login";
 import { useGoogleLogin } from "@/hooks/auth/use-google-login";
 import { useOAuthPostAuth } from "@/hooks/auth/use-oauth-post-auth";
+import { useRedirectIfAuthenticated } from "@/hooks/auth/use-redirect-if-authenticated";
+import { getPathname, Link } from "@/i18n/navigation";
+import { loginHref } from "@/lib/navigation/routes";
 import { cn } from "@/lib/utils";
 import { translateApiErrorCode } from "@/lib/utils/api-error";
 import { type SignupFormValues, signupSchema } from "@/schema/auth";
 import { AuthSocialLogin } from "../auth-social-login";
 import { AuthEmailPasswordFields, AuthFullNameField } from "./auth-form-fields";
 
-export function SignupContent({ className }: { className?: string }) {
+export type SignupContentProps = {
+  className?: string;
+  /** Called after a successful OAuth signup, with the validated post-signup destination. */
+  onAuthenticated: (destination: string) => void;
+  /**
+   * `"modal"` (default): the login/signup cross-link soft-navigates, which
+   * Next.js intercepts as the login modal — the expected in-app experience.
+   * `"page"`: rendered as the full-page fallback (`SignupPageContent`); the
+   * cross-link forces a hard navigation to the plain login page instead,
+   * since a soft nav here would still get intercepted as a modal stacked on
+   * top of the very page it targets.
+   */
+  variant?: "modal" | "page";
+};
+
+export function SignupContent({
+  className,
+  onAuthenticated,
+  variant = "modal",
+}: SignupContentProps) {
   const t = useTranslations("auth");
   const tErrors = useTranslations("errors.codes");
   const locale = useLocale();
-  const { openLoginModal } = useAuthStore();
+  const { nextPath } = useAuthNextParam();
+  const isAuthenticated = useRedirectIfAuthenticated(nextPath);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [registrationPending, setRegistrationPending] = useState(false);
@@ -57,7 +80,7 @@ export function SignupContent({ className }: { className?: string }) {
     return () => window.clearInterval(id);
   }, [retryAfterSeconds]);
 
-  const handleOAuthSuccess = useOAuthPostAuth();
+  const handleOAuthSuccess = useOAuthPostAuth(nextPath, onAuthenticated);
 
   const { startGoogleLogin, isPending: googleLoading } = useGoogleLogin({
     rememberMe: false,
@@ -97,6 +120,8 @@ export function SignupContent({ className }: { className?: string }) {
     }
   };
 
+  if (isAuthenticated) return null;
+
   if (registrationPending) {
     return (
       <div className={cn("space-y-4 text-center px-2", className)}>
@@ -107,12 +132,20 @@ export function SignupContent({ className }: { className?: string }) {
           {t("registerSuccess.description", { email: pendingEmail })}
         </p>
         <Button
+          asChild
           type="button"
           variant="outline"
-          onClick={() => openLoginModal()}
           className="w-full h-11 rounded-full"
         >
-          {t("registerSuccess.backToLogin")}
+          {variant === "page" ? (
+            <a href={getPathname({ href: loginHref(nextPath), locale })}>
+              {t("registerSuccess.backToLogin")}
+            </a>
+          ) : (
+            <Link replace href={loginHref(nextPath)}>
+              {t("registerSuccess.backToLogin")}
+            </Link>
+          )}
         </Button>
       </div>
     );
@@ -175,12 +208,20 @@ export function SignupContent({ className }: { className?: string }) {
       <span className="flex justify-center items-center text-sm leading-[18px] font-normal text-black mt-2">
         {t("alreadyHaveAccount")}
         <Button
+          asChild
           type="button"
           variant="ghost"
-          onClick={() => openLoginModal()}
           className="hover:no-underline hover:cursor-pointer hover:text-[#3DCBB1] no-underline text-[#3DCBB1] hover:brightness-110 transition-all duration-300 pl-0.5"
         >
-          {t("login")}
+          {variant === "page" ? (
+            <a href={getPathname({ href: loginHref(nextPath), locale })}>
+              {t("login")}
+            </a>
+          ) : (
+            <Link replace href={loginHref(nextPath)}>
+              {t("login")}
+            </Link>
+          )}
         </Button>
       </span>
     </div>

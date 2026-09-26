@@ -3,18 +3,18 @@
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { PRIVATE_ROUTES } from "@/constants/route";
-import { useAuthStore, useGetMe } from "@/hooks/auth";
+import { useGetMe } from "@/hooks/auth";
+import { Link } from "@/i18n/navigation";
+import { loginHref, signedInHomeHref } from "@/lib/navigation/routes";
 
 /**
  * Temporary signed-in homepage at `/home`.
- * Auth gate reuses the login modal + nextLink pattern (become-instructor State A).
+ * Auth gate reuses the route-based login modal + `next` pattern (become-instructor State A).
  * Full Figma layout is a later task — no API fetch here.
  */
 export function SignedInHomePage() {
   const t = useTranslations("home.signedIn");
   const { me, isLoading } = useGetMe();
-  const { openLoginModal } = useAuthStore();
 
   if (isLoading) {
     return (
@@ -33,12 +33,10 @@ export function SignedInHomePage() {
         <p className="mt-2 text-sm text-muted-foreground">
           {t("loginRequired.description")}
         </p>
-        <Button
-          className="mt-6"
-          type="button"
-          onClick={() => openLoginModal(PRIVATE_ROUTES.home)}
-        >
-          {t("loginRequired.login")}
+        <Button asChild className="mt-6">
+          <Link href={loginHref(signedInHomeHref)}>
+            {t("loginRequired.login")}
+          </Link>
         </Button>
       </section>
     );

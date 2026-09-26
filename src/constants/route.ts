@@ -4,7 +4,12 @@ export const PUBLIC_ROUTES = {
   forgotPassword: "/forgot-password",
   confirmEmail: "/confirm-email",
   logout: "/logout",
+  login: "/login",
+  signup: "/signup",
 } as const;
+
+/** Query param carrying the post-login/signup return path on `/login` and `/signup`. */
+export const AUTH_NEXT_QUERY_PARAM = "next";
 
 export const PRIVATE_ROUTES = {
   /** Signed-in homepage (temporary placeholder UI until Figma home ships). */

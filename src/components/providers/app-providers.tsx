@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { SWRConfig } from "swr";
 import { AuthConfirmTabSync } from "@/components/providers/auth-confirm-tab-sync";
 import { AuthLogoutTabSync } from "@/components/providers/auth-logout-tab-sync";
+import { AuthModalBackgroundBridge } from "@/components/providers/auth-modal-background-bridge";
 import { DEFAULT_SWR_CONFIG } from "@/constants/swr";
 import { EventsStreamProvider } from "@/events";
 import { useSyncMeFromAuth } from "@/hooks/auth";
@@ -31,6 +32,7 @@ export function AppProviders({ children }: AppProvidersProps) {
         <LanguageLocaleSync />
         <AuthConfirmTabSync />
         <AuthLogoutTabSync />
+        <AuthModalBackgroundBridge />
         {children}
       </EventsStreamProvider>
     </SWRConfig>

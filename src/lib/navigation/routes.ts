@@ -1,4 +1,5 @@
 import {
+  AUTH_NEXT_QUERY_PARAM,
   PRIVATE_RESOURCE_ROUTES as privateResourceRoutes,
   PRIVATE_ROUTES as privateRoutes,
   PUBLIC_ROUTES as publicRoutes,
@@ -93,6 +94,22 @@ export const signedInHomeHref = toPrivateRoute(privateRoutes.home);
 export const forgotPasswordHref = toPublicRoute(publicRoutes.forgotPassword);
 export const confirmEmailHref = toPublicRoute(publicRoutes.confirmEmail);
 export const logoutHref = toPublicRoute(publicRoutes.logout);
+
+/** `/login`, optionally carrying a validated post-login return path. */
+export function loginHref(nextPath?: string | null): string {
+  return toPublicRoute(
+    publicRoutes.login,
+    nextPath ? { [AUTH_NEXT_QUERY_PARAM]: nextPath } : undefined,
+  );
+}
+
+/** `/signup`, optionally carrying a validated post-signup return path. */
+export function signupHref(nextPath?: string | null): string {
+  return toPublicRoute(
+    publicRoutes.signup,
+    nextPath ? { [AUTH_NEXT_QUERY_PARAM]: nextPath } : undefined,
+  );
+}
 
 export const adminRootHref = toPrivateRoute(privateRoutes.admin.root);
 export const instructorRootHref = toPrivateRoute(privateRoutes.instructor.root);

@@ -44,12 +44,12 @@ import {
   refreshCertificateFieldErrors,
   validateApplicationForm,
 } from "@/lib/instructor-application/validate-application-form";
+import { loginHref } from "@/lib/navigation/routes";
 import { cn } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
 import { isPdfMedia } from "@/lib/utils/media";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import { instructorContactAdminSchema } from "@/schema/instructor";
-import { useAuthStore } from "@/store/auth";
 import type { MediaFile } from "@/types/media";
 
 export function BecomeInstructorPage() {
@@ -58,7 +58,6 @@ export function BecomeInstructorPage() {
   const tValidation = useTranslations("instructor.validation");
   const tErrors = useTranslations("errors.codes");
   const locale = useLocale();
-  const { openLoginModal } = useAuthStore();
   const {
     application,
     pageState,
@@ -209,11 +208,10 @@ export function BecomeInstructorPage() {
           title={t("stateA.title")}
           description={t("stateA.description")}
           action={
-            <Button
-              className="bg-[#3dcbb1] hover:bg-[#35b39c]"
-              onClick={() => openLoginModal(PUBLIC_ROUTES.becomeInstructor)}
-            >
-              {t("stateA.login")}
+            <Button asChild className="bg-[#3dcbb1] hover:bg-[#35b39c]">
+              <Link href={loginHref(PUBLIC_ROUTES.becomeInstructor)}>
+                {t("stateA.login")}
+              </Link>
             </Button>
           }
         />
