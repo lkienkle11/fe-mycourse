@@ -22,7 +22,7 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Legacy tree pkg | @nosferatu500/react-sortable-tree | 5.x | Installed; taxonomy form uses `SortableTreeEditor` (@dnd-kit) instead |
 | Forms | react-hook-form + zod | 7.x / 4.x | `@hookform/resolvers` bridges the two |
 | i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` (no `ja` routing). Taxonomy **data** labels localize from BE via query `locale` / translation tables — see `docs/taxonomy-admin.md`. |
-| Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup, **3 min** `errorRetryInterval`) for hooks under the provider; `useAuth` sets its own SWR options |
+| Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup, **3 min** `errorRetryInterval`, `provider: meCacheProvider`) for hooks under the provider; `useAuth` sets its own SWR options |
 | HTTP client | Xior 0.8.3 over Next.js Fetch (`ApiTransport`) | exact-pinned `xior` | Shared raw executor + isolated per-request authenticated executors with request/response interceptors; six `api*` + six `raw*` helpers |
 | Global state | Zustand | 5.x | Provider-free stores (auth, me, stream event log) |
 | Realtime (client) | BroadcastChannel, SSE, WebSocket, NDJSON fetch | — | See [`docs/delivery.md`](./delivery.md) |
@@ -259,8 +259,10 @@ Covers everything related to authentication UI and server-side token management:
 | `logoutAction` | `actions/auth/auth.ts` | `"use server"` — revoke session, clear cookies |
 | `signupAction` | `actions/auth/auth.ts` | **Deprecated alias** of `registerAction` |
 | `loginSchema` / `signupSchema` | `schema/auth/auth.ts` | Zod schemas with i18n error keys |
-| `useAuthStore` | `store/auth/auth.ts` | Auth modal state (authAction, nextLink) |
-| `useAuthStore` / `useGetMe` / `useSyncMeFromAuth` | `hooks/auth/use-auth-store.ts` | Auth modal store; `/me` Zustand mirror; SWR sync via `MeSwrSync` |
+| `useGetMe` / `useSyncMeFromAuth` | `hooks/auth/use-auth-store.ts` | `/me` Zustand mirror (`useMeStore`, `store/auth/auth.ts`); SWR sync via `MeSwrSync` |
+| `useAuthNextParam` | `hooks/auth/use-auth-next-param.ts` | Reads/validates the `next` query param on `/login`, `/signup` (via `isSafeInternalPath` + `isAuthRoutePath`); strips an invalid value via a raw `history.replaceState`, not `router.replace` (avoids triggering `@modal` interception) |
+| `useRedirectIfAuthenticated` | `hooks/auth/use-redirect-if-authenticated.ts` | Redirects away from `/login`/`/signup` when `useGetMe().me` was already set on first mount — snapshotted once, not re-evaluated on a later login/signup transition |
+| `loginHref` / `signupHref` | `lib/navigation/routes.ts` | Build `/login?next=...` / `/signup?next=...` — the app's single way to open the login/signup route modal |
 | `useCustomLanguage` / `useSyncLanguageFromLocale` | `hooks/language/*` | Language label/code store (no React Context) |
 | `useLanguageStore` | `store/language/language-store.ts` | `languageCode`, `locale`, `languageLabel` |
 
@@ -326,7 +328,7 @@ When multiple concurrent browser requests are eligible for silent refresh simult
 
 ### 5. SWR for Current User
 
-`useAuth` uses SWR to cache the `GET /api/v1/me` response with options defined in `src/api/hooks/auth/useAuth.ts` (including `shouldRetryOnError: false` and hook-level `revalidateOnFocus: true`). `AppProviders` wraps the app in `SWRConfig` with `revalidateOnFocus: false`, a 30-second dedup interval, and a **3-minute** `errorRetryInterval` (constants in `src/constants/swr.ts`) so hooks that allow error retry do not hammer the BE every 5 seconds. `MeSwrSync` (a null-render child) calls `useSyncMeFromAuth` **inside** that provider so the internal `useAuth` shares the same client SWR context as the rest of the subtree. After a successful login, `login-content.tsx` invokes **`mutateMe()`** from `useGetMe()` to refresh the Zustand `/me` slice immediately.
+`useAuth` uses SWR to cache the `GET /api/v1/me` response with options defined in `src/api/hooks/auth/useAuth.ts` (including `shouldRetryOnError: false` and hook-level `revalidateOnFocus: true`). It revalidates on mount (SWR's default) on every route **except** `/login`/`/signup`, where it skips the on-mount fetch if `meCacheProvider`'s (`src/lib/swr/me-cache-provider.ts`) persisted `/me` cache is less than 30 s old — this is what lets a fast bounce between the two full-page routes (each a hard nav) make zero redundant `/me` calls, while a reload of any protected route still always re-checks the session. Scoping the skip that narrowly matters: an earlier, unscoped version skipped it everywhere, which let a revoked/expired session go undetected across a reload of a protected page; `e2e/tests/auth.spec.ts` caught it (see the hook's own doc comment). `AppProviders` wraps the app in `SWRConfig` with `revalidateOnFocus: false`, a 30-second dedup interval, a **3-minute** `errorRetryInterval` (constants in `src/constants/swr.ts`), and a `provider: meCacheProvider` cache so hooks that allow error retry do not hammer the BE every 5 seconds. `MeSwrSync` (a null-render child) calls `useSyncMeFromAuth` **inside** that provider so the internal `useAuth` shares the same client SWR context as the rest of the subtree. After a successful login, `login-content.tsx` invokes **`mutateMe()`** from `useGetMe()` to refresh the Zustand `/me` slice immediately.
 
 `useMyInstructorApplication` intentionally does **not** revalidate on focus and exposes bootstrap-only `isLoading` so `BecomeInstructorPage` does not unmount the form when the user returns to the tab. See `docs/instructor-application.md`.
 

@@ -171,6 +171,12 @@ const messages = {
       success: "Logged out! Redirecting…",
       error: "Could not log out. Please try again.",
     },
+    loginPage: {
+      pageTitle: "Log in",
+    },
+    signupPage: {
+      pageTitle: "Sign up",
+    },
     errors: {
       generic: "Something went wrong. Please try again.",
       emailAlreadyExists: "This email is already registered.",

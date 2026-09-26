@@ -6,11 +6,13 @@ import { routing } from "@/i18n/routing";
 
 type LocaleLayoutProps = {
   children: ReactNode;
+  modal: ReactNode;
   params: Promise<{ locale: string }>;
 };
 
 export default async function LocaleLayout({
   children,
+  modal,
   params,
 }: LocaleLayoutProps) {
   const { locale } = await params;
@@ -21,7 +23,10 @@ export default async function LocaleLayout({
 
   return (
     <NextIntlClientProvider>
-      <AppProviders>{children}</AppProviders>
+      <AppProviders>
+        {children}
+        {modal}
+      </AppProviders>
     </NextIntlClientProvider>
   );
 }

@@ -172,6 +172,12 @@ const messages = {
       success: "Đã đăng xuất! Đang chuyển hướng…",
       error: "Không thể đăng xuất. Vui lòng thử lại.",
     },
+    loginPage: {
+      pageTitle: "Đăng nhập",
+    },
+    signupPage: {
+      pageTitle: "Đăng ký",
+    },
     errors: {
       generic: "Đã có lỗi xảy ra. Vui lòng thử lại.",
       emailAlreadyExists: "Email này đã được đăng ký.",

@@ -138,17 +138,17 @@ Follow the Tailwind CSS recommended order: layout → spacing → sizing → typ
 | State type | Tool | Example |
 |------------|------|---------|
 | Server data (async, cached) | SWR | `useAuth`, `useCourses` |
-| Global UI state (sync, no fetch) | Zustand | `useAuthStore` (modal), `useLanguageStore` (locale label/code), `useApiError`, `useStreamEventsStore` |
+| Global UI state (sync, no fetch) | Zustand | `useMeStore` (session/permissions), `useLanguageStore` (locale label/code), `useApiError`, `useStreamEventsStore` |
 | Realtime push (multi-transport) | Events pipeline + hooks | `useWebSocketStreamEvent`, `useSseStreamEvent`, … |
 | Local component state | `useState` | Form open/close toggles |
-| URL/navigation state | `useRouter` / `usePathname` | Active nav item highlight |
+| URL/navigation state | `useRouter` / `usePathname` | Active nav item highlight; login/signup modal (`@modal` intercepting route + `next` query param, see [`flow.md`](./flow.md)) |
 
 ### Zustand: no Provider needed
 
 ```ts
 // ✅ Correct — import directly, no wrap needed
-import { useAuthStore } from "@/store/auth/auth";
-const { openLoginModal } = useAuthStore();
+import { useApiError } from "@/store/api-error-store";
+const { lastError, clear } = useApiError();
 ```
 
 ### Language: store + sync hook (no Context)

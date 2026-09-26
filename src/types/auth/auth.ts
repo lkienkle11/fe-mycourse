@@ -1,5 +1,3 @@
-export type AuthActions = "none" | "login" | "signup" | "logout";
-
 /** Result shape returned by auth server actions (login, confirm, OAuth, logout). */
 export interface AuthActionResult {
   success: boolean;

@@ -931,7 +931,7 @@ sudo nginx -t                  # valid config after certbot edits?
 | Auth session cookies | `src/lib/utils/auth-session.ts` (server-only, **not** in barrel) | `setAuthSessionCookies` — import `@/lib/utils/auth-session` in Server Actions only |
 | i18n routing | `src/i18n/routing.ts` | `locales: ["en","vi"]`, `defaultLocale: "vi"`, `localePrefix: "always"` |
 | API route constants | `src/constants/api-route.ts` | All API endpoint paths |
-| Auth modal store | `src/store/auth/auth.ts` | `useAuthStore` (Zustand) |
+| Session/permissions store | `src/store/auth/auth.ts` | `useMeStore` (Zustand) |
 | Global error store | `src/store/api-error-store.ts` | `useApiError` (Zustand, max 20 entries) |
 | Translation files | `src/messages/en.ts` / `vi.ts` | English and Vietnamese copy; loaded by `loadMessages` |
 | PM2 (dev/staging/prod) | `ecosystem.config.cjs` (repo root) | App names `mycourse-web-dev` / `mycourse-web-staging` / `mycourse-web-prod`; CI reloads **dev** only |

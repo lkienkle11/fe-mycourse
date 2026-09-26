@@ -6,7 +6,7 @@ FE companions for crawl policy, client payload redaction, JSON-LD sanitization, 
 
 ## Status
 
-Helpers are **unused** by pages/layouts. They do **not** replace authentication or authorization. `noindex` / robots disallow lists are a crawl hint, not an access control.
+Helpers are **unused** by pages/layouts. They do **not** replace authentication or authorization. `noindex` / robots disallow lists are a crawl hint, not an access control. **Exception:** `safe-redirect.ts` is used — via `useAuthNextParam` (`src/hooks/auth/use-auth-next-param.ts`), which is used by `LoginContent`, `SignupContent`, and `useOAuthPostAuth` for the route-based login/signup modal and pages.
 
 ## Helpers
 
@@ -16,6 +16,7 @@ Helpers are **unused** by pages/layouts. They do **not** replace authentication 
 | Client redact | `src/lib/security/web/redact-client-payload.ts` | Allow-list / DTO projection for props that may reach the client. Mirrors the allow-list discipline of `redactApiErrorUrl` / `sanitizeApiErrorCause` in `src/api/core/fetch-error.ts` — never blind key-name deletion. |
 | JSON-LD sanitize | `src/lib/security/web/sanitize-json-ld.ts` | Sanitize graph objects before serialize; used with `JsonLd` (`src/lib/seo/json-ld.tsx`) which also escapes `<` → `\u003c`. |
 | Header presets | `src/lib/security/web/security-headers-presets.ts` | Draft map aligned with nginx headers already documented in [`deploy.md`](./deploy.md) (`X-Frame-Options SAMEORIGIN`, `X-Content-Type-Options nosniff`, `Referrer-Policy strict-origin-when-cross-origin`). CSP draft is **inactive** until Google One Tap, OAuth popup, media/embed, reverse proxy, and report endpoint are reviewed. |
+| Safe redirect (open-redirect guard) | `src/lib/security/web/safe-redirect.ts` | `isSafeInternalPath` validates that a post-login/signup return path (`next` query param on `/login`/`/signup`) is a same-origin relative internal path before it is ever used for navigation — rejects absolute URLs (`scheme://`), protocol-relative paths (`//...`), and backslash-prefixed paths. `isAuthRoutePath` additionally rejects a `next` that is itself `/login`/`/signup` (self-reference, otherwise propagates through every login/signup cross-link). Both used by `useAuthNextParam` (`src/hooks/auth/use-auth-next-param.ts`); `isAuthRoutePath` also by `AuthButton` and `useAuthModalBackgroundBridge`. |
 
 ## Rules
 

@@ -55,11 +55,13 @@ test.describe("Auth journey", () => {
     await page.getByRole("button", { name: "Open user menu" }).click();
     await page.getByRole("link", { name: "Logout" }).click();
 
-    await expect(
-      page.getByRole("button", { name: "Login" }).first(),
-    ).toBeVisible({
-      timeout: 15_000,
-    });
+    // Header CTA is a route link (`/login?next=...`), not a modal-opening
+    // button — the route-based login/signup modal reads `next` from the URL.
+    await expect(page.getByRole("link", { name: "Login" }).first()).toBeVisible(
+      {
+        timeout: 15_000,
+      },
+    );
   });
 
   test("an expired/revoked session logs the user out on the next check", async ({

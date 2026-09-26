@@ -12,25 +12,46 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Field } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import { ApiErrorCode } from "@/constants/api-error-code";
-import { useAuthStore, useGetMe } from "@/hooks";
+import { useGetMe } from "@/hooks";
+import { useAuthNextParam } from "@/hooks/auth/use-auth-next-param";
 import { useDiscordLogin } from "@/hooks/auth/use-discord-login";
 import { useGoogleLogin } from "@/hooks/auth/use-google-login";
 import { useOAuthPostAuth } from "@/hooks/auth/use-oauth-post-auth";
-import { useRouter } from "@/i18n/navigation";
-// import { Link } from "@/i18n/navigation";
+import { useRedirectIfAuthenticated } from "@/hooks/auth/use-redirect-if-authenticated";
+import { getPathname, Link } from "@/i18n/navigation";
 // import { forgotPasswordHref } from "@/lib/navigation/routes";
+import { homeHref, signupHref } from "@/lib/navigation/routes";
 import { cn } from "@/lib/utils";
 import { translateApiErrorCode } from "@/lib/utils/api-error";
 import { type LoginFormValues, loginSchema } from "@/schema/auth";
 import { AuthSocialLogin } from "../auth-social-login";
 import { AuthEmailPasswordFields } from "./auth-form-fields";
 
-export function LoginContent({ className }: { className?: string }) {
+export type LoginContentProps = {
+  className?: string;
+  /** Called after a successful login/OAuth, with the validated post-login destination. */
+  onAuthenticated: (destination: string) => void;
+  /**
+   * `"modal"` (default): the login/signup cross-link soft-navigates, which
+   * Next.js intercepts as the signup modal — the expected in-app experience.
+   * `"page"`: rendered as the full-page fallback (`LoginPageContent`); the
+   * cross-link forces a hard navigation to the plain signup page instead,
+   * since a soft nav here would still get intercepted as a modal stacked on
+   * top of the very page it targets.
+   */
+  variant?: "modal" | "page";
+};
+
+export function LoginContent({
+  className,
+  onAuthenticated,
+  variant = "modal",
+}: LoginContentProps) {
   const t = useTranslations("auth");
   const tErrors = useTranslations("errors.codes");
   const locale = useLocale();
-  const router = useRouter();
-  const { openSignupModal, closeAllModals, nextLink } = useAuthStore();
+  const { nextPath } = useAuthNextParam();
+  const isAuthenticated = useRedirectIfAuthenticated(nextPath);
   const { mutateMe } = useGetMe();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -60,7 +81,7 @@ export function LoginContent({ className }: { className?: string }) {
     defaultValue: false,
   });
 
-  const handleOAuthSuccess = useOAuthPostAuth();
+  const handleOAuthSuccess = useOAuthPostAuth(nextPath, onAuthenticated);
 
   const { startGoogleLogin, isPending: googleLoading } = useGoogleLogin({
     rememberMe: rememberMe ?? false,
@@ -92,10 +113,7 @@ export function LoginContent({ className }: { className?: string }) {
     const result = await handleAuthSubmit("login", values);
     if (result.success) {
       mutateMe();
-      closeAllModals();
-      if (nextLink) {
-        router.push(nextLink);
-      }
+      onAuthenticated(nextPath ?? homeHref);
     } else if (result.code === ApiErrorCode.EmailNotConfirmed) {
       setEmailNotConfirmed(true);
       setServerError(translateApiErrorCode(tErrors, result.code));
@@ -123,6 +141,8 @@ export function LoginContent({ className }: { className?: string }) {
       setResendMessage(translateApiErrorCode(tErrors, result.code));
     }
   };
+
+  if (isAuthenticated) return null;
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -227,12 +247,20 @@ export function LoginContent({ className }: { className?: string }) {
       <span className="flex justify-center items-center text-sm leading-[18px] font-normal text-black">
         {t("noAccount")}
         <Button
+          asChild
           type="button"
           variant="ghost"
-          onClick={() => openSignupModal()}
           className="hover:no-underline hover:cursor-pointer hover:text-[#3DCBB1] no-underline text-[#3DCBB1] hover:brightness-110 transition-all duration-300 pl-0.5"
         >
-          {t("register")}
+          {variant === "page" ? (
+            <a href={getPathname({ href: signupHref(nextPath), locale })}>
+              {t("register")}
+            </a>
+          ) : (
+            <Link replace href={signupHref(nextPath)}>
+              {t("register")}
+            </Link>
+          )}
         </Button>
       </span>
     </div>

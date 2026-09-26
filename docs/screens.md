@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-07-26 (temporary signed-in `/home` route + SignedInHomePage). Prior: 2026-07-10 Homepage sections use `public/assets/images/home` static assets; 2026-07-08 Discord + Google on login/signup popup._
+_Last audited: 2026-09-19 (route-based login/signup modal: `/login` + `/signup` pages, `@modal` parallel/intercepting slot, `LoginSignupPopup` no longer mounted in `header.tsx` / `DashboardLayout`, Zustand `authAction`/`nextLink` removed). Prior: 2026-07-26 temporary signed-in `/home` route + SignedInHomePage; 2026-07-10 Homepage sections use `public/assets/images/home` static assets; 2026-07-08 Discord + Google on login/signup popup._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -65,8 +65,8 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 > Route builders/helpers (single source: `src/lib/navigation/routes.ts`):
 > - `toPublicRoute` / `toPrivateRoute`
 > - `toPublicResourceRoute` / `toPrivateResourceRoute`
-> - feature helpers like `instructorCourseEditorHref(courseId)` and `instructorCourseEditorTabHref(courseId, tab)`
->   Login/signup remain **modal-only** via `LoginSignupPopup`.
+> - feature helpers like `instructorCourseEditorHref(courseId)` and `instructorCourseEditorTabHref(courseId, tab)`, and `loginHref(nextPath?)` / `signupHref(nextPath?)`
+>   Login/signup are route-based (`/login`, `/signup`), intercepted as a `LoginSignupPopup` modal via the `@modal` slot when navigated to in-app.
 
 ---
 
@@ -93,7 +93,7 @@ src/app/layout.tsx                          Root layout
 └── src/app/[locale]/layout.tsx             Locale layout
     │   Validates locale (404 if unknown)
     │   <NextIntlClientProvider>            → messages from loadMessages(locale) in request.ts
-    │   <AppProviders>                      → `SWRConfig` + `MeSwrSync` + `LanguageLocaleSync` + stream/auth tab sync + `children`
+    │   <AppProviders>                      → `SWRConfig` (`provider: meCacheProvider` — persists only the `/me` cache entry to `sessionStorage`) + `MeSwrSync` + `LanguageLocaleSync` + stream/auth tab sync + `children`
     │
     ├── src/app/[locale]/(web)/layout.tsx   Web shell layout
     │     <BecomeInstructorPromoBanner /> + <Header /> + <GoogleOneTapHost /> + <main> + <Footer /> → HomePage, become-instructor, confirm-email, logout
@@ -228,8 +228,9 @@ Optional `title` / `description` / `action` props override the variant's default
 │         Sidebar header: logo + title
 │         Scrollable body: `overflow-y-auto` (search + `BrowseSidebarMenu` — Collapsible + `SidebarMenu*`)
 │         Footer: LocaleSwitcher (`fullWidth`, `languageLabel` trigger) + SidebarAuthFooter
-└── LoginSignupPopup — sibling after </header> (z-300 overlay / z-301 content, centered card)
 ```
+
+`LoginSignupPopup` is **not** mounted as a sibling inside `Header` anymore — see [Auth Shell](#auth-shell-authlayout--loginsignuppopup) below for the route-based `@modal` mechanism that replaced it.
 
 Breakpoint: **`lg` (1024px)**. Cart is desktop-only (not in mobile bar or sidebar).
 
@@ -282,10 +283,11 @@ DashboardLayout (authorized)
 │           └── main (px-2 py-4)
 │                 ├── DashboardPageHeader
 │                 └── role page content
-└── LoginSignupPopup (when authorized)
 
 Denied: HeaderDashboard (leading: BrandLogoLink className="md:hidden" — logo only, no title, shared with HeaderMobileBar, replaces the burger since there is no sidebar to open) + trailing locale (lg+) + StatusErrorPage (no sidebar) — variant `forbidden` when `useGetMe().me` is set, `unauthorized` otherwise
 ```
+
+`LoginSignupPopup` is no longer mounted inside `DashboardLayout` (authorized or denied). On the `unauthorized` denial state (no session at all — as opposed to `forbidden`, meaning authenticated but missing the required permission), `DashboardLayout` auto-navigates to `/login?next=<denied path>` `UNAUTHORIZED_AUTO_PROMPT_MS` (500ms) after first rendering that denial state, so the `@modal`-intercepted login popup opens as an overlay on top of the same `StatusErrorPage`. The timer is cancelled on unmount and fires at most once per denied path per page load, tracked via an in-memory module-level record (not `sessionStorage`): dismissing the auto-opened modal (`router.back()`, which remounts the component on the same path) does not restart it, but an actual browser refresh of the denied page does, since that clears the in-memory record. A hard reload of `/login?next=<denied path>` itself (rather than the denied page) is turned back into this same intercepted-modal experience by `useAuthModalBackgroundBridge` — see `flow.md` §6.1. This does not happen for `forbidden`.
 
 The visible dashboard page heading is now **layout-owned**, not page-owned:
 
@@ -312,33 +314,47 @@ Sidebar collapsed icons use `SidebarMenuButton` tooltips; `SidebarProvider` incl
 | Authenticated | `me !== null` | `<UserMenu me={me} />` |
 | Unauthenticated | `me === null` | `<AuthButton />` only |
 
-**`LoginSignupPopup`** — mounted in **`header.tsx`** after `</header>` (not inside `AuthLayout`). Visible when `authAction === "login" || "signup"` (`useAuthStore`). Full-viewport dialog `z-300`/`z-301`.
+**`LoginSignupPopup`** — no longer mounted as a sibling in `header.tsx` (or inside `DashboardLayout`). It is rendered by the **`@modal` parallel route slot** at `src/app/[locale]/layout.tsx` level (`src/app/[locale]/@modal/(.)login/page.tsx` / `(.)signup/page.tsx`), only when `/login` or `/signup` is the active intercepted route — see [`docs/router.md`](router.md#modal-parallel-slot-loginsignup). `type: "login" | "signup"` is a prop, fixed by which route intercepted (no longer read from Zustand). `open` is local component state (`useState(true)`); closing sets `open=false` (letting the Radix exit animation play, ~100ms matching `DialogContent`'s `duration-100`) then calls `router.back()`. Full-viewport dialog `z-300`/`z-301` (unchanged).
 
 ### Component tree (unauthenticated)
 
 ```
 Header
-├── AuthLayout
-│     └── AuthButton → openLoginModal() via useAuthStore
-└── LoginSignupPopup (sibling, outside sticky header)
-      ├── LoginSignupLayout
-      │     "login"  → LoginContent
-      │     "signup" → SignupContent
-      │     └── AuthSocialLogin (Discord + Google buttons; wired via onDiscordClick / onGoogleClick)
-      ├── LoginContent → handleAuthSubmit("login") → loginAction → mutateMe()
-      │     ├── !success → translateApiErrorCode(tErrors, result.code) — never result.message
-      │     └── AuthSocialLogin → useDiscordLogin / useGoogleLogin (entrypoint="login") → useOAuthPostAuth
-      └── SignupContent → handleAuthSubmit("signup", …, locale) → registerAction({ locale })
-            ├── !success → translateApiErrorCode(tErrors, result.code); 4010 rate-limit shows countdown
-            └── AuthSocialLogin → useDiscordLogin / useGoogleLogin (entrypoint="signup") → useOAuthPostAuth
+└── AuthLayout
+      └── AuthButton
+            ├── not on /login|/signup:     <Link href={loginHref(pathname)}>  / <Link href={signupHref(pathname)}> → soft nav, intercepted as a modal
+            └── on /login or /signup:      <a href={loginHref()}> / <a href={signupHref()}> → hard nav, no `next` (isAuthRoutePath guard — see flow.md §6)
+
+[locale]/layout.tsx
+└── @modal slot (only when /login or /signup is the intercepted route)
+      └── LoginSignupPopup (type="login" | "signup", local `open` state)
+            ├── LoginSignupLayout
+            │     "login"  → LoginContent (variant="modal", default)
+            │     "signup" → SignupContent (variant="modal", default)
+            │     └── AuthSocialLogin (Discord + Google buttons; wired via onDiscordClick / onGoogleClick)
+            ├── LoginContent (onAuthenticated) → handleAuthSubmit("login") → loginAction → mutateMe() → onAuthenticated(destination)
+            │     ├── !success → translateApiErrorCode(tErrors, result.code) — never result.message
+            │     ├── useAuthNextParam() reads + validates `next` query param (isSafeInternalPath + isAuthRoutePath)
+            │     ├── useRedirectIfAuthenticated(nextPath) → renders null + router.replace only if useGetMe().me was already set on first mount (snapshotted once)
+            │     └── AuthSocialLogin → useDiscordLogin / useGoogleLogin (entrypoint="login") → useOAuthPostAuth(onAuthenticated)
+            └── SignupContent (onAuthenticated) → handleAuthSubmit("signup", …, locale) → registerAction({ locale }) → onAuthenticated(destination)
+                  ├── !success → translateApiErrorCode(tErrors, result.code); 4010 rate-limit shows countdown
+                  ├── useAuthNextParam() reads + validates `next` query param (isSafeInternalPath + isAuthRoutePath)
+                  ├── useRedirectIfAuthenticated(nextPath) → renders null + router.replace only if useGetMe().me was already set on first mount (snapshotted once)
+                  └── AuthSocialLogin → useDiscordLogin / useGoogleLogin (entrypoint="signup") → useOAuthPostAuth(onAuthenticated)
+
+(web)/login/page.tsx → LoginPageContent → AuthCardFrame → LoginSignupLayout → LoginContent (variant="page")
+(web)/signup/page.tsx → SignupPageContent → AuthCardFrame → LoginSignupLayout → SignupContent (variant="page")
 ```
+
+Switching between the login and sign up forms inside the modal is `<Link replace href={signupHref(nextPath)}>` / `loginHref(nextPath)` (`src/lib/navigation/routes.ts`) instead of toggling a Zustand enum — `replace` (not `push`) means the browser back button exits the modal in one step regardless of how many times the visitor toggled between forms. On the full-page fallback (`variant="page"`), the same cross-link instead renders a plain `<a href>` (hard nav) — a soft `Link` there would still get intercepted as a modal stacked on top of the full page it targets. `LoginContent` / `SignupContent` no longer read `useAuthStore`; they call the `onAuthenticated(destination)` prop instead of doing `closeAllModals()` + `router.push(nextLink)` themselves.
 
 **Social login behavior (login + signup modals):**
 
 > The popup shows **Discord + Google** only. X OAuth actions/hooks and `/auth/x/callback` remain in the codebase but are **not** wired to `AuthSocialLogin`.
 
 - **Discord:** `useDiscordLogin` opens the OAuth popup (`startDiscordLoginAction` → authorize URL with `state`) and waits for the callback `postMessage`, then calls `discordLoginAction({ code, state })`. Success toasts `auth.socialLogin.discordSuccess`; cancel toasts `auth.socialLogin.discordCancelled`; errors resolve via `errors.codes.*` (BE `4023`–`4025`; FE-local `4018` on state mismatch, `4026` when client id or callback URL is missing).
-- **Google:** `useGoogleLogin` opens the GSI code-client popup and calls `googleLoginAction({ code, remember_me })`. `onSuccess` toasts `auth.socialLogin.googleSuccess` and runs `useOAuthPostAuth` (`mutateMe` + close modal + push `nextLink`); `onCancel` toasts `auth.socialLogin.googleCancelled`; `onError` shows the inline `translateApiErrorCode` message.
+- **Google:** `useGoogleLogin` opens the GSI code-client popup and calls `googleLoginAction({ code, remember_me })`. `onSuccess` toasts `auth.socialLogin.googleSuccess` and runs `useOAuthPostAuth(onAuthenticated)` (`mutateMe()` then `onAuthenticated(nextPath ?? homeHref)`, `nextPath` from `useAuthNextParam()`); `onCancel` toasts `auth.socialLogin.googleCancelled`; `onError` shows the inline `translateApiErrorCode` message.
 - **Google One Tap:** shown outside the modal by `GoogleOneTapHost` for guests only.
 
 **Dedicated auth pages:** `ConfirmEmailContent` (`/confirm-email`), `LogoutContent` (`/logout`), plus locale-less OAuth callback relays (English-only copy): `DiscordOAuthCallbackPage` (`/auth/discord/callback`) and retained `XOAuthCallbackPage` (`/auth/x/callback`).
@@ -444,6 +460,8 @@ Defined in `src/constants/route.ts`:
 // src/constants/route.ts
 PUBLIC_ROUTES = {
   home: "/",
+  login: "/login",
+  signup: "/signup",
   forgotPassword: "/forgot-password",
   confirmEmail: "/confirm-email",
   logout: "/logout",
@@ -479,7 +497,7 @@ toPrivateResourceRoute(PRIVATE_RESOURCE_ROUTES.instructor.courseEditorTab, {
 })
 ```
 
-Use with `@/i18n/navigation` `Link` / `router.push` — locale prefix is applied automatically. No `auth.login` / `auth.signup` constants (modal-only login/signup).
+Use with `@/i18n/navigation` `Link` / `router.push` — locale prefix is applied automatically. `loginHref(nextPath?)` / `signupHref(nextPath?)` (`src/lib/navigation/routes.ts`) build `/login?next=…` / `/signup?next=…`; login/signup are route-based now, not modal-only.
 
 ---
 
@@ -542,7 +560,7 @@ Symbol and edge counts change as the codebase grows. Refresh the local graph wit
 
 **Route:** `src/app/[locale]/(web)/home/page.tsx` → `PRIVATE_ROUTES.home` (`/home`).
 
-- Login-required: while `useGetMe` loads, show a spinner; guests see a login CTA that calls `openLoginModal(PRIVATE_ROUTES.home)` (reuse login modal + `nextLink`, same idea as become-instructor State A).
+- Login-required: while `useGetMe` loads, show a spinner; guests see a login CTA — `<Link href={loginHref(signedInHomeHref)}>` — that navigates to `/login?next=/home` (same idea as become-instructor State A; `LoginSignupPopup` opens as a modal overlay via the `@modal` intercepting route rather than a Zustand-driven modal).
 - Authenticated users see a **temporary placeholder** (title + short notice). No Figma hero/chips/course grids, no API fetch.
 - **No route metadata** (`generateMetadata` intentionally omitted per product decision). Crawl protection derives from `PRIVATE_ROUTES` disallow lists. Do not emit Course/Offer JSON-LD from illustration data.
 - Full Figma signed-in layout remains documented in [`seo-ranking-setup.md`](./seo-ranking-setup.md) for a later implementation pass.
