@@ -9,6 +9,7 @@ import { DEFAULT_SWR_CONFIG } from "@/constants/swr";
 import { EventsStreamProvider } from "@/events";
 import { useSyncMeFromAuth } from "@/hooks/auth";
 import { useSyncLanguageFromLocale } from "@/hooks/language";
+import { meCacheProvider } from "@/lib/swr/me-cache-provider";
 
 type AppProvidersProps = {
   children: ReactNode;
@@ -26,7 +27,7 @@ function LanguageLocaleSync() {
 
 export function AppProviders({ children }: AppProvidersProps) {
   return (
-    <SWRConfig value={DEFAULT_SWR_CONFIG}>
+    <SWRConfig value={{ ...DEFAULT_SWR_CONFIG, provider: meCacheProvider }}>
       <EventsStreamProvider>
         <MeSwrSync />
         <LanguageLocaleSync />
