@@ -4,7 +4,7 @@ _Last audited: 2026-07-26 (temporary signed-in `/home` under `(web)` + `PRIVATE_
 
 Source of truth for the SEO foundation under `src/types/seo/**`, `src/constants/seo/**`, `src/lib/seo/**`, `src/lib/performance/**`, and `src/lib/security/web/**`. Companion FE security notes: [`security-hardening-notes.md`](./security-hardening-notes.md). BE intent (take-note only): [`be-mycourse/docs/security-public-seo-notes.md`](../../be-mycourse/docs/security-public-seo-notes.md).
 
-**Status:** helpers exist for future `generateMetadata` / JSON-LD / crawl policy. They are **not** imported from `layout.tsx`, route `page.tsx`, `app/sitemap.ts`, or `app/robots.ts` in this phase. The temporary `/{locale}/home` route ships **without** page metadata; its crawl protection comes from `PRIVATE_ROUTES` disallow derivation only.
+**Status:** helpers exist for future `generateMetadata` / JSON-LD / crawl policy. They are **not** imported from `layout.tsx`, route `page.tsx`, `app/sitemap.ts`, or `app/robots.ts` in this phase. The temporary `/{locale}/home` route ships **without** page metadata; its crawl protection comes from `PRIVATE_ROUTES` disallow derivation only. **Exception:** `robotsPreset` / `robotsModeForPublicRouteKey` (N5) are now imported and used, from `generateMetadata` in `src/app/[locale]/(web)/login/page.tsx` and `.../signup/page.tsx` — the first real page wiring of this SEO scaffolding.
 
 ---
 
@@ -111,7 +111,7 @@ Optional barrel: `src/lib/seo/index.ts` (Knip `ignoreFiles` covers `**/index.ts`
 
 - `PUBLIC_ROUTES` = publicly routable (no login gate at the constant layer). That is **not** the sitemap list.
 - `SEO_INDEXABLE_PUBLIC_ROUTE_KEYS` (in `src/constants/seo/routes.ts`) is the allow-list of `PUBLIC_ROUTES` keys eligible for sitemap / crawl-allow. **Phase now: `home` only.**
-- Auth-adjacent public routes (`forgotPassword`, `confirmEmail`, `logout`) and other non-allow-listed public keys use `robotsModeForPublicRouteKey` → `noindex` when wired. Do not put them in `buildSitemapEntries` defaults.
+- Auth-adjacent public routes (`forgotPassword`, `confirmEmail`, `logout`, `login`, `signup`) and other non-allow-listed public keys use `robotsModeForPublicRouteKey` → `noindex` when wired. `login` and `signup` are the first two of these actually wired: their `generateMetadata` calls `robotsModeForPublicRouteKey("login" | "signup")` + `robotsPreset(...)` directly. Do not put them in `buildSitemapEntries` defaults.
 
 ## JSON-LD / ranking
 

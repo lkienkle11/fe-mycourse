@@ -129,7 +129,7 @@ _Last audited: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code 
 
 ## Cross-module contracts
 - `Auth UI -> actions/auth/auth-client -> actions/auth -> api/callers` for login/signup submit; UI maps `result.code` via `translateApiErrorCode(tErrors, code)`.
-- `OAuth: AuthSocialLogin / GoogleOneTapHost -> hooks/auth (useDiscordLogin | useGoogleLogin | useGoogleOneTap [| useXLogin retained]) -> actions/auth/{discord-oauth,google-oauth,x-oauth} -> lib/utils/auth-action (finalizeAuthLoginAction) -> api/callers/auth`; success runs `useOAuthPostAuth` (`mutateMe` + close modal + push `nextLink`).
+- `OAuth: AuthSocialLogin / GoogleOneTapHost -> hooks/auth (useDiscordLogin | useGoogleLogin | useGoogleOneTap [| useXLogin retained]) -> actions/auth/{discord-oauth,google-oauth,x-oauth} -> lib/utils/auth-action (finalizeAuthLoginAction) -> api/callers/auth`; success runs `useOAuthPostAuth(onAuthenticated)` (`mutateMe` + `onAuthenticated(nextPath ?? homeHref)`, `nextPath` from `useAuthNextParam`).
 - `api/hooks/auth/useAuth -> hooks/auth/use-auth-store` for SWR-to-Zustand sync.
 - All feature `catch` blocks after API calls → `toastApiError(useTranslations("errors.codes"), error)` (Auth, Media, Taxonomy, Instructor, Course).
 - `api/api-transport` + runtime adapters depend on `lib/utils/cookie` / `auth-session` for token cookie read/write.

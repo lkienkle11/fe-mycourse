@@ -123,14 +123,6 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `setAuthSessionCookies`, `clearAuthSessionCookies`, refresh proxy, login/confirm actions.
 - **Dependencies**: `parseMaxAgeForCookie` from `fetch-helpers` (`src/api/core/fetch-helpers.ts`).
 
-### Asset: AuthActions
-- **Name**: `AuthActions`
-- **Type**: Union type (`"none" | "login" | "signup" | "logout"`)
-- **Path**: `src/types/auth/auth.ts`
-- **Purpose**: Tracks the current auth modal state in `useAuthStore`.
-- **Scope**: `src/store/auth/auth.ts`, `src/components/common/auth-menu/`.
-- **Dependencies**: none.
-
 ### Asset: AuthActionResult
 - **Name**: `AuthActionResult`
 - **Type**: Interface (`{ success, message, code, retryAfterSeconds? }`)
@@ -222,6 +214,15 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Shared route outputs generated from route builders to avoid duplicated conversion in call sites. `homeHref` = public guest `/`; `signedInHomeHref` = private `/home`.
 - **Scope**: auth components, header/user menu constants, dashboard constants, signed-in home route.
 - **Dependencies**: route builder functions in same module.
+
+### Asset: `loginHref(nextPath?)` / `signupHref(nextPath?)`
+- **Name**: `loginHref`, `signupHref`
+- **Type**: Utility functions
+- **Path**: `src/lib/navigation/routes.ts` (alongside `homeHref`/`logoutHref`)
+- **Purpose**: Build `/login?next=...` / `/signup?next=...` via `buildQueryParams` — the single way anything in the app opens the login/signup modal. This replaces the old `useAuthStore` `openLoginModal(path)`/`openSignupModal(path)` actions and their scattered call sites.
+- **Scope**: `AuthButton` (header), `DashboardLayout`'s `unauthorized` auto-prompt, `SignedInHomePage`, `BecomeInstructorPage`, `LoginContent`/`SignupContent`'s form-switch links.
+- **Dependencies**: `toPublicRoute`, `PUBLIC_ROUTES`, `AUTH_NEXT_QUERY_PARAM` (`src/constants/route.ts`), `buildQueryParams`.
+- **Reuse Rule**: Never build `/login` or `/signup` hrefs by hand — always go through `loginHref`/`signupHref` so the `next` param is built consistently.
 
 ### Asset: `instructorCourseEditorHref(courseId)` / `instructorCourseEditorTabHref(courseId, tab)`
 - **Name**: `instructorCourseEditorHref`, `instructorCourseEditorTabHref`
@@ -364,9 +365,9 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `DashboardLayout`, `RoleDashboardLayout`, `DashboardSidebar`, `HeaderDashboard`, `DashboardUnauthorized` (deprecated, unused)
 - **Type**: Client components
 - **Path**: `src/components/common/dashboard/`, `src/components/common/header/header-dashboard.tsx`
-- **Purpose**: Role dashboard chrome: `DashboardLayout` owns the shell; `RoleDashboardLayout` centralizes admin/sysadmin role config (items + shell permission) and forwards into `DashboardLayout`. `DashboardLayout` still provides `SidebarProvider` + fixed sidebar under `HeaderDashboard` (`h-16`); `collapsible="icon"` (collapsed = root icons + tooltips); mobile nav via `Sheet` with `DashboardSidebarMobileHeader` / `DashboardSidebarLocaleFooter`. Locale: `DashboardHeaderLocale` (`LocaleSwitcher` + `useCodeLabelLanguage`, `lg+`) and drawer footer (`fullWidth`, below `lg`) — same pattern as `header.tsx` / `header-mobile-sidebar.tsx`. `HeaderDashboard` exposes `leading` / `trailing` slots only (no built-in locale). The shell now renders one shared dashboard page header (breadcrumb → title → description → actions) above all dashboard pages. Layout permission gate: on denial, renders the shared `StatusErrorPage` (`forbidden` when `useGetMe().me` is set, `unauthorized` otherwise) instead of a bespoke fallback; below `md`, the denial branch's `HeaderDashboard` `leading` slot shows the shared `BrandLogoLink` (`header/brand-logo-link.tsx`, logo only, no title, also used by `HeaderMobileBar`) instead of the authorized branch's burger, since there is no sidebar to open in the denied state. `DashboardUnauthorized` is the superseded fallback component — kept in the codebase marked `@deprecated`, no longer referenced by `DashboardLayout`.
+- **Purpose**: Role dashboard chrome: `DashboardLayout` owns the shell; `RoleDashboardLayout` centralizes admin/sysadmin role config (items + shell permission) and forwards into `DashboardLayout`. `DashboardLayout` still provides `SidebarProvider` + fixed sidebar under `HeaderDashboard` (`h-16`); `collapsible="icon"` (collapsed = root icons + tooltips); mobile nav via `Sheet` with `DashboardSidebarMobileHeader` / `DashboardSidebarLocaleFooter`. Locale: `DashboardHeaderLocale` (`LocaleSwitcher` + `useCodeLabelLanguage`, `lg+`) and drawer footer (`fullWidth`, below `lg`) — same pattern as `header.tsx` / `header-mobile-sidebar.tsx`. `HeaderDashboard` exposes `leading` / `trailing` slots only (no built-in locale). The shell now renders one shared dashboard page header (breadcrumb → title → description → actions) above all dashboard pages. Layout permission gate: on denial, renders the shared `StatusErrorPage` (`forbidden` when `useGetMe().me` is set, `unauthorized` otherwise) instead of a bespoke fallback; below `md`, the denial branch's `HeaderDashboard` `leading` slot shows the shared `BrandLogoLink` (`header/brand-logo-link.tsx`, logo only, no title, also used by `HeaderMobileBar`) instead of the authorized branch's burger, since there is no sidebar to open in the denied state. On the `unauthorized` denial state only (no session; not `forbidden`), `DashboardLayout` auto-navigates to `loginHref(<denied path>)` 500ms after render so the visitor sees the denial state first before being sent to the route-based login modal; the denied path is frozen via React's "store info from a previous render" `setState` pattern (not a ref mutated during render, which this repo's `react-hooks/refs` lint rule forbids) so a later `pathname` change (once `/login` is intercepted) doesn't redirect it there instead. Which paths have already been auto-prompted is tracked in an in-memory module-level `Set` (`autoPromptedPaths`, not `sessionStorage`) — a dismiss-triggered remount of the component (closing the modal via `router.back()`) does not re-trigger it, but an actual browser refresh of the denied page does, since that re-evaluates the module fresh. `resetDashboardAutoPromptTracking()` (exported for tests, called from `test-support/reset-stores.ts`) clears it between test cases. `DashboardUnauthorized` is the superseded fallback component — kept in the codebase marked `@deprecated`, no longer referenced by `DashboardLayout`.
 - **Scope**: `/admin`, `/instructor`, `/sysadmin` routes.
-- **Dependencies**: shadcn `Sidebar*` (includes `TooltipProvider`), `LocaleSwitcher`, RBAC hooks, `LoginSignupPopup`.
+- **Dependencies**: shadcn `Sidebar*` (includes `TooltipProvider`), `LocaleSwitcher`, RBAC hooks, `loginHref` (`@/lib/navigation/routes`). No longer renders `LoginSignupPopup` directly — the route-based `@modal` slot (`src/app/[locale]/@modal/`) renders it when navigation lands on `/login` or `/signup`.
 
 ### Asset: Dashboard page-header state
 - **Name**: `DashboardPageHeader`, `useDashboardPageHeaderOverride`, `useRegisterDashboardPageHeader`, `useDashboardPageHeaderStore`
@@ -445,6 +446,24 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: API callers (building endpoint keys), navigation helpers.
 - **Dependencies**: none.
 - **Reuse Rule**: Use whenever building a URL with dynamic segments or query params. Do not do manual string concatenation.
+
+### Asset: isSafeInternalPath
+- **Name**: `isSafeInternalPath(path: string | null | undefined): path is string`
+- **Type**: Pure function
+- **Path**: `src/lib/security/web/safe-redirect.ts`
+- **Purpose**: Open-redirect guard — validates that a path is a same-origin relative internal path (starts with a single `/`, no `://` scheme, not protocol-relative `//...`, not backslash-prefixed) before it is ever used as a post-login/signup redirect target.
+- **Scope**: Any code building a `next`/return-path redirect target; currently `useAuthNextParam`.
+- **Dependencies**: none.
+- **Reuse Rule**: Always validate a redirect target read from a query param or user-controlled input with this function before navigating — never hand-roll a same-origin check.
+
+### Asset: isAuthRoutePath
+- **Name**: `isAuthRoutePath(path: string | null | undefined): boolean`
+- **Type**: Pure function
+- **Path**: `src/lib/security/web/safe-redirect.ts`
+- **Purpose**: True when `path` is `/login` or `/signup` themselves. A `next`/return-path value must never resolve to one of these — "return to the login page after logging in" is meaningless and, left unguarded, creates a self-referencing `next` that keeps propagating across every login/signup cross-link (`AuthButton`, the in-form login↔signup switch links). Also used by `useAuthModalBackgroundBridge` to decide when a hard-loaded `/login`/`/signup` page should bounce to its `next` background.
+- **Scope**: `useAuthNextParam` (excludes an auth-route `next` from validity), `AuthButton`, `useAuthModalBackgroundBridge`.
+- **Dependencies**: none.
+- **Reuse Rule**: Combine with `isSafeInternalPath` (`isSafeInternalPath(x) && !isAuthRoutePath(x)`) anywhere a `next`/return-path value is validated — same-origin safety alone is not enough to rule out a self-referencing auth-route loop.
 
 ### Asset: apiListQueryToRecord
 - **Name**: `apiListQueryToRecord(params: ApiListQueryParams): Record<string, string>`
@@ -940,15 +959,6 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ## Zustand Stores
 
-### Asset: useAuthStore
-- **Name**: `useAuthStore`
-- **Type**: Zustand store
-- **Path**: `src/store/auth/auth.ts`
-- **Purpose**: Tracks the active auth modal (`authAction`: none/login/signup/logout) and post-auth redirect path (`nextLink`). Methods: `openLoginModal(nextPath?)`, `openSignupModal(nextPath?)`, `closeAllModals()`.
-- **Scope**: Any component that opens/closes auth modals or checks auth modal state.
-- **Dependencies**: `zustand`.
-- **Reuse Rule**: Do not use local state for auth modal visibility — always use `useAuthStore`.
-
 ### Asset: useMeStore
 - **Name**: `useMeStore`
 - **Type**: Zustand store
@@ -993,6 +1003,49 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Bridges SWR `useAuth` → `useMeStore`. Called once inside `MeSwrSync` component in `AppProviders`. Keeps global Zustand state in sync with SWR cache.
 - **Scope**: `src/components/providers/app-providers.tsx` (`MeSwrSync`) only.
 - **Dependencies**: `useAuth`, `useMeStore`.
+
+### Asset: useAuthNextParam
+- **Name**: `useAuthNextParam(): { nextPath: string | null; rawNextPath: string | null }`
+- **Type**: Custom hook
+- **Path**: `src/hooks/auth/use-auth-next-param.ts`
+- **Purpose**: Reads and validates the `next` query param on `/login`/`/signup` via `isSafeInternalPath` **and** `isAuthRoutePath` (a `next` of `/login` or `/signup` is rejected too, not just an unsafe cross-origin one — otherwise it self-propagates through every login/signup cross-link). An invalid `next` is stripped from the address bar with a raw `window.history.replaceState` call, **not** `router.replace`: going through the Next.js router here — even to the same pathname, just without the query — is a soft navigation, and the `@modal` intercepting-route convention treats any soft navigation landing on `/login`/`/signup` as "entering the route from elsewhere," popping the modal open on top of the very page that is already rendering it. The raw History API updates the URL bar without triggering that interception.
+- **Scope**: `LoginContent`, `SignupContent`, `useOAuthPostAuth`, `useAuthModalBackgroundBridge`.
+- **Dependencies**: `next/navigation` (`useSearchParams`), `isSafeInternalPath`, `isAuthRoutePath` (`src/lib/security/web/safe-redirect.ts`), `AUTH_NEXT_QUERY_PARAM` (`src/constants/route.ts`).
+
+### Asset: useRedirectIfAuthenticated
+- **Name**: `useRedirectIfAuthenticated(nextPath: string | null): boolean`
+- **Type**: Custom hook
+- **Path**: `src/hooks/auth/use-redirect-if-authenticated.ts`
+- **Purpose**: Redirects away from `/login`/`/signup` (via `router.replace(nextPath ?? homeHref)`) when a session already existed **before this component ever rendered its form** (a stale tab, a race with a background navigation, a shared link opened twice) — never keeps showing the login/signup form in that case. Snapshots "was authenticated on the first resolved check" once (`"pending" | "authenticated" | "guest"`, via a `setState` guarded by a render-time condition — the same "store info from a previous render" pattern as `dashboard-layout.tsx`'s `frozenDenial`, not a ref mutated during render, which `react-hooks/refs` forbids here) and never re-evaluates after that. Deliberately does **not** react to a *later* transition from guest to authenticated while mounted — that transition is the login/signup this very form just performed, already handled by the caller's own `onAuthenticated` callback (`LoginContent`/`SignupContent`'s `onSubmit`, which fires `mutateMe()` without awaiting it). An earlier version reacted to every `me` change and raced that callback: by the time its effect fired, the URL had often already moved on to the real destination (dropping its `next` query param), so `useAuthNextParam()` recomputed `nextPath` as `null` and it overwrote the correct redirect with a bounce to `homeHref` — caught via a fixture-backed e2e run (`e2e/tests/auth.spec.ts`) where a learner's own post-login redirect to `/instructor` got hijacked back to `/`. Returns whether the authenticated-on-mount redirect is in flight, so the caller can render `null` for that one frame instead of flashing the form.
+- **Scope**: `LoginContent`, `SignupContent` (covers both the `LoginSignupPopup` modal and the `LoginPageContent`/`SignupPageContent` full-page fallback, since both render through these shared components).
+- **Dependencies**: `useGetMe` (`src/hooks/auth/use-auth-store.ts`), `@/i18n/navigation` (`useRouter`), `homeHref` (`src/lib/navigation/routes.ts`).
+
+### Asset: useAuthModalBackgroundBridge / AuthModalBackgroundBridge
+- **Name**: `useAuthModalBackgroundBridge()`, `AuthModalBackgroundBridge` (thin wrapper component, same pattern as `AuthConfirmTabSync`)
+- **Type**: Custom hook + invisible sync component
+- **Path**: `src/hooks/auth/use-auth-modal-background-bridge.ts`, `src/components/providers/auth-modal-background-bridge.tsx`
+- **Purpose**: Retrofits the intercepted-modal-over-background experience onto a hard load of `/login`/`/signup` with a valid `next` (Next.js's `(.)login`/`(.)signup` interception only ever engages for a soft navigation). Bounces: `router.replace(next)` first, then waits for `pathname` to confirm that navigation actually landed before `router.push`ing back to the login/signup destination — which Next.js then intercepts as a modal.
+- **Scope**: Mounted once, app-wide, in `AppProviders` alongside `AuthConfirmTabSync`/`AuthLogoutTabSync`.
+- **Dependencies**: `useAuthNextParam`, `@/i18n/navigation` (`usePathname`, `useRouter`), `loginHref`/`signupHref`.
+- **Reuse Rule**: Any future route-modal-with-`next` feature should follow this same bounce pattern rather than inventing a new one.
+
+### Asset: meCacheProvider
+- **Name**: `meCacheProvider(): Cache`
+- **Type**: SWR cache provider function
+- **Path**: `src/lib/swr/me-cache-provider.ts`
+- **Purpose**: Passed as `SWRConfig`'s `provider` in `AppProviders`. Behaves exactly like SWR's default in-memory `Map` for every key except the current-user `/me` endpoint (`getMeEndpointKey`), which is also persisted to `sessionStorage` as `{ state, persistedAt }` (written on `beforeunload`, read back on init). Needed because `LoginContent`/`SignupContent`'s `variant="page"` cross-link forces a hard navigation between `/login` and `/signup` (see `useAuthNextParam` above) — a hard nav tears down the whole JS runtime, including SWR's normally in-memory-only cache, so every such reload used to re-fetch `/me` from scratch and briefly render the header as logged out. This applies to any hard reload of any page, not just the login/signup cross-link. **Client-only singleton** (module-level `browserCache`): `SWRConfig` re-invokes `provider` on every remount (e.g. React Fast Refresh in dev), and without the singleton guard each remount registered another `beforeunload` listener that was never removed — a real leak confirmed across a long dev session. The server branch always returns a fresh, empty `Map`; a server-side singleton would leak one user's `/me` data into another user's SSR render, since the module stays loaded across requests.
+- **Scope**: `AppProviders`'s `SWRConfig` only — this is the one global cache for every `useSWR` call in the app, but only the `/me` key is ever persisted; every other key keeps the default in-memory-only behavior (no staleness/size trade-off elsewhere).
+- **Dependencies**: `getMeEndpointKey` (`src/api/callers/auth`), `swr` (`Cache`/`State` types).
+- **Reuse Rule**: Do not add more keys to this provider's persistence without a concrete reload-flash problem to justify it — persisting a key means showing stale data for one frame on every hard reload before SWR's revalidation resolves.
+
+### Asset: isMeCacheFresh
+- **Name**: `isMeCacheFresh(maxAgeMs: number): boolean`
+- **Type**: Pure-ish function (reads `sessionStorage`)
+- **Path**: `src/lib/swr/me-cache-provider.ts`
+- **Purpose**: True when the persisted `/me` cache (see `meCacheProvider`) was written less than `maxAgeMs` ago and carries valid data (no error). Used by `useAuth` to compute `revalidateOnMount: !(isAuthRoutePath(pathname) && isMeCacheFresh(SWR_DEDUPING_INTERVAL_MS))` — **only** while the current route is `/login`/`/signup`; every other route always revalidates on mount regardless of this function's result. That scoping is the whole safety story: an earlier, unscoped use of this check (skipping the fetch on *every* route) let a revoked/expired session go undetected across a reload of a protected page for the whole window — confirmed by `e2e/tests/auth.spec.ts`'s "an expired/revoked session logs the user out on the next check" failing. Scoped to `/login`/`/signup`, it only ever delays detecting a session revoked *while the visitor is already sitting on the login/signup page itself* — a page with no permission-gated content. `sessionStorage` is per-tab, so this can never mask a logout that happened in a *different* tab, and a logout in *this* tab re-persists the logged-out state before the window could go stale.
+- **Scope**: `useAuth` (`src/api/hooks/auth/useAuth.ts`) only, and only combined with `isAuthRoutePath(pathname)`.
+- **Dependencies**: none beyond `sessionStorage`.
+- **Reuse Rule**: This gates `revalidateOnMount`, not `revalidateOnFocus` or an explicit `mutate()` — those must keep working immediately after an explicit login/logout regardless of this window. Never call this without also checking `isAuthRoutePath(pathname)` first — that route check is what keeps it from masking a revoked session on a protected page. Do not widen the freshness check to other SWR keys without the same per-tab-plus-route-scoped reasoning that makes it safe for `/me`.
 
 ### Asset: useLanguageStore
 - **Name**: `useLanguageStore`

@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useMemo } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogClose,
@@ -10,36 +10,49 @@ import {
   DialogTitle,
 } from "@/components/ui";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/hooks";
+import { useRouter } from "@/i18n/navigation";
+import { homeHref } from "@/lib/navigation/routes";
 import { cn } from "@/lib/utils";
 import { LoginContent } from "./login-content";
 import { LoginSignupLayout } from "./login-signup-layout";
 import { SignupContent } from "./signup-content";
 
+/** Matches `DialogContent`/`DialogOverlay`'s `duration-100` exit animation. */
+const CLOSE_ANIMATION_MS = 100;
+
 export function LoginSignupPopup({
+  type,
   contentClassName,
 }: {
+  type: "login" | "signup";
   contentClassName?: string;
 }) {
-  const { authAction, closeAllModals } = useAuthStore();
+  const router = useRouter();
+  const [open, setOpen] = useState(true);
 
-  const isOpen = useMemo(
-    () => authAction === "login" || authAction === "signup",
-    [authAction],
-  );
+  /** Lets the Radix exit animation play before the route change unmounts it. */
+  function closeWithAnimation(after: () => void) {
+    setOpen(false);
+    window.setTimeout(after, CLOSE_ANIMATION_MS);
+  }
 
-  const handleClose = () => {
-    closeAllModals();
-  };
+  function handleOpenChange(next: boolean) {
+    if (next) return;
+    closeWithAnimation(() => router.back());
+  }
 
-  const title = authAction === "signup" ? "Sign up" : "Sign in";
+  function handleAuthenticated(destination: string) {
+    closeWithAnimation(() => router.push(destination || homeHref));
+  }
+
+  const title = type === "signup" ? "Sign up" : "Sign in";
   const description =
-    authAction === "signup"
+    type === "signup"
       ? "Create a MyCourse account"
       : "Sign in to your MyCourse account";
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
         overlayClassName="z-300 bg-black/50 backdrop-blur-sm"
@@ -67,8 +80,12 @@ export function LoginSignupPopup({
               <X className="size-4" aria-hidden />
             </Button>
           </DialogClose>
-          <LoginSignupLayout type={authAction as "login" | "signup"}>
-            {authAction === "login" ? <LoginContent /> : <SignupContent />}
+          <LoginSignupLayout type={type}>
+            {type === "login" ? (
+              <LoginContent onAuthenticated={handleAuthenticated} />
+            ) : (
+              <SignupContent onAuthenticated={handleAuthenticated} />
+            )}
           </LoginSignupLayout>
         </div>
       </DialogContent>

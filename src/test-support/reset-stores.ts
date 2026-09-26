@@ -1,10 +1,10 @@
-import { useAuthStore, useMeStore } from "@/store/auth";
+import { resetDashboardAutoPromptTracking } from "@/components/common/dashboard/dashboard-layout";
+import { useMeStore } from "@/store/auth";
 
-const initialAuthState = useAuthStore.getState();
 const initialMeState = useMeStore.getState();
 
-/** Resets Zustand auth/me store state between tests (called from `jest.setup.ts`). */
+/** Resets Zustand me store state and module-level UI state between tests (called from `jest.setup.ts`). */
 export function resetStores() {
-  useAuthStore.setState(initialAuthState, true);
   useMeStore.setState(initialMeState, true);
+  resetDashboardAutoPromptTracking();
 }

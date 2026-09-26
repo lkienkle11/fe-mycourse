@@ -5,8 +5,6 @@ import { useShallow } from "zustand/react/shallow";
 import { useAuth } from "@/api/hooks/auth";
 import { type MeStoreState, useMeStore } from "@/store/auth";
 
-export { type AuthStoreState, useAuthStore } from "@/store/auth";
-
 export function useGetMe(): MeStoreState {
   return useMeStore(
     useShallow((s) => ({

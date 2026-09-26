@@ -1,4 +1,4 @@
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { MockAppRouterProvider } from "@/test-support/mock-app-router";
 import { renderWithProviders } from "@/test-support/render";
@@ -17,7 +17,7 @@ import { LoginContent } from "./login-content";
 function renderLogin() {
   return renderWithProviders(
     <MockAppRouterProvider>
-      <LoginContent />
+      <LoginContent onAuthenticated={jest.fn()} />
     </MockAppRouterProvider>,
   );
 }
