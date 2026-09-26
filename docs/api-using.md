@@ -266,7 +266,7 @@ Client components never call the actions directly for the popup flows — they u
 
 Hooks may override these per subscription. Examples:
 
-- `useAuth` — `revalidateOnFocus: true`, `shouldRetryOnError: false` (session refresh on tab focus; no error retry loop), `revalidateOnMount: !isMeCacheFresh(SWR_DEDUPING_INTERVAL_MS)` — skips the on-mount fetch entirely when the persisted `/me` cache was written less than 30 s ago (a hard reload that just happened, e.g. bouncing between `/login`/`/signup`), instead of refetching on every single one.
+- `useAuth` — `revalidateOnFocus: true`, `shouldRetryOnError: false` (session refresh on tab focus; no error retry loop), `revalidateOnMount: !(isAuthRoutePath(pathname) && isMeCacheFresh(SWR_DEDUPING_INTERVAL_MS))` — skips the on-mount fetch **only** while the current route is `/login`/`/signup` and the persisted `/me` cache was written less than 30 s ago (a fast bounce between those two full pages, each a hard nav), instead of refetching on every single bounce. Every other route always revalidates on mount — scoping the skip to just these two routes is what keeps a revoked/expired session detectable on the very next reload of a protected page.
 - `useMyInstructorApplication` — inherits global `revalidateOnFocus: false`, `shouldRetryOnError: false`; exposes **bootstrap-only** `isLoading` (see `docs/instructor-application.md`).
 - Hooks that omit `shouldRetryOnError: false` inherit SWR’s default retry-on-error behaviour but use the **3-minute** `errorRetryInterval` instead of 5 seconds.
 

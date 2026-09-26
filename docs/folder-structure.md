@@ -479,7 +479,7 @@ src/lib/
 │   ├── flatten-route-tree.ts # flattenRouteTreePaths — shared nested route-constant → string[] (crawl + sitemap)
 │   └── dashboard-page-header.ts  # dashboard route metadata resolver (consumes static constants + shared dashboard types)
 ├── swr/
-│   └── me-cache-provider.ts # meCacheProvider() — SWRConfig `provider` for AppProviders; persists only the `/me` cache entry to sessionStorage so a hard nav (e.g. /login <-> /signup) doesn't flash a "logged out" header while SWR refetches
+│   └── me-cache-provider.ts # meCacheProvider() — SWRConfig `provider` for AppProviders; persists only the `/me` cache entry to sessionStorage so a hard nav (e.g. /login <-> /signup) doesn't flash a "logged out" header while SWR refetches. Also exports isMeCacheFresh(), used by useAuth (only on /login|/signup) to skip that refetch entirely on a fast bounce.
 ├── quill/
 │   ├── index.ts            # Barrel: ensureQuillLoaded, Quill blots, toolbar, paste/drop, link helpers
 │   ├── delta-editor-quill.ts  # Client-only Quill runtime (image/video/document blots, link-edit overlay, config-driven toolbar)
