@@ -5,16 +5,53 @@ import { getMeEndpointKey } from "@/api/callers/auth";
 
 const ME_CACHE_STORAGE_KEY = "swr-me-cache";
 
-function readPersistedMeCache(): State | null {
+type PersistedMeCache = {
+  state: State;
+  /** `Date.now()` at the time this was written — see `isMeCacheFresh`. */
+  persistedAt: number;
+};
+
+function readPersistedMeCache(): PersistedMeCache | null {
   try {
     const raw = sessionStorage.getItem(ME_CACHE_STORAGE_KEY);
     if (!raw) return null;
-    const parsed: State = JSON.parse(raw);
-    if (parsed?.data === undefined || parsed.error) return null;
+    const parsed: PersistedMeCache = JSON.parse(raw);
+    if (
+      parsed?.state?.data === undefined ||
+      parsed.state.error ||
+      typeof parsed.persistedAt !== "number"
+    ) {
+      return null;
+    }
     return parsed;
   } catch {
     return null;
   }
+}
+
+/**
+ * True when the persisted `/me` cache (see `meCacheProvider`) was written
+ * within the last `maxAgeMs`. `useAuth` uses this to skip an otherwise-certain
+ * revalidation on mount, but **only** while the current route is `/login` or
+ * `/signup` (`isAuthRoutePath`) — never for any other route. That scoping is
+ * the whole safety story: skipping this check on a protected route (e.g. a
+ * reload of `/instructor`) would let a revoked/expired session survive
+ * undetected for the whole window (confirmed via `e2e/tests/auth.spec.ts`'s
+ * "an expired/revoked session logs the user out on the next check" — that
+ * failed the first time this optimization existed, before it was scoped to
+ * the login/signup routes only). Scoped this way, the only thing it can ever
+ * delay detecting is a session that's revoked *while the visitor is already
+ * sitting on the login/signup page itself* — a page that shows no
+ * permission-gated content and, if authenticated, only redirects onward
+ * (`useRedirectIfAuthenticated`) once already confirmed. `sessionStorage` is
+ * per-tab, so this can never mask a logout that happened in a *different*
+ * tab, and a logout in *this* tab re-persists the logged-out state before
+ * this could go stale.
+ */
+export function isMeCacheFresh(maxAgeMs: number): boolean {
+  const persisted = readPersistedMeCache();
+  if (!persisted) return false;
+  return Date.now() - persisted.persistedAt < maxAgeMs;
 }
 
 /**
@@ -28,17 +65,11 @@ function readPersistedMeCache(): State | null {
  * it targets). A hard navigation tears down the whole JS runtime, including
  * SWR's in-memory cache, so every such reload re-fetched `/me` from scratch
  * and briefly rendered the header as "logged out" until it resolved.
- * Persisting only this one key removes that flash: the previous `me` paints
- * instantly on the next mount, while `useAuth`'s default `revalidateOnMount`
- * still fires a real request right behind it to confirm the session is still
- * valid — this does not skip that check. (An earlier version also skipped the
- * on-mount refetch entirely when this cache was written less than
- * `SWR_DEDUPING_INTERVAL_MS` ago, to avoid a redundant network call on a fast
- * bounce between `/login` and `/signup`. That let a revoked/expired session
- * survive a reload for that whole window, which
- * `e2e/tests/auth.spec.ts`'s "an expired/revoked session logs the user out on
- * the next check" caught. Removed for that reason — the extra request on a
- * bounce is the correct, safer trade-off.)
+ * Persisting only this one key removes that flash (the previous `me` shows
+ * instantly), and — paired with `isMeCacheFresh` gating `revalidateOnMount`
+ * in `useAuth`, but **only** on `/login`/`/signup` — also skips the redundant
+ * network call on a fast bounce between those two pages specifically,
+ * without weakening detection anywhere else in the app.
  *
  * `browserCache` is a client-only singleton: `SWRConfig` re-invokes its
  * `provider` factory every time it remounts (a `useRef` guard, reset on
@@ -64,7 +95,7 @@ export function meCacheProvider(): Cache {
   const meKey = getMeEndpointKey;
 
   const persisted = readPersistedMeCache();
-  if (persisted) cache.set(meKey, persisted);
+  if (persisted) cache.set(meKey, persisted.state);
 
   window.addEventListener("beforeunload", () => {
     try {
@@ -72,7 +103,8 @@ export function meCacheProvider(): Cache {
       if (!state || state.data === undefined) {
         sessionStorage.removeItem(ME_CACHE_STORAGE_KEY);
       } else {
-        sessionStorage.setItem(ME_CACHE_STORAGE_KEY, JSON.stringify(state));
+        const payload: PersistedMeCache = { state, persistedAt: Date.now() };
+        sessionStorage.setItem(ME_CACHE_STORAGE_KEY, JSON.stringify(payload));
       }
     } catch {
       // Storage full/unavailable (private mode) - fine to lose the persisted cache.
