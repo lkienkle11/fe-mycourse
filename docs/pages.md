@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-07-26 — temporary signed-in `/{locale}/home`. Prior: 2026-07-06 roster `?portfolioId=` modal; Profiles screen removed; become-instructor route._
+_Last audited: 2026-09-19 — route-based login/signup modal (`/login`, `/signup` + `@modal` intercepting slot), replacing modal-only Zustand auth. Prior: 2026-07-26 temporary signed-in `/{locale}/home`; 2026-07-06 roster `?portfolioId=` modal; Profiles screen removed; become-instructor route._
 
 ## Current pages
 
@@ -9,6 +9,8 @@ _Last audited: 2026-07-26 — temporary signed-in `/{locale}/home`. Prior: 2026-
 | `/` | `src/app/page.tsx` | Redirect → `/vi` (default locale) | Implemented |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | `HomePage` (`src/screen/common/home/page.tsx`) | Implemented |
 | `/{locale}/home` | `src/app/[locale]/(web)/home/page.tsx` | `SignedInHomePage` — login-required temporary placeholder (`PRIVATE_ROUTES.home`); no route metadata | Temporary |
+| `/{locale}/login?next=…` | `src/app/[locale]/(web)/login/page.tsx` | `LoginPageContent` — full-page fallback (direct nav/refresh/shared link); intercepted as a modal overlay (`@modal/(.)login`) when navigated to in-app | Implemented |
+| `/{locale}/signup?next=…` | `src/app/[locale]/(web)/signup/page.tsx` | `SignupPageContent` — full-page fallback; intercepted as a modal overlay (`@modal/(.)signup`) when navigated to in-app | Implemented |
 | `/{locale}/become-instructor` | `src/app/[locale]/(web)/become-instructor/page.tsx` | `BecomeInstructorPage` — instructor application (states A–H) | Implemented (see `docs/instructor-application.md`) |
 | `/{locale}/confirm-email` | `src/app/[locale]/(web)/confirm-email/page.tsx` | `ConfirmEmailContent` → `confirmAction` | Implemented |
 | `/{locale}/logout` | `src/app/[locale]/(web)/logout/page.tsx` | `LogoutContent` → `logoutAction` (+ cross-tab `broadcast:logout`) | Implemented |
@@ -48,27 +50,27 @@ _Last audited: 2026-07-26 — temporary signed-in `/{locale}/home`. Prior: 2026-
 - `src/app/[locale]/admin|sysadmin/layout.tsx` — `RoleDashboardLayout` → `DashboardLayout` (no site footer)
 - `src/app/[locale]/instructor/layout.tsx` — `DashboardLayout` (no site footer)
 
-## Auth UX (not dedicated login/signup pages)
+## Auth UX (route-based login/signup modal)
 
 | Flow | Where it lives |
 |------|----------------|
-| Login / Sign up | Modal only — `LoginSignupPopup` in `header.tsx` (`LoginContent` / `SignupContent`) |
+| Login / Sign up | Route-based: `/{locale}/login` and `/{locale}/signup` (dedicated full pages — `LoginPageContent` / `SignupPageContent` wrapping `LoginContent` / `SignupContent` in `AuthCardFrame`, an elevated card, `rounded-xl` + `shadow-xl`, so it stands out from the plain page background), intercepted as a `LoginSignupPopup` overlay (`@modal/(.)login`, `@modal/(.)signup` — `src/app/[locale]/@modal/`) whenever the navigation happens client-side from anywhere in the app. No longer modal-only, and no longer mounted redundantly in `header.tsx` / `dashboard-layout.tsx`. |
 | Email confirm | Dedicated page `/{locale}/confirm-email?token=…` |
 | Logout | Dedicated page `/{locale}/logout` (also linked from user menu) |
 
 Route constants:
-- `PUBLIC_ROUTES` (`src/constants/route.ts`): public/no-login routes (`home` → `/`, `forgotPassword`, `confirmEmail`, `logout`, **`becomeInstructor`**)
+- `PUBLIC_ROUTES` (`src/constants/route.ts`): public/no-login routes (`home` → `/`, `forgotPassword`, `confirmEmail`, `logout`, `login`, `signup`, **`becomeInstructor`**) — `login` and `signup` are `noindex` (not in `SEO_INDEXABLE_PUBLIC_ROUTE_KEYS`, `src/constants/seo/routes.ts`)
 - `PRIVATE_ROUTES` (`src/constants/route.ts`): login-required routes (`home` → `/home`, `admin`, `instructor`, `sysadmin`, `account`)
 - `PUBLIC_RESOURCE_ROUTES` / `PRIVATE_RESOURCE_ROUTES` (`src/constants/route.ts`): dynamic templates (`:param`) for resource pages
-- Route builders/helpers live in `src/lib/navigation/routes.ts` (for example `signedInHomeHref`, `instructorCourseEditorHref(courseId)` for `/instructor/courses/:courseId/info` and `instructorCourseEditorTabHref(courseId, tab)` for the route-backed editor tabs)
+- Route builders/helpers live in `src/lib/navigation/routes.ts` (for example `signedInHomeHref`, `loginHref(nextPath?)` / `signupHref(nextPath?)` building `/login?next=…` / `/signup?next=…`, `instructorCourseEditorHref(courseId)` for `/instructor/courses/:courseId/info` and `instructorCourseEditorTabHref(courseId, tab)` for the route-backed editor tabs)
 
-No `auth.login` / `auth.signup` route constants (login/signup stay modal-only).
+`loginHref` / `signupHref` are the route constants for auth (superseding the old "no `auth.login`/`auth.signup` constants" note — login/signup are real routes now, not modal-only).
 
 ## Current implementation notes
 
 | Area | Status |
 |------|--------|
-| Login / Signup pages | Modal-only (`LoginSignupPopup`), no dedicated route pages |
+| Login / Signup pages | Route-based (`/login`, `/signup`) — dedicated full pages, intercepted as a `LoginSignupPopup` modal via the `@modal` parallel slot when navigated to in-app |
 | Guest home `/` | Marketing mock `HomePage` |
 | Signed-in home `/home` | Temporary placeholder + client auth gate; Figma UI not shipped |
 | Admin pages | Implemented: dashboard shell, taxonomy, instructors, course review |

@@ -10,12 +10,21 @@ Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifec
 ## 1. Login Flow
 
 ```
-User clicks "Login" button
+Visitor navigates (via <Link>) to /login?next=<path>   [loginHref, src/lib/navigation/routes.ts]
+  (header AuthButton, dashboard auto-redirect on unauthorized denial, or a direct link/refresh)
+  AuthButton omits `next` (and hard-navs instead of <Link>) when already standing on
+  /login or /signup   [isAuthRoutePath, src/lib/security/web/safe-redirect.ts] — a soft nav
+  back to either would self-reference and get intercepted as a modal over the page it targets
   ↓
-useAuthStore.openLoginModal()   [src/store/auth/auth.ts]
-  → authAction = "login"
+Soft navigation intercepted as a modal by the @modal route slot   [src/app/[locale]/@modal/(.)login/page.tsx]
+  → renders <LoginSignupPopup type="login" />
+  (hard navigation instead renders the full page: src/app/[locale]/(web)/login/page.tsx)
   ↓
 LoginSignupPopup renders LoginContent   [src/components/common/auth-menu/auth/]
+  → LoginContent reads `next` via useAuthNextParam()   [src/hooks/auth/use-auth-next-param.ts]
+    (rejects a `next` that is unsafe OR itself /login|/signup — isSafeInternalPath + isAuthRoutePath)
+  → useRedirectIfAuthenticated(nextPath) redirects away immediately (renders null) if
+    useGetMe().me is already set — visiting /login while authenticated never keeps showing the form
   ↓
 User fills form (email + password + rememberMe)
   ↓
@@ -39,8 +48,9 @@ Server Action reads response:
     NO  → return { success: false, message, code }
   ↓
 Client receives AuthActionResult:
-  - success=true  → mutateMe() [invalidate SWR cache] → useAuthStore.closeAllModals()
-                    → redirect to nextLink if set
+  - success=true  → mutateMe() [invalidate SWR cache]
+                    → onAuthenticated(nextPath ?? homeHref)   [prop supplied by LoginSignupPopup]
+                    → LoginSignupPopup sets open=false (exit animation), then router.push(destination)
   - success=false → translateApiErrorCode(tErrors, result.code) inline or toast — never result.message
 ```
 
@@ -63,8 +73,8 @@ Google:  GSI code client popup → googleLoginAction → POST /api/v1/auth/googl
 finalizeAuthLoginAction (shared with email login)
   → set session cookies on success
   ↓
-useOAuthPostAuth onSuccess:
-  mutateMe() + closeAllModals() + router.push(nextLink) when set
+useOAuthPostAuth(onAuthenticated) onSuccess:
+  mutateMe() + onAuthenticated(nextPath ?? homeHref)   [nextPath read via useAuthNextParam()]
   ↓
 Errors: translateApiErrorCode (BE 4013–4017/4019, 4023–4025; FE-local 4018, 4020–4022, 4026)
 ```
@@ -175,20 +185,34 @@ Standard pattern for all forms (login, signup, future forms):
 
 ---
 
-## 5. Auth Modal State Flow
+## 5. Route-Based Login/Signup Modal Flow
 
 ```
-openLoginModal(nextPath?)  → authAction="login",  nextLink=nextPath
-openSignupModal(nextPath?) → authAction="signup", nextLink=nextPath
-closeAllModals()           → authAction="none",   nextLink=null
+Navigate to /login?next=X   [loginHref(X), src/lib/navigation/routes.ts]
+Navigate to /signup?next=X  [signupHref(X)]
 
-LoginSignupPopup (mounted in header.tsx, outside AuthLayout):
-  authAction === "login"  → show LoginContent
-  authAction === "signup" → show SignupContent
-  authAction === "none"   → dialog closed
+Soft navigation (from anywhere in the app) → intercepted by the @modal parallel-route slot
+  [src/app/[locale]/@modal/(.)login/page.tsx | (.)signup/page.tsx]
+  → renders <LoginSignupPopup type="login" | "signup" /> over the underlying page
 
-LoginContent ↔ SignupContent:
-  → Switch tab → setAuthAction("signup") / setAuthAction("login")
+Hard/direct navigation with no `next` (refresh, shared link) → renders the full page instead
+  [src/app/[locale]/(web)/login/page.tsx | signup/page.tsx]
+
+Hard/direct navigation WITH a valid `next` → useAuthModalBackgroundBridge bounces it back
+into the intercepted-modal experience   [src/hooks/auth/use-auth-modal-background-bridge.ts,
+  mounted via AuthModalBackgroundBridge in AppProviders]:
+  1. router.replace(next) — background page's real content renders
+  2. wait for pathname to confirm that landed (not a timer/rAF — races a slow RSC fetch)
+  3. router.push(loginHref(next) | signupHref(next)) — now a soft nav, @modal intercepts it
+
+LoginSignupPopup:
+  → owns local `open` state (no store); `type` prop fixed by which route matched
+  → close → setOpen(false) (Radix Dialog exit animation, ~100ms) → router.back()
+
+LoginContent ↔ SignupContent (switch forms inside the modal):
+  → <Link replace href={signupHref(nextPath)}> / <Link replace href={loginHref(nextPath)}>
+  (replace, not push — browser back exits the modal in one step regardless of how many
+  times the visitor toggled between forms)
 ```
 
 ---

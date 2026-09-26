@@ -247,9 +247,11 @@ sequenceDiagram
   else me != null
     AL->>AL: render <UserMenu me={me} />
   else me == null
-    AL->>AL: render <AuthButton /> + <LoginSignupPopup />
+    AL->>AL: render <AuthButton />
   end
 ```
+
+`AuthLayout` never mounts `LoginSignupPopup` itself — the guest branch renders only `<AuthButton />`, which links to `/login` / `/signup`. `LoginSignupPopup` is rendered solely by the `@modal` parallel-route slot (`src/app/[locale]/@modal/`) when `/login` or `/signup` is the active intercepted route; see §Route-Based Login/Signup Modal below.
 
 ### `useAuth` hook details
 
@@ -262,6 +264,8 @@ const { me, isLoading, error, mutate } = useAuth();
 - **Key:** `getMeEndpointKey` = `"/api/v1/me"` (defined once in `src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)`).
 - **Hook options:** `useAuth` passes `shouldRetryOnError: false` and `revalidateOnFocus: true` in `useAuth.ts`. `AppProviders` renders `SWRConfig` with `revalidateOnFocus: false`, `dedupingInterval: 30_000ms`, and `errorRetryInterval: 180_000ms` (3 min — see `src/constants/swr.ts`); `MeSwrSync` calls `useSyncMeFromAuth` **inside** that provider so the `/me` SWR subscription shares the same context as the rest of the tree. Hooks that omit `shouldRetryOnError: false` retry on error at the 3-minute interval, not SWR’s default 5 seconds.
 - **401 handling:** `getMeService` catches 401 and returns `null` instead of throwing, so SWR does not enter error state for unauthenticated users.
+- **Cache persistence:** `SWRConfig`'s `provider` is `meCacheProvider` (`src/lib/swr/me-cache-provider.ts`), not SWR's plain default in-memory `Map`. It behaves identically for every other SWR key, but additionally persists the `/me` entry to `sessionStorage` on `beforeunload` and restores it on init — needed because the full-page `/login`↔`/signup` cross-link (§6) forces a hard navigation, which otherwise wipes the in-memory cache and makes the header flash "logged out" on every such reload while `/me` refetches. `meCacheProvider` is a **client-only singleton** — `SWRConfig` re-invokes its `provider` factory on every remount (notably React Fast Refresh in dev, which can't always preserve `AppProviders`' state), and without the singleton guard each remount registered another `beforeunload` listener that was never removed, leaking one per remount for the tab's whole lifetime. The server branch always returns a fresh, empty `Map` per request — a server-side singleton would leak one user's `/me` data into another user's SSR render, since the module stays loaded across requests.
+- **Skipping the redundant refetch:** `useAuth` also passes `revalidateOnMount: !isMeCacheFresh(SWR_DEDUPING_INTERVAL_MS)` (`isMeCacheFresh` from `me-cache-provider.ts`). The persisted `/me` cache carries a `persistedAt` timestamp; when it's less than `SWR_DEDUPING_INTERVAL_MS` (30 s) old, SWR skips fetching on this mount entirely instead of just showing the cached value while revalidating in the background. Without this, bouncing between `/login` and `/signup` (each a hard nav — see §6) re-fetched `/me` on every single bounce, since a hard reload is a fresh SWR mount with no in-memory dedup history to fall back on. `revalidateOnFocus` and explicit `mutate()` calls (after login/logout) are unaffected — they still run normally regardless of this window. `sessionStorage` is per-tab, so this can never mask a logout that happened in a *different* tab, and a logout in *this* tab re-persists the logged-out state before the window could go stale.
 
 ---
 
@@ -379,25 +383,57 @@ Global error store updates are applied on client path; server path reports to lo
 
 ---
 
-## 6. Auth Modal State (Zustand)
+## 6. Route-Based Login/Signup Modal
 
-**Goal:** Open and close login/signup modals from anywhere in the app without prop drilling.
+**Goal:** Open and close login/signup modals from anywhere in the app without prop drilling, purely via route navigation.
 
-`useAuthStore` (`src/store/auth/auth.ts`) is a provider-free Zustand store:
+There is no `useAuthStore` / Zustand state for this anymore — opening the modal is a normal navigation to `/login` or `/signup`:
 
 ```ts
-const { authAction, openLoginModal, openSignupModal, closeAllModals, nextLink } = useAuthStore();
+import { loginHref, signupHref } from "@/lib/navigation/routes";
+
+<Link href={loginHref(nextPath)}>Log in</Link>
+<Link href={signupHref(nextPath)}>Sign up</Link>
 ```
 
-| Action | Effect |
-|--------|--------|
-| `openLoginModal(nextPath?)` | Sets `authAction: "login"`, stores `nextPath` in `nextLink` |
-| `openSignupModal(nextPath?)` | Sets `authAction: "signup"`, stores `nextPath` in `nextLink` |
-| `closeAllModals()` | Resets `authAction: "none"`, clears `nextLink` |
+`loginHref` / `signupHref` (`src/lib/navigation/routes.ts`) build `/login?next=<nextPath>` / `/signup?next=<nextPath>` via the existing `buildQueryParams` helper (mirrors the existing `homeHref`/`logoutHref` pattern).
 
-`LoginSignupPopup` observes `authAction` to decide which tab to show and whether to be visible. `AuthButton` calls `openLoginModal()` when clicked.
+| Trigger | Href |
+|---------|------|
+| `AuthButton` (header CTA), on any page other than `/login`/`/signup` | `<Link href={loginHref(pathname)}>` / `<Link href={signupHref(pathname)}>` — current page via `usePathname()` (`@/i18n/navigation`) as `next`; soft nav, intercepted as a modal |
+| `AuthButton`, while already on `/login`/`/signup` (`isAuthRoutePath(pathname)`) | Plain `<a href={loginHref()}>` / `<a href={signupHref()}>` (hard nav, no `next`, built via `getPathname` for the locale prefix) — a soft `Link` back to either would self-reference and get intercepted as a modal stacked on the very page it targets |
+| `DashboardLayout` auto-redirect on `unauthorized` denial | `loginHref(<denied path>)`, 500ms after first rendering the denial state; tracked per-path in an in-memory `Set` (`autoPromptedPaths`, not `sessionStorage`) so it fires at most once per denied path per page load — a browser refresh clears it (re-arms the prompt), a dismiss-triggered remount (`router.back()`) does not |
+| Switching forms inside the `LoginSignupPopup` modal (`LoginContent`/`SignupContent`'s default `variant="modal"`) | `<Link replace href={signupHref(nextPath)}>` / `loginHref(nextPath)` — soft nav, intercepted as the other modal |
+| Switching forms on the full-page fallback (`LoginPageContent`/`SignupPageContent` pass `variant="page"`) | Plain `<a href>` (built via `getPathname`) instead of `Link` — a soft nav here would still get intercepted as a modal stacked on the full page it targets, which is exactly the "why does a modal show up when the signup page is already in front of me" bug this avoids |
 
-**Post-auth redirect:** Store `nextLink` before triggering the modal; read it after successful login/signup to redirect the user to the intended page.
+A soft navigation to `/login` or `/signup` from anywhere in the app is intercepted as a modal overlay by the `@modal` parallel-route slot (`src/app/[locale]/@modal/`, rendered alongside `children` from `src/app/[locale]/layout.tsx`):
+
+- `@modal/default.tsx` — returns `null` when no intercepted route is active.
+- `@modal/(.)login/page.tsx`, `@modal/(.)signup/page.tsx` — each renders `<LoginSignupPopup type="login" | "signup" />` on top of whatever page the visitor was viewing.
+
+This interception is unconditional for **any** soft (client-side) navigation matching the pattern — Next.js has no supported way to opt a specific `Link`/`router.push` call out of it. That is why every "I don't want a modal here" case above (`AuthButton` on an auth route, the full-page cross-link) is solved the same way: render a plain `<a href>` (a real, hard navigation) instead of `Link`, since only a hard load bypasses the interceptor.
+
+A hard/direct navigation to the same URL with **no** `next` (refresh, shared link) instead renders the full page at `(web)/login/page.tsx` / `(web)/signup/page.tsx`, composing the same `LoginSignupLayout` + `LoginContent`/`SignupContent`. A hard/direct navigation that **does** carry a valid `next` is turned back into the intercepted-modal experience by the background bridge below, instead of staying as a plain page.
+
+`LoginSignupPopup` no longer reads any store — it takes `type` as a prop and manages its own local `open` state. Closing sets `open=false` (letting the Radix Dialog exit animation play) then calls `router.back()` after the same delay.
+
+**Already authenticated:** `useRedirectIfAuthenticated(nextPath)` (`src/hooks/auth/use-redirect-if-authenticated.ts`), called by both `LoginContent` and `SignupContent`, redirects to `nextPath ?? homeHref` via `router.replace` as soon as `useGetMe().me` is truthy, and renders `null` for that one frame instead of the form — visiting `/login`/`/signup` (modal or full page) with an existing session never keeps showing the login/signup form.
+
+**Post-auth redirect:** The `next` query param carries the intended destination. `useAuthNextParam()` (`src/hooks/auth/use-auth-next-param.ts`) reads it via `useSearchParams` and validates it with **both** `isSafeInternalPath` (same-origin check) **and** `isAuthRoutePath` (`src/lib/security/web/safe-redirect.ts`) — a `next` of `/login` or `/signup` itself is rejected too, not just a cross-origin one, since otherwise it self-propagates through every login/signup cross-link. `LoginContent`/`SignupContent` and `useOAuthPostAuth` all read the destination through this hook and hand it to the `onAuthenticated` callback supplied by `LoginSignupPopup`.
+
+An invalid `next` is stripped from the address bar with a **raw `window.history.replaceState` call, not `router.replace`**. Going through the Next.js router here — even just to drop the query string on the same pathname — is itself a soft navigation, and `@modal`'s interception convention treats any soft navigation landing on `/login`/`/signup` as "entering the route from elsewhere," popping the modal open on top of the very page that is already rendering it (a hard-loaded `/login?next=<invalid>` would otherwise show the login form doubled: once as the full page, once as an unwanted modal over it). The raw History API updates the URL bar without triggering that interception.
+
+**SWR cache across a hard nav:** the full-page login↔signup cross-link above forces a hard navigation, which tears down the whole JS runtime including SWR's normally in-memory-only cache. `meCacheProvider` (`src/lib/swr/me-cache-provider.ts`), passed as `AppProviders`' `SWRConfig` `provider`, additionally persists just the `/me` cache entry to `sessionStorage` (written on `beforeunload`, restored on init) so that reload shows the previously known auth state instantly instead of flashing "logged out" while SWR refetches. `useAuth` additionally passes `revalidateOnMount: !isMeCacheFresh(SWR_DEDUPING_INTERVAL_MS)`, so a bounce between `/login` and `/signup` within 30 s of the last one skips the `/me` network call entirely rather than just hiding its visual flash — bouncing back and forth repeatedly makes exactly one `/me` request, not one per bounce. See §3 below.
+
+### 6.1 Background bridge for a hard-loaded modal
+
+Next.js's `(.)login`/`(.)signup` interception only ever engages for a soft (client-side) navigation — there is no supported way to make a hard load render an intercepted route. `useAuthModalBackgroundBridge()` (`src/hooks/auth/use-auth-modal-background-bridge.ts`), mounted once app-wide via `AuthModalBackgroundBridge` in `AppProviders` (same "invisible sync component" pattern as `AuthConfirmTabSync`/`AuthLogoutTabSync`), retrofits that experience onto a hard load:
+
+1. On its first effect run only (guarded by a ref, never repeats), if the current route is `/login`/`/signup` with a validated `next` (via `useAuthNextParam()`), it calls `router.replace(next)` — the background page's real content actually renders.
+2. A second effect waits until `pathname` confirms that navigation has genuinely landed (not on a fixed timer or animation frame, which can fire before a slow RSC fetch/compile actually completes), then calls `router.push` back to the login/signup destination.
+3. That second navigation is now a soft one away from an already-rendered page, so `@modal`'s interception applies — the modal opens over the real background page.
+
+`next` is only ever a validated same-origin internal path (via `useAuthNextParam()`/`isSafeInternalPath`), so this never bounces to a cross-origin/external URL. A bare `/login`/`/signup` with no `next` is unaffected (nothing to bounce to). Any future route-modal-with-`next` feature can follow the same pattern.
 
 ---
 

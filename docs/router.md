@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-07-26 (temporary signed-in `/home` under `(web)` + `PRIVATE_ROUTES.home`). Prior: 2026-07-22 unmounted account/forgot-password; OAuth COOP; OAuth callback middleware bypass._
+_Last audited: 2026-09-19 (route-based login/signup modal via `@modal` parallel + intercepting routes, replacing the Zustand-driven `LoginSignupPopup`). Prior: 2026-07-26 temporary signed-in `/home` under `(web)` + `PRIVATE_ROUTES.home`; 2026-07-22 unmounted account/forgot-password; OAuth COOP; OAuth callback middleware bypass._
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
 
@@ -75,10 +75,15 @@ export const config = {
 /                       → src/app/page.tsx               redirect → /vi
 /auth/discord/callback  → src/app/auth/discord/callback/page.tsx  Discord OAuth popup callback (locale-less, no prefix)
 /auth/x/callback        → src/app/auth/x/callback/page.tsx  X OAuth popup callback (locale-less; retained, not wired to modal)
-/[locale]/              → src/app/[locale]/layout.tsx     NextIntlClientProvider + AppProviders
+/[locale]/              → src/app/[locale]/layout.tsx     NextIntlClientProvider + AppProviders, renders `children` + `modal` (parallel slot)
+/[locale]/@modal        → src/app/[locale]/@modal/default.tsx           parallel slot fallback (renders null on any non-intercepted route)
+/[locale]/@modal        → src/app/[locale]/@modal/(.)login/page.tsx     intercepts same-level `/login` → <LoginSignupPopup type="login" />
+/[locale]/@modal        → src/app/[locale]/@modal/(.)signup/page.tsx    intercepts same-level `/signup` → <LoginSignupPopup type="signup" />
 /[locale]/              → src/app/[locale]/(web)/layout.tsx  Header + main + Footer
 /[locale]/              → src/app/[locale]/(web)/page.tsx    HomePage (guest marketing)
 /[locale]/home          → src/app/[locale]/(web)/home/page.tsx  SignedInHomePage (login-required, temporary placeholder)
+/[locale]/login         → src/app/[locale]/(web)/login/page.tsx  LoginPageContent (full-page fallback; intercepted as a modal when navigated to in-app)
+/[locale]/signup        → src/app/[locale]/(web)/signup/page.tsx  SignupPageContent (full-page fallback; intercepted as a modal when navigated to in-app)
 /[locale]/become-instructor → src/app/[locale]/(web)/become-instructor/page.tsx  BecomeInstructorPage
 /[locale]/confirm-email → src/app/[locale]/(web)/confirm-email/page.tsx  Email confirm
 /[locale]/logout        → src/app/[locale]/(web)/logout/page.tsx         Logout
@@ -102,6 +107,34 @@ export const config = {
 ### Route Groups
 
 `(web)` is a [Next.js route group](https://nextjs.org/docs/app/building-your-application/routing/route-groups) — the parentheses mean it does NOT appear in the URL. It applies the web shell layout (Header/Footer) to all pages inside.
+
+### `@modal` parallel slot (login/signup)
+
+`src/app/[locale]/layout.tsx` accepts and renders a `modal` prop (a [parallel route](https://nextjs.org/docs/app/building-your-application/routing/parallel-routes) slot) alongside `children`:
+
+```tsx
+export default async function LocaleLayout({ children, modal, params }: LocaleLayoutProps) {
+  // ...
+  return (
+    <NextIntlClientProvider>
+      <AppProviders>
+        {children}
+        {modal}
+      </AppProviders>
+    </NextIntlClientProvider>
+  );
+}
+```
+
+The slot lives at `src/app/[locale]/@modal/`:
+
+- `default.tsx` — renders `null`; used whenever the current navigation doesn't match an intercepted route.
+- `(.)login/page.tsx` — a same-level [intercepting route](https://nextjs.org/docs/app/building-your-application/routing/intercepting-routes) that matches `/login`; renders `<LoginSignupPopup type="login" />`.
+- `(.)signup/page.tsx` — same pattern for `/signup`, rendering `<LoginSignupPopup type="signup" />`.
+
+Because `@modal` sits at the `[locale]` segment and `(web)` is a route group (transparent to intercepting-route segment matching), this single slot intercepts `/login` and `/signup` navigations triggered from **anywhere** in the app — including dashboard routes — and overlays them as a modal on top of whatever page the visitor was already on. A hard/direct navigation to `/login` or `/signup` with **no** `next` query param (fresh load, refresh, shared link) bypasses the interception and renders the full page instead (see `/[locale]/login` and `/[locale]/signup` in the tree above). A hard/direct navigation that **does** carry a valid `next` is instead retroactively turned into an intercepted modal by `useAuthModalBackgroundBridge` — see "Background bridge for a hard-loaded modal" in `flow.md`.
+
+**Opting a specific link out of interception:** this is unconditional for *any* soft navigation matching the pattern — there is no supported way to make one particular `Link`/`router.push` call skip the interceptor while still doing a soft nav. Two call sites deliberately want the plain full page instead of a modal stacked on top of it: `AuthButton` (header CTA) while already standing on `/login`/`/signup`, and the login↔signup cross-link on the full-page fallback (`LoginContent`/`SignupContent`'s `variant="page"`, used by `LoginPageContent`/`SignupPageContent`). Both render a plain `<a href>` (built via `getPathname` from `@/i18n/navigation` for the locale prefix) instead of `Link` — a real hard navigation is the only way to bypass the interceptor. See `flow.md` §6.
 
 ### Error Boundaries (error.tsx / global-error.tsx)
 
@@ -157,6 +190,10 @@ src/app/[locale]/
 | `/en` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
 | `/vi/home` | `[locale]/(web)/home/page.tsx` | `SignedInHomePage` — login-required temporary placeholder (Figma UI not shipped) | ✅ Temporary |
 | `/en/home` | same | same | ✅ Temporary |
+| `/vi/login?next=…` | `[locale]/(web)/login/page.tsx` | `LoginPageContent` — full-page fallback; intercepted as a modal (`@modal/(.)login`) when navigated to in-app | ✅ Implemented |
+| `/en/login?next=…` | same | same | ✅ Implemented |
+| `/vi/signup?next=…` | `[locale]/(web)/signup/page.tsx` | `SignupPageContent` — full-page fallback; intercepted as a modal (`@modal/(.)signup`) when navigated to in-app | ✅ Implemented |
+| `/en/signup?next=…` | same | same | ✅ Implemented |
 | `/auth/discord/callback?code=…&state=…` | `app/auth/discord/callback/page.tsx` | `DiscordOAuthCallbackPage` (locale-less, English-only) — `postMessage` `code`/`state`/`error` to `window.opener`, then `window.close()`; fallback copy + Back-to-home link when opened without an opener | ✅ Implemented |
 | `/auth/x/callback?code=…&state=…` | `app/auth/x/callback/page.tsx` | `XOAuthCallbackPage` (locale-less, English-only, retained) — same relay pattern for X OAuth; not wired to login/signup popup | ✅ Implemented |
 | `/vi/confirm-email?token=…` | `[locale]/(web)/confirm-email/page.tsx` | `ConfirmEmailContent` | ✅ Implemented |
@@ -227,7 +264,7 @@ Root layout            (src/app/layout.tsx)
 | Layout file | What it mounts |
 |-------------|---------------|
 | `src/app/layout.tsx` | Global fonts (Roboto, Gilroy, GeistMono as CSS vars), `<Toaster>` (Sonner) |
-| `src/app/[locale]/layout.tsx` | `NextIntlClientProvider`, `AppProviders` (`SWRConfig`, `EventsStreamProvider`, `MeSwrSync`, `LanguageLocaleSync`, auth tab sync) |
+| `src/app/[locale]/layout.tsx` | `NextIntlClientProvider`, `AppProviders` (`SWRConfig` with `provider: meCacheProvider`, `EventsStreamProvider`, `MeSwrSync`, `LanguageLocaleSync`, auth tab sync) |
 | `src/app/[locale]/(web)/layout.tsx` | `Header`, `<main>` content area, `Footer` |
 | `src/app/[locale]/admin/layout.tsx` | `RoleDashboardLayout` → `DashboardLayout` (`ADMIN_DASHBOARD_ITEMS`, `admin:modify` gate) + shared dashboard page header |
 | `src/app/[locale]/instructor/layout.tsx` | `DashboardLayout` (`INSTRUCTOR_DASHBOARD_ITEMS`, `instructor:modify` OR `course_instructor:read` gate) + shared dashboard page header |
@@ -358,7 +395,7 @@ src/screen/common/course/course-review-page.tsx   → CourseReviewPage (shared b
 | `/` (locale home via `PUBLIC_ROUTES.home`) | Guest marketing home | Exists (mock). Future SEO wire optional. **Only** default SEO-indexable public key today. `homeHref` still points here. |
 | `/home` (`PRIVATE_ROUTES.home`) | Signed-in homepage | **Temporary route shipped.** `(web)` shell + client auth gate; placeholder UI (no Figma sections, no API fetch, **no route metadata**). Crawl disallow derives from `PRIVATE_ROUTES` (includes `/home`). Full Figma layout is a later task. |
 
-**Auth gate:** guests on `/home` see a login CTA that opens the existing login modal with `nextLink=/home` (same modal pattern as become-instructor State A). No dedicated login page.
+**Auth gate:** guests on `/home` see a login CTA (`<Link href={loginHref(signedInHomeHref)}>`) that navigates to `/login?next=/home` (same pattern as become-instructor State A). `/login` is a dedicated route now — intercepted as a modal overlay when the navigation happens client-side, and a full page on direct/hard navigation. `next` is a validated URL query param read by `useAuthNextParam()` (`isSafeInternalPath` **and** `isAuthRoutePath` — a `next` of `/login`/`/signup` itself is rejected too), not a Zustand field.
 
 **Href helpers:** `homeHref` = public `/`; `signedInHomeHref` = private `/home`. Logo / `navigateToHome` still use `homeHref` until product decides brand-home should follow auth state.
 

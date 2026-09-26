@@ -67,8 +67,12 @@ src/app/
 │   ├── discord/callback/page.tsx # Discord OAuth popup callback: postMessage(code/state/error) to window.opener, then close
 │   └── x/callback/page.tsx     # X (Twitter) OAuth popup callback (retained, not wired to login/signup modal)
 └── [locale]/               # Dynamic locale segment — value: "en" | "vi"
-    ├── layout.tsx          # Locale layout: wraps in NextIntlClientProvider + AppProviders
+    ├── layout.tsx          # Locale layout: NextIntlClientProvider + AppProviders; renders {children} + {modal} (@modal slot)
     ├── not-found.tsx       # Locale-level 404 → NotFoundPage (inherits providers from layout)
+    ├── @modal/             # Parallel route slot for the login/signup route modal
+    │   ├── default.tsx     # Renders null when no intercepted route is active
+    │   ├── (.)login/page.tsx   # Intercepted /login → <LoginSignupPopup type="login" />
+    │   └── (.)signup/page.tsx  # Intercepted /signup → <LoginSignupPopup type="signup" />
     ├── (web)/              # Route group: marketing + signed-in home shell (no prefix in URL)
     │   ├── layout.tsx      # Web shell: Header + GoogleOneTapHost + GSI script + <main> + Footer
     │   ├── not-found.tsx   # Web 404 → NotFoundPage showHeader={false}
@@ -76,7 +80,9 @@ src/app/
     │   ├── home/page.tsx   # Signed-in home → SignedInHomePage (temporary, login-required)
     │   ├── become-instructor/page.tsx
     │   ├── confirm-email/page.tsx
-    │   └── logout/page.tsx
+    │   ├── logout/page.tsx
+    │   ├── login/page.tsx  # Full-page /login fallback (hard nav/refresh/shared link) → LoginPageContent
+    │   └── signup/page.tsx # Full-page /signup fallback → SignupPageContent
     ├── admin/              # Admin dashboard (RoleDashboardLayout -> DashboardLayout)
     │   ├── layout.tsx
     │   ├── page.tsx
@@ -277,7 +283,7 @@ Provider-free stores. Any component can import and use without a wrapping Provid
 ```
 src/store/
 ├── auth/
-│   └── auth.ts             # useAuthStore: modal state (authAction: "none"|"login"|"signup"|"logout", nextLink)
+│   └── auth.ts             # useMeStore: /me session + permissions (synced from useAuth via MeSwrSync)
 ├── dashboard/
 │   └── dashboard-page-header-store.ts  # useDashboardPageHeaderStore: runtime header override entry + setOverride
 ├── language/
@@ -298,8 +304,9 @@ src/store/
 ```
 src/hooks/
 ├── auth/
-│   ├── index.ts            # Barrel: use-auth-store, use-permissions, tab-sync hooks
-│   ├── use-auth-store.ts   # useAuthStore (re-export), useGetMe, useSyncMeFromAuth
+│   ├── index.ts            # Barrel: use-auth-store, use-auth-next-param, use-permissions, tab-sync hooks
+│   ├── use-auth-store.ts   # useGetMe, useSyncMeFromAuth (no more useAuthStore — removed with the Zustand-modal)
+│   ├── use-auth-next-param.ts # useAuthNextParam: reads + validates the `next` query param on /login, /signup
 │   ├── use-permissions.ts  # usePermissionSet, useHas*, useSatisfiesPermissions, useFilteredUserMenuGroups
 │   ├── use-auth-confirm-tab-sync.ts
 │   ├── use-auth-logout-tab-sync.ts
@@ -307,7 +314,7 @@ src/hooks/
 │   ├── use-google-one-tap.ts  # GSI One Tap prompt for guests → googleOneTapAction (auto-dismiss when logged in)
 │   ├── use-discord-login.ts   # Discord OAuth popup + postMessage listener (DISCORD_OAUTH_MESSAGE_TYPE) → discordLoginAction
 │   ├── use-x-login.ts         # X OAuth popup + postMessage listener (X_OAUTH_MESSAGE_TYPE) → xLoginAction; retained, not on popup
-│   └── use-oauth-post-auth.ts # Shared post-auth: mutateMe + closeAllModals + push(nextLink)
+│   └── use-oauth-post-auth.ts # Shared post-auth: mutateMe + onAuthenticated(nextPath ?? homeHref)
 ├── course/
 │   ├── index.ts            # Barrel: use-course-editor-state, use-course-outline-reorder
 │   ├── use-course-editor-state.ts  # Course editor state, lease handling, translated toasts
@@ -471,6 +478,8 @@ src/lib/
 │   ├── routes.ts           # route builders + shared href constants (public/private/resource)
 │   ├── flatten-route-tree.ts # flattenRouteTreePaths — shared nested route-constant → string[] (crawl + sitemap)
 │   └── dashboard-page-header.ts  # dashboard route metadata resolver (consumes static constants + shared dashboard types)
+├── swr/
+│   └── me-cache-provider.ts # meCacheProvider() — SWRConfig `provider` for AppProviders; persists only the `/me` cache entry to sessionStorage so a hard nav (e.g. /login <-> /signup) doesn't flash a "logged out" header while SWR refetches
 ├── quill/
 │   ├── index.ts            # Barrel: ensureQuillLoaded, Quill blots, toolbar, paste/drop, link helpers
 │   ├── delta-editor-quill.ts  # Client-only Quill runtime (image/video/document blots, link-edit overlay, config-driven toolbar)
@@ -640,6 +649,8 @@ e2e/
 
 ### `src/lib/seo/`, `src/lib/performance/`, `src/lib/security/web/` — Unused SEO foundation (2026-07-25)
 
+`src/lib/security/web/safe-redirect.ts` is the one exception below — it's wired and used by `useAuthNextParam` (`hooks/auth/use-auth-next-param.ts`).
+
 ```
 src/lib/
 ├── seo/
@@ -663,7 +674,8 @@ src/lib/
         ├── crawl-policy.ts
         ├── redact-client-payload.ts
         ├── sanitize-json-ld.ts
-        └── security-headers-presets.ts
+        ├── security-headers-presets.ts
+        └── safe-redirect.ts          # isSafeInternalPath + isAuthRoutePath — used by useAuthNextParam (login/signup `next` param)
 ```
 
 See [`seo-ranking-setup.md`](./seo-ranking-setup.md). Not wired to pages/layouts this phase.

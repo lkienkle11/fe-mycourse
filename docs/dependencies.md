@@ -46,7 +46,7 @@ Envelope validation uses existing **`zod`** (see `src/events/core/normalize-inbo
 
 | Package | Version | Role |
 |---------|---------|------|
-| `zustand` | 5.0.12 | Global UI state — auth modal state (`useAuthStore`), current user state (`useMeStore`), API error store (`useApiError`) |
+| `zustand` | 5.0.12 | Global UI state — current user state (`useMeStore`), API error store (`useApiError`) |
 | `swr` | 2.4.1 | Server state / data fetching — `useAuth` hook for `GET /api/v1/me`; automatic revalidation, deduplication |
 
 ---
