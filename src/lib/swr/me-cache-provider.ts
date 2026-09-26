@@ -5,45 +5,16 @@ import { getMeEndpointKey } from "@/api/callers/auth";
 
 const ME_CACHE_STORAGE_KEY = "swr-me-cache";
 
-type PersistedMeCache = {
-  state: State;
-  /** `Date.now()` at the time this was written — see `isMeCacheFresh`. */
-  persistedAt: number;
-};
-
-function readPersistedMeCache(): PersistedMeCache | null {
+function readPersistedMeCache(): State | null {
   try {
     const raw = sessionStorage.getItem(ME_CACHE_STORAGE_KEY);
     if (!raw) return null;
-    const parsed: PersistedMeCache = JSON.parse(raw);
-    if (
-      parsed?.state?.data === undefined ||
-      parsed.state.error ||
-      typeof parsed.persistedAt !== "number"
-    ) {
-      return null;
-    }
+    const parsed: State = JSON.parse(raw);
+    if (parsed?.data === undefined || parsed.error) return null;
     return parsed;
   } catch {
     return null;
   }
-}
-
-/**
- * True when the persisted `/me` cache (see `meCacheProvider`) was written
- * within the last `maxAgeMs` — used by `useAuth` to skip an otherwise-certain
- * revalidation on mount for a hard reload that just happened. Without this,
- * bouncing between the `/login` and `/signup` full pages (a hard nav each
- * time — see `meCacheProvider`'s doc comment) re-fetches `/me` on every
- * single bounce even though nothing about the session could plausibly have
- * changed a few seconds apart. `sessionStorage` is per-tab, so this can never
- * mask a logout that happened in a *different* tab; a logout in *this* tab
- * itself re-persists the now-logged-out state before this could go stale.
- */
-export function isMeCacheFresh(maxAgeMs: number): boolean {
-  const persisted = readPersistedMeCache();
-  if (!persisted) return false;
-  return Date.now() - persisted.persistedAt < maxAgeMs;
 }
 
 /**
@@ -57,11 +28,17 @@ export function isMeCacheFresh(maxAgeMs: number): boolean {
  * it targets). A hard navigation tears down the whole JS runtime, including
  * SWR's in-memory cache, so every such reload re-fetched `/me` from scratch
  * and briefly rendered the header as "logged out" until it resolved.
- * Persisting only this one key removes that flash (the previous `me` shows
- * instantly), and — paired with `isMeCacheFresh` gating `revalidateOnMount`
- * in `useAuth` — also skips the redundant network refetch when the reload
- * happens within `SWR_DEDUPING_INTERVAL_MS` of the last one, without changing
- * caching behavior for any other SWR-backed data in the app.
+ * Persisting only this one key removes that flash: the previous `me` paints
+ * instantly on the next mount, while `useAuth`'s default `revalidateOnMount`
+ * still fires a real request right behind it to confirm the session is still
+ * valid — this does not skip that check. (An earlier version also skipped the
+ * on-mount refetch entirely when this cache was written less than
+ * `SWR_DEDUPING_INTERVAL_MS` ago, to avoid a redundant network call on a fast
+ * bounce between `/login` and `/signup`. That let a revoked/expired session
+ * survive a reload for that whole window, which
+ * `e2e/tests/auth.spec.ts`'s "an expired/revoked session logs the user out on
+ * the next check" caught. Removed for that reason — the extra request on a
+ * bounce is the correct, safer trade-off.)
  *
  * `browserCache` is a client-only singleton: `SWRConfig` re-invokes its
  * `provider` factory every time it remounts (a `useRef` guard, reset on
@@ -87,7 +64,7 @@ export function meCacheProvider(): Cache {
   const meKey = getMeEndpointKey;
 
   const persisted = readPersistedMeCache();
-  if (persisted) cache.set(meKey, persisted.state);
+  if (persisted) cache.set(meKey, persisted);
 
   window.addEventListener("beforeunload", () => {
     try {
@@ -95,8 +72,7 @@ export function meCacheProvider(): Cache {
       if (!state || state.data === undefined) {
         sessionStorage.removeItem(ME_CACHE_STORAGE_KEY);
       } else {
-        const payload: PersistedMeCache = { state, persistedAt: Date.now() };
-        sessionStorage.setItem(ME_CACHE_STORAGE_KEY, JSON.stringify(payload));
+        sessionStorage.setItem(ME_CACHE_STORAGE_KEY, JSON.stringify(state));
       }
     } catch {
       // Storage full/unavailable (private mode) - fine to lose the persisted cache.

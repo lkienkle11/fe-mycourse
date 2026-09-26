@@ -7,30 +7,22 @@ import {
   jest,
 } from "@jest/globals";
 import { getMeEndpointKey } from "@/api/callers/auth";
-import type {
-  isMeCacheFresh as IsMeCacheFresh,
-  meCacheProvider as MeCacheProvider,
-} from "./me-cache-provider";
+import type { meCacheProvider as MeCacheProvider } from "./me-cache-provider";
 
 const STORAGE_KEY = "swr-me-cache";
 if (!getMeEndpointKey) throw new Error("getMeEndpointKey resolved to null");
 const meKey = getMeEndpointKey;
 
-function persist(state: unknown, persistedAt: number = Date.now()): void {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ state, persistedAt }));
-}
-
-describe("meCacheProvider / isMeCacheFresh", () => {
+describe("meCacheProvider", () => {
   let meCacheProvider: typeof MeCacheProvider;
-  let isMeCacheFresh: typeof IsMeCacheFresh;
 
   beforeEach(async () => {
-    // Both keep/read a module-level singleton cache (see `meCacheProvider`'s
-    // doc comment) so it survives real SWRConfig remounts without leaking a
+    // `meCacheProvider` keeps a module-level singleton cache (see its doc
+    // comment) so it survives real SWRConfig remounts without leaking a
     // `beforeunload` listener per remount. Each test needs a fresh module
     // instance to observe first-call behavior in isolation.
     jest.resetModules();
-    ({ meCacheProvider, isMeCacheFresh } = await import("./me-cache-provider"));
+    ({ meCacheProvider } = await import("./me-cache-provider"));
   });
 
   afterEach(() => {
@@ -44,7 +36,7 @@ describe("meCacheProvider / isMeCacheFresh", () => {
 
   it("restores a previously persisted /me entry", () => {
     const state = { data: { email: "user@example.com" }, isLoading: false };
-    persist(state);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 
     const cache = meCacheProvider();
 
@@ -52,7 +44,10 @@ describe("meCacheProvider / isMeCacheFresh", () => {
   });
 
   it("restores a persisted `data: null` entry (a confirmed logged-out state)", () => {
-    persist({ data: null, isLoading: false });
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ data: null, isLoading: false }),
+    );
 
     const cache = meCacheProvider();
 
@@ -60,7 +55,10 @@ describe("meCacheProvider / isMeCacheFresh", () => {
   });
 
   it("ignores a persisted entry that carries an error", () => {
-    persist({ error: "boom", isLoading: false });
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ error: "boom", isLoading: false }),
+    );
 
     const cache = meCacheProvider();
 
@@ -79,9 +77,9 @@ describe("meCacheProvider / isMeCacheFresh", () => {
     cache.set(meKey, state);
 
     window.dispatchEvent(new Event("beforeunload"));
-    const stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null");
-    expect(stored.state).toEqual(state);
-    expect(typeof stored.persistedAt).toBe("number");
+    expect(JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null")).toEqual(
+      state,
+    );
 
     cache.delete(meKey);
     window.dispatchEvent(new Event("beforeunload"));
@@ -102,27 +100,5 @@ describe("meCacheProvider / isMeCacheFresh", () => {
     ).toHaveLength(1);
 
     addSpy.mockRestore();
-  });
-
-  it("isMeCacheFresh is false when nothing is persisted", () => {
-    expect(isMeCacheFresh(30_000)).toBe(false);
-  });
-
-  it("isMeCacheFresh is true within the given max age", () => {
-    persist({ data: { email: "user@example.com" }, isLoading: false });
-    expect(isMeCacheFresh(30_000)).toBe(true);
-  });
-
-  it("isMeCacheFresh is false once older than the given max age", () => {
-    persist(
-      { data: { email: "user@example.com" }, isLoading: false },
-      Date.now() - 31_000,
-    );
-    expect(isMeCacheFresh(30_000)).toBe(false);
-  });
-
-  it("isMeCacheFresh is false for a persisted entry that carries an error", () => {
-    persist({ error: "boom", isLoading: false });
-    expect(isMeCacheFresh(30_000)).toBe(false);
   });
 });
