@@ -335,12 +335,12 @@ Header
             ├── LoginContent (onAuthenticated) → handleAuthSubmit("login") → loginAction → mutateMe() → onAuthenticated(destination)
             │     ├── !success → translateApiErrorCode(tErrors, result.code) — never result.message
             │     ├── useAuthNextParam() reads + validates `next` query param (isSafeInternalPath + isAuthRoutePath)
-            │     ├── useRedirectIfAuthenticated(nextPath) → renders null + router.replace if useGetMe().me is already set
+            │     ├── useRedirectIfAuthenticated(nextPath) → renders null + router.replace only if useGetMe().me was already set on first mount (snapshotted once)
             │     └── AuthSocialLogin → useDiscordLogin / useGoogleLogin (entrypoint="login") → useOAuthPostAuth(onAuthenticated)
             └── SignupContent (onAuthenticated) → handleAuthSubmit("signup", …, locale) → registerAction({ locale }) → onAuthenticated(destination)
                   ├── !success → translateApiErrorCode(tErrors, result.code); 4010 rate-limit shows countdown
                   ├── useAuthNextParam() reads + validates `next` query param (isSafeInternalPath + isAuthRoutePath)
-                  ├── useRedirectIfAuthenticated(nextPath) → renders null + router.replace if useGetMe().me is already set
+                  ├── useRedirectIfAuthenticated(nextPath) → renders null + router.replace only if useGetMe().me was already set on first mount (snapshotted once)
                   └── AuthSocialLogin → useDiscordLogin / useGoogleLogin (entrypoint="signup") → useOAuthPostAuth(onAuthenticated)
 
 (web)/login/page.tsx → LoginPageContent → AuthCardFrame → LoginSignupLayout → LoginContent (variant="page")

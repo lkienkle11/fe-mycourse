@@ -24,7 +24,9 @@ LoginSignupPopup renders LoginContent   [src/components/common/auth-menu/auth/]
   → LoginContent reads `next` via useAuthNextParam()   [src/hooks/auth/use-auth-next-param.ts]
     (rejects a `next` that is unsafe OR itself /login|/signup — isSafeInternalPath + isAuthRoutePath)
   → useRedirectIfAuthenticated(nextPath) redirects away immediately (renders null) if
-    useGetMe().me is already set — visiting /login while authenticated never keeps showing the form
+    useGetMe().me was ALREADY set on first mount (snapshotted once, ignores this same form's
+    own login completing later) — visiting /login while already authenticated never keeps
+    showing the form
   ↓
 User fills form (email + password + rememberMe)
   ↓
