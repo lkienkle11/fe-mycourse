@@ -1,5 +1,7 @@
 export * from "./use-auth-confirm-tab-sync";
 export * from "./use-auth-logout-tab-sync";
+export * from "./use-auth-modal-background-bridge";
+export * from "./use-auth-next-param";
 export * from "./use-auth-store";
 export * from "./use-discord-login";
 export * from "./use-google-login";
