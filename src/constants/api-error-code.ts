@@ -25,6 +25,7 @@ export const ApiErrorCode = {
   NotFound: 3004,
   Conflict: 3005,
   TooManyRequests: 3006,
+  SlugAlreadyExists: 3007,
 
   // Auth (4xxx)
   EmailAlreadyExists: 4001,
