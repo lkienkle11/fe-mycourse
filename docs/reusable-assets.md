@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-07-10 (Homepage marketing images under `public/assets/images/home`). Prior: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
+_Last audited: 2026-09-29 (course slug management UI: `SlugInput`, `sanitizeSlugInput`, `extractRecommendedSlug`, `useCourseCreateFlow`, `ApiErrorCode.SlugAlreadyExists`). Prior: 2026-07-10 (Homepage marketing images under `public/assets/images/home`); before that: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -151,7 +151,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: All API callers, Server Actions, authenticated transport.
 - **Dependencies**: none.
 - **Current Usage**: `src/api/transport/api-transport.ts`, `src/actions/auth/auth.ts`, login/signup UI.
-- **Reuse Rule**: Always import from here. Never hardcode `code === 0` or `code === 3002` inline.
+- **Reuse Rule**: Always import from here. Never hardcode `code === 0`, `code === 3002` or `code === 3007` inline (use `ApiErrorCode.SlugAlreadyExists` for a duplicate course slug; copy lives in `errors.codes.3007` in `src/messages/error-codes.ts`, en + vi).
 
 ### Asset: API_PUBLIC_ROUTES
 - **Name**: `API_PUBLIC_ROUTES`
@@ -588,9 +588,9 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `ConfirmActionDialog`
 - **Type**: React component
 - **Path**: `src/components/shared/confirm-action-dialog.tsx`
-- **Purpose**: Generic `AlertDialog` confirm shell with custom labels, loading state, and close guard while `isLoading`.
-- **Scope**: `ConfirmDeleteDialog` wrapper; instructor course editor submit-review confirm (`editor-page.tsx`).
-- **Dependencies**: `AlertDialog` primitives from `src/components/ui/alert-dialog.tsx`.
+- **Purpose**: Generic confirm shell with custom labels, loading state, and close guard while `isLoading`. Default variant is a Radix `AlertDialog`; the `stacked` variant renders a `Dialog` (`role="alertdialog"`) meant to sit inside another `Dialog`'s content, sharing the parent's primitive family so focus traps do not fight (a separate `AlertDialog` package copy caused `RangeError: Maximum call stack size exceeded`).
+- **Scope**: `ConfirmDeleteDialog` wrapper; instructor course editor submit-review confirm (`editor-page.tsx`); stacked "use recommended slug?" confirm over the create-course dialog (`useCourseCreateFlow`, `InstructorCoursesPage`; `stacked` variant rendered inside the create `DialogContent`).
+- **Dependencies**: `AlertDialog` primitives from `src/components/ui/alert-dialog.tsx` (default variant); `Dialog` primitives from `src/components/ui/dialog.tsx` and `Button` (`stacked` variant).
 
 ### Asset: buildCourseAdminListColumns
 - **Name**: `buildCourseAdminListColumns`
@@ -712,6 +712,15 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Composed by `useCourseEditorState`; wired from `InstructorCourseEditorPage` outline tab actions.
 - **Dependencies**: `course.ts` outline helpers, reorder API callers, `toastApiError`, lease acquire/release from `useCourseLeaseState`.
 
+### Asset: useCourseCreateFlow
+- **Name**: `useCourseCreateFlow`
+- **Type**: React hook
+- **Path**: `src/hooks/course/use-course-create-flow.ts` (barrel: `src/hooks/course/index.ts`)
+- **Purpose**: Create-course dialog state machine. Builds the `POST /api/v1/courses` body with `toCreateCoursePayload(title, slug)` (`{ title, slug? }`; a blank slug is omitted and the BE generates it — the slug is never derived from the title on the FE). On HTTP 409 with `code === ApiErrorCode.SlugAlreadyExists` (3007) it reads `data.recommended_slug` via `extractRecommendedSlug` and exposes `suggestedSlug` for a stacked `ConfirmActionDialog`: `acceptSuggestion` resubmits with the recommended slug, `dismissSuggestion` returns to the form. Any other error goes to `toastApiError`.
+- **Scope**: `InstructorCoursesPage` create dialog (the confirm is `ConfirmActionDialog stacked`, rendered inside the create `DialogContent`).
+- **Dependencies**: `toCreateCoursePayload` (`src/lib/utils/course.ts`), `extractRecommendedSlug` / `toastApiError` (`src/lib/utils/api-error.ts`), `ApiErrorCode`, `courseCreateSchema`, `createCourseService` (`src/api/callers/course`).
+- **Reuse Rule**: Reuse for any create-with-optional-slug flow; never re-implement 3007 handling inline.
+
 ### Asset: CourseOutlineRowActions
 - **Name**: `CourseOutlineRowActions`
 - **Type**: React component
@@ -791,8 +800,8 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course.ts`, `src/lib/utils/duration.ts`
-- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry (6 tabs incl. `review-history`), basic-info/sub-lesson form state factories (including H/M/S duration parts for TEXT/QUIZ), `buildSubLessonEstimatedDurationPayload` / `validateSubLessonDurationForm`, `toUpdateCourseBasicInfoPayload` (PATCH fields only — no `title`), taxonomy id `Set` mapping, `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE), `validateSubLessonFormContent` / `validateCourseSubmitReadiness` (QUIZ rules delegate to `courseQuizOptionSchema`), quiz editor state helpers `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` for `SubLessonQuizFields`, and `formatDurationMs` / `parseDurationPartsToMs` / `splitMsToDurationParts` for outline labels. **Review workflow UI** (`editor-page.tsx`): `canManageReviewWorkflow` gates prepare/submit/reopen header buttons to `collaborator_role === "OWNER"`.
-- **Scope**: `use-course-editor-state`, `editor-page.tsx`, `course-editor-outline-tab.tsx`, `course-editor-dialogs.tsx`.
+- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry (6 tabs incl. `review-history`), basic-info/sub-lesson form state factories (`createCourseBasicInfoState(version, courseSlug)` seeds the form `slug` from `course.slug`; H/M/S duration parts for TEXT/QUIZ), `buildSubLessonEstimatedDurationPayload` / `validateSubLessonDurationForm`, `toUpdateCourseBasicInfoPayload(basicInfo, persistedSlug)` (sends `title` and all required fields and adds `slug` only when it differs from `persistedSlug`), `toCreateCoursePayload(title, slug)` (`{ title, slug? }`, blank slug omitted; imported from `@/lib/utils/course`), taxonomy id `Set` mapping, `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE), `validateSubLessonFormContent` / `validateCourseSubmitReadiness` (QUIZ rules delegate to `courseQuizOptionSchema`), quiz editor state helpers `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` for `SubLessonQuizFields`, and `formatDurationMs` / `parseDurationPartsToMs` / `splitMsToDurationParts` for outline labels. **Review workflow UI** (`editor-page.tsx`): `canManageReviewWorkflow` gates prepare/submit/reopen header buttons to `collaborator_role === "OWNER"`.
+- **Scope**: `use-course-editor-state`, `use-course-create-flow`, `editor-page.tsx`, `course-editor-outline-tab.tsx`, `course-editor-dialogs.tsx`.
 - **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`); `duration.ts` for display/payload conversion.
 
 ### Asset: dagre-tree utils
@@ -810,6 +819,15 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Nested drag-and-drop tree with name field and read-only slug preview per node. Uses shared `TaxonomyTreeNode` (no duplicate tree type).
 - **Scope**: Taxonomy topics/skills (`TaxonomyTreeEditor` wrapper); similar JSONB trees elsewhere.
 - **Dependencies**: `SortableList`, `slugifyName`, `createTaxonomyTreeNode`, `TaxonomyTreeNode`.
+
+### Asset: SlugInput
+- **Name**: `SlugInput`, `SlugInputProps`
+- **Type**: React component
+- **Path**: `src/components/shared/slug-input.tsx`
+- **Purpose**: Controlled text input for an **editable** slug (`value` + `onValueChange`). Every change goes through `sanitizeSlugInput`: whitespace becomes `-`, every character outside `a-z 0-9 -` (uppercase, accented) is dropped, length capped at `SLUG_MAX_LENGTH` (255). It does not derive a slug from a title. Callers own validation (course schemas, `SLUG_PATTERN`) and error display (`FieldError`).
+- **Scope**: Create-course dialog (optional slug) and the course editor basic-info tab (required slug, disabled without a draft). Taxonomy keeps its read-only slug preview and does not use this component.
+- **Dependencies**: `Input` (`src/components/ui`), `sanitizeSlugInput` (`src/lib/utils/slug.ts`).
+- **Reuse Rule**: Use for any user-editable slug field; never hand-roll slug character filtering in a form.
 
 ### Asset: ImageFileField
 - **Name**: `ImageFileField`, `ImageFileFieldProps`
@@ -831,9 +849,18 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `slugifyName(text: string): string`
 - **Type**: Utility function
 - **Path**: `src/lib/utils/slug.ts`
-- **Purpose**: Build slug from display name (`generateSlug` + `slugifyName` alias): trim, lowercase, remove Vietnamese accents (`đ/Đ -> d`), spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes. Used for **read-only UI preview only**; persisted slugs are computed on BE (`utils.SlugifyName`).
-- **Scope**: Taxonomy form dialog, tree editor, submit handlers.
+- **Purpose**: Build slug from display name (`generateSlug` + `slugifyName` alias): trim, lowercase, remove Vietnamese accents (`đ/Đ -> d`), spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes. Used for **taxonomy read-only UI preview only** (taxonomy slugs are still computed on BE via `utils.SlugifyName`); course slugs are user-editable and do not use this helper.
+- **Scope**: Taxonomy form dialog, tree editor, submit handlers. Not used for course slugs.
 - **Dependencies**: none.
+
+### Asset: sanitizeSlugInput / SLUG_MAX_LENGTH / SLUG_PATTERN
+- **Name**: `sanitizeSlugInput(value: string): string`, `SLUG_MAX_LENGTH` (255), `SLUG_PATTERN`
+- **Type**: Utility function + constants
+- **Path**: `src/lib/utils/slug.ts` (import from `@/lib/utils/slug`; the `@/lib/utils` barrel re-exports only `generateSlug` / `slugifyName`)
+- **Purpose**: Editable-slug input filter and validation constants. `sanitizeSlugInput` maps whitespace to `-`, drops every character outside `a-z 0-9 -` (uppercase and accented letters are dropped, not lowercased or transliterated; non-Latin letters and emoji too) and truncates to `SLUG_MAX_LENGTH`. `SLUG_PATTERN` (`^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$`) is the accepted final shape used by the course Zod schemas. `generateSlug` / `slugifyName` are unchanged (taxonomy preview only).
+- **Scope**: `SlugInput`, `courseCreateSchema` / `courseBasicInfoSchema` slug fields.
+- **Dependencies**: none.
+- **Reuse Rule**: Import the constants instead of repeating `255` or a slug regex.
 
 ### Asset: unicodeCodePointLength / truncateUnicodeCodePoints
 - **Name**: `unicodeCodePointLength(value: string): number`, `truncateUnicodeCodePoints(value: string, max: number): string`
@@ -1194,11 +1221,11 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `ApiErrorCode` (`src/constants/api-error-code.ts`), `ApiResponse` type.
 
 ### Asset: toastApiError / translateApiErrorCode
-- **Name**: `toastApiError`, `translateApiErrorCode`, `extractApiError`, `resolveApiErrorMessageKey`
+- **Name**: `toastApiError`, `translateApiErrorCode`, `extractApiError`, `extractRecommendedSlug`, `resolveApiErrorMessageKey`
 - **Type**: Utility functions
-- **Path**: `src/lib/utils/api-error.ts` (barrel: `@/lib/utils`)
-- **Purpose**: Unified API error resolver — maps `response.code` → `errors.codes.{code}` i18n key. Never passes BE `message` to UI. Development may `console.debug({ code })` only — never BE `message`. Production browser: no custom API Console from this helper.
-- **Scope**: Auth, Me, Media, Taxonomy, Instructor, Course — all `catch` blocks after API calls.
+- **Path**: `src/lib/utils/api-error.ts` (barrel: `@/lib/utils`, except `extractRecommendedSlug` — import it from `@/lib/utils/api-error`)
+- **Purpose**: Unified API error resolver — maps `response.code` → `errors.codes.{code}` i18n key. Never passes BE `message` to UI. Development may `console.debug({ code })` only — never BE `message`. Production browser: no custom API Console from this helper. `extractRecommendedSlug(error)` returns `data.recommended_slug` **only** when the error carries `ApiErrorCode.SlugAlreadyExists` (3007) and the field is a non-blank string, otherwise `undefined`; it shares a private response-body reader with `extractApiError` (no duplicate parsing).
+- **Scope**: Auth, Me, Media, Taxonomy, Instructor, Course — all `catch` blocks after API calls; `extractRecommendedSlug` — create-course flow (`useCourseCreateFlow`).
 - **Dependencies**: `src/messages/error-codes.ts`, `ApiErrorCode`.
 
 ### Asset: RequiredLabel / FieldError

@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-09-16 (added `e2e/`, `src/test-support/`, `scripts/e2e-lifecycle.mjs`, `jest.config.ts`, `playwright.config.ts`; `src/**/*.test.ts(x)` colocated test files across the source tree — see `docs/testing.md`). Prior: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained); 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
+_Last audited: 2026-09-29 (course slug UI: `slug-input.tsx`, `use-course-create-flow.ts`, `slug.ts` `sanitizeSlugInput`, `e2e/tests/course-slug.spec.ts`). Prior: 2026-09-16 (added `e2e/`, `src/test-support/`, `scripts/e2e-lifecycle.mjs`, `jest.config.ts`, `playwright.config.ts`; `src/**/*.test.ts(x)` colocated test files across the source tree — see `docs/testing.md`). Prior: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained); 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -197,7 +197,7 @@ src/components/
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
 │                           #   DeltaEditor, DeltaEditorLinkDialog, DeltaViewer, SortableList (TouchSensor mobile),
-│                           #   SortableTreeEditor, PreviewPdf (dynamic client-only) + preview-pdf-viewer,
+│                           #   SortableTreeEditor, SlugInput, PreviewPdf (dynamic client-only) + preview-pdf-viewer,
 │                           #   SearchBar (stub), ImageFileField
 │                           #   Consumers: course editor + become-instructor bio (restricted DeltaEditor) +
 │                           #   InstructorProfileViewDialog bio (DeltaViewer)
@@ -316,9 +316,10 @@ src/hooks/
 │   ├── use-x-login.ts         # X OAuth popup + postMessage listener (X_OAUTH_MESSAGE_TYPE) → xLoginAction; retained, not on popup
 │   └── use-oauth-post-auth.ts # Shared post-auth: mutateMe + onAuthenticated(nextPath ?? homeHref)
 ├── course/
-│   ├── index.ts            # Barrel: use-course-editor-state, use-course-outline-reorder
+│   ├── index.ts            # Barrel: use-course-editor-state, use-course-outline-reorder, use-course-create-flow
 │   ├── use-course-editor-state.ts  # Course editor state, lease handling, translated toasts
-│   └── use-course-outline-reorder.ts  # Optimistic outline reorder (SWR patch + reorder API)
+│   ├── use-course-outline-reorder.ts  # Optimistic outline reorder (SWR patch + reorder API)
+│   └── use-course-create-flow.ts  # useCourseCreateFlow: create-course submit, optional slug, 409/3007 recommended-slug confirm
 ├── dashboard/
 │   ├── index.ts            # useDashboardPageHeaderOverride, useRegisterDashboardPageHeader
 │   ├── use-dashboard-page-header-override.ts
@@ -417,7 +418,7 @@ src/schema/
 ├── media/media.ts          # upload batch rules (media.validation.*)
 ├── taxonomy/taxonomy.ts    # slug/status/topic/skill/outcome schemas
 ├── instructor/instructor.ts # email, rejection reason, expertise, ticket
-└── course/course.ts        # create, section, lesson, sub-lesson, collaborator, reject
+└── course/course.ts        # create (title + optional slug), basic-info (required slug), section, lesson, sub-lesson, collaborator, reject
 ```
 
 Error messages in schemas use **i18n keys** (not hardcoded strings). Resolve in components via `resolveValidationMessage` or auth-specific `resolveAuthValidationMessage`.
@@ -494,11 +495,11 @@ src/lib/
 │   ├── url.ts              # buildQueryParams() — query string builder
 │   ├── list-query.ts       # apiListQueryToRecord() — BE list filter → query record (taxonomy + media)
 │   ├── api.ts              # isApiSuccess() — ApiResponse success type guard
-│   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractApiError
+│   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractApiError, extractRecommendedSlug (3007)
 │   ├── auth-action.ts      # finalizeAuthLoginAction, mapAuthApiError — shared login-session cookie finalizer
 │   ├── validation-message.ts # resolveValidationMessage, toastValidationError, firstValidationMessageKey
 │   ├── course-delta.ts       # Quill Delta parse/stringify/text helpers + countDeltaNonWhitespace + countDeltaCodePoints + stripDeltaFormatAttributes + sanitizeLockedTextDelta (TEXT_DELTA_LOCKED_FORMAT_ATTRIBUTES policy)
-│   ├── course.ts             # createCourseBasicInfoState, createCourseSubLessonFormState, buildSubLessonEstimatedDurationPayload, validateSubLessonDurationForm, validateSubLessonFormContent, validateCourseSubmitReadiness, applyQuizAllowMultipleChange, applyQuizOptionCorrectChange, rootOutlineStableId, selectedIdsToMap
+│   ├── course.ts             # createCourseBasicInfoState(version, courseSlug), toUpdateCourseBasicInfoPayload(basicInfo, persistedSlug), toCreateCoursePayload(title, slug), createCourseSubLessonFormState, buildSubLessonEstimatedDurationPayload, validateSubLessonDurationForm, validateSubLessonFormContent, validateCourseSubmitReadiness, applyQuizAllowMultipleChange, applyQuizOptionCorrectChange, rootOutlineStableId, selectedIdsToMap
 │   ├── duration.ts           # formatDurationMs, parseDurationPartsToMs, splitMsToDurationParts (curriculum estimated_duration_ms)
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
 │   ├── media.ts            # isImageFilename, isExecutableExtension, validateMediaUploadBatch, isImageMedia, …
@@ -508,7 +509,7 @@ src/lib/
 │   │   ├── resource.ts     # getTaxonomyResourceConfig, getTaxonomySearchableColumns, getTaxonomyTreeFromEntity, buildTaxonomyDagreRoot, toTaxonomyTreeWritePayload, createTaxonomyTreeNode, countTaxonomyTreeNodes
 │   │   ├── form-helpers.ts # CONTENT_LOCALE_OPTIONS, canonicalizeContentLocale, buildTaxonomyFormDefaultValues, compact*Translations, slug preview helpers
 │   │   └── form-submit.ts  # buildTaxonomySubmitPayload, persistTaxonomyForm — import as `@/lib/utils/taxonomy/form-submit` only
-│   ├── slug.ts             # generateSlug() + slugifyName() — live slug normalization
+│   ├── slug.ts             # generateSlug() + slugifyName() (taxonomy preview) + sanitizeSlugInput(), SLUG_MAX_LENGTH, SLUG_PATTERN (editable slug input; import via `@/lib/utils/slug` — the barrel re-exports only generateSlug/slugifyName)
 │   ├── react.ts            # useUniqueId() — stable ID generator for accessibility
 │   ├── user.ts             # pickCharacter() — avatar initial picker
 │   ├── cookie.ts           # isomorphic getCookieValue / setCookieValue; buildCookieOptions
@@ -637,12 +638,15 @@ src/test-support/
 ```
 e2e/
 ├── fixtures/
-│   └── server.mjs                # Loopback HTTP fixture backend (plain node:http, no framework) — auth, /me, course detail/collaborators/candidates (2 seeded outline sections)/sections-reorder/leases, taxonomy lists; CORS headers for cross-origin browser calls
+│   └── server.mjs                # Loopback HTTP fixture backend (plain node:http, no framework) — auth, /me, course detail/collaborators/candidates (2 seeded outline sections)/sections-reorder/leases, taxonomy lists; POST /api/v1/courses (slug create incl. 409/3007 + recommended_slug) and course basic-info PATCH slug echo; CORS headers for cross-origin browser calls
 ├── support/
+│   ├── auth.ts                   # loginAsInstructor() — login through the real popup as the fixture instructor
 │   └── fixture-client.ts         # resetFixtures() / revokeSession() helpers + FIXTURE_USERS
 └── tests/
     ├── auth.spec.ts              # login/logout/expired-session/forbidden journeys
     ├── course-editing.spec.ts    # collaborator submission through the real picker UI; keyboard-driven outline section reorder (@dnd-kit KeyboardSensor)
+    ├── course-error-states.spec.ts # StatusErrorPage forbidden variant on a non-collaborator course
+    ├── course-slug.spec.ts       # optional slug on create, 409/3007 recommended-slug confirm (Yes/No), basic-info slug edit
     └── locale-404.spec.ts        # valid locale / unknown route / unsupported locale
 ```
 

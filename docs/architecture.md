@@ -281,7 +281,9 @@ All HTTP communication and token lifecycle management:
 | `apiFetch` / `apiPost` / `apiPut` / `apiDelete` / `apiOptions` | `api/core/methods.ts` | Low-level helpers on `apiTransport` → `ApiResult<T>` |
 | `getMeService` / `patchMeService` / `deleteMeService` / `getMyPermissionsService` | `api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | Me API callers |
 | `toastApiError` / `translateApiErrorCode` | `lib/utils/api-error.ts` | Map `response.code` → `errors.codes.{code}` |
+| `extractRecommendedSlug` | `lib/utils/api-error.ts` | Read `data.recommended_slug` from a `409` / code 3007 (`SlugAlreadyExists`) create-course error |
 | `RequiredLabel` / `FieldError` | `components/shared/` | Form required asterisk + inline Zod errors |
+| `SlugInput` | `components/shared/slug-input.tsx` | Editable slug field (filters through `sanitizeSlugInput`: `a-z 0-9 -`, whitespace becomes `-`, max 255); used by the course create dialog (optional) and the course basic-info tab (required) |
 | `loginService` | `api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | `POST /api/v1/auth/login` |
 | `listMediaFiles` / `uploadMediaFiles` / `deleteMediaFile` | `api/callers/media/media-factory.ts (+ media-browser.ts)` | Media library CRUD (multipart upload with 30s timeout, delete by `object_key`) |
 | `useMediaFiles` | `api/hooks/media/useMediaFiles.ts` | SWR hook for paginated media list |

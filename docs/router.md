@@ -203,7 +203,7 @@ src/app/[locale]/
 | `/vi/admin` | `[locale]/admin/page.tsx` | `AdminDashboardPage` | ✅ Shell + placeholder |
 | `/vi/instructor` | `[locale]/instructor/page.tsx` | `InstructorDashboardPage` | ✅ Shell + placeholder |
 | `/vi/instructor/courses` | `[locale]/instructor/courses/page.tsx` | `InstructorCoursesPage` | ✅ Implemented |
-| `/vi/instructor/courses/{courseId}/info` | `[locale]/instructor/courses/[courseId]/info/page.tsx` | `InstructorCourseEditorPage` (`tab="info"`) — basic info incl. `about_course` WYSIWYG; Snow tooltip **Edit**/**Remove** update full same-URL link runs across block gaps | ✅ Implemented |
+| `/vi/instructor/courses/{courseId}/info` | `[locale]/instructor/courses/[courseId]/info/page.tsx` | `InstructorCourseEditorPage` (`tab="info"`) — basic info incl. `about_course` WYSIWYG and the editable slug field; Snow tooltip **Edit**/**Remove** update full same-URL link runs across block gaps | ✅ Implemented |
 | `/vi/instructor/courses/{courseId}/outline` | `[locale]/instructor/courses/[courseId]/outline/page.tsx` | `InstructorCourseEditorPage` (`tab="outline"`) | ✅ Implemented |
 | `/vi/instructor/courses/{courseId}/collaborators` | `[locale]/instructor/courses/[courseId]/collaborators/page.tsx` | `InstructorCourseEditorPage` (`tab="collaborators"`) | ✅ Implemented |
 | `/vi/instructor/courses/{courseId}/pricing` | `[locale]/instructor/courses/[courseId]/pricing/page.tsx` | `InstructorCourseEditorPage` (`tab="pricing"`) | ✅ Implemented |

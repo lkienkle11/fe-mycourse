@@ -14,6 +14,7 @@ export {
 export * from "./image-file-field";
 export * from "./permission-gate";
 export * from "./search-bar";
+export * from "./slug-input";
 export * from "./sortable-list";
 export * from "./sortable-tree-editor";
 export * from "./status-error-page";

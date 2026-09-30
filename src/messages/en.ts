@@ -830,6 +830,10 @@ const messages = {
       title: "Please enter a course title.",
       titleMin: "Title must contain at least 5 non-whitespace characters.",
       titleMax: "Title must be at most 255 characters.",
+      slugRequired: "Please enter a slug.",
+      slugInvalid:
+        "Slug may only contain lowercase letters, numbers, and dashes, and cannot start or end with a dash.",
+      slugMax: "Slug must be at most 255 characters.",
       shortDescriptionMin:
         "Short description must contain at least 20 non-whitespace characters.",
       shortDescriptionMax: "Short description must be at most 500 characters.",
@@ -940,6 +944,13 @@ const messages = {
         titleLabel: "Title",
         slugLabel: "Slug",
         slugPlaceholder: "course-slug",
+        slugHint:
+          "Optional. Leave blank to generate one automatically. Lowercase letters, numbers, and dashes only.",
+        slugConflictTitle: "Slug already exists",
+        slugConflictDescription:
+          "This slug already exists. We suggest: {slug}. Do you want to continue creating the course with this slug?",
+        slugConflictConfirm: "Yes",
+        slugConflictCancel: "No",
         create: "Create",
         creating: "Creating...",
       },
@@ -1105,6 +1116,10 @@ const messages = {
         titleLabel: "Title",
         titleReadOnlyHint:
           "Course title is set when the course is created and cannot be changed here.",
+        slugLabel: "Slug",
+        slugPlaceholder: "course-slug",
+        slugHint:
+          "Lowercase letters, numbers, and dashes only. If the slug is already taken, a suffix is added automatically.",
         shortDescriptionLabel: "Short description",
         aboutLabel: "About course",
         thumbnailLabel: "Thumbnail",
@@ -1251,6 +1266,8 @@ const messages = {
         basicInfoSaved: "Course information saved.",
         basicInfoSaveError:
           "Could not save course information. Refresh and try again.",
+        slugAdjusted:
+          "Course information saved. The slug was already taken, so it was changed to {slug}.",
         sectionSaved: "Section saved.",
         sectionSaveError: "Could not save section.",
         sectionDeleted: "Section deleted.",

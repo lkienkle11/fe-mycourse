@@ -7,7 +7,7 @@
  *
  * Typical mapping:
  * - Media upload/delete: 2003–2009, 9011–9019
- * - Taxonomy / course / instructor CRUD: 2001–2002, 2010, 3003–3006
+ * - Taxonomy / course / instructor CRUD: 2001–2002, 2010, 3003–3007
  * - Auth flows: 4001–4012
  */
 export const errorCodesEn = {
@@ -37,6 +37,7 @@ export const errorCodesEn = {
   "3004": "The requested item was not found.",
   "3005": "This action conflicts with the current state.",
   "3006": "Too many requests. Please wait and try again.",
+  "3007": "This slug is already in use.",
 
   // Auth (4xxx)
   "4001": "This email is already registered.",
@@ -110,6 +111,7 @@ export const errorCodesVi = {
   "3004": "Không tìm thấy nội dung yêu cầu.",
   "3005": "Thao tác xung đột với trạng thái hiện tại.",
   "3006": "Quá nhiều yêu cầu. Vui lòng đợi và thử lại.",
+  "3007": "Slug này đã được sử dụng.",
 
   // Auth (4xxx)
   "4001": "Email này đã được đăng ký.",

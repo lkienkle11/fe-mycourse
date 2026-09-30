@@ -3,12 +3,14 @@
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { createCourseService, deleteCourseService } from "@/api/callers/course";
+import { deleteCourseService } from "@/api/callers/course";
 import { useEditableCourses } from "@/api/hooks/course";
 import { CourseStatusBadge } from "@/components/features/course/course-status-badge";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { RequiredLabel } from "@/components/shared/required-label";
+import { SlugInput } from "@/components/shared/slug-input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,30 +20,30 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useCourseCreateFlow } from "@/hooks/course";
 import { useRegisterDashboardPageHeader } from "@/hooks/dashboard";
 import { useRouter } from "@/i18n/navigation";
 import {
   instructorCourseEditorHref,
   instructorCourseEditorTabHref,
 } from "@/lib/navigation/routes";
-import { slugifyName } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
-import { toastValidationError } from "@/lib/utils/validation-message";
-import { courseCreateSchema } from "@/schema/course";
 import type { CourseListItem } from "@/types/course";
 
 export function InstructorCoursesPage() {
   const tCommon = useTranslations("course.common");
   const t = useTranslations("course.list");
-  const tValidation = useTranslations("course.validation");
   const tErrors = useTranslations("errors.codes");
   const router = useRouter();
   const { rows, isLoading, mutate } = useEditableCourses();
   const [createOpen, setCreateOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const derivedSlug = slugifyName(title);
+  const create = useCourseCreateFlow({
+    onCreated: async (created) => {
+      setCreateOpen(false);
+      await mutate();
+      router.push(instructorCourseEditorTabHref(created.course.id, "info"));
+    },
+  });
   const [deleteTarget, setDeleteTarget] = useState<CourseListItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const headerActions = useMemo(
@@ -91,29 +93,6 @@ export function InstructorCoursesPage() {
     ],
     [t, tCommon],
   );
-
-  const handleCreate = async () => {
-    const parsed = courseCreateSchema.safeParse({ title: title.trim() });
-    if (!parsed.success) {
-      toastValidationError(tValidation, parsed.error.issues, "title");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const created = await createCourseService({
-        title: title.trim(),
-      });
-      toast.success(t("toast.created"));
-      setCreateOpen(false);
-      setTitle("");
-      await mutate();
-      router.push(instructorCourseEditorTabHref(created.course.id, "info"));
-    } catch (error) {
-      toastApiError(tErrors, error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleDelete = async () => {
     if (!deleteTarget) {
@@ -231,19 +210,23 @@ export function InstructorCoursesPage() {
               </RequiredLabel>
               <Input
                 id="course-title"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
+                value={create.title}
+                onChange={(event) => create.setTitle(event.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="course-slug">{t("createDialog.slugLabel")}</Label>
-              <Input
+              <RequiredLabel htmlFor="course-slug" required={false}>
+                {t("createDialog.slugLabel")}
+              </RequiredLabel>
+              <SlugInput
                 id="course-slug"
-                readOnly
-                value={derivedSlug}
-                className="cursor-not-allowed bg-muted"
-                aria-readonly
+                value={create.slug}
+                onValueChange={create.setSlug}
+                placeholder={t("createDialog.slugPlaceholder")}
               />
+              <p className="text-xs text-muted-foreground">
+                {t("createDialog.slugHint")}
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -256,14 +239,33 @@ export function InstructorCoursesPage() {
             </Button>
             <Button
               type="button"
-              disabled={isSubmitting || !title.trim() || derivedSlug.length < 1}
-              onClick={() => void handleCreate()}
+              disabled={create.isSubmitting || !create.title.trim()}
+              onClick={() => void create.submit()}
             >
-              {isSubmitting
+              {create.isSubmitting
                 ? t("createDialog.creating")
                 : t("createDialog.create")}
             </Button>
           </DialogFooter>
+
+          <ConfirmActionDialog
+            stacked
+            open={create.suggestedSlug !== null}
+            onOpenChange={(open) => {
+              if (!open) {
+                create.dismissSuggestion();
+              }
+            }}
+            onConfirm={create.acceptSuggestion}
+            title={t("createDialog.slugConflictTitle")}
+            description={t("createDialog.slugConflictDescription", {
+              slug: create.suggestedSlug ?? "",
+            })}
+            confirmLabel={t("createDialog.slugConflictConfirm")}
+            cancelLabel={t("createDialog.slugConflictCancel")}
+            isLoading={create.isSubmitting}
+            loadingLabel={t("createDialog.creating")}
+          />
         </DialogContent>
       </Dialog>
 

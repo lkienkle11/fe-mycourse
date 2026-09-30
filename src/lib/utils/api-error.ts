@@ -29,13 +29,33 @@ export type ExtractedApiError = {
   message: string;
 };
 
-/** Pulls `code` and `message` from an API error envelope. */
-export function extractApiError(error: unknown): ExtractedApiError {
+function readErrorResponseBody(error: unknown): unknown {
   if (isApiHttpError(error)) {
-    return parseApiErrorEnvelope(error.response.data);
+    return error.response.data;
   }
   const legacy = error as { response?: { data?: unknown } };
-  return parseApiErrorEnvelope(legacy?.response?.data);
+  return legacy?.response?.data;
+}
+
+/** Pulls `code` and `message` from an API error envelope. */
+export function extractApiError(error: unknown): ExtractedApiError {
+  return parseApiErrorEnvelope(readErrorResponseBody(error));
+}
+
+/**
+ * Reads `data.recommended_slug` from a slug-conflict (`SlugAlreadyExists`)
+ * error body. Returns `undefined` for any other error or a missing/blank value.
+ */
+export function extractRecommendedSlug(error: unknown): string | undefined {
+  if (extractApiError(error).code !== ApiErrorCode.SlugAlreadyExists) {
+    return undefined;
+  }
+  const body = readErrorResponseBody(error) as
+    | { data?: { recommended_slug?: unknown } | null }
+    | null
+    | undefined;
+  const slug = body?.data?.recommended_slug;
+  return typeof slug === "string" && slug.trim() ? slug : undefined;
 }
 
 /** i18n key for a numeric API error code: `errors.codes.{code}`. */
