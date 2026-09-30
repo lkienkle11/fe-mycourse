@@ -21,6 +21,7 @@ import type {
   CourseSubLessonFormState,
   CourseSubLessonKind,
   CourseVersion,
+  CreateCoursePayload,
   UpdateCourseBasicInfoPayload,
   UpsertCourseQuizOptionPayload,
 } from "@/types/course";
@@ -49,9 +50,11 @@ export const courseEditorTabs = [
 
 export function createCourseBasicInfoState(
   activeVersion?: CourseVersion,
+  courseSlug = "",
 ): CourseBasicInfoForm {
   return {
     title: activeVersion?.title ?? "",
+    slug: courseSlug,
     short_description: activeVersion?.short_description ?? "",
     about_course: activeVersion?.about_course ?? createEmptyDeltaString(),
     thumbnail_file_id: activeVersion?.thumbnail_file_id ?? "",
@@ -69,6 +72,7 @@ export function createCourseBasicInfoState(
 
 export function toUpdateCourseBasicInfoPayload(
   basicInfo: CourseBasicInfoForm,
+  persistedSlug: string,
 ): UpdateCourseBasicInfoPayload {
   const payload: UpdateCourseBasicInfoPayload = {
     expected_row_version: basicInfo.expected_row_version,
@@ -84,6 +88,22 @@ export function toUpdateCourseBasicInfoPayload(
   };
   if (basicInfo.preview_video_file_id) {
     payload.preview_video_file_id = basicInfo.preview_video_file_id;
+  }
+  const slug = basicInfo.slug.trim();
+  if (slug !== persistedSlug) {
+    payload.slug = slug;
+  }
+  return payload;
+}
+
+export function toCreateCoursePayload(
+  title: string,
+  slug: string,
+): CreateCoursePayload {
+  const payload: CreateCoursePayload = { title: title.trim() };
+  const trimmedSlug = slug.trim();
+  if (trimmedSlug) {
+    payload.slug = trimmedSlug;
   }
   return payload;
 }
@@ -400,7 +420,7 @@ export function validateCourseSubmitReadiness(
   }
 
   const basicInfo = courseBasicInfoSchema.safeParse(
-    createCourseBasicInfoState(draftVersion),
+    createCourseBasicInfoState(draftVersion, detail.course.slug),
   );
   if (!basicInfo.success) {
     return basicInfo.error.issues.map((issue) => ({
