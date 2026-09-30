@@ -3,6 +3,7 @@ import {
   countDeltaNonWhitespace,
   countNonWhitespace,
 } from "@/lib/utils/course-delta";
+import { SLUG_MAX_LENGTH, SLUG_PATTERN } from "@/lib/utils/slug";
 
 const titleField = z
   .string({ message: "validation.title" })
@@ -12,15 +13,31 @@ const titleField = z
   })
   .max(255, { message: "validation.titleMax" });
 
+const slugFormatField = (allowEmpty: boolean) =>
+  z
+    .string()
+    .max(SLUG_MAX_LENGTH, { message: "validation.slugMax" })
+    .refine(
+      (value) => (allowEmpty && value === "") || SLUG_PATTERN.test(value),
+      {
+        message: "validation.slugInvalid",
+      },
+    );
+
 const requiredUuid = (message: string) =>
   z.string().trim().min(1, { message }).uuid({ message });
 
 export const courseCreateSchema = z.object({
   title: titleField,
+  slug: slugFormatField(true),
 });
 
 export const courseBasicInfoSchema = z.object({
   title: titleField,
+  slug: z
+    .string()
+    .min(1, { message: "validation.slugRequired" })
+    .pipe(slugFormatField(false)),
   short_description: z
     .string()
     .trim()

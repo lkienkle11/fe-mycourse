@@ -45,6 +45,7 @@ Transport code is grouped by folder (SoT owners stay as separate files inside fo
 - Server authenticated redirects follow only 301/302/303/307/308 (304 and other 3xx are not Location hops).
 - Success type guard: `isApiSuccess()` in `src/lib/utils/api.ts`.
 - User-facing errors: `toastApiError` / `translateApiErrorCode` in `src/lib/utils/api-error.ts` → `errors.codes.{code}`.
+- `ApiErrorCode.SlugAlreadyExists` (**3007**, HTTP 409) is returned by `POST /courses` when the slug is taken; the create response body carries `data.recommended_slug`, read with `extractRecommendedSlug(error)` (`src/lib/utils/api-error.ts`, code 3007 only).
 
 ## Auth routes used
 - `POST /api/v1/auth/login`
@@ -85,9 +86,9 @@ Mounted under `API_PRIVATE_ROUTES.course` — see `src/api/callers/course/course
 | Route | Caller / hook | Notes |
 |-------|---------------|-------|
 | `GET /api/v1/courses/my` | `listMyCoursesService` / `useMyCourses` | Instructor editable course list |
-| `POST /api/v1/courses` | `createCourseService` | Body `{ title }` only |
+| `POST /api/v1/courses` | `createCourseService` | Body `{ title, slug? }` (`toCreateCoursePayload`); a blank slug is omitted so the BE generates it. A taken slug returns `409` / code **3007** with `data.recommended_slug` (`extractRecommendedSlug`); `useCourseCreateFlow` confirms and resubmits with the recommended slug |
 | `GET /api/v1/courses/:courseId` | `getCourseDetailService` / `useCourseDetail` | Optional `include_outline=false` on info/collaborators tabs |
-| `PATCH /api/v1/courses/:courseId/basic-info` | `updateCourseBasicInfoService` | Optimistic lock via `expected_row_version`; FE updates lock from PATCH response + SWR cache (`handleSaveBasicInfo` / `useCourseBasicInfoState`) so back-to-back saves stay in sync |
+| `PATCH /api/v1/courses/:courseId/basic-info` | `updateCourseBasicInfoService` | Optimistic lock via `expected_row_version`; FE updates lock from PATCH response + SWR cache (`handleSaveBasicInfo` / `useCourseBasicInfoState`) so back-to-back saves stay in sync. Body includes `slug` only when it differs from the persisted `course.slug` (`toUpdateCourseBasicInfoPayload`); the response `data.course.slug` is the source of truth (if it differs from the sent slug the UI toasts `course.editor.toast.slugAdjusted`) |
 | `DELETE /api/v1/courses/:courseId` | `deleteCourseService` | Owner-only |
 | Collaborator list / picker | `listCourseCollaboratorsService`, `listCourseInstructorCandidatesService`, `useCourseCollaborators`, `useCourseInstructorCandidates` | Paginated `GET …/collaborators` (`course_instructor:read`) + picker `GET …/instructor-candidates` (**P67** `course_collaborator_candidate:read`; owner-only in repo) |
 | Collaborator CRUD | `*Collaborator*Service` | Under `/courses/:courseId/collaborators` |

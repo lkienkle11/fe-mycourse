@@ -207,11 +207,13 @@ export type CourseProgress = {
 
 export type CreateCoursePayload = {
   title: string;
+  slug?: string;
 };
 
 export type UpdateCourseBasicInfoPayload = {
   expected_row_version: number;
   title: string;
+  slug?: string;
   short_description: string;
   about_course: string;
   thumbnail_file_id: string;
@@ -313,6 +315,7 @@ export type CourseSelectionKey = "tag_ids" | "skill_ids" | "outcome_ids";
 
 export type CourseBasicInfoForm = {
   title: string;
+  slug: string;
   short_description: string;
   about_course: string;
   thumbnail_file_id: string;

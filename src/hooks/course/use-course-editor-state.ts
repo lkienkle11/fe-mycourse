@@ -67,25 +67,33 @@ type UseCourseEditorStateParams = {
   mutateDetail: KeyedMutator<CourseDetail>;
 };
 
-function useCourseBasicInfoState(activeVersion?: CourseVersion) {
+function useCourseBasicInfoState(
+  activeVersion?: CourseVersion,
+  courseSlug = "",
+) {
   const activeVersionId = activeVersion?.id ?? "";
   const activeRowVersion = activeVersion?.row_version ?? 0;
   const [basicInfo, setBasicInfo] = useState<CourseBasicInfoForm>(() =>
-    createCourseBasicInfoState(activeVersion),
+    createCourseBasicInfoState(activeVersion, courseSlug),
   );
   const [syncedVersionId, setSyncedVersionId] = useState(activeVersionId);
   const [syncedRowVersion, setSyncedRowVersion] = useState(activeRowVersion);
+  const [syncedCourseSlug, setSyncedCourseSlug] = useState(courseSlug);
 
   if (syncedVersionId !== activeVersionId) {
     setSyncedVersionId(activeVersionId);
     setSyncedRowVersion(activeRowVersion);
-    setBasicInfo(createCourseBasicInfoState(activeVersion));
+    setBasicInfo(createCourseBasicInfoState(activeVersion, courseSlug));
   } else if (syncedRowVersion !== activeRowVersion) {
     setSyncedRowVersion(activeRowVersion);
     setBasicInfo((prev) => ({
       ...prev,
       expected_row_version: activeRowVersion,
     }));
+  }
+  if (syncedCourseSlug !== courseSlug) {
+    setSyncedCourseSlug(courseSlug);
+    setBasicInfo((prev) => ({ ...prev, slug: courseSlug }));
   }
 
   const tagSelection = useMemo(
@@ -295,7 +303,7 @@ export function useCourseEditorState({
     outcomeId,
     setOutcomeId,
     toggleSelection,
-  } = useCourseBasicInfoState(activeVersion);
+  } = useCourseBasicInfoState(activeVersion, courseDetail?.course.slug);
   const { isSubmittingCollaborator, setIsSubmittingCollaborator } =
     useCourseCollaboratorState();
   const { handleAddCollaborators, handleRemoveCollaborator } =
@@ -374,19 +382,24 @@ export function useCourseEditorState({
     }
     setIsSavingBasicInfo(true);
     try {
-      const detail = await updateCourseBasicInfoService(
-        courseId,
-        toUpdateCourseBasicInfoPayload(basicInfo),
+      const payload = toUpdateCourseBasicInfoPayload(
+        basicInfo,
+        courseDetail?.course.slug ?? "",
       );
-      const nextRowVersion = detail.draft_version?.row_version;
-      if (nextRowVersion != null) {
-        setBasicInfo((prev) => ({
-          ...prev,
-          expected_row_version: nextRowVersion,
-        }));
-      }
+      const detail = await updateCourseBasicInfoService(courseId, payload);
+      const savedSlug = detail.course.slug;
+      setBasicInfo((prev) => ({
+        ...prev,
+        slug: savedSlug,
+        expected_row_version:
+          detail.draft_version?.row_version ?? prev.expected_row_version,
+      }));
       await mutateDetail(detail, { revalidate: false });
-      toast.success(t("basicInfoSaved"));
+      if (payload.slug !== undefined && payload.slug !== savedSlug) {
+        toast.info(t("slugAdjusted", { slug: savedSlug }));
+      } else {
+        toast.success(t("basicInfoSaved"));
+      }
     } catch (error) {
       toastApiError(tErrors, error);
     } finally {

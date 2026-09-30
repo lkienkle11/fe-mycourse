@@ -829,6 +829,10 @@ const messages = {
       title: "Vui lòng nhập tiêu đề khóa học.",
       titleMin: "Tiêu đề cần ít nhất 5 ký tự (không tính khoảng trắng).",
       titleMax: "Tiêu đề tối đa 255 ký tự.",
+      slugRequired: "Vui lòng nhập slug.",
+      slugInvalid:
+        "Slug chỉ gồm chữ thường, số và dấu gạch ngang, và không được bắt đầu hoặc kết thúc bằng dấu gạch ngang.",
+      slugMax: "Slug tối đa 255 ký tự.",
       shortDescriptionMin:
         "Mô tả ngắn cần ít nhất 20 ký tự (không tính khoảng trắng).",
       shortDescriptionMax: "Mô tả ngắn tối đa 500 ký tự.",
@@ -938,6 +942,13 @@ const messages = {
         titleLabel: "Tiêu đề",
         slugLabel: "Đường dẫn tĩnh",
         slugPlaceholder: "khoa-hoc-cua-ban",
+        slugHint:
+          "Không bắt buộc. Để trống để hệ thống tự tạo. Chỉ gồm chữ thường, số và dấu gạch ngang.",
+        slugConflictTitle: "Slug đã tồn tại",
+        slugConflictDescription:
+          "Slug này đã tồn tại. Chúng tôi đề xuất: {slug}. Bạn có muốn tiếp tục tạo khóa học với slug này không?",
+        slugConflictConfirm: "Có",
+        slugConflictCancel: "Không",
         create: "Tạo",
         creating: "Đang tạo...",
       },
@@ -1102,6 +1113,10 @@ const messages = {
         titleLabel: "Tiêu đề",
         titleReadOnlyHint:
           "Tiêu đề khóa học được đặt khi tạo khóa học và không thể đổi tại đây.",
+        slugLabel: "Đường dẫn tĩnh",
+        slugPlaceholder: "khoa-hoc-cua-ban",
+        slugHint:
+          "Chỉ gồm chữ thường, số và dấu gạch ngang. Nếu slug đã được dùng, hệ thống sẽ tự thêm hậu tố.",
         shortDescriptionLabel: "Mô tả ngắn",
         aboutLabel: "Giới thiệu khóa học",
         thumbnailLabel: "Ảnh bìa",
@@ -1252,6 +1267,8 @@ const messages = {
         basicInfoSaved: "Đã lưu thông tin khóa học.",
         basicInfoSaveError:
           "Không thể lưu thông tin khóa học. Vui lòng tải lại và thử lại.",
+        slugAdjusted:
+          "Đã lưu thông tin khóa học. Slug đã được dùng nên được đổi thành {slug}.",
         sectionSaved: "Đã lưu phần.",
         sectionSaveError: "Không thể lưu phần.",
         sectionDeleted: "Đã xóa phần.",

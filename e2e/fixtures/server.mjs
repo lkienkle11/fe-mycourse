@@ -50,6 +50,12 @@ const CANDIDATE_USER = {
 };
 
 const COURSE_ID = "course-fixture-1";
+const DEFAULT_COURSE_SLUG = "fixture-course";
+/** Slug the fixture always reports as already used (409 on create, suffixed on update). */
+const TAKEN_SLUG = "taken-slug";
+const TAKEN_SLUG_SUFFIXED = `${TAKEN_SLUG}-x7k92ab`;
+let courseSlug = DEFAULT_COURSE_SLUG;
+let draftRowVersion = 1;
 let collaborators = [
   {
     user_id: "user-instructor",
@@ -72,6 +78,8 @@ function resetState() {
   ];
   outlineSections = buildInitialOutlineSections();
   leasesByToken = new Map();
+  courseSlug = DEFAULT_COURSE_SLUG;
+  draftRowVersion = 1;
 }
 
 function json(res, status, body, extraHeaders = {}) {
@@ -196,7 +204,7 @@ function buildCourseDetail() {
     course: {
       id: COURSE_ID,
       owner_user_id: "user-instructor",
-      slug: "fixture-course",
+      slug: courseSlug,
       created_at: 1_700_000_000,
       updated_at: 1_700_000_000,
     },
@@ -208,11 +216,18 @@ function buildCourseDetail() {
       status: "DRAFT",
       title: "Fixture Course",
       short_description: "A synthetic course used by Playwright journeys.",
-      about_course: "",
-      tag_ids: [],
-      skill_ids: [],
-      outcome_ids: [],
-      row_version: 1,
+      about_course: JSON.stringify({
+        ops: [
+          { insert: "A synthetic about-course body used by Playwright.\n" },
+        ],
+      }),
+      thumbnail_file_id: "0198c2f0-0000-7000-8000-000000000001",
+      course_level_id: "0198c2f0-0000-7000-8000-000000000002",
+      course_topic_id: "0198c2f0-0000-7000-8000-000000000003",
+      tag_ids: ["0198c2f0-0000-7000-8000-000000000004"],
+      skill_ids: ["0198c2f0-0000-7000-8000-000000000005"],
+      outcome_ids: ["0198c2f0-0000-7000-8000-000000000006"],
+      row_version: draftRowVersion,
       rejection_reason: "",
       created_at: 1_700_000_000,
       updated_at: 1_700_000_000,
@@ -368,6 +383,33 @@ async function handle(req, res) {
     }
 
     if (method === "GET" && pathname === `/api/v1/courses/${COURSE_ID}`) {
+      return json(res, 200, envelope(0, "ok", buildCourseDetail()));
+    }
+
+    if (method === "POST" && pathname === "/api/v1/courses") {
+      const body = (await readBody(req)) ?? {};
+      if (body.slug === TAKEN_SLUG) {
+        return json(
+          res,
+          409,
+          envelope(3007, "Slug already exists", {
+            recommended_slug: TAKEN_SLUG_SUFFIXED,
+          }),
+        );
+      }
+      courseSlug = body.slug || "generated-course-slug";
+      return json(res, 201, envelope(0, "ok", buildCourseDetail()));
+    }
+
+    if (
+      method === "PATCH" &&
+      pathname === `/api/v1/courses/${COURSE_ID}/basic-info`
+    ) {
+      const body = (await readBody(req)) ?? {};
+      if (body.slug !== undefined) {
+        courseSlug = body.slug === TAKEN_SLUG ? TAKEN_SLUG_SUFFIXED : body.slug;
+      }
+      draftRowVersion += 1;
       return json(res, 200, envelope(0, "ok", buildCourseDetail()));
     }
 
