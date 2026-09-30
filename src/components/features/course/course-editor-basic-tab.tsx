@@ -6,6 +6,7 @@ import { DeltaEditor } from "@/components/shared/delta-editor";
 import { FieldError } from "@/components/shared/field-error";
 import { ImageFileField } from "@/components/shared/image-file-field";
 import { RequiredLabel } from "@/components/shared/required-label";
+import { SlugInput } from "@/components/shared/slug-input";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -136,6 +137,41 @@ export function CourseBasicInfoTab({
                         }));
                       }}
                     />
+                    <FieldError
+                      error={fieldState.error}
+                      message={resolveValidationMessage(
+                        tCourse as unknown as (key: string) => string,
+                        fieldState.error?.message,
+                      )}
+                    />
+                  </div>
+                )}
+              />
+
+              <Controller
+                name="slug"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <div className="space-y-2">
+                    <RequiredLabel htmlFor="course-basic-slug">
+                      {t("slugLabel")}
+                    </RequiredLabel>
+                    <SlugInput
+                      id="course-basic-slug"
+                      name={field.name}
+                      ref={field.ref}
+                      onBlur={field.onBlur}
+                      value={field.value}
+                      disabled={!editable}
+                      placeholder={t("slugPlaceholder")}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setBasicInfo((prev) => ({ ...prev, slug: value }));
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t("slugHint")}
+                    </p>
                     <FieldError
                       error={fieldState.error}
                       message={resolveValidationMessage(
