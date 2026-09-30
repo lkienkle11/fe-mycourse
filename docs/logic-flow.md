@@ -334,24 +334,48 @@ Components can subscribe to the global error store:
 
 ## 10. Course Editor — Basic Info Save (Optimistic Lock)
 
-**Source:** `src/hooks/course/use-course-editor-state.ts`, `src/lib/utils/course.ts`, `updateCourseBasicInfoService`
+**Source:** `src/hooks/course/use-course-editor-state.ts`, `src/lib/utils/course.ts` (`createCourseBasicInfoState`, `toUpdateCourseBasicInfoPayload`), `updateCourseBasicInfoService`
 
 ```
 User clicks Save on info tab
   ↓
 handleSaveBasicInfo()
   ├─ courseBasicInfoSchema.safeParse(basicInfo)  → fail? toastValidationError
-  ├─ PATCH /courses/:id/basic-info  { …fields, expected_row_version }
+  ├─ PATCH /courses/:id/basic-info  { …fields, expected_row_version, slug? }   (slug only if ≠ persisted course.slug)
   ├─ success: setBasicInfo.expected_row_version ← response draft_version.row_version
   ├─ mutateDetail(response, { revalidate: false })  → SWR cache row_version in sync
-  └─ toast "basicInfoSaved"
+  └─ response data.course.slug ≠ sent slug ? toast "slugAdjusted" : toast "basicInfoSaved"
 
-useCourseBasicInfoState(activeVersion)
+useCourseBasicInfoState(activeVersion, courseSlug)   [createCourseBasicInfoState(version, courseSlug)]
   ├─ draft version id changed  → reset full form from server
   └─ same id, row_version changed  → update expected_row_version only (external refresh / cache)
 ```
 
-BE increments `row_version` on each PATCH; stale `expected_row_version` returns `409` / app code `3005`.
+BE increments `row_version` on each PATCH; stale `expected_row_version` returns `409` / app code `3005`. The slug is independent of the title (the BE no longer recomputes it); the persisted slug from the PATCH response (`data.course.slug`) is authoritative, and a taken slug on create returns `409` / app code `3007` (`ApiErrorCode.SlugAlreadyExists`).
+
+---
+
+## 10a. Course Create — Optional Slug and Slug Conflict (3007)
+
+**Source:** `src/hooks/course/use-course-create-flow.ts` (`useCourseCreateFlow`), `src/lib/utils/course.ts` (`toCreateCoursePayload`), `src/lib/utils/api-error.ts` (`extractRecommendedSlug`), `src/components/shared/slug-input.tsx`, `src/screen/instructor/courses/page.tsx`
+
+```
+User submits create dialog { title, slug? }
+  ↓
+courseCreateSchema.safeParse  → invalid → toastValidationError
+  ↓
+toCreateCoursePayload(title, slug)  → blank slug omitted → { title } | { title, slug }
+  ↓
+POST /api/v1/courses
+  ├─ success → toast created, reset form, onCreated → close dialog, refresh list, open editor
+  ├─ 409 + code 3007 + data.recommended_slug  (extractRecommendedSlug(error))
+  │     → suggestedSlug set → stacked ConfirmActionDialog
+  │         ├─ Yes → resubmit with slug = recommended_slug   (repeats on a new 3007)
+  │         └─ No  → dismissSuggestion, return to form (input unchanged)
+  └─ other error → toastApiError(tErrors, error)
+```
+
+The FE never derives a slug from the title; a blank slug lets the BE generate it. The confirm is `ConfirmActionDialog stacked`, rendered inside the create `DialogContent` (React-tree nested) and built on the same `Dialog` primitive family as the create dialog: a sibling dialog would dismiss the create dialog (Radix treats its focus as outside), and a separate `AlertDialog` package copy fights the parent focus trap (`RangeError: Maximum call stack size exceeded`).
 
 ---
 
@@ -433,6 +457,9 @@ const isPreview = subLessonForm.kind === "QUIZ" ? false : subLessonForm.is_previ
 | `submitOutlineNoSections` | Outline has no sections |
 | `submitOutlineNoLessons` | A section has no lessons |
 | `submitOutlineNoItems` | A lesson has no sub-lessons |
+| `slugRequired` | Basic-info slug is empty |
+| `slugInvalid` | Slug does not match `SLUG_PATTERN`: `a-z`, `0-9`, `-`; no leading/trailing `-` |
+| `slugMax` | Slug longer than `SLUG_MAX_LENGTH` (255) |
 
 ---
 

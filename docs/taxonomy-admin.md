@@ -89,11 +89,12 @@ Edit/reorder still uses `SortableTreeEditor` in the form dialog — separate fro
 
 Topics and outcomes support optional `image_file_id` (media file UUID). The form dialog opens **Browse media** (`MediaCollectionDialog` with `visibleTabs={["image"]}` only — no document/video tabs) when the user has `media_file:read`. Selection callback receives both the selected `file` and active-tab `type`; taxonomy accepts only `type === "image"`, then stores `file.id` and shows a thumbnail when picked in-session. On edit, preview also hydrates from API field `image_file_url`. The preview/picker UI is implemented via shared component `ImageFileField` at `src/components/shared/image-file-field.tsx`. See [media-collection.md](./media-collection.md).
 
-## Slug (read-only preview; server authority)
+## Slug (read-only preview; server authority — taxonomy only)
 
 - UI preview uses `slugifyName()` / `generateSlug()` in `src/lib/utils/slug.ts` (trim, lowercase, remove Vietnamese accents, `đ/Đ -> d`, spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes).
 - On edit, slug preview falls back to API `slug` until the watched canonical `name` field is non-empty (avoids empty preview when `useWatch` lags behind `defaultValues` after dialog remount).
 - Slug field is **read-only** on create and edit; users only type the name.
+- Scope: this read-only, name-derived behavior applies to **taxonomy only**. Course slugs are editable and independent of the title (shared `SlugInput`, `sanitizeSlugInput`, `SLUG_PATTERN`, `SLUG_MAX_LENGTH` in `src/lib/utils/slug.ts`); `generateSlug` / `slugifyName` are not used for courses. See `docs/patterns.md` §15 and `docs/instructor-admin.md`.
 - **Create/update API payloads omit `slug`** — BE derives it from **canonical `name`** (and from each tree node canonical `name`) via `utils.SlugifyName`. Non-`en` translation-only edits do not regenerate slug.
 - Tree nodes: canonical name is editable, slug preview is read-only; write payload omits `slug` on `TaxonomyTreeNode` (use `toTaxonomyTreeWritePayload()` in `src/lib/utils/taxonomy/`).
 

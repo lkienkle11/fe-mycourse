@@ -348,7 +348,7 @@ Schemas live under `src/schema/<domain>/` (barrel `@/schema`). Each module uses 
 | `media.validation` | `tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected` |
 | `taxonomy.form.validation` | `name`, `nameMax`, `shortDescription`, `shortDescriptionMax`, `descriptionMaxLines`, `descriptionLineMax` |
 | `instructor.validation` | `email`, `rejectionReason`, `rejectionReasonMax`, `topicId`, `skillId`, `ticketSubject`, `ticketMessage` |
-| `course.validation` | `title`, `titleMax`, `shortDescriptionMax`, `sectionTitle`, `lessonTitle`, `subLessonTitle`, `subLessonKind`, `quizPrompt`, `quizOptionBody`, `quizOptionsMin`, `quizCorrectAnswerRequired`, `quizSingleChoiceMultipleCorrect`, `quizPreviewNotAllowed`, `videoMediaRequired`, `textContentRequired`, `submitInvalidSubLesson`, `submitBasicInfoIncomplete`, `submitCollaboratorRequired`, `submitOutlineNoSections`, `submitOutlineNoLessons`, `submitOutlineNoItems`, `rejectReason`, `rejectReasonMax` |
+| `course.validation` | `title`, `titleMax`, `slugRequired`, `slugInvalid`, `slugMax`, `shortDescriptionMax`, `sectionTitle`, `lessonTitle`, `subLessonTitle`, `subLessonKind`, `quizPrompt`, `quizOptionBody`, `quizOptionsMin`, `quizCorrectAnswerRequired`, `quizSingleChoiceMultipleCorrect`, `quizPreviewNotAllowed`, `videoMediaRequired`, `textContentRequired`, `submitInvalidSubLesson`, `submitBasicInfoIncomplete`, `submitCollaboratorRequired`, `submitOutlineNoSections`, `submitOutlineNoLessons`, `submitOutlineNoItems`, `rejectReason`, `rejectReasonMax` |
 
 Taxonomy forms resolve Zod keys via `useTranslations("taxonomy.form")` + schema key `validation.*` (same parent-namespace pattern as auth).
 
@@ -569,7 +569,12 @@ Same ESLint config enforces **type-only** files under `src/types/` (no `const`, 
 
 ## 15. Slug fields
 
-Taxonomy and course-create slugs are **read-only** in the UI. Show a live preview with `generateSlug(name)` / `slugifyName(name)` while the user types the name or title. **Do not send `slug` in create/update API payloads** — the backend computes the persisted slug with `utils.SlugifyName`. Use one shared `TaxonomyTreeNode` type (`slug?` optional on write); strip slugs with `toTaxonomyTreeWritePayload()` before taxonomy mutations. Do not expose an editable slug input or duplicate tree node types.
+**Taxonomy** slugs are **read-only** in the UI. Show a live preview with `generateSlug(name)` / `slugifyName(name)` while the user types the name. **Do not send `slug` in taxonomy create/update payloads** — the backend computes the persisted slug with `utils.SlugifyName`. Use one shared `TaxonomyTreeNode` type (`slug?` optional on write); strip slugs with `toTaxonomyTreeWritePayload()` before taxonomy mutations. Do not expose an editable slug input or duplicate tree node types. `generateSlug` / `slugifyName` are for taxonomy only.
+
+**Course** slugs are **editable** and independent of the course title (no title-derived slug or preview in the FE). Reuse the shared `SlugInput` (`src/components/shared/slug-input.tsx`), which filters input through `sanitizeSlugInput` (`src/lib/utils/slug.ts`: whitespace becomes `-`, every character outside `a-z 0-9 -` is dropped, max `SLUG_MAX_LENGTH` = 255); validate with `SLUG_PATTERN` through `courseCreateSchema` / `courseBasicInfoSchema` (`course.validation.slugRequired` / `slugInvalid` / `slugMax`).
+
+- Create dialog: the slug is **optional**; a blank slug is omitted from `POST /courses` (`toCreateCoursePayload(title, slug)` from `@/lib/utils/course`) so the BE generates it. A `409` / code **3007** with `data.recommended_slug` (`extractRecommendedSlug`) opens a stacked `ConfirmActionDialog` (Yes resubmits with the recommended slug and repeats on a new 3007; No returns to the form) — see `useCourseCreateFlow` (`src/hooks/course/use-course-create-flow.ts`). Render the confirm as `ConfirmActionDialog stacked` inside the create `DialogContent` (React-tree nested): a sibling dialog would dismiss the parent (Radix treats its focus as outside), and the default `AlertDialog` variant comes from a separate Radix package copy whose focus trap fights the parent dialog's (`RangeError: Maximum call stack size exceeded`). Use `stacked` whenever a confirm opens over another `Dialog`.
+- Basic-info tab: the slug is **required**, defaults to `course.slug`, and is disabled while there is no draft. `toUpdateCourseBasicInfoPayload(basicInfo, persistedSlug)` sends `slug` only when it differs from the persisted slug; the response `data.course.slug` is the source of truth.
 
 ---
 

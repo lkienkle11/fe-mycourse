@@ -405,6 +405,17 @@ Domain modules may alias or extend this shape. Taxonomy extends it with `search_
 
 ---
 
+### Course create and basic-info slug
+
+| Service | Method / path | Body |
+|---------|---------------|------|
+| `createCourseService` | `POST /api/v1/courses` | `{ title, slug? }` built by `toCreateCoursePayload(title, slug)` (`@/lib/utils/course`); a blank slug is omitted |
+| `updateCourseBasicInfoService` | `PATCH /api/v1/courses/:courseId/basic-info` | `expected_row_version` plus optional `slug` from `toUpdateCourseBasicInfoPayload(basicInfo, persistedSlug)` |
+
+Slug conflicts return HTTP `409` with app code **3007** (`ApiErrorCode.SlugAlreadyExists`, copy in `errors.codes.3007` en/vi). `extractRecommendedSlug(error)` (`src/lib/utils/api-error.ts`) reads `data.recommended_slug` (code 3007 only); `useCourseCreateFlow` opens a stacked `ConfirmActionDialog` (Yes resubmits with the recommended slug, No returns to the form). After a PATCH, `data.course.slug` is the source of truth and `course.editor.toast.slugAdjusted` shows when it differs from the slug sent. Input filtering and limits live in `src/lib/utils/slug.ts` (`sanitizeSlugInput`, `SLUG_PATTERN`, `SLUG_MAX_LENGTH`).
+
+---
+
 ## Course detail (instructor)
 
 Callers: `src/api/callers/course/course-factory.ts (+ course-browser.ts)`, hook `useCourseDetail` in `src/api/hooks/course/useCourses.ts`.
@@ -525,6 +536,7 @@ setServerError(translateApiErrorCode(tErrors, result.code));
 
 - i18n keys: `errors.codes.{code}` in `src/messages/en.ts` / `vi.ts` (sourced from `src/messages/error-codes.ts`).
 - Unknown codes fall back to `errors.codes.9999`.
+- `409` slug conflicts use code **3007** (`ApiErrorCode.SlugAlreadyExists`); `extractRecommendedSlug(error)` reads `data.recommended_slug` for the create-course confirm flow.
 - FE form validation uses separate namespaces (`auth.validation.*`, `course.validation.*`, …) — never mix with API codes.
 
 ---
