@@ -1,6 +1,6 @@
 # Instructor management (FE)
 
-_Last audited: 2026-10-15 (course create dialog now built on the shared `useSlugConflictFlow`). Prior: 2026-07-06 — Approvals ⋮ menu: **Delete** only when applicant account is ineligible (disabled / banned / email unconfirmed); active users get View + Approve + Reject only. Prior: roster profile modal on `portfolioId`; removed Profiles screen._
+_Last audited: 2026-10-15 (instructor identity types carry the user `slug`: `InstructorUserIdentity`, `InstructorRosterMember`). Prior: 2026-10-15 (course create dialog now built on the shared `useSlugConflictFlow`). Prior: 2026-07-06 — Approvals ⋮ menu: **Delete** only when applicant account is ineligible (disabled / banned / email unconfirmed); active users get View + Approve + Reject only. Prior: roster profile modal on `portfolioId`; removed Profiles screen._
 
 Admin and sysadmin dashboards manage instructors via BE `/api/v1/instructors`, `/instructor-applications`, `/instructor-profiles`, `/instructor-expertise-*` (junction), and `/instructor-tickets`. Instructors use `/instructor/tickets` for their own support tickets (create, thread, close).
 
@@ -145,6 +145,7 @@ Reuses: `DataTable`, `ConfirmDeleteDialog`, `PermissionGate`, shared `Searchable
 
 - Roster table includes an `Avatar` column.
 - **Approvals and admin tickets** use `InstructorUserCell` — avatar + `display_name` + `email` (no raw `id` / `user_id` columns). **Roster** uses avatar + name/email columns directly (not `InstructorUserCell`).
+- BE identity rows (`InstructorUserIdentity` for application and profile list/detail, `InstructorRosterMember` for the roster and its bulk-add result) also carry the user `slug` (`""` until assigned). It is typed data only: no column, link or search uses it yet (BE search is `display_name` / `email`).
 - Avatar rendering rule is shared across instructor screens:
   - use API `avatar` URL when present
   - otherwise fallback to generated initials via `pickCharacter(full_name | display_name)`.

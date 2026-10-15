@@ -1,6 +1,6 @@
 # Instructor application page (user)
 
-_Last audited: 2026-07-06 — Wikidata filter: allow video-game **companies** (developer/publisher/studio); block game **titles** only; `allSettled` vi/en fetch; merge prefers description-passing locale (Riot Games). Prior: prefix-match + token suffix for Samsung/PayPal._
+_Last audited: 2026-10-15 (`MyInstructorApplication` carries the user `slug`). Prior: 2026-07-06 — Wikidata filter: allow video-game **companies** (developer/publisher/studio); block game **titles** only; `allSettled` vi/en fetch; merge prefers description-passing locale (Riot Games). Prior: prefix-match + token suffix for Samsung/PayPal._
 
 Public authenticated page for learners to submit and manage their **instructor application**. Admin review UX remains in [`instructor-admin.md`](./instructor-admin.md).
 
@@ -51,7 +51,7 @@ Feature logic lives under one namespace; components only render UI.
 
 **Constants:** `src/constants/instructor-application.ts` — `YEAR_EXPERIENCE_BUCKETS`, page-state type.
 
-**API/domain types:** `src/types/instructor.ts` — single source for `YearsExperienceCode`, `MyInstructorApplication`, payloads.
+**API/domain types:** `src/types/instructor.ts` — single source for `YearsExperienceCode`, `MyInstructorApplication` (includes the user `slug`, `""` until assigned; not rendered), payloads.
 
 **UI:** `src/components/features/instructor/become-instructor-application/` — `application-form`, `sections`, `panels`, `combobox-fields`, `taxonomy-select`, `taxonomy-section`, `certificate-list`; render only.
 

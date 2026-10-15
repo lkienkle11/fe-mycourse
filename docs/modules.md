@@ -1,6 +1,6 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-10-15 (Taxonomy slug management UI: editable root + per-node slug, 3007 recommended-slug confirm via shared hook). Prior: 2026-09-29 (Course slug management UI: editable slug on create + basic-info, 3007 recommended-slug confirm). Prior: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code retained). Prior: 2026-06-17 (course read-path performance: `include_outline`, `include_images`, browser-verified info tab)._
+_Last audited: 2026-10-15 (user slug contract: `MeResponse.slug`, `CourseCollaborator` composed from `UserPickerCandidate`, `updateMeSchema.slug`). Prior: 2026-10-15 (Taxonomy slug management UI: editable root + per-node slug, 3007 recommended-slug confirm via shared hook). Prior: 2026-09-29 (Course slug management UI: editable slug on create + basic-info, 3007 recommended-slug confirm). Prior: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code retained). Prior: 2026-06-17 (course read-path performance: `include_outline`, `include_images`, browser-verified info tab)._
 
 
 ## Module map
@@ -29,7 +29,7 @@ _Last audited: 2026-10-15 (Taxonomy slug management UI: editable root + per-node
 - `Shared` exposes reusable helpers/types/constants (`lib/language`, `constants/browse-menu.ts`, …).
 - `Taxonomy` provides admin CRUD for levels/topics/outcomes/skills/tags; list filters reuse `ApiListQueryParams` and extend with taxonomy typed-search (`search_by`, `search_value`).
 - `Media` provides the reusable media library dialog (browse/upload/select); taxonomy cover images use it. List filters extend `ApiListQueryParams` with `category` / `sort_order`.
-- `Course` provides instructor course CRUD, draft editing tabs, outline sorting, collaborator management (role label **Cộng tác viên** / **Collaborator** for `EDITOR`), and admin/sysadmin review actions. Review workflow buttons (prepare / submit / reopen) are **owner-only** in UI and API. Admin catalog, trash, and review queue tables use `CourseListItem.owner_display_name` for the owner column (fallback `owner_user_id`).
+- `Course` provides instructor course CRUD, draft editing tabs, outline sorting, collaborator management (role label **Cộng tác viên** / **Collaborator** for `EDITOR`), and admin/sysadmin review actions. Review workflow buttons (prepare / submit / reopen) are **owner-only** in UI and API. Admin catalog, trash, and review queue tables use `CourseListItem.owner_display_name` for the owner column (fallback `owner_user_id`); `CourseListItem.owner_slug` is typed (optional, omitted when empty) but not rendered.
 
 ## Taxonomy module
 
@@ -103,15 +103,15 @@ _Last audited: 2026-10-15 (Taxonomy slug management UI: editable root + per-node
 - **Utils**: `src/lib/utils/dashboard.ts` — `filterDashboardItems` wraps `filterPermissionNavTree` for `DashboardItem[]`.
 - **Hooks**: `src/hooks/auth/use-permissions.ts` — `useHasPermission`, `useHasAll/AnyPermissions`, `useSatisfiesPermissions`, `useFilteredUserMenuGroups`, `useFilteredDashboardItems` over `useGetMe().mePermissions`.
 - **UI**: `PermissionGate` (`src/components/shared/permission-gate.tsx`); user menu via `useFilteredUserMenuGroups` in `UserMenuDropdownItems`; dashboard sidebar via `useFilteredDashboardItems` in `DashboardLayout`.
-- **Note**: `MeResponse` has authoritative `permissions: string[]` plus display-only `roles: string[]`; `/me` preserves the BE-provided role order and may include unknown role names. Gate UI by permission, never by role name alone.
+- **Note**: `MeResponse` has authoritative `permissions: string[]` plus display-only `roles: string[]`; `/me` preserves the BE-provided role order and may include unknown role names. Gate UI by permission, never by role name alone. `MeResponse.slug` is the user slug (`""` until the BE assigns one; display data, never an identity key) and `avatar_url` / `avatar_object_key` are optional because the BE omits them when empty.
 
 ## Me API module
 
 - **Routes**: `API_PRIVATE_ROUTES.user` — `getMe`, `patchMe`, `deleteMe`, `hardDeleteMe`, `getMyPermissions`.
 - **Callers**: `src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)` — `getMeService`, `patchMeService`, `deleteMeService`, `hardDeleteMeService`, `getMyPermissionsService`.
 - **Hook**: `useAuth` exposes `{ me, isLoading, error, errorCode, mutate }`; 401 on GET `/me` → `null` (not an error).
-- **Schema**: `src/schema/me/me.ts` — `updateMeSchema` (`avatar_file_id` optional UUID).
-- **UI**: No dedicated account-settings page yet; callers ready for avatar PATCH via `MediaCollectionDialog`.
+- **Schema**: `src/schema/me/me.ts` — `updateMeSchema` (`avatar_file_id` optional UUID; `slug` optional via the shared `optionalSlugField`, blank means "do not send").
+- **UI**: No dedicated account-settings page yet; callers ready for avatar PATCH via `MediaCollectionDialog`; the `slug` field of `UpdateMePayload` has no UI yet (a taken slug is auto-suffixed by the BE, so `useSlugConflictFlow` does not apply).
 
 ## Auth OAuth module (Google + Discord + X social login)
 
