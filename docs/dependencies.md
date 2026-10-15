@@ -1,6 +1,6 @@
 # Dependencies
 
-_Last audited: 2026-09-16 (`server-only` 0.0.1 runtime; `knip` 6.17.1 dev; testing stack added — `jest` 30.5.1, `@playwright/test` 1.63.0, `msw` 2.11.1, `undici` 8.10.2, `@testing-library/*` — all exact-pinned; lockfile pinned)._
+_Last audited: 2026-10-15 (`@dnd-kit/core` consumer row now names `TaxonomyTreeEditor`; no package added, removed or changed). Prior: 2026-09-16 (`server-only` 0.0.1 runtime; `knip` 6.17.1 dev; testing stack added — `jest` 30.5.1, `@playwright/test` 1.63.0, `msw` 2.11.1, `undici` 8.10.2, `@testing-library/*` — all exact-pinned; lockfile pinned)._
 
 
 All dependencies for the `fe-mycourse` project. Checked against `package.json`.
@@ -130,7 +130,7 @@ All UI primitives live in `src/components/ui/` and are re-exported from `src/com
 
 | Package | Version | Role |
 |---------|---------|------|
-| `@dnd-kit/core` | ^6.3.1 | DnD context — `SortableList`, `SortableTreeEditor` |
+| `@dnd-kit/core` | ^6.3.1 | DnD context — `SortableList`, `TaxonomyTreeEditor` (via `SortableList`) |
 | `@dnd-kit/sortable` | ^10.0.0 | Sortable lists |
 | `@dnd-kit/utilities` | ^3.2.2 | CSS transform helpers |
 | `@dnd-kit/modifiers` | ^9.0.0 | Drag modifiers |

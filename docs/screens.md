@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-09-29 (course slug UI: create dialog optional slug + 3007 confirm; info tab editable slug). Prior: 2026-09-19 (route-based login/signup modal: `/login` + `/signup` pages, `@modal` parallel/intercepting slot, `LoginSignupPopup` no longer mounted in `header.tsx` / `DashboardLayout`, Zustand `authAction`/`nextLink` removed). Prior: 2026-07-26 temporary signed-in `/home` route + SignedInHomePage; 2026-07-10 Homepage sections use `public/assets/images/home` static assets; 2026-07-08 Discord + Google on login/signup popup._
+_Last audited: 2026-10-15 (taxonomy slug UI: form-dialog editable root slug + 3007 confirm, per-node tree slug). Prior: 2026-09-29 (course slug UI: create dialog optional slug + 3007 confirm; info tab editable slug). Prior: 2026-09-19 (route-based login/signup modal: `/login` + `/signup` pages, `@modal` parallel/intercepting slot, `LoginSignupPopup` no longer mounted in `header.tsx` / `DashboardLayout`, Zustand `authAction`/`nextLink` removed). Prior: 2026-07-26 temporary signed-in `/home` route + SignedInHomePage; 2026-07-10 Homepage sections use `public/assets/images/home` static assets; 2026-07-08 Discord + Google on login/signup popup._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -53,7 +53,7 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/{locale}/sysadmin/courses/reviewing` | Active | `CourseReviewPage` (`scope="sysadmin"`) — pending review queue (+ Preview link in ⋮ menu) |
 | `/{locale}/sysadmin/courses/reviewing/{courseId}/preview` | Active | `CourseReviewPreviewPage` — placeholder |
 | `/{locale}/sysadmin/courses/trash` | Active | `CourseAdminTrashPage` — restore / permanent delete (same ⋮ / dialog pattern as admin) |
-| `/{locale}/admin/taxonomy/{resource}` | Active | Shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags); list uses `locale` from `useLocale()`; create/edit increments `formDialogKey` and remounts `TaxonomyFormDialog`; **edit loads** `getTaxonomyDetailService(…, { view: "edit" })` (canonical + translations Tabs + `expected_row_version`) |
+| `/{locale}/admin/taxonomy/{resource}` | Active | Shared `TaxonomyListPage` (resource = levels \| topics \| outcomes \| skills \| tags); list uses `locale` from `useLocale()`; create/edit increments `formDialogKey` and remounts `TaxonomyFormDialog`; **edit loads** `getTaxonomyDetailService(…, { view: "edit" })` (canonical + translations Tabs + `expected_row_version`); levels/topics/skills/tags forms have an editable root slug (`SlugInput`; create 409/3007 opens a stacked recommended-slug `ConfirmActionDialog`) and topics/skills tree nodes an inline-editable slug |
 | `/{locale}/sysadmin/taxonomy/{resource}` | Active | Same shared `TaxonomyListPage` (sysadmin menu + permissions) |
 | `/{locale}/*` (unknown path) | Active | Custom 404 — `NotFoundPage` via `not-found.tsx` chain |
 
@@ -426,8 +426,11 @@ All primitives are re-exported from `src/components/ui/index.ts`.
 | `SearchBar` | `search-bar.tsx` | Controlled search input with optional icon, placeholder i18n, className props. Used in Header (hidden on mobile) and home SearchSection. |
 | `RequiredLabel` | `required-label.tsx` | Label with red asterisk for required fields — Taxonomy, Instructor approvals, Course create dialog. |
 | `FieldError` | `field-error.tsx` | Inline validation message under a field (resolves i18n key from Zod). |
+| `FormField` | `form-field.tsx` | Labelled field block (`RequiredLabel` + control + hint + `FieldError`) — course create dialog, course basic-info tab, taxonomy form dialog. |
 | `PermissionGate` | `permission-gate.tsx` | Declarative permission guard for dashboard / feature UI. |
-| `SlugInput` | `slug-input.tsx` | Editable slug input filtered by `sanitizeSlugInput` — course create dialog, course basic-info tab. |
+| `SlugInput` | `slug-input.tsx` | Editable slug input filtered by `sanitizeSlugInput` — course create dialog, course basic-info tab, taxonomy form root slug, taxonomy tree-node slug (`TaxonomyTreeEditor`). |
+| `SlugField` | `slug-field.tsx` | Labelled slug field (`FormField` + `SlugInput`) — course create dialog, course basic-info tab, taxonomy form root slug. |
+| `SlugConflictConfirmDialog` | `slug-conflict-confirm-dialog.tsx` | Stacked recommended-slug confirm — course create dialog, taxonomy form dialog. |
 
 ---
 

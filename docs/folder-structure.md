@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-09-29 (course slug UI: `slug-input.tsx`, `use-course-create-flow.ts`, `slug.ts` `sanitizeSlugInput`, `e2e/tests/course-slug.spec.ts`). Prior: 2026-09-16 (added `e2e/`, `src/test-support/`, `scripts/e2e-lifecycle.mjs`, `jest.config.ts`, `playwright.config.ts`; `src/**/*.test.ts(x)` colocated test files across the source tree — see `docs/testing.md`). Prior: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained); 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
+_Last audited: 2026-10-15 (taxonomy slug UI: `src/hooks/slug/use-slug-conflict-flow.ts`, `src/schema/shared/slug.ts`, `src/lib/utils/{tree,payload}.ts`, `src/constants/taxonomy/limits.ts`, `src/components/shared/{form-field,slug-field,slug-conflict-confirm-dialog}.tsx`, tree editor merged into `src/components/features/taxonomy/taxonomy-tree-editor.tsx`, `e2e/tests/taxonomy-slug.spec.ts`). Prior: 2026-09-29 (course slug UI: `slug-input.tsx`, `use-course-create-flow.ts`, `slug.ts` `sanitizeSlugInput`, `e2e/tests/course-slug.spec.ts`). Prior: 2026-09-16 (added `e2e/`, `src/test-support/`, `scripts/e2e-lifecycle.mjs`, `jest.config.ts`, `playwright.config.ts`; `src/**/*.test.ts(x)` colocated test files across the source tree — see `docs/testing.md`). Prior: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained); 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -189,7 +189,7 @@ src/components/
 │   ├── course/             # CourseStatusBadge, CourseBasicInfoTab,
 │   │                       # CourseOutlineTab, CourseOutlineRowActions, CourseCollaboratorsTab,
 │   │                       # Course*Dialog helpers; grouped tab prop objects (`state` / `data|taxonomyRows` / `actions`)
-│   ├── taxonomy/           # TaxonomyFormDialog, TaxonomyLocaleTabsSection, tree/description editors, taxonomy-table-columns, taxonomy-tree-view-button (no form helper/submit modules — those live under src/lib/utils/taxonomy/)
+│   ├── taxonomy/           # TaxonomyFormDialog, TaxonomyLocaleTabsSection, taxonomy-tree-editor (sortable tree + name + per-node slug), tree-node-slug-field, description editor, taxonomy-table-columns, taxonomy-tree-view-button (no form helper/submit modules — those live under src/lib/utils/taxonomy/)
 │   ├── instructor/         # InstructorProfileViewDialog, InstructorApprovalsRowActions,
 │   │                       # InstructorListPagination, instructor action/footer helpers,
 │   │                       # shared instructor course editor route adapter for app pages
@@ -197,7 +197,7 @@ src/components/
 ├── shared/                 # Cross-feature presentational components
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
 │                           #   DeltaEditor, DeltaEditorLinkDialog, DeltaViewer, SortableList (TouchSensor mobile),
-│                           #   SortableTreeEditor, SlugInput, PreviewPdf (dynamic client-only) + preview-pdf-viewer,
+│                           #   SlugInput, FormField, SlugField, SlugConflictConfirmDialog, PreviewPdf (dynamic client-only) + preview-pdf-viewer,
 │                           #   SearchBar (stub), ImageFileField
 │                           #   Consumers: course editor + become-instructor bio (restricted DeltaEditor) +
 │                           #   InstructorProfileViewDialog bio (DeltaViewer)
@@ -338,6 +338,9 @@ src/hooks/
 ├── quill/
 │   ├── index.ts            # useDeltaEditorMediaHandlers
 │   └── use-delta-editor-media-handlers.ts
+├── slug/
+│   ├── index.ts            # Barrel: use-slug-conflict-flow
+│   └── use-slug-conflict-flow.ts  # useSlugConflictFlow: generic submit with an optional slug + 409/3007 recommended-slug confirm state (course create + taxonomy)
 └── use-mobile.ts           # useIsMobile
 ```
 
@@ -421,7 +424,7 @@ src/schema/
 └── course/course.ts        # create (title + optional slug), basic-info (required slug), section, lesson, sub-lesson, collaborator, reject
 ```
 
-Error messages in schemas use **i18n keys** (not hardcoded strings). Resolve in components via `resolveValidationMessage` or auth-specific `resolveAuthValidationMessage`.
+Error messages in schemas use **i18n keys** (not hardcoded strings). Resolve in components via the shared `resolveValidationMessage` (`src/lib/utils/validation-message.ts`, translator typed `(key: never) => string`; the auth form fields use it too).
 
 ### `src/constants/` — Application Constants
 
@@ -455,7 +458,8 @@ src/constants/
 ├── course/
 │   └── sub-lesson-kind-icons.ts  # SUB_LESSON_KIND_ICONS — Lucide icons for VIDEO/TEXT/QUIZ outline labels
 ├── taxonomy/
-│   └── resources.ts        # TAXONOMY_RESOURCES, TAXONOMY_RESOURCE_KEYS, TAXONOMY_GROUP_READ_PERMISSIONS (data only)
+│   ├── resources.ts        # TAXONOMY_RESOURCES, TAXONOMY_RESOURCE_KEYS, TAXONOMY_GROUP_READ_PERMISSIONS (data only)
+│   └── limits.ts           # TAXONOMY_NAME_MAX_LENGTH (255), TAXONOMY_SHORT_DESCRIPTION_MAX_LENGTH (100) — used by the taxonomy schema and the form / tree-editor maxLength props (data only)
 ├── media/
 │   └── file-rules.ts       # MEDIA_TAB_ACCEPT, MEDIA_COLLECTION_ALL_TABS, upload limits, extension lists
 └── events/
@@ -478,7 +482,7 @@ src/lib/
 │   ├── home.ts             # navigateToHome(router) + re-exports homeHref / signedInHomeHref
 │   ├── routes.ts           # route builders + shared href constants (public/private/resource)
 │   ├── flatten-route-tree.ts # flattenRouteTreePaths — shared nested route-constant → string[] (crawl + sitemap)
-│   └── dashboard-page-header.ts  # dashboard route metadata resolver (consumes static constants + shared dashboard types)
+│   └── dashboard-page-header.ts  # dashboard route metadata resolver (consumes static constants + shared dashboard types; nav-tree lookups via `findTreeNodeById` / `findTreePath` from `src/lib/utils/tree.ts`)
 ├── swr/
 │   └── me-cache-provider.ts # meCacheProvider() — SWRConfig `provider` for AppProviders; persists only the `/me` cache entry to sessionStorage so a hard nav (e.g. /login <-> /signup) doesn't flash a "logged out" header while SWR refetches. Also exports isMeCacheFresh(), used by useAuth (only on /login|/signup) to skip that refetch entirely on a fast bounce.
 ├── quill/
@@ -497,19 +501,21 @@ src/lib/
 │   ├── api.ts              # isApiSuccess() — ApiResponse success type guard
 │   ├── api-error.ts        # toastApiError, translateApiErrorCode, extractApiError, extractRecommendedSlug (3007)
 │   ├── auth-action.ts      # finalizeAuthLoginAction, mapAuthApiError — shared login-session cookie finalizer
-│   ├── validation-message.ts # resolveValidationMessage, toastValidationError, firstValidationMessageKey
+│   ├── validation-message.ts # resolveValidationMessage (translator typed `(key: never) => string`; auth + course + taxonomy), toastValidationError, firstValidationMessageKey
 │   ├── course-delta.ts       # Quill Delta parse/stringify/text helpers + countDeltaNonWhitespace + countDeltaCodePoints + stripDeltaFormatAttributes + sanitizeLockedTextDelta (TEXT_DELTA_LOCKED_FORMAT_ATTRIBUTES policy)
 │   ├── course.ts             # createCourseBasicInfoState(version, courseSlug), toUpdateCourseBasicInfoPayload(basicInfo, persistedSlug), toCreateCoursePayload(title, slug), createCourseSubLessonFormState, buildSubLessonEstimatedDurationPayload, validateSubLessonDurationForm, validateSubLessonFormContent, validateCourseSubmitReadiness, applyQuizAllowMultipleChange, applyQuizOptionCorrectChange, rootOutlineStableId, selectedIdsToMap
 │   ├── duration.ts           # formatDurationMs, parseDurationPartsToMs, splitMsToDurationParts (curriculum estimated_duration_ms)
 │   ├── format-bytes.ts     # formatBytes() — human-readable B/KB/MB/GB (upload UI, any file size display)
 │   ├── media.ts            # isImageFilename, isExecutableExtension, validateMediaUploadBatch, isImageMedia, …
-│   ├── dagre-tree.ts       # treeToFlowElements, getLayoutedElements (React Flow + dagre)
+│   ├── dagre-tree.ts       # treeToFlowElements (walks the tree with the generic walkTree), getLayoutedElements (React Flow + dagre)
+│   ├── tree.ts             # Generic `{ id, children? }` helpers: walkTree, flattenTree, countTreeNodes, getTreeMaxDepth, findTreePath, findTreeNodeById, updateTreeNode (taxonomy, dashboard nav resolver, dagre-tree; import via `@/lib/utils/tree`)
+│   ├── payload.ts          # Optional write-payload fields: omitWhenBlank, changedNonBlank, payloadField (course + taxonomy payload builders; import via `@/lib/utils/payload`)
 │   ├── taxonomy/           # Taxonomy utils package (import via `@/lib/utils/taxonomy`)
 │   │   ├── index.ts        # Re-exports resource + form-helpers only (not form-submit — avoids API cycle)
-│   │   ├── resource.ts     # getTaxonomyResourceConfig, getTaxonomySearchableColumns, getTaxonomyTreeFromEntity, buildTaxonomyDagreRoot, toTaxonomyTreeWritePayload, createTaxonomyTreeNode, countTaxonomyTreeNodes
-│   │   ├── form-helpers.ts # CONTENT_LOCALE_OPTIONS, canonicalizeContentLocale, buildTaxonomyFormDefaultValues, compact*Translations, slug preview helpers
-│   │   └── form-submit.ts  # buildTaxonomySubmitPayload, persistTaxonomyForm — import as `@/lib/utils/taxonomy/form-submit` only
-│   ├── slug.ts             # generateSlug() + slugifyName() (taxonomy preview) + sanitizeSlugInput(), SLUG_MAX_LENGTH, SLUG_PATTERN (editable slug input; import via `@/lib/utils/slug` — the barrel re-exports only generateSlug/slugifyName)
+│   │   ├── resource.ts     # getTaxonomyResourceConfig, getTaxonomySearchableColumns, getTaxonomyTreeFromEntity, buildTaxonomyDagreRoot, collectTaxonomyTreeSlugs, toTaxonomyTreeWritePayload (persisted-slug aware), validateTaxonomyTreeSlugs, hasAdjustedTaxonomyTreeSlugs, createTaxonomyTreeNode (node count / depth: `src/lib/utils/tree.ts`)
+│   │   ├── form-helpers.ts # CONTENT_LOCALE_OPTIONS, canonicalizeContentLocale, buildTaxonomyFormDefaultValues (seeds slug), getPersistedTaxonomySlug, buildTaxonomySlugBaseline, TAXONOMY_TREE_INDENT_PX, compact*Translations
+│   │   └── form-submit.ts  # buildTaxonomySubmitPayload, persistTaxonomyForm (returns the saved entity), getTaxonomySaveSlugNotice (slug: blank omitted on create, only changed on update/tree nodes) — import as `@/lib/utils/taxonomy/form-submit` only
+│   ├── slug.ts             # sanitizeSlugInput(), SLUG_MAX_LENGTH, SLUG_PATTERN, isSlugAdjusted() (course + taxonomy slug rules; import via `@/lib/utils/slug` — not re-exported by the barrel; the omit-blank / omit-unchanged payload rule is `payload.ts`)
 │   ├── react.ts            # useUniqueId() — stable ID generator for accessibility
 │   ├── user.ts             # pickCharacter() — avatar initial picker
 │   ├── cookie.ts           # isomorphic getCookieValue / setCookieValue; buildCookieOptions
@@ -638,7 +644,7 @@ src/test-support/
 ```
 e2e/
 ├── fixtures/
-│   └── server.mjs                # Loopback HTTP fixture backend (plain node:http, no framework) — auth, /me, course detail/collaborators/candidates (2 seeded outline sections)/sections-reorder/leases, taxonomy lists; POST /api/v1/courses (slug create incl. 409/3007 + recommended_slug) and course basic-info PATCH slug echo; CORS headers for cross-origin browser calls
+│   └── server.mjs                # Loopback HTTP fixture backend (plain node:http, no framework) — auth, /me, course detail/collaborators/candidates (2 seeded outline sections)/sections-reorder/leases, taxonomy lists; POST /api/v1/courses (slug create incl. 409/3007 + recommended_slug) and course basic-info PATCH slug echo; POST/PATCH /api/v1/taxonomy/{resource} (slug create incl. 409/3007 + recommended_slug, adjusted slug echo on update); CORS headers for cross-origin browser calls
 ├── support/
 │   ├── auth.ts                   # loginAsInstructor() — login through the real popup as the fixture instructor
 │   └── fixture-client.ts         # resetFixtures() / revokeSession() helpers + FIXTURE_USERS
@@ -647,6 +653,7 @@ e2e/
     ├── course-editing.spec.ts    # collaborator submission through the real picker UI; keyboard-driven outline section reorder (@dnd-kit KeyboardSensor)
     ├── course-error-states.spec.ts # StatusErrorPage forbidden variant on a non-collaborator course
     ├── course-slug.spec.ts       # optional slug on create, 409/3007 recommended-slug confirm (Yes/No), basic-info slug edit
+    ├── taxonomy-slug.spec.ts     # root slug on create, 409/3007 recommended-slug confirm (Yes/No), update slug-adjusted toast, per-node slug edit
     └── locale-404.spec.ts        # valid locale / unknown route / unsupported locale
 ```
 
