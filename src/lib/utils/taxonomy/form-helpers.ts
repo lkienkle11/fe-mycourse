@@ -1,5 +1,4 @@
 import { LANGUAGE_OPTIONS } from "@/constants";
-import { slugifyName } from "@/lib/utils";
 import type {
   CourseOutcome,
   CourseTopic,
@@ -8,8 +7,12 @@ import type {
   TaxonomyNodeTranslation,
   TaxonomyOutcomeTranslation,
   TaxonomyResourceKey,
-  TaxonomyTreeNode,
+  TaxonomySlugBaseline,
 } from "@/types/taxonomy";
+import {
+  collectTaxonomyTreeSlugs,
+  getTaxonomyTreeFromEntity,
+} from "./resource";
 
 export const TAXONOMY_TREE_INDENT_PX = 12;
 export const TAXONOMY_DIALOG_BASE_MIN_PX = 672;
@@ -147,6 +150,7 @@ export function buildTaxonomyFormDefaultValues(
   const enName = buildNameTranslations(initialData).en?.name ?? row?.name ?? "";
   return {
     name: enName,
+    slug: getPersistedTaxonomySlug(resourceKey, initialData),
     status: row?.status ?? "ACTIVE",
     short_description: "",
     description: [],
@@ -180,27 +184,17 @@ export function getPersistedTaxonomySlug(
   return (initialData as SlugStatusTaxonomy).slug ?? "";
 }
 
-export function resolveTaxonomySlugPreview(
-  name: string,
-  persistedSlug: string,
-): string {
-  const trimmed = name.trim();
-  if (trimmed) return slugifyName(trimmed);
-  return persistedSlug;
-}
-
-export function getTaxonomyTreeMaxDepth(nodes: TaxonomyTreeNode[]): number {
-  let max = 0;
-  const visit = (items: TaxonomyTreeNode[], depth: number) => {
-    for (const node of items) {
-      max = Math.max(max, depth);
-      if (node.children?.length) {
-        visit(node.children, depth + 1);
-      }
-    }
+/** Persisted root slug and `node id -> slug` captured when the dialog opens. */
+export function buildTaxonomySlugBaseline(
+  resourceKey: TaxonomyResourceKey,
+  initialData?: TaxonomyEntity | null,
+): TaxonomySlugBaseline {
+  return {
+    slug: getPersistedTaxonomySlug(resourceKey, initialData),
+    treeSlugs: collectTaxonomyTreeSlugs(
+      getTaxonomyTreeFromEntity(resourceKey, initialData),
+    ),
   };
-  visit(nodes, 0);
-  return max;
 }
 
 export function compactNameTranslations(

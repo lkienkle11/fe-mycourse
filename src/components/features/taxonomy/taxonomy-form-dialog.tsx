@@ -8,9 +8,11 @@ import { type FieldPath, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 import { MediaCollectionDialog } from "@/components/features/media";
-import { FieldError } from "@/components/shared/field-error";
+import { FormField } from "@/components/shared/form-field";
 import { ImageFileField } from "@/components/shared/image-file-field";
 import { RequiredLabel } from "@/components/shared/required-label";
+import { SlugConflictConfirmDialog } from "@/components/shared/slug-conflict-confirm-dialog";
+import { SlugField } from "@/components/shared/slug-field";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,35 +30,35 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PERMISSIONS } from "@/constants/permissions";
-import { toastApiError } from "@/lib/utils/api-error";
+import {
+  TAXONOMY_NAME_MAX_LENGTH,
+  TAXONOMY_SHORT_DESCRIPTION_MAX_LENGTH,
+} from "@/constants/taxonomy/limits";
+import { useSlugConflictFlow } from "@/hooks/slug";
 import {
   buildNameTranslations,
   buildOutcomeTranslations,
   buildTaxonomyFormDefaultValues,
   buildTaxonomyInitialImageFileURL,
+  buildTaxonomySlugBaseline,
   collectTabLocales,
   contentLocaleOptionLabel,
-  getPersistedTaxonomySlug,
   getTaxonomyResourceConfig,
   getTaxonomyTreeFromEntity,
-  getTaxonomyTreeMaxDepth,
   resolveAllowedContentLocale,
-  resolveTaxonomySlugPreview,
   TAXONOMY_DIALOG_BASE_MIN_PX,
   TAXONOMY_TREE_INDENT_PX,
   uniqueLocales,
+  validateTaxonomyTreeSlugs,
 } from "@/lib/utils/taxonomy";
 import {
   buildTaxonomySubmitPayload,
+  getTaxonomySaveSlugNotice,
   persistTaxonomyForm,
 } from "@/lib/utils/taxonomy/form-submit";
+import { getTreeMaxDepth } from "@/lib/utils/tree";
 import { resolveValidationMessage } from "@/lib/utils/validation-message";
-import {
-  taxonomyOutcomeSchema,
-  taxonomySkillSchema,
-  taxonomySlugStatusSchema,
-  taxonomyTopicSchema,
-} from "@/schema/taxonomy";
+import { getTaxonomyFormSchema } from "@/schema/taxonomy";
 import type { MediaFile } from "@/types/media";
 import type {
   TaxonomyEntity,
@@ -91,9 +93,7 @@ export function TaxonomyFormDialog({
   const t = useTranslations("taxonomy");
   const tForm = useTranslations("taxonomy.form");
   const tMedia = useTranslations("media.picker");
-  const tErrors = useTranslations("errors.codes");
   const config = getTaxonomyResourceConfig(resourceKey);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [tree, setTree] = useState<TaxonomyTreeNode[]>(() =>
     getTaxonomyTreeFromEntity(resourceKey, initialData),
   );
@@ -110,16 +110,17 @@ export function TaxonomyFormDialog({
   const [initialImageFileURL, setInitialImageFileURL] = useState(() =>
     buildTaxonomyInitialImageFileURL(resourceKey, initialData),
   );
-  const [persistedSlug] = useState(() =>
-    getPersistedTaxonomySlug(resourceKey, initialData),
+  const [slugBaseline] = useState(() =>
+    buildTaxonomySlugBaseline(resourceKey, initialData),
+  );
+  const [treeSlugErrors, setTreeSlugErrors] = useState<Record<string, string>>(
+    {},
   );
 
-  const schema = useMemo(() => {
-    if (resourceKey === "outcomes") return taxonomyOutcomeSchema;
-    if (resourceKey === "topics") return taxonomyTopicSchema;
-    if (resourceKey === "skills") return taxonomySkillSchema;
-    return taxonomySlugStatusSchema;
-  }, [resourceKey]);
+  const schema = useMemo(
+    () => getTaxonomyFormSchema(resourceKey, mode),
+    [resourceKey, mode],
+  );
 
   type FormValues = z.infer<typeof schema>;
 
@@ -136,10 +137,10 @@ export function TaxonomyFormDialog({
     name: "image_file_id" as FieldPath<FormValues>,
   }) as string | undefined;
 
-  const nameValue =
+  const slugValue =
     (useWatch({
       control: form.control,
-      name: "name" as FieldPath<FormValues>,
+      name: "slug" as FieldPath<FormValues>,
     }) as string | undefined) ?? "";
 
   const statusValue =
@@ -238,15 +239,24 @@ export function TaxonomyFormDialog({
     }));
   };
 
-  const onSubmit = async (values: FormValues) => {
-    setIsSubmitting(true);
-    try {
+  const slugFlow = useSlugConflictFlow({
+    slug: slugValue,
+    setSlug: (next) =>
+      (form.setValue as (name: "slug", value: string) => void)("slug", next),
+    prepare: (nextSlug) => {
+      const issues = validateTaxonomyTreeSlugs(tree, slugBaseline.treeSlugs);
+      setTreeSlugErrors(issues);
+      if (Object.keys(issues).length > 0) {
+        toast.error(tForm("validation.treeSlug"));
+        return null;
+      }
       const built = buildTaxonomySubmitPayload({
         resourceKey,
-        values,
+        values: { ...form.getValues(), slug: nextSlug },
         nameTranslations,
         outcomeTranslations,
         tree,
+        baseline: slugBaseline,
       });
       if (!built.ok) {
         toast.error(
@@ -254,37 +264,44 @@ export function TaxonomyFormDialog({
             locale: contentLocaleOptionLabel(built.error.locale),
           }),
         );
-        return;
+        return null;
       }
-      await persistTaxonomyForm(
+      return built.payload;
+    },
+    request: async (payload) => ({
+      payload,
+      saved: await persistTaxonomyForm(
         resourceKey,
         mode,
         initialData?.id,
         expectedRowVersion,
-        built.payload,
-      );
-      toast.success(
-        mode === "create"
-          ? t("common.createSuccess")
-          : t("common.updateSuccess"),
-      );
+        payload,
+      ),
+    }),
+    onSuccess: ({ payload, saved }) => {
+      const notice = getTaxonomySaveSlugNotice(resourceKey, payload, saved);
+      if (notice.adjustedSlug) {
+        toast.info(tForm("slugAdjusted", { slug: notice.adjustedSlug }));
+      }
+      if (notice.treeAdjusted) {
+        toast.info(tForm("treeSlugsAdjusted"));
+      }
+      if (!notice.adjustedSlug && !notice.treeAdjusted) {
+        toast.success(
+          mode === "create"
+            ? t("common.createSuccess")
+            : t("common.updateSuccess"),
+        );
+      }
       onSuccess();
       onOpenChange(false);
-    } catch (error) {
-      toastApiError(tErrors, error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    },
+  });
 
-  const slugPreview = useMemo(
-    () => resolveTaxonomySlugPreview(nameValue, persistedSlug),
-    [nameValue, persistedSlug],
-  );
   const imagePreviewURL = imagePreview?.url || initialImageFileURL;
 
   const treeMaxDepth = useMemo(
-    () => (config.hasTree ? getTaxonomyTreeMaxDepth(tree) : 0),
+    () => (config.hasTree ? getTreeMaxDepth(tree) : 0),
     [config.hasTree, tree],
   );
 
@@ -303,6 +320,13 @@ export function TaxonomyFormDialog({
       ? Boolean(activeOutcome.short_description.trim()) ||
         (activeOutcome.description ?? []).some((line) => line.trim())
       : Boolean(activeName.trim());
+
+  const resolvedTreeSlugErrors = Object.fromEntries(
+    Object.entries(treeSlugErrors).map(([nodeId, key]) => [
+      nodeId,
+      resolveValidationMessage(tForm, key),
+    ]),
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -326,7 +350,10 @@ export function TaxonomyFormDialog({
             <span className="sr-only">Close</span>
           </Button>
         </div>
-        <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          className="space-y-4"
+          onSubmit={form.handleSubmit(() => void slugFlow.submit())}
+        >
           <div className="space-y-2">
             <RequiredLabel required={false}>{tForm("status")}</RequiredLabel>
             <Select
@@ -391,74 +418,83 @@ export function TaxonomyFormDialog({
           ) : null}
 
           {resourceKey === "outcomes" ? (
-            <div className="space-y-2">
-              <RequiredLabel htmlFor="short_description">
-                {tForm("shortDescription")}
-              </RequiredLabel>
+            <FormField
+              id="short_description"
+              label={tForm("shortDescription")}
+              error={
+                activeLocale === "en" &&
+                "short_description" in form.formState.errors
+                  ? form.formState.errors.short_description
+                  : undefined
+              }
+              errorMessage={resolveValidationMessage(
+                tForm,
+                "short_description" in form.formState.errors
+                  ? form.formState.errors.short_description?.message
+                  : undefined,
+              )}
+            >
               <Input
                 id="short_description"
                 value={activeOutcome.short_description}
-                maxLength={100}
+                maxLength={TAXONOMY_SHORT_DESCRIPTION_MAX_LENGTH}
                 onChange={(event) =>
                   updateActiveOutcomeShort(event.target.value)
                 }
               />
-              {activeLocale === "en" ? (
-                <FieldError
-                  error={
-                    "short_description" in form.formState.errors
-                      ? form.formState.errors.short_description
-                      : undefined
-                  }
-                  message={resolveValidationMessage(
-                    tForm as (key: string) => string,
-                    "short_description" in form.formState.errors
-                      ? form.formState.errors.short_description?.message
-                      : undefined,
-                  )}
-                />
-              ) : null}
-            </div>
+            </FormField>
           ) : (
             <>
-              <div className="space-y-2">
-                <RequiredLabel htmlFor="name">{tForm("name")}</RequiredLabel>
+              <FormField
+                id="name"
+                label={tForm("name")}
+                error={
+                  activeLocale === "en" && "name" in form.formState.errors
+                    ? form.formState.errors.name
+                    : undefined
+                }
+                errorMessage={resolveValidationMessage(
+                  tForm,
+                  "name" in form.formState.errors
+                    ? form.formState.errors.name?.message
+                    : undefined,
+                )}
+              >
                 <Input
                   id="name"
                   value={activeName}
-                  maxLength={255}
+                  maxLength={TAXONOMY_NAME_MAX_LENGTH}
                   onChange={(event) => updateActiveName(event.target.value)}
                 />
-                {activeLocale === "en" ? (
-                  <FieldError
-                    error={
-                      "name" in form.formState.errors
-                        ? form.formState.errors.name
-                        : undefined
-                    }
-                    message={resolveValidationMessage(
-                      tForm as (key: string) => string,
-                      "name" in form.formState.errors
-                        ? form.formState.errors.name?.message
-                        : undefined,
-                    )}
-                  />
-                ) : null}
-              </div>
-              {activeLocale === "en" ? (
-                <div className="space-y-2">
-                  <RequiredLabel htmlFor="slug" required={false}>
-                    {tForm("slug")}
-                  </RequiredLabel>
-                  <Input
-                    id="slug"
-                    readOnly
-                    value={slugPreview}
-                    className="cursor-not-allowed bg-muted"
-                    aria-readonly
-                  />
-                </div>
-              ) : null}
+              </FormField>
+              <SlugField
+                id="slug"
+                required={mode === "edit"}
+                label={tForm("slug")}
+                placeholder={tForm("slugPlaceholder")}
+                hint={tForm(
+                  mode === "create" ? "slugHintCreate" : "slugHintEdit",
+                )}
+                value={slugValue}
+                onValueChange={(next) =>
+                  form.setValue(
+                    "slug" as FieldPath<FormValues>,
+                    next as never,
+                    { shouldValidate: form.formState.isSubmitted },
+                  )
+                }
+                error={
+                  "slug" in form.formState.errors
+                    ? form.formState.errors.slug
+                    : undefined
+                }
+                errorMessage={resolveValidationMessage(
+                  tForm,
+                  "slug" in form.formState.errors
+                    ? form.formState.errors.slug?.message
+                    : undefined,
+                )}
+              />
             </>
           )}
 
@@ -466,8 +502,12 @@ export function TaxonomyFormDialog({
             <TaxonomyTreeEditor
               resourceKey={config.key}
               value={tree}
-              onChange={setTree}
+              onChange={(next) => {
+                setTree(next);
+                setTreeSlugErrors({});
+              }}
               editLocale={activeLocale}
+              slugErrors={resolvedTreeSlugErrors}
             />
           ) : null}
 
@@ -483,15 +523,31 @@ export function TaxonomyFormDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
+              disabled={slugFlow.isSubmitting}
             >
               {t("common.cancel")}
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={slugFlow.isSubmitting}>
               {t("common.save")}
             </Button>
           </DialogFooter>
         </form>
+
+        <SlugConflictConfirmDialog
+          suggestedSlug={slugFlow.suggestedSlug}
+          isSubmitting={slugFlow.isSubmitting}
+          onAccept={slugFlow.acceptSuggestion}
+          onDismiss={slugFlow.dismissSuggestion}
+          labels={{
+            title: tForm("slugConflictTitle"),
+            description: tForm("slugConflictDescription", {
+              slug: slugFlow.suggestedSlug ?? "",
+            }),
+            confirm: tForm("slugConflictConfirm"),
+            cancel: tForm("slugConflictCancel"),
+            loading: tForm("slugConflictLoading"),
+          }}
+        />
       </DialogContent>
 
       <MediaCollectionDialog
