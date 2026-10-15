@@ -32,6 +32,8 @@ export type Course = {
 
 export type CourseListItem = Course & {
   owner_display_name?: string;
+  /** Owner user slug; omitted by the backend when empty and not populated on the instructor and learner lists. */
+  owner_slug?: string;
   title: string;
   review_status: CourseVersionStatus | "";
   version_id?: string;
@@ -75,13 +77,9 @@ export type CourseVersion = {
   updated_at: number;
 };
 
-export type CourseCollaborator = {
-  user_id: string;
+/** A collaborator is a picker identity plus the collaborator role. */
+export type CourseCollaborator = UserPickerCandidate & {
   role: CourseCollaboratorRole;
-  display_name: string;
-  email: string;
-  avatar_file_id?: string;
-  avatar_url?: string;
 };
 
 export type AddCollaboratorsBulkPayload = {

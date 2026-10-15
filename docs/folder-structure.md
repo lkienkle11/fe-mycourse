@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-10-15 (taxonomy slug UI: `src/hooks/slug/use-slug-conflict-flow.ts`, `src/schema/shared/slug.ts`, `src/lib/utils/{tree,payload}.ts`, `src/constants/taxonomy/limits.ts`, `src/components/shared/{form-field,slug-field,slug-conflict-confirm-dialog}.tsx`, tree editor merged into `src/components/features/taxonomy/taxonomy-tree-editor.tsx`, `e2e/tests/taxonomy-slug.spec.ts`). Prior: 2026-09-29 (course slug UI: `slug-input.tsx`, `use-course-create-flow.ts`, `slug.ts` `sanitizeSlugInput`, `e2e/tests/course-slug.spec.ts`). Prior: 2026-09-16 (added `e2e/`, `src/test-support/`, `scripts/e2e-lifecycle.mjs`, `jest.config.ts`, `playwright.config.ts`; `src/**/*.test.ts(x)` colocated test files across the source tree — see `docs/testing.md`). Prior: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained); 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
+_Last audited: 2026-10-15 (user slug contract: `updateMeSchema` optional `slug`, `buildMeResponse` carries `slug`; colocated tests are not listed per file in this document); 2026-10-15 (taxonomy slug UI: `src/hooks/slug/use-slug-conflict-flow.ts`, `src/schema/shared/slug.ts`, `src/lib/utils/{tree,payload}.ts`, `src/constants/taxonomy/limits.ts`, `src/components/shared/{form-field,slug-field,slug-conflict-confirm-dialog}.tsx`, tree editor merged into `src/components/features/taxonomy/taxonomy-tree-editor.tsx`, `e2e/tests/taxonomy-slug.spec.ts`). Prior: 2026-09-29 (course slug UI: `slug-input.tsx`, `use-course-create-flow.ts`, `slug.ts` `sanitizeSlugInput`, `e2e/tests/course-slug.spec.ts`). Prior: 2026-09-16 (added `e2e/`, `src/test-support/`, `scripts/e2e-lifecycle.mjs`, `jest.config.ts`, `playwright.config.ts`; `src/**/*.test.ts(x)` colocated test files across the source tree — see `docs/testing.md`). Prior: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained); 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -417,7 +417,7 @@ src/types/
 src/schema/
 ├── index.ts                # Barrel: auth, me, media, taxonomy, instructor, course
 ├── auth/auth.ts            # loginSchema, signupSchema (auth.validation.*)
-├── me/me.ts                # updateMeSchema (avatar_file_id optional UUID)
+├── me/me.ts                # updateMeSchema (avatar_file_id optional UUID, slug optional)
 ├── media/media.ts          # upload batch rules (media.validation.*)
 ├── taxonomy/taxonomy.ts    # slug/status/topic/skill/outcome schemas
 ├── instructor/instructor.ts # email, rejection reason, expertise, ticket
@@ -630,7 +630,7 @@ src/test-support/
 ├── mock-app-router.tsx           # Stub Next AppRouterContext for components calling useRouter()
 ├── reset-stores.ts               # Resets Zustand auth/me store state between tests
 ├── fixtures/
-│   └── auth.ts                   # buildMeResponse — synthetic MeResponse factory
+│   └── auth.ts                   # buildMeResponse — synthetic MeResponse factory (includes a synthetic slug)
 ├── msw/
 │   └── server.ts                 # Shared MSW server (no default handlers)
 ├── jest.setup.ts                 # setupFilesAfterEnv (both projects) — MSW start/stop, store reset, RTL cleanup, jsdom polyfills (ResizeObserver, matchMedia, pointer-capture, scrollIntoView)

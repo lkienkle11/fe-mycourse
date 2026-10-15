@@ -21,6 +21,7 @@ function buildCollaborator(userId: string): CourseCollaborator {
     role: "EDITOR",
     display_name: `User ${userId}`,
     email: `${userId}@example.com`,
+    slug: `user-${userId}`,
   };
 }
 

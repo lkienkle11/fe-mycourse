@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-10-15 (taxonomy create/update slug contract and 3007 confirm flow). Prior: 2026-07-22 (server sanitized logs; browser no custom Console; compress body memo retained). Prior: raw GET cache; media 30s._
+_Last audited: 2026-10-15 (user slug contract on `/me`, collaborators, candidates and course list owner). Prior: 2026-10-15 (taxonomy create/update slug contract and 3007 confirm flow). Prior: 2026-07-22 (server sanitized logs; browser no custom Console; compress body memo retained). Prior: raw GET cache; media 30s._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -306,8 +306,8 @@ Callers in `src/api/callers/course/course-factory.ts (+ course-browser.ts)`:
 
 | Service | Method | Path | Notes |
 |---------|--------|------|-------|
-| `listCourseCollaboratorsService` | GET | `/api/v1/courses/:courseId/collaborators` | Paginated (`page`, `per_page`, optional `search`); returns `ApiPaginatedData<CourseCollaborator[]>` |
-| `listCourseInstructorCandidatesService` | GET | `/api/v1/courses/:courseId/instructor-candidates` | Requires `course_collaborator_candidate:read` (P67); owner-only on BE; paginated picker source |
+| `listCourseCollaboratorsService` | GET | `/api/v1/courses/:courseId/collaborators` | Paginated (`page`, `per_page`, optional `search`); returns `ApiPaginatedData<CourseCollaborator[]>`; each row is a `UserPickerCandidate` identity plus `role`, including the user `slug` (`""` until assigned) |
+| `listCourseInstructorCandidatesService` | GET | `/api/v1/courses/:courseId/instructor-candidates` | Requires `course_collaborator_candidate:read` (P67); owner-only on BE; paginated picker source; rows are `UserPickerCandidate` (`user_id`, `display_name`, `email`, `slug`, optional `avatar_file_id` / `avatar_url`) |
 | `addCourseCollaboratorsBulkService` | POST | `/api/v1/courses/:courseId/collaborators/bulk` | Bulk add: optional `role` accepts only `EDITOR` (the BE default when omitted); returns `added` + `failed[]` |
 | `removeCourseCollaboratorService` | DELETE | `/api/v1/courses/:courseId/collaborators/:userId` | |
 
@@ -329,7 +329,7 @@ Callers in `src/api/callers/course/course-factory.ts (+ course-browser.ts)`:
 
 Hooks in `src/api/hooks/course/useCourses.ts`: `useAdminCourses`, `useTrashedCourses`. After trash/restore/delete, call `mutate` on the relevant SWR keys.
 
-**List response (`CourseListItem`):** admin catalog, trash, and review queue (`GET /course-reviews/pending`) return items with `owner_user_id` plus optional `owner_display_name` (owner display name from BE; same source as collaborator `display_name`). Admin/review table columns render `owner_display_name` and fall back to `owner_user_id` when empty (`buildCourseAdminListColumns`).
+**List response (`CourseListItem`):** admin catalog, trash, and review queue (`GET /course-reviews/pending`) return items with `owner_user_id` plus optional `owner_display_name` (owner display name from BE; same source as collaborator `display_name`) and optional `owner_slug` (owner user slug; omitted when empty, not populated on `GET /courses/my` or the learner list, and not rendered in the tables yet). Admin/review table columns render `owner_display_name` and fall back to `owner_user_id` when empty (`buildCourseAdminListColumns`).
 
 Eligibility helper: `canMoveCourseToTrash` in `src/lib/utils/course.ts` (mirrors BE trash rules for UI).
 
@@ -560,7 +560,7 @@ import {
 } from "@/api/callers/auth";
 ```
 
-`useAuth` exposes `errorCode` for non-401 GET failures. PATCH body: `{ avatar_file_id?: uuid }` (optional).
+`useAuth` exposes `errorCode` for non-401 GET failures. PATCH body: `{ avatar_file_id?: uuid, slug?: string }` (both optional; `slug` omitted means unchanged, and a taken slug is auto-suffixed by the BE with the stored value returned, never `409`). `MeResponse` carries `slug` and optional `avatar_url` / `avatar_object_key`; no UI calls `patchMeService` yet.
 
 ---
 

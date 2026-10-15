@@ -5,6 +5,8 @@ export type UserPickerCandidate = {
   user_id: string;
   display_name: string;
   email: string;
+  /** User slug; `""` when none is assigned. Display data only, never a selection key. */
+  slug: string;
   avatar_file_id?: string;
   avatar_url?: string;
 };

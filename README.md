@@ -314,11 +314,14 @@ interface MeResponse {
   user_code: string; // ULID
   email: string;
   display_name: string;
-  avatar_url: string;
+  slug: string; // "" until the backend assigns one
+  avatar_url?: string; // omitted by the backend when empty
+  avatar_object_key?: string; // omitted by the backend when empty
   email_confirmed: boolean;
   is_disabled: boolean;
   created_at: number;       // Unix timestamp
-  permissions: string[];
+  permissions: string[]; // authoritative for access control
+  roles: string[]; // display-only role names
 }
 ```
 

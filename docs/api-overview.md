@@ -1,6 +1,6 @@
 # API Overview (`fe-mycourse`)
 
-_Last audited: 2026-10-15 (taxonomy slug create/update contract; 3007 on taxonomy create). Prior: 2026-07-22 (browser `[API]` Console only when NODE_ENV=development; server sanitized logs; prod browser silent)._
+_Last audited: 2026-10-15 (user slug contract: `MeResponse.slug`, optional avatar fields, optional `slug` in `PATCH /me`, `slug` on collaborator / candidate / roster / application rows, optional `CourseListItem.owner_slug`). Prior: 2026-10-15 (taxonomy slug create/update contract; 3007 on taxonomy create). Prior: 2026-07-22 (browser `[API]` Console only when NODE_ENV=development; server sanitized logs; prod browser silent)._
 
 ## Scope
 Frontend API layer lives in `src/api/` and is used by `src/actions/` and client hooks.
@@ -60,8 +60,8 @@ Transport code is grouped by folder (SoT owners stay as separate files inside fo
 
 | Route | Caller | Notes |
 |-------|--------|-------|
-| `GET /api/v1/me` | `getMeService` | 401 → `null` (anonymous) |
-| `PATCH /api/v1/me` | `patchMeService` | Body: `{ avatar_file_id?: uuid }` |
+| `GET /api/v1/me` | `getMeService` | 401 → `null` (anonymous). Body `MeResponse` carries `slug` (`""` until assigned) and optional `avatar_url` / `avatar_object_key` (omitted by the BE when empty) |
+| `PATCH /api/v1/me` | `patchMeService` | Body: `{ avatar_file_id?: uuid, slug?: string }`. Omit `slug` to leave it unchanged; a null, empty, malformed or reserved slug is `400`; a taken slug is auto-suffixed by the BE and the response `slug` is authoritative (never `409` / `3007`, so `useSlugConflictFlow` does not apply). Returns the same `MeResponse` as `GET /me` |
 | `DELETE /api/v1/me` | `deleteMeService` | Soft-delete account |
 | `DELETE /api/v1/me/hard` | `hardDeleteMeService` | Hard-delete |
 | `GET /api/v1/me/permissions` | `getMyPermissionsService` | Permission name strings |

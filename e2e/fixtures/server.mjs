@@ -26,6 +26,7 @@ const USERS = {
     id: "user-instructor",
     password: "Passw0rd!1",
     display_name: "Fixture Instructor",
+    slug: "fixture-instructor",
     permissions: [
       "instructor:modify",
       "course_instructor:read",
@@ -38,6 +39,7 @@ const USERS = {
     id: "user-admin",
     password: "Passw0rd!1",
     display_name: "Fixture Admin",
+    slug: "fixture-admin",
     permissions: [
       "admin:modify",
       "course_level:read",
@@ -55,6 +57,7 @@ const USERS = {
     id: "user-learner",
     password: "Passw0rd!1",
     display_name: "Fixture Learner",
+    slug: "fixture-learner",
     permissions: [],
     roles: ["learner"],
   },
@@ -64,6 +67,7 @@ const CANDIDATE_USER = {
   user_id: "user-candidate",
   display_name: "Candidate Collaborator",
   email: "candidate@example.test",
+  slug: "candidate-collaborator",
 };
 
 const COURSE_ID = "course-fixture-1";
@@ -175,26 +179,27 @@ function resolveTreeSlugs(nodes, storedNodes = []) {
 }
 let courseSlug = DEFAULT_COURSE_SLUG;
 let draftRowVersion = 1;
-let collaborators = [
-  {
-    user_id: "user-instructor",
-    role: "OWNER",
-    display_name: "Fixture Instructor",
-    email: "instructor@example.test",
-  },
-];
+/** Fresh owner-only collaborator list; the fixture course starts and resets to this. */
+function seedCollaborators() {
+  const email = "instructor@example.test";
+  const owner = USERS[email];
+  return [
+    {
+      user_id: owner.id,
+      role: "OWNER",
+      display_name: owner.display_name,
+      email,
+      slug: owner.slug,
+    },
+  ];
+}
+
+let collaborators = seedCollaborators();
 
 function resetState() {
   sessionsByAccessToken = new Map();
   sessionsById = new Map();
-  collaborators = [
-    {
-      user_id: "user-instructor",
-      role: "OWNER",
-      display_name: "Fixture Instructor",
-      email: "instructor@example.test",
-    },
-  ];
+  collaborators = seedCollaborators();
   outlineSections = buildInitialOutlineSections();
   leasesByToken = new Map();
   courseSlug = DEFAULT_COURSE_SLUG;
@@ -277,7 +282,7 @@ function userMeResponse(userId) {
     user_code: user.id,
     email,
     display_name: user.display_name,
-    avatar_url: "",
+    slug: user.slug,
     email_confirmed: true,
     is_disabled: false,
     created_at: 1_700_000_000,
