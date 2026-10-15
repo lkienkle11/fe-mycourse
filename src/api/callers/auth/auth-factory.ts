@@ -32,6 +32,8 @@ export interface ConfirmPayload {
 
 export interface UpdateMePayload {
   avatar_file_id?: string;
+  /** Omit to leave the slug unchanged; the backend rejects null/empty with 400 and auto-suffixes a taken value (never 409). */
+  slug?: string;
 }
 
 export interface GoogleLoginPayload {

@@ -99,6 +99,8 @@ export type MyInstructorApplication = {
   id: string;
   user_id: string;
   display_name: string;
+  /** User slug; `""` when none is assigned. */
+  slug: string;
   email: string;
   avatar?: string;
   review_status: InstructorReviewStatus | null;
@@ -149,6 +151,8 @@ export type ContactInstructorAdminResponse = {
 export type InstructorUserIdentity = {
   full_name: string;
   avatar: string;
+  /** User slug; `""` when none is assigned. */
+  slug: string;
   display_name?: string;
   email?: string;
   is_disabled?: boolean;
@@ -160,6 +164,8 @@ export type InstructorUserIdentity = {
 export type InstructorRosterMember = {
   id: string;
   full_name: string;
+  /** User slug; `""` when none is assigned. */
+  slug: string;
   email: string;
   phone: string;
   avatar: string;
