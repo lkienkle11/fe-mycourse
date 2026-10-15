@@ -1,6 +1,6 @@
 # Logic Flow
 
-_Last audited: 2026-07-08 (Discord + Google OAuth on popup; X code retained). Prior: 2026-06-26 (course admin ⋮ menu → dialog: `modal={false}` + deferred `onSelect` so `body` stays clickable after approve/trash flows). Prior: course version numbering §13, reject-fork draft, reorder nested merge._
+_Last audited: 2026-10-15 (taxonomy create/update slug flow §10b; §10a source now includes the shared slug-conflict hook). Prior: 2026-07-08 (Discord + Google OAuth on popup; X code retained). Prior: 2026-06-26 (course admin ⋮ menu → dialog: `modal={false}` + deferred `onSelect` so `body` stays clickable after approve/trash flows). Prior: course version numbering §13, reject-fork draft, reorder nested merge._
 
 
 Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifecycle, data fetching, and form submission patterns.
@@ -288,7 +288,7 @@ Message files: src/messages/vi.ts, src/messages/en.ts (loaded via src/lib/i18n/l
 
 Convention:
   → Zod validation messages = i18n key strings (e.g. "validation.email", "validation.title")
-  → Resolve via resolveValidationMessage / resolveAuthValidationMessage — skip t() when message is undefined
+  → Resolve via the shared resolveValidationMessage (src/lib/utils/validation-message.ts; auth form fields use it too) — skip t() when message is undefined
   → API errors = errors.codes.{numericCode} only (src/messages/error-codes.ts)
   → Form validation = module.validation.* namespaces (separate from API codes)
 ```
@@ -357,7 +357,7 @@ BE increments `row_version` on each PATCH; stale `expected_row_version` returns 
 
 ## 10a. Course Create — Optional Slug and Slug Conflict (3007)
 
-**Source:** `src/hooks/course/use-course-create-flow.ts` (`useCourseCreateFlow`), `src/lib/utils/course.ts` (`toCreateCoursePayload`), `src/lib/utils/api-error.ts` (`extractRecommendedSlug`), `src/components/shared/slug-input.tsx`, `src/screen/instructor/courses/page.tsx`
+**Source:** `src/hooks/course/use-course-create-flow.ts` (`useCourseCreateFlow`), `src/hooks/slug/use-slug-conflict-flow.ts` (`useSlugConflictFlow`), `src/lib/utils/course.ts` (`toCreateCoursePayload`), `src/lib/utils/api-error.ts` (`extractRecommendedSlug`), `src/components/shared/slug-input.tsx`, `src/screen/instructor/courses/page.tsx`
 
 ```
 User submits create dialog { title, slug? }
@@ -379,6 +379,44 @@ The FE never derives a slug from the title; a blank slug lets the BE generate it
 
 ---
 
+## 10b. Taxonomy Create / Update — Slug and Slug Conflict (3007)
+
+**Source:** `src/components/features/taxonomy/taxonomy-form-dialog.tsx` (`TaxonomyFormDialog`), `src/components/features/taxonomy/taxonomy-tree-editor.tsx` (`TaxonomyTreeEditor`), `src/components/features/taxonomy/tree-node-slug-field.tsx` (`TreeNodeSlugField`), `src/lib/utils/taxonomy/form-submit.ts` (`buildTaxonomySubmitPayload`, `persistTaxonomyForm`, `getTaxonomySaveSlugNotice`), `src/lib/utils/taxonomy/resource.ts` (`toTaxonomyTreeWritePayload`, `validateTaxonomyTreeSlugs`), `src/lib/utils/payload.ts` (`payloadField`, `changedNonBlank`), `src/lib/utils/slug.ts` (`isSlugAdjusted`), `src/schema/shared/slug.ts`, `src/hooks/slug/use-slug-conflict-flow.ts` (`useSlugConflictFlow`), `src/lib/utils/api-error.ts` (`extractRecommendedSlug`), `src/components/shared/slug-field.tsx`, `src/components/shared/slug-conflict-confirm-dialog.tsx`
+
+```
+Admin submits the form dialog (levels | topics | skills | tags)
+  ↓
+zodResolver(getTaxonomyFormSchema(resourceKey, mode))
+  → edit: blank slug → slugRequired (field error, no request)
+  ↓
+useSlugConflictFlow.prepare
+  → validateTaxonomyTreeSlugs (topics/skills)
+        persisted node blank, or malformed node slug → node error + toast, no request
+  → buildTaxonomySubmitPayload
+        root slug: blank → omitted; edit → sent only if ≠ persisted slug
+        tree nodes: slug sent only for a new node with a typed slug or an edited existing node
+  ↓
+create:  POST /api/v1/taxonomy/{resource}
+  ├─ success → notice → close dialog, refresh list
+  ├─ 409 + code 3007 + data.recommended_slug  (extractRecommendedSlug(error))
+  │     → SlugConflictConfirmDialog (ConfirmActionDialog stacked, taxonomy.form.slugConflict*)
+  │         ├─ Yes → resubmit with slug = recommended_slug   (repeats on a new 3007)
+  │         └─ No  → close confirm, return to form (input unchanged)
+  └─ other error → toastApiError(tErrors, error)   (incl. 3005 stale lock)
+
+update:  PATCH /api/v1/taxonomy/{resource}/:id  { …fields, expected_row_version, slug? }
+  ├─ success → notice → close dialog, refresh list
+  └─ error → toastApiError(tErrors, error)
+
+notice (getTaxonomySaveSlugNotice):
+  response slug ≠ sent slug          → toast taxonomy.form.slugAdjusted
+  a sent node slug came back changed → toast taxonomy.form.treeSlugsAdjusted
+  neither                            → taxonomy.common.createSuccess / updateSuccess
+```
+
+The FE never derives a slug from `name`; a blank root slug lets the BE generate it. Update and tree-node collisions are resolved by the BE (no 409). The create confirm is rendered inside the form `DialogContent` for the same reason as §10a.
+
+---
 ## 11. Course Editor — Submit-for-Review Validation Flow
 
 **Source:** `src/lib/utils/course.ts`, `src/hooks/course/use-course-editor-state.ts`, `src/screen/instructor/courses/editor-page.tsx`

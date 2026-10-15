@@ -1,6 +1,6 @@
 # API Overview (`fe-mycourse`)
 
-_Last audited: 2026-07-22 (browser `[API]` Console only when NODE_ENV=development; server sanitized logs; prod browser silent)._
+_Last audited: 2026-10-15 (taxonomy slug create/update contract; 3007 on taxonomy create). Prior: 2026-07-22 (browser `[API]` Console only when NODE_ENV=development; server sanitized logs; prod browser silent)._
 
 ## Scope
 Frontend API layer lives in `src/api/` and is used by `src/actions/` and client hooks.
@@ -45,7 +45,7 @@ Transport code is grouped by folder (SoT owners stay as separate files inside fo
 - Server authenticated redirects follow only 301/302/303/307/308 (304 and other 3xx are not Location hops).
 - Success type guard: `isApiSuccess()` in `src/lib/utils/api.ts`.
 - User-facing errors: `toastApiError` / `translateApiErrorCode` in `src/lib/utils/api-error.ts` → `errors.codes.{code}`.
-- `ApiErrorCode.SlugAlreadyExists` (**3007**, HTTP 409) is returned by `POST /courses` when the slug is taken; the create response body carries `data.recommended_slug`, read with `extractRecommendedSlug(error)` (`src/lib/utils/api-error.ts`, code 3007 only).
+- `ApiErrorCode.SlugAlreadyExists` (**3007**, HTTP 409) is returned by `POST /courses` and by taxonomy create (`POST /taxonomy/{levels,topics,skills,tags}`) when the slug is taken; the response body carries `data.recommended_slug`, read with `extractRecommendedSlug(error)` (`src/lib/utils/api-error.ts`, code 3007 only). Slug conflicts on update (course basic-info PATCH, taxonomy PATCH) and on tree nodes are resolved by the BE (no 409); the response slug is authoritative.
 
 ## Auth routes used
 - `POST /api/v1/auth/login`
@@ -86,7 +86,7 @@ Mounted under `API_PRIVATE_ROUTES.course` — see `src/api/callers/course/course
 | Route | Caller / hook | Notes |
 |-------|---------------|-------|
 | `GET /api/v1/courses/my` | `listMyCoursesService` / `useMyCourses` | Instructor editable course list |
-| `POST /api/v1/courses` | `createCourseService` | Body `{ title, slug? }` (`toCreateCoursePayload`); a blank slug is omitted so the BE generates it. A taken slug returns `409` / code **3007** with `data.recommended_slug` (`extractRecommendedSlug`); `useCourseCreateFlow` confirms and resubmits with the recommended slug |
+| `POST /api/v1/courses` | `createCourseService` | Body `{ title, slug? }` (`toCreateCoursePayload`); a blank slug is omitted so the BE generates it. A taken slug returns `409` / code **3007** with `data.recommended_slug` (`extractRecommendedSlug`); `useCourseCreateFlow` (shared `useSlugConflictFlow`) confirms and resubmits with the recommended slug |
 | `GET /api/v1/courses/:courseId` | `getCourseDetailService` / `useCourseDetail` | Optional `include_outline=false` on info/collaborators tabs |
 | `PATCH /api/v1/courses/:courseId/basic-info` | `updateCourseBasicInfoService` | Optimistic lock via `expected_row_version`; FE updates lock from PATCH response + SWR cache (`handleSaveBasicInfo` / `useCourseBasicInfoState`) so back-to-back saves stay in sync. Body includes `slug` only when it differs from the persisted `course.slug` (`toUpdateCourseBasicInfoPayload`); the response `data.course.slug` is the source of truth (if it differs from the sent slug the UI toasts `course.editor.toast.slugAdjusted`) |
 | `DELETE /api/v1/courses/:courseId` | `deleteCourseService` | Owner-only |
@@ -112,6 +112,7 @@ See `docs/api-using.md` § Course detail and § Taxonomy.
 List query extends `ApiListQueryParams` with `search_by`, `search_value`, **`locale`** (content locale for resolved labels; from `useLocale()`), and optional `include_images` (`false` skips image URL hydration — course editor pickers only; admin CRUD screens keep default `true`).
 
 **Dual response:** list / `GET /:id?locale=` → localized/public shape; `GET /:id?view=edit` → admin editable (canonical + full `translations` + `row_version`). PATCH sends `expected_row_version` (stale → 409 / **3005**). See `docs/taxonomy-admin.md`, `docs/api-using.md` § Taxonomy.
+**Slug (levels, topics, skills, tags):** create/update bodies accept an optional root `slug` and, for topics `child_topics` and skills `children`, an optional per-node `slug`. A blank root slug is omitted on create so the BE generates it from the canonical `name`; update sends `slug` only when changed. A taken root slug on create returns `409` / code **3007** with `data.recommended_slug` (`extractRecommendedSlug`); `useSlugConflictFlow` confirms and resubmits. Update and tree-node conflicts are resolved by the BE and the response slug is the source of truth (`taxonomy.form.slugAdjusted` when it differs from the slug sent). See `docs/taxonomy-admin.md` § Slug.
 
 ## Media routes (private)
 

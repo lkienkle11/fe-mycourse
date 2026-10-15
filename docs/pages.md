@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-09-29 — course slug management UI (create-dialog optional slug + 3007 confirm; basic-info editable slug). Prior: 2026-09-19 — route-based login/signup modal (`/login`, `/signup` + `@modal` intercepting slot), replacing modal-only Zustand auth. Prior: 2026-07-26 temporary signed-in `/{locale}/home`; 2026-07-06 roster `?portfolioId=` modal; Profiles screen removed; become-instructor route._
+_Last audited: 2026-10-15 — taxonomy slug management UI (form-dialog editable slug + 3007 confirm; tree-node slug edit). Prior: 2026-09-29 — course slug management UI (create-dialog optional slug + 3007 confirm; basic-info editable slug). Prior: 2026-09-19 — route-based login/signup modal (`/login`, `/signup` + `@modal` intercepting slot), replacing modal-only Zustand auth. Prior: 2026-07-26 temporary signed-in `/{locale}/home`; 2026-07-06 roster `?portfolioId=` modal; Profiles screen removed; become-instructor route._
 
 ## Current pages
 
@@ -85,7 +85,7 @@ All user-facing API failures use `errors.codes.{numericCode}` via `translateApiE
 |---------------|-------------------|-------------------|
 | Login / Signup modal | `auth` Zod keys via `loginSchema` / `registerSchema` | Inline `translateApiErrorCode(tErrors, result.code)` |
 | Confirm email / Logout pages | — | Inline code-based errors |
-| Taxonomy list + form dialog | `taxonomy.form.validation.*`, `RequiredLabel`, `FieldError`; create/edit remounts `TaxonomyFormDialog` via `formDialogKey` so `initialData` hydrates form + slug preview (controlled `open` does not invoke Radix `onOpenChange(true)`) | `toastApiError` on delete / create / update |
+| Taxonomy list + form dialog | `taxonomy.form.validation.*`, `RequiredLabel`, `FieldError`; editable root slug (`SlugInput`, `SLUG_PATTERN`, max 255; blank allowed) and per-node slug toggles in the tree editor; create/edit remounts `TaxonomyFormDialog` via `formDialogKey` so `initialData` hydrates the form incl. the slug (controlled `open` does not invoke Radix `onOpenChange(true)`) | `toastApiError` on delete / create / update (a create 409/3007 with a recommended slug is handled by a stacked `ConfirmActionDialog`, not toasted; `taxonomy.form.slugAdjusted` when the BE adjusts an update slug) |
 | Media collection + upload | `media.validation.*` (size, type, executable) | `toastApiError` |
 | Instructor roster / approvals / expertise / tickets / profiles | `instructor.validation.*`, `RequiredLabel` on email/reject/topic/skill/ticket fields | `toastValidationError` pre-submit; `toastApiError` on API |
 | Instructor courses list | `course.validation.title` + optional slug (`SlugInput`, `SLUG_PATTERN`, max 255) on the create dialog; a 409/3007 opens a stacked `ConfirmActionDialog` (Yes resubmits with `data.recommended_slug`, No returns to the form) | `toastApiError` on create / delete (3007 with a recommended slug is handled by the confirm, not toasted) |

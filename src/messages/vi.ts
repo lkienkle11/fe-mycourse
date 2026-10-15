@@ -1332,6 +1332,20 @@ const messages = {
       editTitle: "Sửa {resource}",
       name: "Tên",
       slug: "Đường dẫn tĩnh",
+      slugPlaceholder: "duong-dan-cua-ban",
+      slugHintCreate:
+        "Không bắt buộc. Để trống để hệ thống tự tạo. Chỉ gồm chữ thường, số và dấu gạch ngang.",
+      slugHintEdit:
+        "Chỉ gồm chữ thường, số và dấu gạch ngang. Nếu slug đã được dùng, hệ thống sẽ tự thêm hậu tố.",
+      slugConflictTitle: "Slug đã tồn tại",
+      slugConflictDescription:
+        "Slug này đã tồn tại. Chúng tôi đề xuất: {slug}. Bạn có muốn tiếp tục tạo với slug này không?",
+      slugConflictConfirm: "Có",
+      slugConflictCancel: "Không",
+      slugConflictLoading: "Đang lưu...",
+      slugAdjusted: "Đã lưu. Slug đã được dùng nên được đổi thành {slug}.",
+      treeSlugsAdjusted:
+        "Đã lưu. Một số slug mục con đã được dùng trong cây này nên đã được điều chỉnh để không trùng.",
       shortDescription: "Mô tả ngắn",
       status: "Trạng thái",
       imageFileId: "Ảnh bìa",
@@ -1353,6 +1367,11 @@ const messages = {
         shortDescriptionMax: "Mô tả ngắn tối đa 100 ký tự.",
         descriptionMaxLines: "Tối đa 8 đoạn mô tả.",
         descriptionLineMax: "Mỗi đoạn tối đa 120 ký tự.",
+        slugRequired: "Vui lòng nhập slug.",
+        slugInvalid:
+          "Slug chỉ gồm chữ thường, số và dấu gạch ngang, và không được bắt đầu hoặc kết thúc bằng dấu gạch ngang.",
+        slugMax: "Slug tối đa 255 ký tự.",
+        treeSlug: "Hãy sửa các slug mục con được đánh dấu trước khi lưu.",
       },
     },
     resources: {
@@ -1395,6 +1414,9 @@ const messages = {
       dragHandle: "Kéo để sắp xếp",
       namePlaceholder: "Tên chủ đề con",
       slugPlaceholder: "Đường dẫn tĩnh chủ đề con",
+      slugAuto: "Tự tạo từ tên",
+      slugEdit: "Sửa slug",
+      slugDone: "Xong chỉnh sửa slug",
       remove: "Xóa chủ đề con",
     },
     treeSkills: {
@@ -1402,6 +1424,9 @@ const messages = {
       dragHandle: "Kéo để sắp xếp",
       namePlaceholder: "Tên kỹ năng con",
       slugPlaceholder: "Đường dẫn tĩnh kỹ năng con",
+      slugAuto: "Tự tạo từ tên",
+      slugEdit: "Sửa slug",
+      slugDone: "Xong chỉnh sửa slug",
       remove: "Xóa kỹ năng con",
     },
     description: {

@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-09-16 (Technology Stack: added Jest/RTL/MSW unit/integration tests and Playwright browser tests rows; Quality gates section and Related Docs updated for `e2e-browser.yml` and `testing.md` — see `docs/testing.md`). Prior: 2026-06-17 (Turbopack dev tuning, `clean:next` / `dev:clean` scripts)._
+_Last audited: 2026-10-15 (taxonomy slug UI: `SlugInput` and `extractRecommendedSlug` now shared by course and taxonomy; `useSlugConflictFlow`; shared `FormField`, `tree.ts`, `payload.ts`; `SortableTreeEditor` merged into `TaxonomyTreeEditor`). Prior: 2026-09-16 (Technology Stack: added Jest/RTL/MSW unit/integration tests and Playwright browser tests rows; Quality gates section and Related Docs updated for `e2e-browser.yml` and `testing.md` — see `docs/testing.md`). Prior: 2026-06-17 (Turbopack dev tuning, `clean:next` / `dev:clean` scripts)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -17,9 +17,9 @@ This document describes how the **MyCourse** Next.js application is structured, 
 | Component primitives | Radix UI (`radix-ui` + legacy `@radix-ui/*`) | various | Headless primitives; shadcn v4 batch uses unified `radix-ui` package |
 | Design system | shadcn | 4.2.0 | `components.json` style `radix-nova`; **54** files under `src/components/ui/`; **no Base UI**; full catalog except Combobox |
 | Charts / carousel / calendar | recharts, embla-carousel-react, react-day-picker | 3.x / 8.x / 10.x | Installed via shadcn `chart`, `carousel`, `calendar` |
-| DnD / tree edit | @dnd-kit/* | 6.x | `SortableList`, `SortableTreeEditor` in `src/components/shared/` |
+| DnD / tree edit | @dnd-kit/* | 6.x | `SortableList` in `src/components/shared/`; `TaxonomyTreeEditor` (nested sortable tree built on `SortableList`) in `src/components/features/taxonomy/` |
 | Tree graph | @xyflow/react, dagre | 12.x / 0.8.x | `DagreTreeDialog` (`nodesDraggable` default true) + `dagre-tree.ts` |
-| Legacy tree pkg | @nosferatu500/react-sortable-tree | 5.x | Installed; taxonomy form uses `SortableTreeEditor` (@dnd-kit) instead |
+| Legacy tree pkg | @nosferatu500/react-sortable-tree | 5.x | Installed; taxonomy form uses `TaxonomyTreeEditor` (@dnd-kit via `SortableList`) instead |
 | Forms | react-hook-form + zod | 7.x / 4.x | `@hookform/resolvers` bridges the two |
 | i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` (no `ja` routing). Taxonomy **data** labels localize from BE via query `locale` / translation tables — see `docs/taxonomy-admin.md`. |
 | Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup, **3 min** `errorRetryInterval`, `provider: meCacheProvider`) for hooks under the provider; `useAuth` sets its own SWR options |
@@ -174,7 +174,7 @@ fe/
 │   │   ├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiErrorCodeValue (types only)
 │   │   └── auth/auth.ts            # MeResponse, LoginResponse, RefreshTokenResponse
 │   │
-│   ├── schema/                     # Zod: auth, me, media, taxonomy, instructor, course (barrel @/schema)
+│   ├── schema/                     # Zod: auth, me, media, shared (slug fields), taxonomy, instructor, course (barrel @/schema)
 │   │   └── auth/auth.ts            # loginSchema, signupSchema (Zod + i18n keys)
 │   │
 │   ├── constants/
@@ -194,6 +194,9 @@ fe/
 │   │   │   ├── list-query.ts       # apiListQueryToRecord()
 │   │   │   ├── format-bytes.ts     # formatBytes()
 │   │   │   ├── media.ts            # media upload/list helpers
+│   │   │   ├── payload.ts          # omitWhenBlank(), changedNonBlank(), payloadField() — optional write-payload fields (import `@/lib/utils/payload`)
+│   │   │   ├── slug.ts             # sanitizeSlugInput(), SLUG_PATTERN, SLUG_MAX_LENGTH, isSlugAdjusted() (import `@/lib/utils/slug`)
+│   │   │   ├── tree.ts             # generic `{ id, children? }` helpers: walkTree, flattenTree, countTreeNodes, getTreeMaxDepth, findTreePath, findTreeNodeById, updateTreeNode (import `@/lib/utils/tree`)
 │   │   │   ├── react.ts            # useUniqueId()
 │   │   │   ├── user.ts             # pickCharacter()
 │   │   │   └── cookie.ts           # cookie types, domain, build options, isomorphic get/set
@@ -281,9 +284,15 @@ All HTTP communication and token lifecycle management:
 | `apiFetch` / `apiPost` / `apiPut` / `apiDelete` / `apiOptions` | `api/core/methods.ts` | Low-level helpers on `apiTransport` → `ApiResult<T>` |
 | `getMeService` / `patchMeService` / `deleteMeService` / `getMyPermissionsService` | `api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | Me API callers |
 | `toastApiError` / `translateApiErrorCode` | `lib/utils/api-error.ts` | Map `response.code` → `errors.codes.{code}` |
-| `extractRecommendedSlug` | `lib/utils/api-error.ts` | Read `data.recommended_slug` from a `409` / code 3007 (`SlugAlreadyExists`) create-course error |
+| `extractRecommendedSlug` | `lib/utils/api-error.ts` | Read `data.recommended_slug` from a `409` / code 3007 (`SlugAlreadyExists`) create error (create-course and taxonomy create) |
 | `RequiredLabel` / `FieldError` | `components/shared/` | Form required asterisk + inline Zod errors |
-| `SlugInput` | `components/shared/slug-input.tsx` | Editable slug field (filters through `sanitizeSlugInput`: `a-z 0-9 -`, whitespace becomes `-`, max 255); used by the course create dialog (optional) and the course basic-info tab (required) |
+| `FormField` | `components/shared/form-field.tsx` | Labelled field block: `RequiredLabel` (`htmlFor`) + control + optional muted hint + `FieldError`; `SlugField` is `FormField` + `SlugInput`; used by the course create dialog, the course basic-info tab and the taxonomy form dialog |
+| `SlugInput` | `components/shared/slug-input.tsx` | Editable slug field (filters through `sanitizeSlugInput`: `a-z 0-9 -`, whitespace becomes `-`, max 255); used by the course create dialog (optional), the course basic-info tab (required), the taxonomy form root slug and per-node tree slugs |
+| `useSlugConflictFlow` | `hooks/slug/use-slug-conflict-flow.ts` | Generic create-with-optional-slug submit: on `409` / 3007 exposes the BE `recommended_slug` for a stacked `ConfirmActionDialog` (accept resubmits, dismiss returns to the form); used by course create and taxonomy create |
+| `optionalSlugField` / `requiredSlugField` | `schema/shared/slug.ts` | The single slug zod rule set (blank-allowed / required first, then `SLUG_PATTERN` + `SLUG_MAX_LENGTH`) used by the course and taxonomy schemas and by tree-node slug validation |
+| `omitWhenBlank` / `changedNonBlank` / `payloadField` | `lib/utils/payload.ts` | The single "omit blank / omit unchanged" rule for optional write-payload fields (course + taxonomy builders) |
+| `isSlugAdjusted` | `lib/utils/slug.ts` | "The server adjusted the slug" check (sent vs saved) shared by course and taxonomy |
+| `walkTree` / `flattenTree` / `countTreeNodes` / `getTreeMaxDepth` / `findTreePath` / `findTreeNodeById` / `updateTreeNode` | `lib/utils/tree.ts` | Generic `{ id, children? }` tree helpers shared by taxonomy, the dashboard nav resolver and the dagre layout |
 | `loginService` | `api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | `POST /api/v1/auth/login` |
 | `listMediaFiles` / `uploadMediaFiles` / `deleteMediaFile` | `api/callers/media/media-factory.ts (+ media-browser.ts)` | Media library CRUD (multipart upload with 30s timeout, delete by `object_key`) |
 | `useMediaFiles` | `api/hooks/media/useMediaFiles.ts` | SWR hook for paginated media list |
@@ -383,7 +392,7 @@ All Go API endpoints return a standard `{ code, message, data }` envelope (mirro
 | `src/types/i18n.d.ts` | `AppConfig.Messages` augmentation for typed `useTranslations` keys |
 | `next.config.ts` | next-intl plugin + Turbopack dev tuning (see [Development server](#development-server)) |
 
-Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i18n keys** (e.g. `"validation.email"`). `AuthEmailField`, `AuthPasswordField`, and `AuthFullNameField` in `auth-form-fields.tsx` resolve keys via `useTranslations("auth")` only when `error.message` is set (never `t(undefined)`).
+Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i18n keys** (e.g. `"validation.email"`). `AuthEmailField`, `AuthPasswordField`, and `AuthFullNameField` in `auth-form-fields.tsx` resolve keys with the shared `resolveValidationMessage` (`src/lib/utils/validation-message.ts`) over `useTranslations("auth")` and render them with the shared `FieldError`; a key is resolved only when `error.message` is set (never `t(undefined)`).
 
 ---
 

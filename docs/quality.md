@@ -1,6 +1,6 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-09-16 (`test` now runs the real Jest suite — see [`docs/testing.md`](./testing.md); `deadcode`/Knip in `test-all` / `check-all`; CI `test` job uses `test-all`)._
+_Last audited: 2026-10-15 (jscpd dedup table: shared tree / payload / slug / form-field / slug-conflict modules). Prior: 2026-09-16 (`test` now runs the real Jest suite — see [`docs/testing.md`](./testing.md); `deadcode`/Knip in `test-all` / `check-all`; CI `test` job uses `test-all`)._
 
 Checks for **dead code** (Knip), **circular imports** (Madge), **duplicate code** (jscpd), **ESLint**, and **Biome** under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs **`npm run test-all`** in the **`test`** job (`lint` → `biome` → `test` → `deadcode` → `quality:deps`), then **`npm run build`** in a separate **`build`** job (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 
@@ -233,6 +233,12 @@ _Re-run on 2026-07-22 during Fetch→Xior migration: Xior 0.8.3 exact pin, cooki
 | AuthRuntimeAdapter types | `src/api/auth/auth-runtime.ts` |
 | Login ↔ signup email/password fields | `src/components/common/auth-menu/auth/auth-form-fields.tsx` (`AuthEmailPasswordFields`, …) |
 | `DashboardSidebarLevel` ↔ `DashboardSidebarSubLevel` | Single `DashboardSidebarTree` with `level: "root" \| "sub"` in `dashboard-sidebar.tsx` |
+| Recursive tree walks (taxonomy count / depth / slug collection, dashboard nav lookup, dagre walk) | `src/lib/utils/tree.ts` (`walkTree`, `flattenTree`, `countTreeNodes`, `getTreeMaxDepth`, `findTreePath`, `findTreeNodeById`, `updateTreeNode`) |
+| "Include optional field only when non-blank / changed" in course and taxonomy payload builders | `src/lib/utils/payload.ts` (`omitWhenBlank`, `changedNonBlank`, `payloadField`) |
+| Slug zod rules (course create / basic-info, taxonomy root + tree nodes) | `src/schema/shared/slug.ts` (`optionalSlugField`, `requiredSlugField`) |
+| 3007 conflict state machine (course create, taxonomy create) + stacked confirm | `src/hooks/slug/use-slug-conflict-flow.ts` + `src/components/shared/slug-conflict-confirm-dialog.tsx` |
+| Label + control + hint + error block (course create, basic-info, taxonomy form) | `src/components/shared/form-field.tsx` / `slug-field.tsx` |
+| Auth-local `resolveAuthValidationMessage` / `AuthFieldError` | shared `resolveValidationMessage` + `FieldError` |
 
 ---
 

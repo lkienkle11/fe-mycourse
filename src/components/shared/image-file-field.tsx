@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import { PermissionGate } from "@/components/shared/permission-gate";
 import { RequiredLabel } from "@/components/shared/required-label";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import type { PermissionName } from "@/types/permissions";
 
 export type ImageFileFieldProps = {
@@ -41,11 +40,7 @@ export function ImageFileField({
 }: ImageFileFieldProps) {
   return (
     <div className="space-y-2">
-      {required ? (
-        <RequiredLabel>{label}</RequiredLabel>
-      ) : (
-        <Label>{label}</Label>
-      )}
+      <RequiredLabel required={required}>{label}</RequiredLabel>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
           {previewUrl ? (

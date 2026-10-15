@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-09-29 (course slug management UI: `SlugInput`, `sanitizeSlugInput`, `extractRecommendedSlug`, `useCourseCreateFlow`, `ApiErrorCode.SlugAlreadyExists`). Prior: 2026-07-10 (Homepage marketing images under `public/assets/images/home`); before that: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
+_Last audited: 2026-10-15 (taxonomy slug management UI: `useSlugConflictFlow`, `FormField` / `SlugField`, `payload.ts`, `tree.ts`, per-node slug in `TaxonomyTreeEditor`, `SlugInput` reuse in taxonomy). Prior: 2026-09-29 (course slug management UI: `SlugInput`, `sanitizeSlugInput`, `extractRecommendedSlug`, `useCourseCreateFlow`, `ApiErrorCode.SlugAlreadyExists`). Prior: 2026-07-10 (Homepage marketing images under `public/assets/images/home`); before that: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -151,7 +151,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: All API callers, Server Actions, authenticated transport.
 - **Dependencies**: none.
 - **Current Usage**: `src/api/transport/api-transport.ts`, `src/actions/auth/auth.ts`, login/signup UI.
-- **Reuse Rule**: Always import from here. Never hardcode `code === 0`, `code === 3002` or `code === 3007` inline (use `ApiErrorCode.SlugAlreadyExists` for a duplicate course slug; copy lives in `errors.codes.3007` in `src/messages/error-codes.ts`, en + vi).
+- **Reuse Rule**: Always import from here. Never hardcode `code === 0`, `code === 3002` or `code === 3007` inline (use `ApiErrorCode.SlugAlreadyExists` for a duplicate course or taxonomy slug; copy lives in `errors.codes.3007` in `src/messages/error-codes.ts`, en + vi).
 
 ### Asset: API_PUBLIC_ROUTES
 - **Name**: `API_PUBLIC_ROUTES`
@@ -317,9 +317,9 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `resolveDashboardPageHeaderMetadata`
 - **Type**: Pure function
 - **Path**: `src/lib/navigation/dashboard-page-header.ts`
-- **Purpose**: Maps the current dashboard pathname to the shared breadcrumb/title/description model. Breadcrumb labels and links are auto-derived from the role nav tree (`*DASHBOARD_ITEMS`) by walking item `href` ancestry; static route constants only supply title/description and regex-route anchors.
+- **Purpose**: Maps the current dashboard pathname to the shared breadcrumb/title/description model. Breadcrumb labels and links are auto-derived from the role nav tree (`*DASHBOARD_ITEMS`) by walking item `href` ancestry with the shared `findTreePath` / `findTreeNodeById` (`src/lib/utils/tree.ts`); static route constants only supply title/description and regex-route anchors.
 - **Scope**: `DashboardLayout` only.
-- **Dependencies**: `DASHBOARD_PAGE_HEADER_ROUTES`, `DASHBOARD_ROLE_ROOT`, `DashboardItem`, existing dashboard nav config labels.
+- **Dependencies**: `DASHBOARD_PAGE_HEADER_ROUTES`, `DASHBOARD_ROLE_ROOT`, ``DashboardItem`, `findTreePath` / `findTreeNodeById` (`src/lib/utils/tree.ts`), existing dashboard nav config labels.
 
 ### Asset: Dashboard page-header route metadata
 - **Name**: `DASHBOARD_ROLE_ROOT`, `DASHBOARD_PAGE_HEADER_ROUTES`
@@ -491,20 +491,20 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Dependencies**: `TaxonomyResourceKey`.
 
 ### Asset: Taxonomy config helpers
-- **Name**: `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`, `getTaxonomyTreeFromEntity`, `buildTaxonomyDagreRoot`, `toTaxonomyTreeWritePayload`, `createTaxonomyTreeNode`, `countTaxonomyTreeNodes`
+- **Name**: `getTaxonomyResourceConfig`, `getTaxonomySearchableColumns`, `getTaxonomyTreeFromEntity`, `buildTaxonomyDagreRoot`, `collectTaxonomyTreeSlugs`, `toTaxonomyTreeWritePayload`, `validateTaxonomyTreeSlugs`, `hasAdjustedTaxonomyTreeSlugs`, `createTaxonomyTreeNode`
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/taxonomy/resource.ts` (re-exported from `src/lib/utils/taxonomy/index.ts`)
-- **Purpose**: Resolve `TAXONOMY_RESOURCES` entry, searchable column ids, extract nested tree from entity, build dagre root for read-only popup, strip slug for write payloads, create empty editor node, count nested nodes for button state.
+- **Purpose**: Resolve `TAXONOMY_RESOURCES` entry, searchable column ids, extract nested tree from entity, build dagre root for the read-only popup (names pass through as the BE returned them for the list `locale`; slug is not rendered), collect persisted node slugs, build write payloads (`slug` kept only for a new node with a typed slug or an edited existing node, through `payloadField` / `changedNonBlank`), validate node slugs with the shared slug zod fields, detect BE-adjusted node slugs, create empty editor node. Node counting and maximum depth (tree-view button hint, dialog width) use the generic `countTreeNodes` / `getTreeMaxDepth` from `src/lib/utils/tree.ts`.
 - **Scope**: Taxonomy list page, form dialog, table columns, tree view button.
-- **Dependencies**: `TAXONOMY_RESOURCES` (`src/constants/taxonomy/resources.ts`), `TaxonomyTreeNode`, `DagreTreeRoot` (`dagre-tree.ts`).
+- **Dependencies**: `TAXONOMY_RESOURCES` (`src/constants/taxonomy/resources.ts`), `TaxonomyTreeNode`, `DagreTreeRoot` (`dagre-tree.ts`), `flattenTree` (`src/lib/utils/tree.ts`), `payloadField` / `changedNonBlank` (`src/lib/utils/payload.ts`), `optionalSlugField` / `requiredSlugField` (`src/schema/shared/slug.ts`).
 
 ### Asset: Taxonomy form helpers
-- **Name**: `CONTENT_LOCALE_OPTIONS`, `resolveAllowedContentLocale`, `canonicalizeContentLocale`, `buildTaxonomyFormDefaultValues`, `compactNameTranslations`, `compactOutcomeTranslations`, `contentLocaleOptionLabel`, …
+- **Name**: `CONTENT_LOCALE_OPTIONS`, `resolveAllowedContentLocale`, `canonicalizeContentLocale`, `buildTaxonomyFormDefaultValues`, `getPersistedTaxonomySlug`, `buildTaxonomySlugBaseline`, `compactNameTranslations`, `compactOutcomeTranslations`, `contentLocaleOptionLabel`, `TAXONOMY_TREE_INDENT_PX`, …
 - **Type**: Utility functions + constants
 - **Path**: `src/lib/utils/taxonomy/form-helpers.ts`
-- **Purpose**: Multi-locale content presets for taxonomy translation tabs; BCP47 canonicalize; **whitelist** add via `resolveAllowedContentLocale` (dropdown-only — no free-enter); hydrate form defaultValues / translation maps; compact empty locales before write; slug preview helpers.
+- **Purpose**: Multi-locale content presets for taxonomy translation tabs; BCP47 canonicalize; **whitelist** add via `resolveAllowedContentLocale` (dropdown-only — no free-enter); hydrate form defaultValues / translation maps; compact empty locales before write; persisted-slug baseline (`getPersistedTaxonomySlug`) for the changed-only slug rule.
 - **Scope**: Taxonomy form dialog + locale tabs section; do **not** keep these next to React components.
-- **Dependencies**: `LANGUAGE_OPTIONS` (for `en`/`vi` labels), `slugifyName`, taxonomy types.
+- **Dependencies**: `LANGUAGE_OPTIONS` (for `en`/`vi` labels), taxonomy types.
 
 ### Asset: `TAXONOMY_RESOURCE_KEYS`
 - **Name**: `TAXONOMY_RESOURCE_KEYS`
@@ -513,6 +513,15 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Canonical ordered list of taxonomy resource keys (`levels`, `topics`, `outcomes`, `skills`, `tags`) typed as `readonly TaxonomyResourceKey[]`.
 - **Scope**: Route/screen generation, iteration over resources; keep in sync with `TAXONOMY_RESOURCES` keys.
 - **Dependencies**: `TaxonomyResourceKey` type.
+
+### Asset: `TAXONOMY_NAME_MAX_LENGTH` / `TAXONOMY_SHORT_DESCRIPTION_MAX_LENGTH`
+- **Name**: `TAXONOMY_NAME_MAX_LENGTH`, `TAXONOMY_SHORT_DESCRIPTION_MAX_LENGTH`
+- **Type**: Constants
+- **Path**: `src/constants/taxonomy/limits.ts`
+- **Purpose**: Single source of the taxonomy text limits: name 255 and short description 100 (mirror the BE).
+- **Scope**: `src/schema/taxonomy/taxonomy.ts` (`validation.nameMax`, `validation.shortDescriptionMax`) and the `maxLength` props of `TaxonomyFormDialog` and `TaxonomyTreeEditor`.
+- **Dependencies**: none.
+- **Reuse Rule**: Import the constants; never repeat `255` / `100` for taxonomy text fields.
 
 ### Asset: shared API query helpers
 - **Name**: `useApiListQuery`, `useApiRowsQuery`, `useApiDetailQuery`, `useApiInfiniteListQuery`, `fetchPaginatedListByKey`
@@ -534,16 +543,16 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `TaxonomyFormDialog`, `TaxonomyFormDialogProps`
 - **Type**: React component (client)
 - **Path**: `src/components/features/taxonomy/taxonomy-form-dialog.tsx`
-- **Purpose**: Create/update taxonomy rows per `resourceKey`; locale UI is a multi-preset combobox only (`CONTENT_LOCALE_OPTIONS`, **no en/vi Tabs**, **no free-enter**; placeholder “Select language” / “Chọn ngôn ngữ”; scrollable list + empty copy); submit via `buildTaxonomySubmitPayload` / `persistTaxonomyForm` from `@/lib/utils/taxonomy/form-submit`; canonical + `translations` (and tree node `translations`); initializes `useForm` and local tree/description/image state from **edit detail** on mount (no `useEffect` sync). Update body includes `expected_row_version`. Slug preview is read-only via `resolveTaxonomySlugPreview(name, persistedSlug)`.
+- **Purpose**: Create/update taxonomy rows per `resourceKey`; locale UI is a multi-preset combobox only (`CONTENT_LOCALE_OPTIONS`, **no en/vi Tabs**, **no free-enter**; placeholder “Select language” / “Chọn ngôn ngữ”; scrollable list + empty copy); submit via `buildTaxonomySubmitPayload` / `persistTaxonomyForm` from `@/lib/utils/taxonomy/form-submit`; canonical + `translations` (and tree node `translations`); initializes `useForm` and local tree/description/image state from **edit detail** on mount (no `useEffect` sync). Update body includes `expected_row_version`. The root slug is the shared editable `SlugInput` (default = persisted `slug`; blank omitted on create; sent on update only when changed); a create `409` / **3007** opens the stacked recommended-slug `ConfirmActionDialog` through `useSlugConflictFlow`, and a BE-adjusted update slug toasts `taxonomy.form.slugAdjusted`.
 - **Scope**: Opened from `TaxonomyListPage`; parent must remount with `key` when controlled `open` toggles from table actions.
-- **Dependencies**: `@/lib/utils/taxonomy` (resource + form-helpers), `@/lib/utils/taxonomy/form-submit`, `slugifyName`, `MediaCollectionDialog`, taxonomy Zod schemas, `toastApiError` (incl. **3005**).
+- **Dependencies**: `@/lib/utils/taxonomy` (resource + form-helpers), `@/lib/utils/taxonomy/form-submit`, `SlugInput`, `useSlugConflictFlow`, `ConfirmActionDialog`, `MediaCollectionDialog`, taxonomy Zod schemas, `toastApiError` (incl. **3005**).
 ### Asset: taxonomy form-submit utils
-- **Name**: `buildTaxonomySubmitPayload`, `persistTaxonomyForm`, `prepareOutcomeSubmitPayload`, `prepareTopicSubmitPayload`, `prepareSkillSubmitPayload`, `prepareSlugStatusSubmitPayload`
+- **Name**: `buildTaxonomySubmitPayload`, `persistTaxonomyForm` (returns the saved entity), `getTaxonomySaveSlugNotice`, `prepareOutcomeSubmitPayload`, `prepareTopicSubmitPayload`, `prepareSkillSubmitPayload`, `prepareSlugStatusSubmitPayload`
 - **Type**: Pure helpers + API persist wrappers
 - **Path**: `src/lib/utils/taxonomy/form-submit.ts` (import `@/lib/utils/taxonomy/form-submit` — **not** re-exported from `@/lib/utils/taxonomy` barrel to avoid cycle with `api/callers/taxonomy`)
-- **Purpose**: Keep create/update submit branching out of `TaxonomyFormDialog.onSubmit` (≤60 lines / low cyclo). Compact translations, outcome short_description validation, and create vs update service calls.
+- **Purpose**: Keep create/update submit branching out of `TaxonomyFormDialog.onSubmit` (≤60 lines / low cyclo). Compact translations, outcome short_description validation, and create vs update service calls. Optional fields go through `src/lib/utils/payload.ts`: a blank root `slug` is omitted on create, root `slug` on update only when it differs from the persisted slug, tree-node `slug` only when edited, `image_file_id` only when non-blank. `getTaxonomySaveSlugNotice` compares the sent and saved slug with `isSlugAdjusted` and reports adjusted tree-node slugs.
 - **Scope**: Taxonomy admin form dialog only; lives under utils, not under `components/features/taxonomy/`.
-- **Dependencies**: `createTaxonomyService` / `updateTaxonomyService`, `toTaxonomyTreeWritePayload`, compact helpers in `form-helpers.ts`.
+- **Dependencies**: `createTaxonomyService` / `updateTaxonomyService`, `toTaxonomyTreeWritePayload`, `payloadField` / `changedNonBlank` / `omitWhenBlank` (`src/lib/utils/payload.ts`), `isSlugAdjusted` (`src/lib/utils/slug.ts`), compact helpers in `form-helpers.ts`.
 ### Asset: getTaxonomyDetailService
 - **Name**: `getTaxonomyDetailService`, `listTaxonomyService`, `useTaxonomyList`
 - **Type**: API service + SWR hook
@@ -589,7 +598,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: React component
 - **Path**: `src/components/shared/confirm-action-dialog.tsx`
 - **Purpose**: Generic confirm shell with custom labels, loading state, and close guard while `isLoading`. Default variant is a Radix `AlertDialog`; the `stacked` variant renders a `Dialog` (`role="alertdialog"`) meant to sit inside another `Dialog`'s content, sharing the parent's primitive family so focus traps do not fight (a separate `AlertDialog` package copy caused `RangeError: Maximum call stack size exceeded`).
-- **Scope**: `ConfirmDeleteDialog` wrapper; instructor course editor submit-review confirm (`editor-page.tsx`); stacked "use recommended slug?" confirm over the create-course dialog (`useCourseCreateFlow`, `InstructorCoursesPage`; `stacked` variant rendered inside the create `DialogContent`).
+- **Scope**: `ConfirmDeleteDialog` wrapper; instructor course editor submit-review confirm (`editor-page.tsx`); stacked "use recommended slug?" confirm over the create-course dialog (`useCourseCreateFlow`, `InstructorCoursesPage`) and the taxonomy create form (`TaxonomyFormDialog`), both through `useSlugConflictFlow` (`stacked` variant rendered inside the parent create `DialogContent`).
 - **Dependencies**: `AlertDialog` primitives from `src/components/ui/alert-dialog.tsx` (default variant); `Dialog` primitives from `src/components/ui/dialog.tsx` and `Button` (`stacked` variant).
 
 ### Asset: buildCourseAdminListColumns
@@ -716,10 +725,55 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `useCourseCreateFlow`
 - **Type**: React hook
 - **Path**: `src/hooks/course/use-course-create-flow.ts` (barrel: `src/hooks/course/index.ts`)
-- **Purpose**: Create-course dialog state machine. Builds the `POST /api/v1/courses` body with `toCreateCoursePayload(title, slug)` (`{ title, slug? }`; a blank slug is omitted and the BE generates it — the slug is never derived from the title on the FE). On HTTP 409 with `code === ApiErrorCode.SlugAlreadyExists` (3007) it reads `data.recommended_slug` via `extractRecommendedSlug` and exposes `suggestedSlug` for a stacked `ConfirmActionDialog`: `acceptSuggestion` resubmits with the recommended slug, `dismissSuggestion` returns to the form. Any other error goes to `toastApiError`.
+- **Purpose**: Create-course dialog state. Builds the `POST /api/v1/courses` body with `toCreateCoursePayload(title, slug)` (`{ title, slug? }`; a blank slug is omitted and the BE generates it — the slug is never derived from the title on the FE) and delegates the conflict handling to the shared `useSlugConflictFlow`: on HTTP 409 with `code === ApiErrorCode.SlugAlreadyExists` (3007) it reads `data.recommended_slug` via `extractRecommendedSlug` and exposes `suggestedSlug` for a stacked `ConfirmActionDialog` — `acceptSuggestion` resubmits with the recommended slug, `dismissSuggestion` returns to the form. Any other error goes to `toastApiError`.
 - **Scope**: `InstructorCoursesPage` create dialog (the confirm is `ConfirmActionDialog stacked`, rendered inside the create `DialogContent`).
-- **Dependencies**: `toCreateCoursePayload` (`src/lib/utils/course.ts`), `extractRecommendedSlug` / `toastApiError` (`src/lib/utils/api-error.ts`), `ApiErrorCode`, `courseCreateSchema`, `createCourseService` (`src/api/callers/course`).
-- **Reuse Rule**: Reuse for any create-with-optional-slug flow; never re-implement 3007 handling inline.
+- **Dependencies**: `useSlugConflictFlow` (`src/hooks/slug/use-slug-conflict-flow.ts`), `toCreateCoursePayload` (`src/lib/utils/course.ts`), `courseCreateSchema`, `createCourseService` (`src/api/callers/course`).
+- **Reuse Rule**: Course-specific wrapper — use it only for the create-course dialog. For any other create-with-optional-slug flow use `useSlugConflictFlow`; never re-implement 3007 handling inline.
+
+### Asset: useSlugConflictFlow
+- **Name**: `useSlugConflictFlow<TPayload, TResult>({ slug, setSlug, prepare, request, onSuccess })`
+- **Type**: React hook
+- **Path**: `src/hooks/slug/use-slug-conflict-flow.ts` (barrel `src/hooks/slug/index.ts`, re-exported from `src/hooks/index.ts`)
+- **Purpose**: Generic create/update-with-optional-slug submit state. `prepare(slug)` validates and builds the payload (return `null` after surfacing feedback to skip the request); `request(payload)` performs the call; on HTTP 409 with `code === ApiErrorCode.SlugAlreadyExists` (3007) it reads `data.recommended_slug` via `extractRecommendedSlug` and exposes `suggestedSlug` for `SlugConflictConfirmDialog` (`acceptSuggestion` writes it back with `setSlug` and resubmits, repeating on a new 3007; `dismissSuggestion` returns to the form). Any other error goes to `toastApiError`. Returns `{ isSubmitting, suggestedSlug, submit, acceptSuggestion, dismissSuggestion }`.
+- **Scope**: `useCourseCreateFlow` (create-course dialog) and `TaxonomyFormDialog` (levels, topics, skills, tags; create and update share the path, but only create can receive a 3007).
+- **Dependencies**: `extractRecommendedSlug` / `toastApiError` (`src/lib/utils/api-error.ts`), `next-intl` `errors.codes`.
+- **Reuse Rule**: Reuse for any submit with an optional slug; never re-implement 3007 handling inline.
+
+### Asset: SlugConflictConfirmDialog
+- **Name**: `SlugConflictConfirmDialog`, `SlugConflictConfirmDialogProps`
+- **Type**: React component
+- **Path**: `src/components/shared/slug-conflict-confirm-dialog.tsx`
+- **Purpose**: Stacked "use the recommended slug?" confirm: `ConfirmActionDialog stacked`, open while `suggestedSlug !== null`, accept/dismiss callbacks, caller-supplied labels (the `{slug}` interpolation stays with the caller because namespaces differ per domain).
+- **Scope**: Create-course dialog and `TaxonomyFormDialog`; render it inside the parent `DialogContent`.
+- **Dependencies**: `ConfirmActionDialog`.
+- **Reuse Rule**: Use with `useSlugConflictFlow`; do not copy the `ConfirmActionDialog stacked` wiring.
+
+### Asset: SlugField
+- **Name**: `SlugField`, `SlugFieldProps`
+- **Type**: React component
+- **Path**: `src/components/shared/slug-field.tsx`
+- **Purpose**: `FormField` (`RequiredLabel` + optional hint + `FieldError`) around a `SlugInput` for a slug form field; `name` / `ref` / `onBlur` / `disabled` pass through to `SlugInput` so it works under react-hook-form `Controller` and with plain state.
+- **Scope**: Create-course dialog, course editor basic-info tab, `TaxonomyFormDialog` root slug.
+- **Dependencies**: `FormField`, `SlugInput`.
+- **Reuse Rule**: Use for any labelled slug form field; use bare `SlugInput` only where the layout differs (tree node).
+
+### Asset: TreeNodeSlugField
+- **Name**: `TreeNodeSlugField`
+- **Type**: React component
+- **Path**: `src/components/features/taxonomy/tree-node-slug-field.tsx`
+- **Purpose**: Per-node slug control for `TaxonomyTreeEditor`: muted slug text (or the "generated from the name" placeholder) with a pencil button that toggles an inline `SlugInput` and a done button; stays open while an error is set.
+- **Scope**: `TaxonomyTreeEditor` (topics/skills tree).
+- **Dependencies**: `SlugInput`, `Button`, `FieldError`, lucide `Pencil` / `Check`.
+- **Reuse Rule**: Do not add another per-node slug input.
+
+### Asset: optionalSlugField / requiredSlugField
+- **Name**: `optionalSlugField`, `requiredSlugField`
+- **Type**: Zod schema fields
+- **Path**: `src/schema/shared/slug.ts` (import from `@/schema/shared`)
+- **Purpose**: The single slug rule set: `optionalSlugField` allows blank, otherwise `SLUG_PATTERN` and `SLUG_MAX_LENGTH`; `requiredSlugField` reports `validation.slugRequired` first. Messages are the keys `validation.slugRequired` / `slugInvalid` / `slugMax`, so every consuming namespace defines the same three keys.
+- **Scope**: `courseCreateSchema`, `courseBasicInfoSchema`, `taxonomySlugStatusSchema`, `getTaxonomyFormSchema`, `validateTaxonomyTreeSlugs`.
+- **Dependencies**: `SLUG_PATTERN`, `SLUG_MAX_LENGTH`.
+- **Reuse Rule**: Never re-declare a slug regex or length check in a schema.
 
 ### Asset: CourseOutlineRowActions
 - **Name**: `CourseOutlineRowActions`
@@ -800,32 +854,42 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/course.ts`, `src/lib/utils/duration.ts`
-- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry (6 tabs incl. `review-history`), basic-info/sub-lesson form state factories (`createCourseBasicInfoState(version, courseSlug)` seeds the form `slug` from `course.slug`; H/M/S duration parts for TEXT/QUIZ), `buildSubLessonEstimatedDurationPayload` / `validateSubLessonDurationForm`, `toUpdateCourseBasicInfoPayload(basicInfo, persistedSlug)` (sends `title` and all required fields and adds `slug` only when it differs from `persistedSlug`), `toCreateCoursePayload(title, slug)` (`{ title, slug? }`, blank slug omitted; imported from `@/lib/utils/course`), taxonomy id `Set` mapping, `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE), `validateSubLessonFormContent` / `validateCourseSubmitReadiness` (QUIZ rules delegate to `courseQuizOptionSchema`), quiz editor state helpers `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` for `SubLessonQuizFields`, and `formatDurationMs` / `parseDurationPartsToMs` / `splitMsToDurationParts` for outline labels. **Review workflow UI** (`editor-page.tsx`): `canManageReviewWorkflow` gates prepare/submit/reopen header buttons to `collaborator_role === "OWNER"`.
+- **Purpose**: Pure course editor helpers — `courseEditorTabs` registry (6 tabs incl. `review-history`), basic-info/sub-lesson form state factories (`createCourseBasicInfoState(version, courseSlug)` seeds the form `slug` from `course.slug`; H/M/S duration parts for TEXT/QUIZ), `buildSubLessonEstimatedDurationPayload` / `validateSubLessonDurationForm`, `toUpdateCourseBasicInfoPayload(basicInfo, persistedSlug)` (sends `title` and all required fields and adds `slug` only when it differs from `persistedSlug`; optional `preview_video_file_id` / `slug` go through `payloadField` / `changedNonBlank`), `toCreateCoursePayload(title, slug)` (`{ title, slug? }`, blank slug omitted via `payloadField`; imported from `@/lib/utils/course`), taxonomy id `Set` mapping, `rootOutlineStableId(courseId)` (`OUTLINE_ROOT` lease key = course UUID v7 from BE), `validateSubLessonFormContent` / `validateCourseSubmitReadiness` (QUIZ rules delegate to `courseQuizOptionSchema`), quiz editor state helpers `applyQuizAllowMultipleChange` / `applyQuizOptionCorrectChange` for `SubLessonQuizFields`, and `formatDurationMs` / `parseDurationPartsToMs` / `splitMsToDurationParts` for outline labels. **Review workflow UI** (`editor-page.tsx`): `canManageReviewWorkflow` gates prepare/submit/reopen header buttons to `collaborator_role === "OWNER"`.
 - **Scope**: `use-course-editor-state`, `use-course-create-flow`, `editor-page.tsx`, `course-editor-outline-tab.tsx`, `course-editor-dialogs.tsx`.
-- **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`); `duration.ts` for display/payload conversion.
+- **Dependencies**: `course-delta.ts` (`createEmptyDeltaString`); ``duration.ts` for display/payload conversion; `payload.ts` (`payloadField`, `changedNonBlank`).
 
 ### Asset: dagre-tree utils
 - **Name**: `DagreTreeRoot`, `treeToFlowElements`, `getLayoutedElements`
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/dagre-tree.ts`
-- **Purpose**: Walk a minimal tree shape (`id`, `name`, optional `children`) and produce layouted React Flow nodes/edges via dagre. Node `data.label` = `name` only.
+- **Purpose**: Walk a minimal tree shape (`id`, `name`, optional `children`) with the shared generic `walkTree` (`src/lib/utils/tree.ts`) and produce layouted React Flow nodes/edges via dagre. Node `data.label` = `name` only.
 - **Scope**: `DagreTreeDialog`; structurally compatible with `TaxonomyTreeNode` (no taxonomy import).
-- **Dependencies**: `@xyflow/react`, `dagre`.
+- **Dependencies**: ``@xyflow/react`, `dagre`, `walkTree` (`src/lib/utils/tree.ts`).
 
-### Asset: SortableTreeEditor
-- **Name**: `SortableTreeEditor`
+### Asset: tree utils
+- **Name**: `walkTree`, `flattenTree`, `countTreeNodes`, `getTreeMaxDepth`, `findTreePath`, `findTreeNodeById`, `updateTreeNode`
+- **Type**: Utility functions (generic over `{ id: string; children?: T[] }`)
+- **Path**: `src/lib/utils/tree.ts` (import `@/lib/utils/tree`)
+- **Purpose**: The single traversal layer for nested `{ id, children? }` trees: depth-first walk, flatten, node count, maximum depth, ancestor path to a node, lookup by id, and immutable per-node update.
+- **Scope**: Taxonomy (`TaxonomyTreeViewButton` node count, `TaxonomyFormDialog` dialog width via the maximum depth, node-slug collection / validation / adjusted-slug detection in `resource.ts`, `TaxonomyTreeEditor`), the dashboard nav resolver (`findTreeNodeById` / `findTreePath` in `src/lib/navigation/dashboard-page-header.ts`), `treeToFlowElements` (`walkTree` in `dagre-tree.ts`).
+- **Dependencies**: none.
+- **Reuse Rule**: Never write another recursive walk / count / find over a `children` tree; import these helpers. Route-constant objects keep using `flattenRouteTreePaths` (different shape).
+
+### Asset: TaxonomyTreeEditor
+- **Name**: `TaxonomyTreeEditor`, `TaxonomyTreeEditorProps`
 - **Type**: React component
-- **Path**: `src/components/shared/sortable-tree-editor.tsx`
-- **Purpose**: Nested drag-and-drop tree with name field and read-only slug preview per node. Uses shared `TaxonomyTreeNode` (no duplicate tree type).
-- **Scope**: Taxonomy topics/skills (`TaxonomyTreeEditor` wrapper); similar JSONB trees elsewhere.
-- **Dependencies**: `SortableList`, `slugifyName`, `createTaxonomyTreeNode`, `TaxonomyTreeNode`.
+- **Path**: `src/components/features/taxonomy/taxonomy-tree-editor.tsx` (barrel: `src/components/features/taxonomy/index.ts`)
+- **Purpose**: Nested drag-and-drop tree editor for taxonomy topics/skills: recursive level over the shared `SortableList`, canonical / per-locale name editing (`editLocale`), add / remove child, and a per-node slug through `TreeNodeSlugField` (shown as muted text, the pencil toggle turns it into an inline `SlugInput`; an edited slug is written back on the node as `TaxonomyTreeNode.slug`, unedited nodes keep sending no slug). Uses shared `TaxonomyTreeNode` (no duplicate tree type); labels come from `taxonomy.tree.*` / `taxonomy.treeSkills.*`; node indentation is `depth * TAXONOMY_TREE_INDENT_PX`; the optional `slugErrors` prop (node id → resolved message) marks nodes with a slug error and keeps their slug input open; name `maxLength` is `TAXONOMY_NAME_MAX_LENGTH`.
+- **Scope**: `TaxonomyFormDialog` (topics `child_topics`, skills `children`).
+- **Dependencies**: `SortableList`, `TreeNodeSlugField`, `createTaxonomyTreeNode`, `TAXONOMY_TREE_INDENT_PX`, `updateTreeNode` (`src/lib/utils/tree.ts`), `TaxonomyTreeNode`, `TAXONOMY_NAME_MAX_LENGTH`.
+- **Reuse Rule**: Use for any taxonomy-shaped nested tree; reorder through `SortableList` and traverse through `src/lib/utils/tree.ts`, never a second recursive implementation.
 
 ### Asset: SlugInput
 - **Name**: `SlugInput`, `SlugInputProps`
 - **Type**: React component
 - **Path**: `src/components/shared/slug-input.tsx`
-- **Purpose**: Controlled text input for an **editable** slug (`value` + `onValueChange`). Every change goes through `sanitizeSlugInput`: whitespace becomes `-`, every character outside `a-z 0-9 -` (uppercase, accented) is dropped, length capped at `SLUG_MAX_LENGTH` (255). It does not derive a slug from a title. Callers own validation (course schemas, `SLUG_PATTERN`) and error display (`FieldError`).
-- **Scope**: Create-course dialog (optional slug) and the course editor basic-info tab (required slug, disabled without a draft). Taxonomy keeps its read-only slug preview and does not use this component.
+- **Purpose**: Controlled text input for an **editable** slug (`value` + `onValueChange`). Every change goes through `sanitizeSlugInput`: whitespace becomes `-`, every character outside `a-z 0-9 -` (uppercase, accented) is dropped, length capped at `SLUG_MAX_LENGTH` (255). It does not derive a slug from a title. Callers own validation (course and taxonomy schemas, `SLUG_PATTERN`) and error display (`FieldError`).
+- **Scope**: Create-course dialog (optional slug), the course editor basic-info tab (required slug, disabled without a draft), the taxonomy form root slug (optional on create) and the per-node slug in `TaxonomyTreeEditor` (`TreeNodeSlugField`, topics/skills).
 - **Dependencies**: `Input` (`src/components/ui`), `sanitizeSlugInput` (`src/lib/utils/slug.ts`).
 - **Reuse Rule**: Use for any user-editable slug field; never hand-roll slug character filtering in a form.
 
@@ -833,9 +897,9 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `ImageFileField`, `ImageFileFieldProps`
 - **Type**: React component
 - **Path**: `src/components/shared/image-file-field.tsx`
-- **Purpose**: Shared image picker/preview field with optional permission gate for the browse action and clear/reset support.
+- **Purpose**: Shared image picker/preview field with optional permission gate for the browse action and clear/reset support; the field label is a `RequiredLabel` (`required` toggles the asterisk).
 - **Scope**: Taxonomy forms today; reusable for any form that stores `image_file_id` + preview URL.
-- **Dependencies**: `PermissionGate` (optional), `Button`, `Label`, `next/image`.
+- **Dependencies**: ``PermissionGate` (optional), `Button`, `RequiredLabel`, `next/image`.
 
 ### Asset: DataTable
 - **Name**: `DataTable`, `DataTableColumn`
@@ -845,22 +909,23 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: Taxonomy list page; future paginated admin lists.
 - **Dependencies**: shadcn `Table`, `ApiListQueryParams` sort fields.
 
-### Asset: slugifyName
-- **Name**: `slugifyName(text: string): string`
-- **Type**: Utility function
-- **Path**: `src/lib/utils/slug.ts`
-- **Purpose**: Build slug from display name (`generateSlug` + `slugifyName` alias): trim, lowercase, remove Vietnamese accents (`đ/Đ -> d`), spaces/underscores → `-`, keep Unicode letters/numbers, collapse repeated dashes. Used for **taxonomy read-only UI preview only** (taxonomy slugs are still computed on BE via `utils.SlugifyName`); course slugs are user-editable and do not use this helper.
-- **Scope**: Taxonomy form dialog, tree editor, submit handlers. Not used for course slugs.
+### Asset: sanitizeSlugInput / SLUG_MAX_LENGTH / SLUG_PATTERN / isSlugAdjusted
+- **Name**: `sanitizeSlugInput(value: string): string`, `SLUG_MAX_LENGTH` (255), `SLUG_PATTERN`, `isSlugAdjusted(sentSlug: string | undefined, savedSlug: string): boolean`
+- **Type**: Utility functions + constants
+- **Path**: `src/lib/utils/slug.ts` (import from `@/lib/utils/slug`; the `@/lib/utils` barrel no longer re-exports anything from it)
+- **Purpose**: Editable-slug input filter, validation constants and the "server adjusted the slug" check. `sanitizeSlugInput` maps whitespace to `-`, drops every character outside `a-z 0-9 -` (uppercase and accented letters are dropped, not lowercased or transliterated; non-Latin letters and emoji too) and truncates to `SLUG_MAX_LENGTH`. `SLUG_PATTERN` (`^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$`) is the accepted final shape used by the shared slug zod fields. `isSlugAdjusted` is true when a slug was sent and the server stored a different one.
+- **Scope**: `SlugInput`, `optionalSlugField` / `requiredSlugField`, `handleSaveBasicInfo`, `getTaxonomySaveSlugNotice`.
 - **Dependencies**: none.
+- **Reuse Rule**: Import the constants instead of repeating `255` or a slug regex; use `isSlugAdjusted` instead of an inline sent/saved comparison; the omit-blank / omit-unchanged payload rule is `src/lib/utils/payload.ts` (see **payload utils**).
 
-### Asset: sanitizeSlugInput / SLUG_MAX_LENGTH / SLUG_PATTERN
-- **Name**: `sanitizeSlugInput(value: string): string`, `SLUG_MAX_LENGTH` (255), `SLUG_PATTERN`
-- **Type**: Utility function + constants
-- **Path**: `src/lib/utils/slug.ts` (import from `@/lib/utils/slug`; the `@/lib/utils` barrel re-exports only `generateSlug` / `slugifyName`)
-- **Purpose**: Editable-slug input filter and validation constants. `sanitizeSlugInput` maps whitespace to `-`, drops every character outside `a-z 0-9 -` (uppercase and accented letters are dropped, not lowercased or transliterated; non-Latin letters and emoji too) and truncates to `SLUG_MAX_LENGTH`. `SLUG_PATTERN` (`^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$`) is the accepted final shape used by the course Zod schemas. `generateSlug` / `slugifyName` are unchanged (taxonomy preview only).
-- **Scope**: `SlugInput`, `courseCreateSchema` / `courseBasicInfoSchema` slug fields.
+### Asset: payload utils
+- **Name**: `omitWhenBlank(value)`, `changedNonBlank(value, persisted = "")`, `payloadField(key, value)`
+- **Type**: Utility functions
+- **Path**: `src/lib/utils/payload.ts` (import `@/lib/utils/payload`)
+- **Purpose**: The single "include an optional string/id in a write payload only when non-blank [and different from the persisted value]" rule. `omitWhenBlank` returns the value unchanged (not trimmed) or `undefined` when blank; `changedNonBlank` returns it only when it is also different from `persisted` (create semantics when `persisted` is `""`); `payloadField` turns the result into a spreadable `{ [key]: value }` fragment that leaves the key absent when the value is `undefined`.
+- **Scope**: `toCreateCoursePayload`, `toUpdateCourseBasicInfoPayload` (`preview_video_file_id`, `slug`), taxonomy `prepare*SubmitPayload` (`image_file_id`, `slug`), sub-lesson `media_url` in `use-course-editor-state.ts`, `toTaxonomyTreeWritePayload` (node `slug`).
 - **Dependencies**: none.
-- **Reuse Rule**: Import the constants instead of repeating `255` or a slug regex.
+- **Reuse Rule**: Use these instead of inline `trim()` / `if (value)` / `value || undefined` in payload builders; never add another omit-when-blank helper.
 
 ### Asset: unicodeCodePointLength / truncateUnicodeCodePoints
 - **Name**: `unicodeCodePointLength(value: string): number`, `truncateUnicodeCodePoints(value: string, max: number): string`
@@ -969,7 +1034,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `loginSchema`, `LoginFormValues`
 - **Type**: Zod schema + inferred type
 - **Path**: `src/schema/auth/auth.ts`
-- **Purpose**: Validates login form — `email`, `password`, `rememberMe`. Validation messages are i18n keys (`"validation.email"`, `"validation.password"`) — translated inside `auth-form-fields.tsx` (`resolveAuthValidationMessage`).
+- **Purpose**: Validates login form — `email`, `password`, `rememberMe`. Validation messages are i18n keys (`"validation.email"`, `"validation.password"`) — translated inside `auth-form-fields.tsx` with the shared `resolveValidationMessage`.
 - **Scope**: `src/components/common/auth-menu/auth/login-content.tsx`.
 - **Dependencies**: `zod`.
 - **Reuse Rule**: Use `zodResolver(loginSchema)` with `react-hook-form`. Never re-define inline.
@@ -1160,7 +1225,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `AuthEmailPasswordFields`, `AuthFullNameField`, `AuthEmailField`, `AuthPasswordField`
 - **Type**: Auth form field components
 - **Path**: `src/components/common/auth-menu/auth/auth-form-fields.tsx`
-- **Purpose**: Shared styled inputs for login/signup modals; resolves Zod i18n validation keys via `useTranslations("auth")` when `FieldError.message` is present.
+- **Purpose**: Shared styled inputs for login/signup modals; resolves Zod i18n validation keys with the shared `resolveValidationMessage` over `useTranslations("auth")` and renders them with the shared `FieldError` when `error.message` is present.
 - **Scope**: `login-content.tsx`, `signup-content.tsx`. Pass `error` only — **do not** call `t(errors.*.message)` in parents (avoids `MISSING_MESSAGE` from `t(undefined)`).
 - **Dependencies**: `InputGroup`, lucide icons, react-hook-form, `next-intl`.
 
@@ -1225,7 +1290,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Utility functions
 - **Path**: `src/lib/utils/api-error.ts` (barrel: `@/lib/utils`, except `extractRecommendedSlug` — import it from `@/lib/utils/api-error`)
 - **Purpose**: Unified API error resolver — maps `response.code` → `errors.codes.{code}` i18n key. Never passes BE `message` to UI. Development may `console.debug({ code })` only — never BE `message`. Production browser: no custom API Console from this helper. `extractRecommendedSlug(error)` returns `data.recommended_slug` **only** when the error carries `ApiErrorCode.SlugAlreadyExists` (3007) and the field is a non-blank string, otherwise `undefined`; it shares a private response-body reader with `extractApiError` (no duplicate parsing).
-- **Scope**: Auth, Me, Media, Taxonomy, Instructor, Course — all `catch` blocks after API calls; `extractRecommendedSlug` — create-course flow (`useCourseCreateFlow`).
+- **Scope**: Auth, Me, Media, Taxonomy, Instructor, Course — all `catch` blocks after API calls; `extractRecommendedSlug` — create-with-slug flows (`useSlugConflictFlow`: course create, taxonomy create).
 - **Dependencies**: `src/messages/error-codes.ts`, `ApiErrorCode`.
 
 ### Asset: RequiredLabel / FieldError
@@ -1233,19 +1298,28 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: React components
 - **Path**: `src/components/shared/required-label.tsx`, `src/components/shared/field-error.tsx`
 - **Purpose**: Form labels with required asterisk; inline Zod field errors below controls.
-- **Scope**: Taxonomy form dialog, instructor/course dialogs, any new forms.
+- **Scope**: Taxonomy form dialog, instructor/course dialogs, the auth form fields (`FieldError`), any new forms; wrapped by `FormField`.
 - **Dependencies**: `Label` from `@/components/ui/label`.
 
+### Asset: FormField
+- **Name**: `FormField`, `FormFieldProps`
+- **Type**: React component
+- **Path**: `src/components/shared/form-field.tsx`
+- **Purpose**: Labelled form field block: `div.space-y-2` containing `RequiredLabel` (`htmlFor`), the control (children), an optional muted hint (`<p className="text-xs text-muted-foreground">`) and `FieldError`.
+- **Scope**: Create-course dialog (title, slug), course editor basic-info tab (title, slug, short description), `TaxonomyFormDialog` (name, short description, slug); `SlugField` composes it. The instructor `Field`, `DeltaEditor`, `ImageFileField`, selects and review/approval textarea blocks keep their own layout on purpose.
+- **Dependencies**: `RequiredLabel`, `FieldError`.
+- **Reuse Rule**: Use for any labelled single-control field instead of repeating the label + control + hint + error markup. Not the shadcn `Field` in `src/components/ui/field.tsx`.
+
 ### Asset: resolveValidationMessage
-- **Name**: `resolveValidationMessage`
+- **Name**: `resolveValidationMessage(t: (key: never) => string, message: string | undefined)`
 - **Type**: Utility function
 - **Path**: `src/lib/utils/validation-message.ts`
-- **Purpose**: Translates Zod i18n message keys through module-scoped `useTranslations` (e.g. `taxonomy.form.validation.*`).
-- **Scope**: All Zod + react-hook-form forms.
+- **Purpose**: Translates Zod i18n message keys through a module-scoped `useTranslations` (e.g. `taxonomy.form.validation.*`, `auth.validation.*`); returns `""` when the message is undefined so `t(undefined)` is never called. The translator parameter is typed `(key: never) => string`, so any next-intl scoped translator (typed key unions) or a plain `(key: string) => string` is accepted directly (no `as unknown as (key: string) => string` cast).
+- **Scope**: All Zod + react-hook-form forms, including the auth form fields (`auth-form-fields.tsx`, rendered with the shared `FieldError`).
 - **Dependencies**: none.
 
 ### Asset: Zod schemas (`src/schema/`)
-- **Name**: Module schemas (`auth`, `me`, `media`, `taxonomy`, `instructor`, `course`)
+- **Name**: Module schemas (`auth`, `me`, `media`, `shared` slug fields, `taxonomy`, `instructor`, `course`)
 - **Type**: Zod schemas
 - **Path**: `src/schema/**` (barrel: `@/schema`)
 - **Purpose**: FE pre-submit validation with i18n keys separate from `errors.codes.*`.

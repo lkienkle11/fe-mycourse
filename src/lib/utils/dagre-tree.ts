@@ -1,5 +1,6 @@
 import { type Edge, type Node, Position } from "@xyflow/react";
 import dagre from "dagre";
+import { walkTree } from "@/lib/utils/tree";
 
 export type DagreTreeLayoutDirection = "vertical" | "horizontal";
 
@@ -13,39 +14,27 @@ export type DagreTreeRoot = {
 const NODE_WIDTH = 172;
 const NODE_HEIGHT = 36;
 
-function walkTree(
-  node: DagreTreeRoot,
-  parentId: string | null,
-  nodes: Node[],
-  edges: Edge[],
-): void {
-  nodes.push({
-    id: node.id,
-    data: { label: node.name },
-    position: { x: 0, y: 0 },
-  });
-
-  if (parentId) {
-    edges.push({
-      id: `${parentId}-${node.id}`,
-      source: parentId,
-      target: node.id,
-      type: "smoothstep",
-    });
-  }
-
-  for (const child of node.children ?? []) {
-    walkTree(child, node.id, nodes, edges);
-  }
-}
-
 export function treeToFlowElements(
   root: DagreTreeRoot,
   direction: DagreTreeLayoutDirection = "vertical",
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
-  walkTree(root, null, nodes, edges);
+  walkTree([root], (node, { parent }) => {
+    nodes.push({
+      id: node.id,
+      data: { label: node.name },
+      position: { x: 0, y: 0 },
+    });
+    if (parent) {
+      edges.push({
+        id: `${parent.id}-${node.id}`,
+        source: parent.id,
+        target: node.id,
+        type: "smoothstep",
+      });
+    }
+  });
   return getLayoutedElements(nodes, edges, direction);
 }
 

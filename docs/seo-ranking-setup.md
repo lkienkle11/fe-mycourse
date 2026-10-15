@@ -1,6 +1,6 @@
 # SEO / Ranking / Performance / Security foundation
 
-_Last audited: 2026-07-26 (temporary signed-in `/home` under `(web)` + `PRIVATE_ROUTES.home`; most SEO helpers still unused by other pages)._
+_Last audited: 2026-10-15 (A12 slug helper row: `src/lib/utils/slug.ts` no longer holds a name-to-slug generator). Prior: 2026-07-26 (temporary signed-in `/home` under `(web)` + `PRIVATE_ROUTES.home`; most SEO helpers still unused by other pages)._
 
 Source of truth for the SEO foundation under `src/types/seo/**`, `src/constants/seo/**`, `src/lib/seo/**`, `src/lib/performance/**`, and `src/lib/security/web/**`. Companion FE security notes: [`security-hardening-notes.md`](./security-hardening-notes.md). BE intent (take-note only): [`be-mycourse/docs/security-public-seo-notes.md`](../../be-mycourse/docs/security-public-seo-notes.md).
 
@@ -38,7 +38,7 @@ Agents must not confuse **reuse** (A) with **new files** (B) or **forbidden work
 | A9 | URL assemble | `src/lib/utils/url.ts` `buildQueryParams` | Path/query assembly when needed. |
 | A10 | Truncate Unicode | `src/lib/utils/unicode-length.ts` `truncateUnicodeCodePoints` | SERP/OG title & description truncation. |
 | A11 | Delta plain text | `src/lib/utils/course-delta.ts` `extractPlainText` | Meta description from Quill when real data exists. |
-| A12 | Slug helper | `src/lib/utils/slug.ts` | Future slug UI/canonical; no second slugger. |
+| A12 | Slug helpers | `src/lib/utils/slug.ts` | `sanitizeSlugInput` / `SLUG_PATTERN` / `SLUG_MAX_LENGTH` / `isSlugAdjusted` for editable slugs. The FE has no name-to-slug generator (the BE generates slugs), so do not add a slugger for future canonical/SEO use. |
 | A13 | HTTP URL parse pattern | `src/lib/instructor-application/url-validation.ts` | `site-config` validates `SITE_URL` with the same HTTPS URL rules (mirror pattern; no instructor-form dependency). |
 | A14 | Domain types | `src/types/course.ts`, `instructor.ts`, `taxonomy/`, `media/` | JSON-LD builders accept these; not home mock `CourseType`. |
 | A15 | Fonts | `src/lib/font.ts` | Existing CWV font setup — cite only; no new font module. |

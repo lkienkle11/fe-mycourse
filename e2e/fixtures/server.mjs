@@ -34,6 +34,23 @@ const USERS = {
     ],
     roles: ["instructor"],
   },
+  "admin@example.test": {
+    id: "user-admin",
+    password: "Passw0rd!1",
+    display_name: "Fixture Admin",
+    permissions: [
+      "admin:modify",
+      "course_level:read",
+      "course_level:create",
+      "course_level:update",
+      "course_level:delete",
+      "topic:read",
+      "topic:create",
+      "topic:update",
+      "topic:delete",
+    ],
+    roles: ["admin"],
+  },
   "learner@example.test": {
     id: "user-learner",
     password: "Passw0rd!1",
@@ -54,6 +71,108 @@ const DEFAULT_COURSE_SLUG = "fixture-course";
 /** Slug the fixture always reports as already used (409 on create, suffixed on update). */
 const TAKEN_SLUG = "taken-slug";
 const TAKEN_SLUG_SUFFIXED = `${TAKEN_SLUG}-x7k92ab`;
+
+/** 409 / code 3007 body shared by every create endpoint that supports a slug. */
+function slugConflictResponse(res) {
+  return json(
+    res,
+    409,
+    envelope(3007, "Slug already exists", {
+      recommended_slug: TAKEN_SLUG_SUFFIXED,
+    }),
+  );
+}
+
+/**
+ * Slug the BE would store for an explicit slug on update: taken slugs are
+ * silently suffixed (no 409). `undefined` means "keep the stored slug".
+ */
+function resolveSavedSlug(requested, stored) {
+  if (requested === undefined) return stored;
+  return requested === TAKEN_SLUG ? TAKEN_SLUG_SUFFIXED : requested;
+}
+
+/** Name-derived slug used when a create or a new tree node omits `slug`. */
+function generatedSlug(name) {
+  return String(name ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+const TAXONOMY_SEGMENTS = ["levels", "topics"];
+
+function buildInitialTaxonomy() {
+  const base = {
+    status: "ACTIVE",
+    row_version: 1,
+    created_at: 1_700_000_000,
+    updated_at: 1_700_000_000,
+  };
+  return {
+    levels: [
+      {
+        ...base,
+        id: "level-1",
+        name: "Beginner",
+        slug: "beginner",
+        translations: { en: { name: "Beginner" } },
+      },
+    ],
+    topics: [
+      {
+        ...base,
+        id: "topic-1",
+        name: "Backend",
+        slug: "backend",
+        translations: { en: { name: "Backend" } },
+        child_topics: [
+          {
+            id: "node-1",
+            name: "Go",
+            slug: "go",
+            translations: { en: { name: "Go" } },
+          },
+        ],
+      },
+    ],
+  };
+}
+
+let taxonomyRows = buildInitialTaxonomy();
+let taxonomyCounter = 0;
+
+function nextTaxonomyId(prefix) {
+  taxonomyCounter += 1;
+  return `${prefix}-${taxonomyCounter}`;
+}
+
+/**
+ * Applies the BE tree-slug rules to incoming nodes: an explicit slug wins, an
+ * omitted slug keeps the stored one (by id) or is generated for a new node,
+ * and a slug already used earlier in the same tree is suffixed.
+ */
+function resolveTreeSlugs(nodes, storedNodes = []) {
+  const stored = new Map(storedNodes.map((node) => [node.id, node]));
+  const used = new Set();
+  const visit = (list) =>
+    (list ?? []).map((node) => {
+      const id = node.id || nextTaxonomyId("node");
+      let slug =
+        node.slug !== undefined
+          ? node.slug
+          : (stored.get(id)?.slug ?? generatedSlug(node.name));
+      if (used.has(slug)) slug = `${slug}-x7k92ab`;
+      used.add(slug);
+      return {
+        ...node,
+        id,
+        slug,
+        children: node.children ? visit(node.children) : undefined,
+      };
+    });
+  return visit(nodes);
+}
 let courseSlug = DEFAULT_COURSE_SLUG;
 let draftRowVersion = 1;
 let collaborators = [
@@ -80,6 +199,8 @@ function resetState() {
   leasesByToken = new Map();
   courseSlug = DEFAULT_COURSE_SLUG;
   draftRowVersion = 1;
+  taxonomyRows = buildInitialTaxonomy();
+  taxonomyCounter = 0;
 }
 
 function json(res, status, body, extraHeaders = {}) {
@@ -388,15 +509,7 @@ async function handle(req, res) {
 
     if (method === "POST" && pathname === "/api/v1/courses") {
       const body = (await readBody(req)) ?? {};
-      if (body.slug === TAKEN_SLUG) {
-        return json(
-          res,
-          409,
-          envelope(3007, "Slug already exists", {
-            recommended_slug: TAKEN_SLUG_SUFFIXED,
-          }),
-        );
-      }
+      if (body.slug === TAKEN_SLUG) return slugConflictResponse(res);
       courseSlug = body.slug || "generated-course-slug";
       return json(res, 201, envelope(0, "ok", buildCourseDetail()));
     }
@@ -406,9 +519,7 @@ async function handle(req, res) {
       pathname === `/api/v1/courses/${COURSE_ID}/basic-info`
     ) {
       const body = (await readBody(req)) ?? {};
-      if (body.slug !== undefined) {
-        courseSlug = body.slug === TAKEN_SLUG ? TAKEN_SLUG_SUFFIXED : body.slug;
-      }
+      courseSlug = resolveSavedSlug(body.slug, courseSlug);
       draftRowVersion += 1;
       return json(res, 200, envelope(0, "ok", buildCourseDetail()));
     }
@@ -530,6 +641,53 @@ async function handle(req, res) {
       const body = (await readBody(req)) ?? {};
       leasesByToken.delete(body.lease_token);
       return json(res, 200, envelope(0, "ok", null));
+    }
+
+    const taxonomyMatch = pathname.match(
+      /^\/api\/v1\/taxonomy\/(levels|topics)(?:\/([^/]+))?$/,
+    );
+    if (taxonomyMatch && TAXONOMY_SEGMENTS.includes(taxonomyMatch[1])) {
+      const [, segment, id] = taxonomyMatch;
+      const rows = taxonomyRows[segment];
+      const row = id ? rows.find((item) => item.id === id) : undefined;
+      const treeField = segment === "topics" ? "child_topics" : undefined;
+
+      if (method === "GET" && !id) {
+        return json(res, 200, envelope(0, "ok", emptyPaginated(rows)));
+      }
+      if (method === "GET" && row) {
+        return json(res, 200, envelope(0, "ok", row));
+      }
+      if (method === "POST" && !id) {
+        const body = (await readBody(req)) ?? {};
+        if (body.slug === TAKEN_SLUG) return slugConflictResponse(res);
+        const created = {
+          id: nextTaxonomyId(`${segment}-created`),
+          name: body.name,
+          slug: body.slug || generatedSlug(body.name),
+          status: body.status ?? "ACTIVE",
+          row_version: 1,
+          created_at: 1_700_000_000,
+          updated_at: 1_700_000_000,
+          translations: body.translations ?? {},
+          ...(treeField
+            ? { [treeField]: resolveTreeSlugs(body[treeField]) }
+            : {}),
+        };
+        rows.push(created);
+        return json(res, 201, envelope(0, "ok", created));
+      }
+      if (method === "PATCH" && row) {
+        const body = (await readBody(req)) ?? {};
+        row.slug = resolveSavedSlug(body.slug, row.slug);
+        if (body.name !== undefined) row.name = body.name;
+        if (body.translations) row.translations = body.translations;
+        if (treeField && body[treeField]) {
+          row[treeField] = resolveTreeSlugs(body[treeField], row[treeField]);
+        }
+        row.row_version += 1;
+        return json(res, 200, envelope(0, "ok", row));
+      }
     }
 
     if (method === "GET" && pathname.startsWith("/api/v1/taxonomy/")) {

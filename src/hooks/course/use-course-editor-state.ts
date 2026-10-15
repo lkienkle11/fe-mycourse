@@ -34,6 +34,8 @@ import {
   validateSubLessonFormContent,
 } from "@/lib/utils/course";
 import { createEmptyDeltaString } from "@/lib/utils/course-delta";
+import { omitWhenBlank, payloadField } from "@/lib/utils/payload";
+import { isSlugAdjusted } from "@/lib/utils/slug";
 import { toastValidationError } from "@/lib/utils/validation-message";
 import {
   courseBasicInfoSchema,
@@ -395,7 +397,7 @@ export function useCourseEditorState({
           detail.draft_version?.row_version ?? prev.expected_row_version,
       }));
       await mutateDetail(detail, { revalidate: false });
-      if (payload.slug !== undefined && payload.slug !== savedSlug) {
+      if (isSlugAdjusted(payload.slug, savedSlug)) {
         toast.info(t("slugAdjusted", { slug: savedSlug }));
       } else {
         toast.success(t("basicInfoSaved"));
@@ -590,7 +592,10 @@ export function useCourseEditorState({
         subLessonForm.kind === "VIDEO" && subLessonForm.video_file_id
           ? {
               media_file_id: subLessonForm.video_file_id,
-              media_url: subLessonForm.video_url || undefined,
+              ...payloadField(
+                "media_url",
+                omitWhenBlank(subLessonForm.video_url),
+              ),
             }
           : undefined,
       text:

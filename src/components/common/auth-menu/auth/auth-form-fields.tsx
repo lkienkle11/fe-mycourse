@@ -3,27 +3,17 @@
 import { LockKeyhole, LockKeyholeOpen, Mail, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
-import type { FieldError, UseFormRegisterReturn } from "react-hook-form";
+import type {
+  FieldError as RHFFieldError,
+  UseFormRegisterReturn,
+} from "react-hook-form";
+import { FieldError } from "@/components/shared/field-error";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-
-/** Zod schemas in `src/schema/auth` store i18n keys; resolve only when a field error exists. */
-type AuthValidationMessageKey =
-  | "validation.email"
-  | "validation.password"
-  | "validation.passwordWeak"
-  | "validation.fullName";
-
-function resolveAuthValidationMessage(
-  t: (key: AuthValidationMessageKey) => string,
-  message: string | undefined,
-): string {
-  if (!message) return "";
-  return t(message as AuthValidationMessageKey);
-}
+import { resolveValidationMessage } from "@/lib/utils/validation-message";
 
 const inputGroupClassName =
   "h-12 border-none shadow-0 shadow-none bg-object-white/90 has-[[data-slot=input-group-control]:focus-visible]:ring-0";
@@ -31,20 +21,10 @@ const inputGroupClassName =
 const inputClassName =
   "placeholder:text-object-black/10 placeholder:text-base text-base px-4";
 
-type AuthFieldErrorProps = {
-  error?: FieldError;
-  message: string;
-};
-
-function AuthFieldError({ error, message }: AuthFieldErrorProps) {
-  if (!error) return null;
-  return <p className="text-xs text-destructive px-1">{message}</p>;
-}
-
 type AuthEmailFieldProps = {
   register: UseFormRegisterReturn;
   placeholder: string;
-  error?: FieldError;
+  error?: RHFFieldError;
 };
 
 export function AuthEmailField({
@@ -53,7 +33,7 @@ export function AuthEmailField({
   error,
 }: AuthEmailFieldProps) {
   const t = useTranslations("auth");
-  const errorMessage = resolveAuthValidationMessage(t, error?.message);
+  const errorMessage = resolveValidationMessage(t, error?.message);
   return (
     <div className="space-y-1">
       <InputGroup className={inputGroupClassName}>
@@ -67,7 +47,7 @@ export function AuthEmailField({
           <Mail />
         </InputGroupAddon>
       </InputGroup>
-      <AuthFieldError error={error} message={errorMessage} />
+      <FieldError error={error} message={errorMessage} />
     </div>
   );
 }
@@ -77,7 +57,7 @@ type AuthPasswordFieldProps = {
   placeholder: string;
   showPassword: boolean;
   onToggleShowPassword: () => void;
-  error?: FieldError;
+  error?: RHFFieldError;
   hint?: ReactNode;
 };
 
@@ -86,8 +66,8 @@ type AuthEmailPasswordFieldsProps = {
   registerPassword: UseFormRegisterReturn;
   emailPlaceholder: string;
   passwordPlaceholder: string;
-  emailError?: FieldError;
-  passwordError?: FieldError;
+  emailError?: RHFFieldError;
+  passwordError?: RHFFieldError;
   showPassword: boolean;
   onToggleShowPassword: () => void;
   passwordHint?: ReactNode;
@@ -127,7 +107,7 @@ export function AuthEmailPasswordFields({
 type AuthFullNameFieldProps = {
   register: UseFormRegisterReturn;
   placeholder: string;
-  error?: FieldError;
+  error?: RHFFieldError;
 };
 
 export function AuthFullNameField({
@@ -136,7 +116,7 @@ export function AuthFullNameField({
   error,
 }: AuthFullNameFieldProps) {
   const t = useTranslations("auth");
-  const errorMessage = resolveAuthValidationMessage(t, error?.message);
+  const errorMessage = resolveValidationMessage(t, error?.message);
   return (
     <div className="space-y-1">
       <InputGroup className={inputGroupClassName}>
@@ -150,7 +130,7 @@ export function AuthFullNameField({
           <User />
         </InputGroupAddon>
       </InputGroup>
-      <AuthFieldError error={error} message={errorMessage} />
+      <FieldError error={error} message={errorMessage} />
     </div>
   );
 }
@@ -164,7 +144,7 @@ export function AuthPasswordField({
   hint,
 }: AuthPasswordFieldProps) {
   const t = useTranslations("auth");
-  const errorMessage = resolveAuthValidationMessage(t, error?.message);
+  const errorMessage = resolveValidationMessage(t, error?.message);
   return (
     <div className="space-y-1">
       <InputGroup className={inputGroupClassName}>
@@ -182,7 +162,7 @@ export function AuthPasswordField({
           {showPassword ? <LockKeyholeOpen /> : <LockKeyhole />}
         </InputGroupAddon>
       </InputGroup>
-      {error ? <AuthFieldError error={error} message={errorMessage} /> : hint}
+      {error ? <FieldError error={error} message={errorMessage} /> : hint}
     </div>
   );
 }

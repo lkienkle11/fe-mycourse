@@ -1331,6 +1331,21 @@ const messages = {
       editTitle: "Edit {resource}",
       name: "Name",
       slug: "Slug",
+      slugPlaceholder: "my-slug",
+      slugHintCreate:
+        "Optional. Leave blank to generate one automatically. Lowercase letters, numbers, and dashes only.",
+      slugHintEdit:
+        "Lowercase letters, numbers, and dashes only. If the slug is already taken, a suffix is added automatically.",
+      slugConflictTitle: "Slug already exists",
+      slugConflictDescription:
+        "This slug already exists. We suggest: {slug}. Do you want to continue creating this item with this slug?",
+      slugConflictConfirm: "Yes",
+      slugConflictCancel: "No",
+      slugConflictLoading: "Saving...",
+      slugAdjusted:
+        "Saved. The slug was already taken, so it was changed to {slug}.",
+      treeSlugsAdjusted:
+        "Saved. Some sub-item slugs were already used in this tree and were adjusted to stay unique.",
       shortDescription: "Short description",
       status: "Status",
       imageFileId: "Cover image",
@@ -1353,6 +1368,11 @@ const messages = {
           "Short description must be at most 100 characters.",
         descriptionMaxLines: "At most 8 description paragraphs are allowed.",
         descriptionLineMax: "Each paragraph must be at most 120 characters.",
+        slugRequired: "Please enter a slug.",
+        slugInvalid:
+          "Slug may only contain lowercase letters, numbers, and dashes, and cannot start or end with a dash.",
+        slugMax: "Slug must be at most 255 characters.",
+        treeSlug: "Fix the highlighted sub-item slugs before saving.",
       },
     },
     resources: {
@@ -1395,6 +1415,9 @@ const messages = {
       dragHandle: "Drag to reorder",
       namePlaceholder: "Sub-topic name",
       slugPlaceholder: "Sub-topic slug",
+      slugAuto: "Generated from the name",
+      slugEdit: "Edit slug",
+      slugDone: "Done editing slug",
       remove: "Remove sub-topic",
     },
     treeSkills: {
@@ -1402,6 +1425,9 @@ const messages = {
       dragHandle: "Drag to reorder",
       namePlaceholder: "Sub-skill name",
       slugPlaceholder: "Sub-skill slug",
+      slugAuto: "Generated from the name",
+      slugEdit: "Edit slug",
+      slugDone: "Done editing slug",
       remove: "Remove sub-skill",
     },
     description: {

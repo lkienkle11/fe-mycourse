@@ -8,6 +8,11 @@ import {
   parseDurationPartsToMs,
   splitMsToDurationParts,
 } from "@/lib/utils/duration";
+import {
+  changedNonBlank,
+  omitWhenBlank,
+  payloadField,
+} from "@/lib/utils/payload";
 import { newV7 } from "@/lib/utils/uuid";
 import { firstValidationMessageKey } from "@/lib/utils/validation-message";
 import { courseBasicInfoSchema, courseQuizOptionSchema } from "@/schema/course";
@@ -74,7 +79,7 @@ export function toUpdateCourseBasicInfoPayload(
   basicInfo: CourseBasicInfoForm,
   persistedSlug: string,
 ): UpdateCourseBasicInfoPayload {
-  const payload: UpdateCourseBasicInfoPayload = {
+  return {
     expected_row_version: basicInfo.expected_row_version,
     title: basicInfo.title.trim(),
     short_description: basicInfo.short_description.trim(),
@@ -85,27 +90,22 @@ export function toUpdateCourseBasicInfoPayload(
     tag_ids: basicInfo.tag_ids,
     skill_ids: basicInfo.skill_ids,
     outcome_ids: basicInfo.outcome_ids,
+    ...payloadField(
+      "preview_video_file_id",
+      omitWhenBlank(basicInfo.preview_video_file_id),
+    ),
+    ...payloadField("slug", changedNonBlank(basicInfo.slug, persistedSlug)),
   };
-  if (basicInfo.preview_video_file_id) {
-    payload.preview_video_file_id = basicInfo.preview_video_file_id;
-  }
-  const slug = basicInfo.slug.trim();
-  if (slug !== persistedSlug) {
-    payload.slug = slug;
-  }
-  return payload;
 }
 
 export function toCreateCoursePayload(
   title: string,
   slug: string,
 ): CreateCoursePayload {
-  const payload: CreateCoursePayload = { title: title.trim() };
-  const trimmedSlug = slug.trim();
-  if (trimmedSlug) {
-    payload.slug = trimmedSlug;
-  }
-  return payload;
+  return {
+    title: title.trim(),
+    ...payloadField("slug", changedNonBlank(slug)),
+  };
 }
 
 function createEmptyQuizOption() {
