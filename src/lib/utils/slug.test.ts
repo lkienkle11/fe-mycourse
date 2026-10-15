@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import {
-  generateSlug,
+  isSlugAdjusted,
   SLUG_MAX_LENGTH,
   SLUG_PATTERN,
   sanitizeSlugInput,
@@ -51,8 +51,16 @@ describe("SLUG_PATTERN", () => {
   });
 });
 
-describe("generateSlug (taxonomy preview, unchanged)", () => {
-  it("still strips accents and normalizes spaces", () => {
-    expect(generateSlug("36 Thanh Hóa")).toBe("36-thanh-hoa");
+describe("isSlugAdjusted", () => {
+  it("is false when no slug was sent", () => {
+    expect(isSlugAdjusted(undefined, "saved")).toBe(false);
+  });
+
+  it("is false when the saved slug equals the sent one", () => {
+    expect(isSlugAdjusted("same", "same")).toBe(false);
+  });
+
+  it("is true when the server stored a different slug", () => {
+    expect(isSlugAdjusted("beginner", "beginner-x7k92ab")).toBe(true);
   });
 });
