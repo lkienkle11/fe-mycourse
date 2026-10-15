@@ -6,11 +6,11 @@ import { toast } from "sonner";
 import { deleteCourseService } from "@/api/callers/course";
 import { useEditableCourses } from "@/api/hooks/course";
 import { CourseStatusBadge } from "@/components/features/course/course-status-badge";
-import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
-import { RequiredLabel } from "@/components/shared/required-label";
-import { SlugInput } from "@/components/shared/slug-input";
+import { FormField } from "@/components/shared/form-field";
+import { SlugConflictConfirmDialog } from "@/components/shared/slug-conflict-confirm-dialog";
+import { SlugField } from "@/components/shared/slug-field";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -204,30 +204,22 @@ export function InstructorCoursesPage() {
             <DialogTitle>{t("createDialog.title")}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3">
-            <div className="space-y-2">
-              <RequiredLabel htmlFor="course-title">
-                {t("createDialog.titleLabel")}
-              </RequiredLabel>
+            <FormField id="course-title" label={t("createDialog.titleLabel")}>
               <Input
                 id="course-title"
                 value={create.title}
                 onChange={(event) => create.setTitle(event.target.value)}
               />
-            </div>
-            <div className="space-y-2">
-              <RequiredLabel htmlFor="course-slug" required={false}>
-                {t("createDialog.slugLabel")}
-              </RequiredLabel>
-              <SlugInput
-                id="course-slug"
-                value={create.slug}
-                onValueChange={create.setSlug}
-                placeholder={t("createDialog.slugPlaceholder")}
-              />
-              <p className="text-xs text-muted-foreground">
-                {t("createDialog.slugHint")}
-              </p>
-            </div>
+            </FormField>
+            <SlugField
+              id="course-slug"
+              required={false}
+              label={t("createDialog.slugLabel")}
+              placeholder={t("createDialog.slugPlaceholder")}
+              hint={t("createDialog.slugHint")}
+              value={create.slug}
+              onValueChange={create.setSlug}
+            />
           </div>
           <DialogFooter>
             <Button
@@ -248,23 +240,20 @@ export function InstructorCoursesPage() {
             </Button>
           </DialogFooter>
 
-          <ConfirmActionDialog
-            stacked
-            open={create.suggestedSlug !== null}
-            onOpenChange={(open) => {
-              if (!open) {
-                create.dismissSuggestion();
-              }
+          <SlugConflictConfirmDialog
+            suggestedSlug={create.suggestedSlug}
+            isSubmitting={create.isSubmitting}
+            onAccept={create.acceptSuggestion}
+            onDismiss={create.dismissSuggestion}
+            labels={{
+              title: t("createDialog.slugConflictTitle"),
+              description: t("createDialog.slugConflictDescription", {
+                slug: create.suggestedSlug ?? "",
+              }),
+              confirm: t("createDialog.slugConflictConfirm"),
+              cancel: t("createDialog.slugConflictCancel"),
+              loading: t("createDialog.creating"),
             }}
-            onConfirm={create.acceptSuggestion}
-            title={t("createDialog.slugConflictTitle")}
-            description={t("createDialog.slugConflictDescription", {
-              slug: create.suggestedSlug ?? "",
-            })}
-            confirmLabel={t("createDialog.slugConflictConfirm")}
-            cancelLabel={t("createDialog.slugConflictCancel")}
-            isLoading={create.isSubmitting}
-            loadingLabel={t("createDialog.creating")}
           />
         </DialogContent>
       </Dialog>
