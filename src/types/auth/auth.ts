@@ -16,7 +16,12 @@ export interface MeResponse {
   user_code: string;
   email: string;
   display_name: string;
-  avatar_url: string;
+  /** User slug; `""` until the backend has assigned one (legacy users before backfill). */
+  slug: string;
+  /** Omitted by the backend when it has no resolved URL; render the fallback avatar then. */
+  avatar_url?: string;
+  /** Omitted by the backend when it has no object key. */
+  avatar_object_key?: string;
   email_confirmed: boolean;
   is_disabled: boolean;
   created_at: number;

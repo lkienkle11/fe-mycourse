@@ -9,7 +9,7 @@ export function buildMeResponse(
     user_code: "U-0001",
     email: "learner@example.com",
     display_name: "Test Learner",
-    avatar_url: "",
+    slug: "test-learner",
     email_confirmed: true,
     is_disabled: false,
     created_at: 1_700_000_000,
