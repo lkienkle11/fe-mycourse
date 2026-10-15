@@ -4,4 +4,5 @@ export * from "./course";
 export * from "./dashboard";
 export * from "./language";
 export * from "./quill";
+export * from "./slug";
 export { useIsMobile } from "./use-mobile";

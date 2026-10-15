@@ -12,12 +12,13 @@ import type { ZodIssue } from "zod";
  * Zod schemas there store `validation.*`; map via `firstValidationMessageKey` before `tValidation`.
  */
 export function resolveValidationMessage(
-  t: (key: string) => string, // accepts next-intl scoped translators
+  // `never` key: accepts any next-intl scoped translator (typed key unions)
+  // as well as a plain `(key: string) => string`, without call-site casts.
+  t: (key: never) => string,
   message: string | undefined,
 ): string {
-  const translate = t as (key: string) => string;
   if (!message) return "";
-  return translate(message);
+  return t(message as never);
 }
 
 /** Maps the first Zod issue message (`validation.titleMax`) to a leaf validation key (`titleMax`). */

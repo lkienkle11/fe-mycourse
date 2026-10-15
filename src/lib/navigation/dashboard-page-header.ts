@@ -2,6 +2,7 @@ import {
   DASHBOARD_PAGE_HEADER_ROUTES,
   DASHBOARD_ROLE_ROOT,
 } from "@/constants/dashboard";
+import { findTreeNodeById, findTreePath } from "@/lib/utils/tree";
 import type {
   DashboardHeaderRouteEntry,
   DashboardHeaderStaticMetadata,
@@ -31,52 +32,6 @@ function detectDashboardRole(pathname: string): DashboardRole | null {
 
   if (pathname.startsWith("/sysadmin")) {
     return "sysadmin";
-  }
-
-  return null;
-}
-
-function findDashboardItemById(
-  items: readonly DashboardItem[],
-  itemId: string,
-): DashboardItem | null {
-  for (const item of items) {
-    if (item.id === itemId) {
-      return item;
-    }
-
-    if (item.children?.length) {
-      const found = findDashboardItemById(item.children, itemId);
-
-      if (found) {
-        return found;
-      }
-    }
-  }
-
-  return null;
-}
-
-/** Walks the nav tree and returns the ancestor chain down to the item with `href`. */
-function findDashboardItemPathByHref(
-  items: readonly DashboardItem[],
-  href: string,
-  ancestors: DashboardItem[] = [],
-): DashboardItem[] | null {
-  for (const item of items) {
-    const path = [...ancestors, item];
-
-    if (item.href === href) {
-      return path;
-    }
-
-    if (item.children?.length) {
-      const found = findDashboardItemPathByHref(item.children, href, path);
-
-      if (found) {
-        return found;
-      }
-    }
   }
 
   return null;
@@ -116,7 +71,7 @@ function resolveExplicitBreadcrumbs(
       return [resolveRoleRootBreadcrumb(breadcrumb.role, translate)];
     }
 
-    const item = findDashboardItemById(items, breadcrumb.itemId);
+    const item = findTreeNodeById(items, breadcrumb.itemId);
 
     if (!item) {
       return [];
@@ -169,7 +124,7 @@ function resolveBreadcrumbsFromNavTree(
     return [roleRoot];
   }
 
-  const itemPath = findDashboardItemPathByHref(items, breadcrumbHref);
+  const itemPath = findTreePath(items, (item) => item.href === breadcrumbHref);
 
   if (!itemPath?.length) {
     return [roleRoot];

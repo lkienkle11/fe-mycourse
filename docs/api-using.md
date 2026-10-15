@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-07-22 (server sanitized logs; browser no custom Console; compress body memo retained). Prior: raw GET cache; media 30s._
+_Last audited: 2026-10-15 (taxonomy create/update slug contract and 3007 confirm flow). Prior: 2026-07-22 (server sanitized logs; browser no custom Console; compress body memo retained). Prior: raw GET cache; media 30s._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -412,7 +412,7 @@ Domain modules may alias or extend this shape. Taxonomy extends it with `search_
 | `createCourseService` | `POST /api/v1/courses` | `{ title, slug? }` built by `toCreateCoursePayload(title, slug)` (`@/lib/utils/course`); a blank slug is omitted |
 | `updateCourseBasicInfoService` | `PATCH /api/v1/courses/:courseId/basic-info` | `expected_row_version` plus optional `slug` from `toUpdateCourseBasicInfoPayload(basicInfo, persistedSlug)` |
 
-Slug conflicts return HTTP `409` with app code **3007** (`ApiErrorCode.SlugAlreadyExists`, copy in `errors.codes.3007` en/vi). `extractRecommendedSlug(error)` (`src/lib/utils/api-error.ts`) reads `data.recommended_slug` (code 3007 only); `useCourseCreateFlow` opens a stacked `ConfirmActionDialog` (Yes resubmits with the recommended slug, No returns to the form). After a PATCH, `data.course.slug` is the source of truth and `course.editor.toast.slugAdjusted` shows when it differs from the slug sent. Input filtering and limits live in `src/lib/utils/slug.ts` (`sanitizeSlugInput`, `SLUG_PATTERN`, `SLUG_MAX_LENGTH`).
+Slug conflicts return HTTP `409` with app code **3007** (`ApiErrorCode.SlugAlreadyExists`, copy in `errors.codes.3007` en/vi). `extractRecommendedSlug(error)` (`src/lib/utils/api-error.ts`) reads `data.recommended_slug` (code 3007 only); `useCourseCreateFlow` (built on the shared `useSlugConflictFlow`, which taxonomy create also uses) opens a stacked `ConfirmActionDialog` (Yes resubmits with the recommended slug, No returns to the form). After a PATCH, `data.course.slug` is the source of truth and `course.editor.toast.slugAdjusted` shows when it differs from the slug sent. Input filtering and limits live in `src/lib/utils/slug.ts` (`sanitizeSlugInput`, `SLUG_PATTERN`, `SLUG_MAX_LENGTH`).
 
 ---
 
@@ -467,11 +467,13 @@ const detail = await getTaxonomyDetailService("levels", id, { view: "edit" });
 // Create / update (update sends expected_row_version)
 await createTaxonomyService("tags", {
   name: "React",
+  slug: "react", // optional — omit (or leave blank) to let the BE generate it; a taken slug → 409 / 3007 + data.recommended_slug
   translations: { en: { name: "React" }, vi: { name: "React" } },
   status: "ACTIVE",
 });
 await updateTaxonomyService("tags", id, {
   translations: { vi: { name: "Phản ứng" } },
+  slug: "react-js", // sent only when it differs from detail.slug; the BE resolves a taken slug and the response slug wins
   expected_row_version: detail.row_version,
 });
 ```
@@ -480,6 +482,7 @@ await updateTaxonomyService("tags", id, {
 |------|---------|
 | `listTaxonomyService` / `useTaxonomyList` | Localized list (`locale`); optional `include_images` |
 | `getTaxonomyDetailService` | `locale` → public/localized shape; `view: "edit"` → canonical + `translations` + tree translations + `row_version` |
+| `createTaxonomyService` / `updateTaxonomyService` | Root `slug` (optional: blank omitted on create, sent on update only when changed) and tree-node `slug` (only when edited). Create conflict → `409` / **3007** + `data.recommended_slug` (`extractRecommendedSlug`; `useSlugConflictFlow` confirms and resubmits). Update conflicts are resolved by the BE and the response `slug` wins (`taxonomy.form.slugAdjusted`). |
 
 Routes are declared in `API_PRIVATE_ROUTES.taxonomy` (`src/constants/api-route.ts`). Resource tables live in `src/constants/taxonomy/resources.ts` (`TAXONOMY_RESOURCES`, `TAXONOMY_RESOURCE_KEYS`); lookup helpers are `getTaxonomyResourceConfig()` / `getTaxonomySearchableColumns()` in `src/lib/utils/taxonomy/`. Types (`TaxonomyResourceConfig`, `TaxonomyListColumn`, `TaxonomyListFilters.include_images` / `locale`, …) are in `src/types/taxonomy/`. List callers reuse `apiListQueryToRecord()` and append taxonomy typed-search + `locale` fields in caller scope. UI entry points: `src/screen/common/taxonomy/taxonomy-list-page.tsx` via app routes under `src/app/[locale]/{admin,sysadmin}/taxonomy/*/page.tsx`; course editor info tab via `editor-page.tsx`.
 
@@ -536,7 +539,7 @@ setServerError(translateApiErrorCode(tErrors, result.code));
 
 - i18n keys: `errors.codes.{code}` in `src/messages/en.ts` / `vi.ts` (sourced from `src/messages/error-codes.ts`).
 - Unknown codes fall back to `errors.codes.9999`.
-- `409` slug conflicts use code **3007** (`ApiErrorCode.SlugAlreadyExists`); `extractRecommendedSlug(error)` reads `data.recommended_slug` for the create-course confirm flow.
+- `409` slug conflicts use code **3007** (`ApiErrorCode.SlugAlreadyExists`); `extractRecommendedSlug(error)` reads `data.recommended_slug` for the create-course and taxonomy-create confirm flows (`useSlugConflictFlow`).
 - FE form validation uses separate namespaces (`auth.validation.*`, `course.validation.*`, …) — never mix with API codes.
 
 ---

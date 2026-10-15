@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-09-16 (Adding New Features Checklist: added a test-coverage checklist item pointing to `testing.md` and `src/test-support/`). Prior: 2026-06-29 (SearchableSelect `useApiInfiniteListQuery` + `getRowKey` page-merge dedupe); shared `deferDropdownAction` + `DeferredDropdownMenuItem` for menu→dialog flows (2026-06-26)._
+_Last audited: 2026-10-15 (§15 Slug fields: taxonomy slugs editable, shared `useSlugConflictFlow`, optional write-payload helpers `payload.ts`; §6 Forms: `FormField`, shared `resolveValidationMessage`). Prior: 2026-09-16 (Adding New Features Checklist: added a test-coverage checklist item pointing to `testing.md` and `src/test-support/`). Prior: 2026-06-29 (SearchableSelect `useApiInfiniteListQuery` + `getRowKey` page-merge dedupe); shared `deferDropdownAction` + `DeferredDropdownMenuItem` for menu→dialog flows (2026-06-26)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -324,8 +324,8 @@ z.string().email({ message: "validation.email" })
 z.string().email({ message: "Please enter a valid email" })
 ```
 
-Translate keys in `auth-form-fields.tsx` (`resolveAuthValidationMessage`) or shared helpers from `src/lib/utils/validation-message.ts`:
-- `resolveValidationMessage()` — inline field errors (react-hook-form)
+Translate keys with the shared helpers from `src/lib/utils/validation-message.ts` (the auth form fields in `auth-form-fields.tsx` use the same `resolveValidationMessage`):
+- `resolveValidationMessage(t, message)` — inline field errors (react-hook-form); the translator parameter is typed `(key: never) => string`, so pass the scoped `useTranslations(...)` result directly (no `as unknown as (key: string) => string` cast)
 - `toastValidationError()` — pre-submit Zod `safeParse` failures (toast before API call)
 
 Pass `error` from react-hook-form, not `t(errors.*.message)` in form shells (calling `t(undefined)` throws `MISSING_MESSAGE`).
@@ -346,13 +346,13 @@ Schemas live under `src/schema/<domain>/` (barrel `@/schema`). Each module uses 
 | Namespace | Keys |
 |-----------|------|
 | `media.validation` | `tooMany`, `fileTooLarge`, `totalTooLarge`, `executableRejected` |
-| `taxonomy.form.validation` | `name`, `nameMax`, `shortDescription`, `shortDescriptionMax`, `descriptionMaxLines`, `descriptionLineMax` |
+| `taxonomy.form.validation` | `name`, `nameMax`, `shortDescription`, `shortDescriptionMax`, `descriptionMaxLines`, `descriptionLineMax`, `slugRequired`, `slugInvalid`, `slugMax`, `treeSlug` |
 | `instructor.validation` | `email`, `rejectionReason`, `rejectionReasonMax`, `topicId`, `skillId`, `ticketSubject`, `ticketMessage` |
 | `course.validation` | `title`, `titleMax`, `slugRequired`, `slugInvalid`, `slugMax`, `shortDescriptionMax`, `sectionTitle`, `lessonTitle`, `subLessonTitle`, `subLessonKind`, `quizPrompt`, `quizOptionBody`, `quizOptionsMin`, `quizCorrectAnswerRequired`, `quizSingleChoiceMultipleCorrect`, `quizPreviewNotAllowed`, `videoMediaRequired`, `textContentRequired`, `submitInvalidSubLesson`, `submitBasicInfoIncomplete`, `submitCollaboratorRequired`, `submitOutlineNoSections`, `submitOutlineNoLessons`, `submitOutlineNoItems`, `rejectReason`, `rejectReasonMax` |
 
 Taxonomy forms resolve Zod keys via `useTranslations("taxonomy.form")` + schema key `validation.*` (same parent-namespace pattern as auth).
 
-Use `RequiredLabel` + `FieldError` from `src/components/shared/` on required dialog fields.
+Use `FormField` (`src/components/shared/form-field.tsx`: `RequiredLabel` + control + optional hint + `FieldError`) on labelled dialog fields; use `RequiredLabel` + `FieldError` directly only where the layout differs (selects, `DeltaEditor`, `ImageFileField`, review/approval textarea blocks).
 
 ---
 
@@ -569,12 +569,13 @@ Same ESLint config enforces **type-only** files under `src/types/` (no `const`, 
 
 ## 15. Slug fields
 
-**Taxonomy** slugs are **read-only** in the UI. Show a live preview with `generateSlug(name)` / `slugifyName(name)` while the user types the name. **Do not send `slug` in taxonomy create/update payloads** — the backend computes the persisted slug with `utils.SlugifyName`. Use one shared `TaxonomyTreeNode` type (`slug?` optional on write); strip slugs with `toTaxonomyTreeWritePayload()` before taxonomy mutations. Do not expose an editable slug input or duplicate tree node types. `generateSlug` / `slugifyName` are for taxonomy only.
+**Taxonomy** slugs (levels, topics, skills, tags, and the per-node slugs inside topic `child_topics` / skill `children`) are **editable** and independent of `name`, using the same shared `SlugField` / `SlugInput`, `sanitizeSlugInput`, `SLUG_PATTERN` and `SLUG_MAX_LENGTH` as course slugs (see below); there is no name-derived slug or live preview in the FE and `generateSlug` / `slugifyName` no longer exist. Use one shared `TaxonomyTreeNode` type (`slug?` optional) and do not duplicate tree node types. Build payload slugs only with `payloadField("slug", changedNonBlank(slug, persistedSlug))` (`src/lib/utils/payload.ts`): a blank root slug is omitted on create so the BE generates it; on update `slug` is sent only when it differs from the persisted slug (a blank slug on an existing item is blocked in the form); a tree node's `slug` is sent only for a new node with a typed slug or an existing node whose slug was edited, through `toTaxonomyTreeWritePayload(nodes, persistedSlugs)`. A create `409` / code **3007** with `data.recommended_slug` is handled by the shared `useSlugConflictFlow` (`src/hooks/slug/use-slug-conflict-flow.ts`) with a stacked `SlugConflictConfirmDialog` (same flow as course create); update and tree-node conflicts are resolved by the BE and surfaced with the `taxonomy.form.slugAdjusted` / `taxonomy.form.treeSlugsAdjusted` toasts.
 
 **Course** slugs are **editable** and independent of the course title (no title-derived slug or preview in the FE). Reuse the shared `SlugInput` (`src/components/shared/slug-input.tsx`), which filters input through `sanitizeSlugInput` (`src/lib/utils/slug.ts`: whitespace becomes `-`, every character outside `a-z 0-9 -` is dropped, max `SLUG_MAX_LENGTH` = 255); validate with `SLUG_PATTERN` through `courseCreateSchema` / `courseBasicInfoSchema` (`course.validation.slugRequired` / `slugInvalid` / `slugMax`).
 
-- Create dialog: the slug is **optional**; a blank slug is omitted from `POST /courses` (`toCreateCoursePayload(title, slug)` from `@/lib/utils/course`) so the BE generates it. A `409` / code **3007** with `data.recommended_slug` (`extractRecommendedSlug`) opens a stacked `ConfirmActionDialog` (Yes resubmits with the recommended slug and repeats on a new 3007; No returns to the form) — see `useCourseCreateFlow` (`src/hooks/course/use-course-create-flow.ts`). Render the confirm as `ConfirmActionDialog stacked` inside the create `DialogContent` (React-tree nested): a sibling dialog would dismiss the parent (Radix treats its focus as outside), and the default `AlertDialog` variant comes from a separate Radix package copy whose focus trap fights the parent dialog's (`RangeError: Maximum call stack size exceeded`). Use `stacked` whenever a confirm opens over another `Dialog`.
+- Create dialog: the slug is **optional**; a blank slug is omitted from `POST /courses` (`toCreateCoursePayload(title, slug)` from `@/lib/utils/course`) so the BE generates it. A `409` / code **3007** with `data.recommended_slug` (`extractRecommendedSlug`) opens a stacked `ConfirmActionDialog` (Yes resubmits with the recommended slug and repeats on a new 3007; No returns to the form) — see `useCourseCreateFlow` (`src/hooks/course/use-course-create-flow.ts`), which uses the shared `useSlugConflictFlow` (`src/hooks/slug/use-slug-conflict-flow.ts`). Render the confirm as `ConfirmActionDialog stacked` inside the create `DialogContent` (React-tree nested): a sibling dialog would dismiss the parent (Radix treats its focus as outside), and the default `AlertDialog` variant comes from a separate Radix package copy whose focus trap fights the parent dialog's (`RangeError: Maximum call stack size exceeded`). Use `stacked` whenever a confirm opens over another `Dialog`.
 - Basic-info tab: the slug is **required**, defaults to `course.slug`, and is disabled while there is no draft. `toUpdateCourseBasicInfoPayload(basicInfo, persistedSlug)` sends `slug` only when it differs from the persisted slug; the response `data.course.slug` is the source of truth.
+**Optional write-payload fields** use the single rule in `src/lib/utils/payload.ts`: include an optional string or id in a create/update body only when it is non-blank and, on update, only when it differs from the persisted value. Use `omitWhenBlank(value)`, `changedNonBlank(value, persisted)` and spread `payloadField(key, value)`; do not hand-roll `trim()` / `value || undefined` branches. Consumers: `toCreateCoursePayload`, `toUpdateCourseBasicInfoPayload` (`preview_video_file_id`, `slug`), the taxonomy `prepare*SubmitPayload` builders (`image_file_id`, `slug`), the sub-lesson `media_url` in `use-course-editor-state.ts`, and each tree node `slug` in `toTaxonomyTreeWritePayload`. "The server adjusted the slug" is `isSlugAdjusted(sent, saved)` in `src/lib/utils/slug.ts`.
 
 ---
 

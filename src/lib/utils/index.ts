@@ -95,7 +95,6 @@ export {
 } from "./permission";
 export { useUniqueId } from "./react";
 export { isServer } from "./runtime";
-export { generateSlug, slugifyName } from "./slug";
 export {
   truncateUnicodeCodePoints,
   unicodeCodePointLength,

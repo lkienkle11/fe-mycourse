@@ -4,9 +4,10 @@ import type { Dispatch, SetStateAction } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { DeltaEditor } from "@/components/shared/delta-editor";
 import { FieldError } from "@/components/shared/field-error";
+import { FormField } from "@/components/shared/form-field";
 import { ImageFileField } from "@/components/shared/image-file-field";
 import { RequiredLabel } from "@/components/shared/required-label";
-import { SlugInput } from "@/components/shared/slug-input";
+import { SlugField } from "@/components/shared/slug-field";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -121,10 +122,15 @@ export function CourseBasicInfoTab({
                 name="title"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <div className="space-y-2">
-                    <RequiredLabel htmlFor="course-basic-title">
-                      {t("titleLabel")}
-                    </RequiredLabel>
+                  <FormField
+                    id="course-basic-title"
+                    label={t("titleLabel")}
+                    error={fieldState.error}
+                    errorMessage={resolveValidationMessage(
+                      tCourse,
+                      fieldState.error?.message,
+                    )}
+                  >
                     <Input
                       {...field}
                       id="course-basic-title"
@@ -137,14 +143,7 @@ export function CourseBasicInfoTab({
                         }));
                       }}
                     />
-                    <FieldError
-                      error={fieldState.error}
-                      message={resolveValidationMessage(
-                        tCourse as unknown as (key: string) => string,
-                        fieldState.error?.message,
-                      )}
-                    />
-                  </div>
+                  </FormField>
                 )}
               />
 
@@ -152,34 +151,26 @@ export function CourseBasicInfoTab({
                 name="slug"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <div className="space-y-2">
-                    <RequiredLabel htmlFor="course-basic-slug">
-                      {t("slugLabel")}
-                    </RequiredLabel>
-                    <SlugInput
-                      id="course-basic-slug"
-                      name={field.name}
-                      ref={field.ref}
-                      onBlur={field.onBlur}
-                      value={field.value}
-                      disabled={!editable}
-                      placeholder={t("slugPlaceholder")}
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        setBasicInfo((prev) => ({ ...prev, slug: value }));
-                      }}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {t("slugHint")}
-                    </p>
-                    <FieldError
-                      error={fieldState.error}
-                      message={resolveValidationMessage(
-                        tCourse as unknown as (key: string) => string,
-                        fieldState.error?.message,
-                      )}
-                    />
-                  </div>
+                  <SlugField
+                    id="course-basic-slug"
+                    label={t("slugLabel")}
+                    name={field.name}
+                    ref={field.ref}
+                    onBlur={field.onBlur}
+                    value={field.value}
+                    disabled={!editable}
+                    placeholder={t("slugPlaceholder")}
+                    hint={t("slugHint")}
+                    error={fieldState.error}
+                    errorMessage={resolveValidationMessage(
+                      tCourse,
+                      fieldState.error?.message,
+                    )}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setBasicInfo((prev) => ({ ...prev, slug: value }));
+                    }}
+                  />
                 )}
               />
 
@@ -187,10 +178,15 @@ export function CourseBasicInfoTab({
                 name="short_description"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <div className="space-y-2">
-                    <RequiredLabel htmlFor="course-basic-short-description">
-                      {t("shortDescriptionLabel")}
-                    </RequiredLabel>
+                  <FormField
+                    id="course-basic-short-description"
+                    label={t("shortDescriptionLabel")}
+                    error={fieldState.error}
+                    errorMessage={resolveValidationMessage(
+                      tCourse,
+                      fieldState.error?.message,
+                    )}
+                  >
                     <Input
                       {...field}
                       id="course-basic-short-description"
@@ -203,14 +199,7 @@ export function CourseBasicInfoTab({
                         }));
                       }}
                     />
-                    <FieldError
-                      error={fieldState.error}
-                      message={resolveValidationMessage(
-                        tCourse as unknown as (key: string) => string,
-                        fieldState.error?.message,
-                      )}
-                    />
-                  </div>
+                  </FormField>
                 )}
               />
             </div>
@@ -241,7 +230,7 @@ export function CourseBasicInfoTab({
                   <FieldError
                     error={fieldState.error}
                     message={resolveValidationMessage(
-                      tCourse as unknown as (key: string) => string,
+                      tCourse,
                       fieldState.error?.message,
                     )}
                   />
@@ -362,7 +351,7 @@ export function CourseBasicInfoTab({
                     <FieldError
                       error={fieldState.error}
                       message={resolveValidationMessage(
-                        tCourse as unknown as (key: string) => string,
+                        tCourse,
                         fieldState.error?.message,
                       )}
                     />
@@ -403,7 +392,7 @@ export function CourseBasicInfoTab({
                     <FieldError
                       error={fieldState.error}
                       message={resolveValidationMessage(
-                        tCourse as unknown as (key: string) => string,
+                        tCourse,
                         fieldState.error?.message,
                       )}
                     />

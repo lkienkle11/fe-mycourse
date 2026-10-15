@@ -13,9 +13,9 @@ import {
 } from "@/components/ui/tooltip";
 import {
   buildTaxonomyDagreRoot,
-  countTaxonomyTreeNodes,
   getTaxonomyTreeFromEntity,
 } from "@/lib/utils/taxonomy";
+import { countTreeNodes } from "@/lib/utils/tree";
 import type {
   CourseSkill,
   CourseTopic,
@@ -36,7 +36,7 @@ export function TaxonomyTreeViewButton({
   const [open, setOpen] = useState(false);
 
   const childCount = useMemo(
-    () => countTaxonomyTreeNodes(getTaxonomyTreeFromEntity(resourceKey, row)),
+    () => countTreeNodes(getTaxonomyTreeFromEntity(resourceKey, row)),
     [resourceKey, row],
   );
 
