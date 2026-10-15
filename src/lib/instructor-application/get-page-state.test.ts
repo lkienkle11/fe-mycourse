@@ -11,6 +11,7 @@ function buildApplication(
     id: "app-1",
     user_id: "user-1",
     display_name: "Learner",
+    slug: "learner",
     email: "learner@example.com",
     review_status: "pending",
     can_resubmit: false,

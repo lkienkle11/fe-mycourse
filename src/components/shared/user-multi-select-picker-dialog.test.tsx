@@ -9,8 +9,18 @@ import type {
 import { UserMultiSelectPickerDialog } from "./user-multi-select-picker-dialog";
 
 const rows: UserPickerCandidate[] = [
-  { user_id: "user-1", display_name: "Alice", email: "alice@example.com" },
-  { user_id: "user-2", display_name: "Bob", email: "bob@example.com" },
+  {
+    user_id: "user-1",
+    display_name: "Alice",
+    email: "alice@example.com",
+    slug: "alice",
+  },
+  {
+    user_id: "user-2",
+    display_name: "Bob",
+    email: "bob@example.com",
+    slug: "bob",
+  },
 ];
 
 const labels: UserPickerLabels = {
