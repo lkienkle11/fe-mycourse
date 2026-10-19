@@ -31,3 +31,7 @@ export function loginAsInstructor(page: Page): Promise<void> {
 export function loginAsAdmin(page: Page): Promise<void> {
   return loginAs(page, FIXTURE_USERS.admin);
 }
+
+export function loginAsHomeLearner(page: Page): Promise<void> {
+  return loginAs(page, FIXTURE_USERS.homeLearner);
+}
