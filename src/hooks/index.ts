@@ -2,6 +2,7 @@ export { useApiError } from "@/store/api-error-store";
 export * from "./auth";
 export * from "./course";
 export * from "./dashboard";
+export * from "./home";
 export * from "./language";
 export * from "./quill";
 export * from "./slug";

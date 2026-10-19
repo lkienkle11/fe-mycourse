@@ -2,7 +2,7 @@
  * Course URL / SWR key helpers (no transport binding).
  */
 
-import { API_PRIVATE_ROUTES } from "@/constants/api-route";
+import { API_PRIVATE_ROUTES, API_PUBLIC_ROUTES } from "@/constants/api-route";
 import { buildQueryParams } from "@/lib/utils";
 import { apiListQueryToRecord } from "@/lib/utils/list-query";
 import type {
@@ -104,4 +104,38 @@ export function getAdminCoursesKey(): string {
 
 export function getTrashedCoursesKey(): string {
   return routes.adminCoursesTrash;
+}
+
+function limitQuery(limit?: number): Record<string, string> {
+  return limit == null ? {} : { limit: String(limit) };
+}
+
+export function getTrendingCoursesKey(limit?: number): string {
+  return requireUrl(
+    buildQueryParams(
+      API_PUBLIC_ROUTES.catalog.trendingCourses,
+      limitQuery(limit),
+    ),
+    "Invalid trending courses URL",
+  );
+}
+
+/**
+ * `userId` only scopes the SWR cache entry (as the URL fragment, never sent to the
+ * server) so one user's continue-learning list is never reused for another user
+ * who signs in later in the same browser session. Callers omit it for the request URL.
+ */
+export function getContinueLearningKey(
+  limit?: number,
+  userId?: string,
+): string {
+  return requireUrl(
+    buildQueryParams(
+      routes.continueLearning,
+      limitQuery(limit),
+      undefined,
+      userId,
+    ),
+    "Invalid continue learning URL",
+  );
 }

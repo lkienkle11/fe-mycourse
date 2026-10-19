@@ -4,6 +4,7 @@
 
 import type { ApiMethods } from "@/api/core/methods";
 import { createInstructorApplicationCallers } from "./instructor-factory-application";
+import { createInstructorCatalogCallers } from "./instructor-factory-catalog";
 import { createInstructorExpertiseCallers } from "./instructor-factory-expertise";
 import { createInstructorProfileCallers } from "./instructor-factory-profile";
 import { createInstructorRosterCallers } from "./instructor-factory-roster";
@@ -21,6 +22,7 @@ export {
   getInstructorTicketMessagesKey,
   getInstructorTicketsListKey,
   getMyInstructorApplicationKey,
+  getPopularInstructorsKey,
 } from "./instructor-factory-keys";
 
 export function createInstructorCallers(methods: ApiMethods) {
@@ -30,5 +32,6 @@ export function createInstructorCallers(methods: ApiMethods) {
     ...createInstructorProfileCallers(methods),
     ...createInstructorExpertiseCallers(methods),
     ...createInstructorTicketCallers(methods),
+    ...createInstructorCatalogCallers(methods),
   };
 }

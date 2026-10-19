@@ -1,12 +1,11 @@
 "use client";
 
-import Image from "next/image";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { pickCharacter } from "@/lib/utils";
 import type { MeResponse } from "@/types/auth";
 import { UserMenuDropdownItems } from "./user-menu-dropdown-items";
 
@@ -15,35 +14,19 @@ interface UserMenuProps {
 }
 
 export const UserMenu = ({ me }: UserMenuProps) => {
-  const { label, color, backgroundColor } = pickCharacter(me.display_name);
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         className="size-10 rounded-full border border-object-black/10 bg-white/95 hover:cursor-pointer"
         aria-label="Open user menu"
       >
-        {me.avatar_url ? (
-          <Image
-            src={me.avatar_url}
-            alt={`${me.display_name} avatar`}
-            width={40}
-            height={40}
-            className="size-full rounded-full object-cover"
-          />
-        ) : (
-          <div
-            className="flex size-full items-center justify-center rounded-full"
-            style={{ backgroundColor }}
-          >
-            <span
-              style={{ color }}
-              className="text-base font-semibold leading-none"
-            >
-              {label}
-            </span>
-          </div>
-        )}
+        <UserAvatar
+          name={me.display_name}
+          src={me.avatar_url}
+          size={40}
+          className="size-full"
+          textClassName="text-base"
+        />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"

@@ -284,3 +284,14 @@ export type UpsertProfileResponse = {
   id: string;
   user_id: string;
 };
+
+/** `GET /api/v1/catalog/instructors/popular` item. The picture key is `avatar` (not `avatar_url`). */
+export type PopularInstructorItem = {
+  user_id: string;
+  display_name: string;
+  /** User slug; `""` until the backend assigns one. Never an identity key. */
+  slug: string;
+  avatar?: string;
+  subtitle?: string;
+  course_count: number;
+};

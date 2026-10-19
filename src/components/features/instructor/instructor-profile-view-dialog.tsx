@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { DeltaViewer } from "@/components/shared/delta-editor";
 import { PreviewPdf } from "@/components/shared/preview-pdf";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -15,7 +15,7 @@ import { INSTRUCTOR_PROFILE_DIALOG_MAX_WIDTH_CLASS } from "@/constants/instructo
 import { YEAR_EXPERIENCE_BUCKETS } from "@/constants/instructor-application";
 import { resolveInstructorDisplayName } from "@/lib/instructor-application/helpers";
 import type { YearsExperienceLabelKey } from "@/lib/instructor-application/page-state";
-import { cn, formatUnixDateTime, pickCharacter } from "@/lib/utils";
+import { cn, formatUnixDateTime } from "@/lib/utils";
 import type {
   InstructorApplication,
   InstructorApplicationProfile,
@@ -73,9 +73,6 @@ export function InstructorProfileViewDialog({
   const locale = useLocale();
   const applicantName =
     fullName.trim() || resolveInstructorDisplayName(application ?? null);
-  const { label, color, backgroundColor } = pickCharacter(
-    applicantName || "User",
-  );
 
   if (!profile && !isLoading) return null;
 
@@ -99,27 +96,13 @@ export function InstructorProfileViewDialog({
           <>
             {applicantName ? (
               <div className="mb-1 flex items-center gap-3 rounded-md border p-3">
-                {avatarUrl ? (
-                  <Image
-                    src={avatarUrl}
-                    alt={`${applicantName} avatar`}
-                    width={40}
-                    height={40}
-                    className="size-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <div
-                    className="flex size-10 items-center justify-center rounded-full"
-                    style={{ backgroundColor }}
-                  >
-                    <span
-                      style={{ color }}
-                      className="text-sm font-semibold leading-none"
-                    >
-                      {label}
-                    </span>
-                  </div>
-                )}
+                <UserAvatar
+                  name={applicantName || "User"}
+                  src={avatarUrl}
+                  size={40}
+                  className="size-10"
+                  textClassName="text-sm"
+                />
                 <div>
                   <p className="text-xs text-muted-foreground">
                     {t("userName")}

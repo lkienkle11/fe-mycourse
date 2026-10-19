@@ -69,7 +69,7 @@ The `docs/` folder is the **primary and authoritative documentation source** for
 | [`docs/architecture.md`](docs/architecture.md) | Full tech stack, directory map, functional clusters (Ui / Api / Auth), design decisions, env vars, i18n, caching layer |
 | [`docs/folder-structure.md`](docs/folder-structure.md) | Full directory tree with purpose of every folder and subfolder |
 | [`docs/flow.md`](docs/flow.md) | Auth and API execution flows — login, signup (placeholder), `/me`, token refresh, cookie strategy, error handling, Zustand store interactions |
-| [`docs/screens.md`](docs/screens.md) | App Router routes, layout hierarchy (header / main / footer), home sections, auth shell, footer i18n (`commonFooter`), UI primitives, route constants |
+| [`docs/screens.md`](docs/screens.md) | App Router routes, layout hierarchy (header / main / footer), guest home sections, signed-in `/home` sections (hero carousel, Complete your Course, Trending Course, Popular Instructor), the `/courses/[slug]` placeholder, auth shell, footer i18n (`commonFooter`), UI primitives, route constants |
 | [`docs/api-using.md`](docs/api-using.md) | Frontend API usage patterns — `apiFetch`/`apiPost`, SWR hooks, Server Actions, auth token handling, error handling, pagination |
 | [`docs/components.md`](docs/components.md) | Component inventory by directory — responsibilities, client/server boundary, naming conventions |
 | [`docs/router.md`](docs/router.md) | App Router tree, locale routing, layout hierarchy, navigation helpers, route constants |
@@ -78,7 +78,7 @@ The `docs/` folder is the **primary and authoritative documentation source** for
 | [`docs/dependencies.md`](docs/dependencies.md) | All runtime and dev dependencies — versions, roles, and usage rules |
 | [`docs/quality.md`](docs/quality.md) | ESLint, Biome, Knip / Madge / jscpd gates; `test-all` (CI) and `check-all` (local pre-PR); browser CI (`e2e-browser.yml`) |
 | [`docs/testing.md`](docs/testing.md) | Jest (Node/jsdom) + Playwright harness — behavior matrix, fixtures/MSW, `test:e2e` lifecycle, known Jest/SWC and jsdom limitations and their fixes |
-| [`docs/seo-ranking-setup.md`](docs/seo-ranking-setup.md) | **SEO / ranking / performance / security foundation** — unused helpers under `src/lib/seo|performance|security/web`; A/B/C reuse tables; planned `/` vs `/home` take-note |
+| [`docs/seo-ranking-setup.md`](docs/seo-ranking-setup.md) | **SEO / ranking / performance / security foundation** — unused helpers under `src/lib/seo|performance|security/web`; A/B/C reuse tables; `/` (guest mock home) vs `/home` (signed-in home fed by the catalog and learner-courses APIs) notes |
 | [`docs/security-hardening-notes.md`](docs/security-hardening-notes.md) | FE crawl/redact/JSON-LD sanitize/header draft helpers + link to BE public-SEO notes |
 | [`docs/reusable-assets.md`](docs/reusable-assets.md) | All reusable utilities, hooks, types, schemas, stores, constants, API callers, and Server Actions |
 | [`docs/delivery.md`](docs/delivery.md) | **Realtime channels** — BroadcastChannel, WebSocket, SSE, NDJSON gRPC; envelope model, env vars, links to per-channel docs |
@@ -431,10 +431,13 @@ Refresh never recurses through the authenticated transport. Browser refresh goes
 
 ```ts
 // src/constants/api-route.ts
-API_PUBLIC_ROUTES.auth.login    // POST /api/v1/auth/login
-API_PUBLIC_ROUTES.auth.signup   // POST /api/v1/auth/signup
-API_PUBLIC_ROUTES.auth.refresh  // POST /api/v1/auth/refresh
-API_PRIVATE_ROUTES.user.getMe   // GET  /api/v1/me
+API_PUBLIC_ROUTES.auth.login                    // POST /api/v1/auth/login
+API_PUBLIC_ROUTES.auth.register                 // POST /api/v1/auth/register
+API_PUBLIC_ROUTES.auth.refresh                  // POST /api/v1/auth/refresh
+API_PUBLIC_ROUTES.catalog.trendingCourses       // GET  /api/v1/catalog/courses/trending
+API_PUBLIC_ROUTES.catalog.popularInstructors    // GET  /api/v1/catalog/instructors/popular
+API_PRIVATE_ROUTES.user.getMe                   // GET  /api/v1/me
+API_PRIVATE_ROUTES.course.continueLearning      // GET  /api/v1/learner-courses/continue
 ```
 
 ---
@@ -488,7 +491,7 @@ interface ApiErrorEntry {
 | File | Description |
 |------|-------------|
 | `common.ts` | Shared UI constants — `HEADER_DROPDOWN_ITEMS` (per-item `permissions` / `titleKey` config), `LANGUAGE_OPTIONS`. Menu types live in `src/types/user-menu.ts`. |
-| `route.ts` | Application route paths — `ROUTES` object containing all named route strings (home, login, signup, …). |
+| `route.ts` | Application route paths — `PUBLIC_ROUTES`, `PRIVATE_ROUTES` (including `home` → `/home`), `PUBLIC_RESOURCE_ROUTES` (`course` → `/courses/:slug`, temporary placeholder page) and `PRIVATE_RESOURCE_ROUTES`. |
 
 ## Auth Store (`src/store/auth/auth.ts`)
 

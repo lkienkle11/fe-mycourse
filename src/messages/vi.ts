@@ -33,13 +33,52 @@ const messages = {
       placeholder: "Bạn muốn học gì hôm nay?",
     },
     signedIn: {
-      title: "Chào mừng trở lại",
-      temporaryNotice:
-        "Trang chủ sau đăng nhập đang tạm thời. Gợi ý cá nhân hóa sẽ được thêm sau.",
       loginRequired: {
         title: "Đăng nhập để tiếp tục",
         description: "Trang này chỉ dành cho tài khoản đã đăng nhập.",
         login: "Đăng nhập",
+      },
+      hero: {
+        label: "Nội dung nổi bật",
+        headline: "Học điều mới mỗi ngày.",
+        subheadline: "Trở thành chuyên gia và sẵn sàng hội nhập với thế giới.",
+        instructor: {
+          headline: "Học từ những người giỏi nhất.",
+          subheadline: "Khóa học được xây dựng bởi các chuyên gia thực thụ.",
+        },
+        learner: {
+          headline: "Học theo nhịp độ của riêng bạn.",
+          subheadline: "Mọi lúc, mọi nơi, không có hạn chót.",
+        },
+        goToSlide: "Chuyển đến slide {index}",
+        slideLabel: "Slide {index} trên {total}",
+      },
+      sectionDescription:
+        "Chúng tôi biết điều tốt nhất dành cho bạn. Gợi ý hàng đầu cho bạn.",
+      retry: "Thử lại",
+      expandMore: "Xem thêm",
+      continueLearning: {
+        title: "Hoàn thành khóa học của bạn",
+        progress: "Đã hoàn thành {completed}/{total} bài học nhỏ",
+        progressLabel: "Tiến độ khóa học {title}",
+        empty: "Bạn chưa có khóa học nào đang học dở.",
+        error: "Không thể tải các khóa học của bạn.",
+      },
+      trending: {
+        title: "Khóa học thịnh hành",
+        empty: "Chưa có khóa học thịnh hành.",
+        error: "Không thể tải các khóa học thịnh hành.",
+      },
+      popularInstructors: {
+        title: "Giảng viên nổi bật",
+        empty: "Chưa có giảng viên để hiển thị.",
+        error: "Không thể tải danh sách giảng viên.",
+      },
+      courseCard: { imageAlt: "Ảnh khóa học {title}" },
+      coursePlaceholder: {
+        title: "Trang khóa học sắp ra mắt",
+        description: "Trang chi tiết khóa học hiện chưa khả dụng.",
+        back: "Về trang chủ",
       },
     },
   },

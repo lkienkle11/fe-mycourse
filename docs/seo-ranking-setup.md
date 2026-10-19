@@ -1,10 +1,10 @@
 # SEO / Ranking / Performance / Security foundation
 
-_Last audited: 2026-10-15 (A12 slug helper row: `src/lib/utils/slug.ts` no longer holds a name-to-slug generator). Prior: 2026-07-26 (temporary signed-in `/home` under `(web)` + `PRIVATE_ROUTES.home`; most SEO helpers still unused by other pages)._
+_Last audited: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (A12 slug helper row: `src/lib/utils/slug.ts` no longer holds a name-to-slug generator). Prior: 2026-07-26 (temporary signed-in `/home` under `(web)` + `PRIVATE_ROUTES.home`; most SEO helpers still unused by other pages)._
 
 Source of truth for the SEO foundation under `src/types/seo/**`, `src/constants/seo/**`, `src/lib/seo/**`, `src/lib/performance/**`, and `src/lib/security/web/**`. Companion FE security notes: [`security-hardening-notes.md`](./security-hardening-notes.md). BE intent (take-note only): [`be-mycourse/docs/security-public-seo-notes.md`](../../be-mycourse/docs/security-public-seo-notes.md).
 
-**Status:** helpers exist for future `generateMetadata` / JSON-LD / crawl policy. They are **not** imported from `layout.tsx`, route `page.tsx`, `app/sitemap.ts`, or `app/robots.ts` in this phase. The temporary `/{locale}/home` route ships **without** page metadata; its crawl protection comes from `PRIVATE_ROUTES` disallow derivation only. **Exception:** `robotsPreset` / `robotsModeForPublicRouteKey` (N5) are now imported and used, from `generateMetadata` in `src/app/[locale]/(web)/login/page.tsx` and `.../signup/page.tsx` — the first real page wiring of this SEO scaffolding.
+**Status:** helpers exist for future `generateMetadata` / JSON-LD / crawl policy. They are **not** imported from `layout.tsx`, route `page.tsx`, `app/sitemap.ts`, or `app/robots.ts` in this phase. The signed-in `/{locale}/home` route ships **without** page metadata; its crawl protection comes from `PRIVATE_ROUTES` disallow derivation only. **Exception:** `robotsPreset` / `robotsModeForPublicRouteKey` (N5) are now imported and used, from `generateMetadata` in `src/app/[locale]/(web)/login/page.tsx` and `.../signup/page.tsx` — the first real page wiring of this SEO scaffolding.
 
 ---
 
@@ -12,8 +12,8 @@ Source of truth for the SEO foundation under `src/types/seo/**`, `src/constants/
 
 - Next.js **16.2.1**, App Router + `next-intl` (`localePrefix: "always"`); root `/` redirects to the default locale.
 - Root metadata today is title/description only in `src/app/layout.tsx` — no OG/Twitter/JSON-LD/sitemap/robots under `src/`.
-- Guest home uses **mock** course data. Signed-in `/home` exists as a **temporary** login-required placeholder (`PRIVATE_ROUTES.home`); Figma UI and personalized API data are not shipped.
-- BE has **no** public anonymous course catalogue (`be-mycourse/docs/modules.md` Planned). `learner-courses*` requires JWT + `course:read` — not for SEO public cache.
+- Guest home uses **mock** course data. Signed-in `/home` is a login-required page (`PRIVATE_ROUTES.home`) that shows catalog and continue-learning data fetched client side; it has no route metadata.
+- The BE exposes two public anonymous catalogue endpoints (`GET /api/v1/catalog/courses/trending`, `GET /api/v1/catalog/instructors/popular`; published-only projections, see `be-mycourse/docs/security-public-seo-notes.md`). The FE home reads them client side and does **not** register `publicCacheProfiles`. `learner-courses*` (including `/continue`) requires JWT + `course:read` and is per-user — never for SEO public cache.
 - No frontend site origin env yet. Do not hard-code a domain. Do not use `NEXT_PUBLIC_API_URL` as canonical/`metadataBase`. Future server-side `SITE_URL` is documented in [`deploy.md`](./deploy.md) only (env files / nginx / PM2 unchanged this phase).
 
 ---
@@ -33,14 +33,14 @@ Agents must not confuse **reuse** (A) with **new files** (B) or **forbidden work
 | A5 | Auth API transport | `src/api/transport/api-transport.ts` | Keep `no-store` for auth/dashboard; **not** for SEO public cache. |
 | A6 | Route maps | `src/constants/route.ts` | Crawl/robots **derive** `PUBLIC_ROUTES` / `PRIVATE_ROUTES` / `PRIVATE_RESOURCE_ROUTES`. Sitemap uses a separate **SEO-indexable** allow-list of `PUBLIC_ROUTES` keys (not raw public-routable). |
 | A6b | Flatten route tree | `src/lib/navigation/flatten-route-tree.ts` `flattenRouteTreePaths` | Single shared recursion for nested route constant objects; crawl-policy + sitemap private helpers reuse it (no duplicate flatten). |
-| A7 | Nav href builders | `src/lib/navigation/routes.ts`, `home.ts` | Canonical/sitemap use `homeHref`, `toPublicRoute`, … |
+| A7 | Nav href builders | `src/lib/navigation/routes.ts`, `home.ts` | Canonical/sitemap use `homeHref`, `toPublicRoute`, …; `courseDetailHref(slug)` builds the placeholder course link. |
 | A8 | i18n locales + pathname | `src/i18n/routing.ts`, `navigation.ts` | `locales` / `defaultLocale` / `getPathname` for hreflang — do not invent locale lists. |
 | A9 | URL assemble | `src/lib/utils/url.ts` `buildQueryParams` | Path/query assembly when needed. |
 | A10 | Truncate Unicode | `src/lib/utils/unicode-length.ts` `truncateUnicodeCodePoints` | SERP/OG title & description truncation. |
 | A11 | Delta plain text | `src/lib/utils/course-delta.ts` `extractPlainText` | Meta description from Quill when real data exists. |
 | A12 | Slug helpers | `src/lib/utils/slug.ts` | `sanitizeSlugInput` / `SLUG_PATTERN` / `SLUG_MAX_LENGTH` / `isSlugAdjusted` for editable slugs. The FE has no name-to-slug generator (the BE generates slugs), so do not add a slugger for future canonical/SEO use. |
 | A13 | HTTP URL parse pattern | `src/lib/instructor-application/url-validation.ts` | `site-config` validates `SITE_URL` with the same HTTPS URL rules (mirror pattern; no instructor-form dependency). |
-| A14 | Domain types | `src/types/course.ts`, `instructor.ts`, `taxonomy/`, `media/` | JSON-LD builders accept these; not home mock `CourseType`. |
+| A14 | Domain types | `src/types/course.ts`, `instructor.ts`, `taxonomy/`, `media/` | JSON-LD builders accept these; not home mock `CourseType`. The signed-in home types (`TrendingCourseItem`, `ContinueLearningItem`, `PopularInstructorItem`) are not wired into JSON-LD. |
 | A15 | Fonts | `src/lib/font.ts` | Existing CWV font setup — cite only; no new font module. |
 | A16 | Image sizes precedent | `src/components/home/course-card.tsx`, hero | Preset `sizes` normalized into performance policy constants. |
 | A17 | Media MIME/ext | `src/lib/utils/media.ts` | Validate OG image extension when needed. |
@@ -91,8 +91,8 @@ Optional barrel: `src/lib/seo/index.ts` (Knip `ignoreFiles` covers `**/index.ts`
 
 - Wire SEO helpers broadly into `layout.tsx` / guest pages; create `app/sitemap.ts`, `app/robots.ts`, `opengraph-image.tsx`.
 - Change `next.config.ts`, `.env`, `.env.example`, nginx, PM2.
-- Replace guest `/` marketing home or ship full Figma signed-in `/home` UI / personalized API data (temporary `/home` placeholder + `privateApp` metadata is allowed).
-- Register `publicCacheProfiles`; call production APIs; build JSON-LD from home mock data.
+- Replace the guest `/` marketing home or give `/home` route metadata (the signed-in `/home` now ships with real catalog data and intentionally has no metadata).
+- Register `publicCacheProfiles`; call production APIs from server components (the client home calls them); build JSON-LD from home mock data.
 - Add packages: `schema-dts`, `react-schemaorg`, `@next/bundle-analyzer`.
 - Duplicate fetch / cache / route-list / slugger / truncate stacks; `OptimizedImage` wrapper; new `middleware.ts`; new font loader.
 - Orphan React files under `src/components/**` (Knip `files` fails). Put `JsonLd` under `src/lib/seo/`.
@@ -146,11 +146,13 @@ See [`security-hardening-notes.md`](./security-hardening-notes.md). Crawl policy
 | Route | Đối tượng | Dữ liệu hiện tại | Index |
 | --- | --- | --- | --- |
 | `/` (`PUBLIC_ROUTES.home`) | Khách chưa đăng nhập | UI home marketing mock/static, chưa fetch API. | SEO-indexable allow-list key `home` (wire later). |
-| `/home` (`PRIVATE_ROUTES.home`) | Người đã đăng nhập | **Temporary** placeholder + client auth gate; no API; no Figma sections. | **`privateApp` / noindex** via route `generateMetadata`. Included in crawl disallow through `PRIVATE_ROUTES`. |
+| `/home` (`PRIVATE_ROUTES.home`) | Người đã đăng nhập | Trang chủ đã đăng nhập: hero carousel, Complete your Course, Trending Course, Popular Instructor; dữ liệu lấy từ API catalog và learner-courses ở phía client; auth gate phía client; không có metadata route. | Không index: chặn crawl qua danh sách disallow suy ra từ `PRIVATE_ROUTES` (route không có `generateMetadata`). |
 
 Locale note: with `localePrefix: "always"`, user-facing paths are `/vi`, `/en`, `/vi/home`, `/en/home`.
 
-### Nội dung `/home` theo Figma (later — not this temporary ship)
+### Nội dung `/home` theo Figma (đã triển khai một phần)
+
+Đã triển khai: hero carousel 3 slide (không có nút mũi tên; kéo/vuốt hoặc bấm dot; tự chuyển sang phải sau 3 giây, đặt lại khi người dùng chuyển thủ công), Complete your Course, Trending Course, Popular Instructor. Không triển khai (quyết định sản phẩm): topic chips, "More from MyCourse Studio", "Popular Category", badge/giá/rating trên card (BE không trả các field này).
 
 Figma file `Mh8LEZPNctm96sQhhTNRJD`, signed-in home frame (e.g. node `4990:51595`). Verified visually 2026-07-25:
 
@@ -169,7 +171,7 @@ All Figma text, ratings, prices, and courses are **UI illustration only** — no
 - Chips use real interactive semantics (not text-only click targets).
 - Images: alt + width/height or aspect ratio (CLS); `priority` only for measured LCP.
 - Never put user interest, enrollment, history, identity, or personalized data into title, description, canonical, OG, JSON-LD, or public cache.
-- While mock/no API: general home metadata only; **no** JSON-LD `Course` / `Offer` / `AggregateRating` / FAQ / video from illustration data.
+- Dữ liệu home là dữ liệu động/cá nhân phía client: không đưa vào metadata, JSON-LD hay public cache; **không** dùng JSON-LD `Course` / `Offer` / `AggregateRating` / FAQ / video từ dữ liệu này.
 
 ### Guest `/` (current)
 
@@ -192,4 +194,3 @@ Synthetic metadata factory, OG/Twitter, JSON-LD, sitemap/robots builders, render
 4. Keep `/home` on `privateApp` unless product proves a public, non-personalized slice is safe to index.
 5. Add `app/sitemap.ts` / `app/robots.ts` consumers of the pure builders.
 6. Wire `JsonLd` only with real published DTOs.
-7. Replace temporary `/home` placeholder with Figma signed-in layout when product/API are ready.

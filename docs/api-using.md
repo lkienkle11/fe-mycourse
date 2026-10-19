@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-10-15 (user slug contract on `/me`, collaborators, candidates and course list owner). Prior: 2026-10-15 (taxonomy create/update slug contract and 3007 confirm flow). Prior: 2026-07-22 (server sanitized logs; browser no custom Console; compress body memo retained). Prior: raw GET cache; media 30s._
+_Last audited: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract on `/me`, collaborators, candidates and course list owner). Prior: 2026-10-15 (taxonomy create/update slug contract and 3007 confirm flow). Prior: 2026-07-22 (server sanitized logs; browser no custom Console; compress body memo retained). Prior: raw GET cache; media 30s._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -129,11 +129,14 @@ API_PUBLIC_ROUTES.auth.google       // POST /api/v1/auth/google         (Google 
 API_PUBLIC_ROUTES.auth.googleOnetap // POST /api/v1/auth/google/onetap  (Google One Tap credential)
 API_PUBLIC_ROUTES.auth.discord      // POST /api/v1/auth/discord          (Discord OAuth code)
 API_PUBLIC_ROUTES.auth.x            // POST /api/v1/auth/x              (X/Twitter code + PKCE verifier; retained, not wired to popup)
+API_PUBLIC_ROUTES.catalog.trendingCourses     // GET  /api/v1/catalog/courses/trending      (home; limit 8, max 24)
+API_PUBLIC_ROUTES.catalog.popularInstructors  // GET  /api/v1/catalog/instructors/popular   (home; limit 4, max 12)
 // Note: /api/v1/auth/google/mobile exists on the BE for native mobile apps only — it is
 // intentionally NOT surfaced in the web FE route map (no web caller).
 
 // Private (requires Authorization header)
 API_PRIVATE_ROUTES.user.getMe   // GET /api/v1/me
+API_PRIVATE_ROUTES.course.continueLearning    // GET /api/v1/learner-courses/continue (course:read; limit 4, max 10)
 ```
 
 Add new constants here when new API endpoints are used.
@@ -314,6 +317,18 @@ Callers in `src/api/callers/course/course-factory.ts (+ course-browser.ts)`:
 Hooks: `useCourseCollaborators`, `useCourseInstructorCandidates` in `src/api/hooks/course/`. Filter params reuse `ApiListQueryParams` (`page`, `per_page`, `search`). Picker API requires **`course_collaborator_candidate:read` (P67)**. Bulk add partial-success UX uses `finalizeBulkUserPickerSubmit` (`src/lib/utils/user-picker-bulk-submit.ts`) via `useCourseCollaboratorActions`. UI: `CourseCollaboratorsTab`, `CourseCollaboratorPickerDialog` (closes only after successful multi-add; errors keep dialog open; `PermissionGate` on add/picker for owners).
 
 `AddCollaboratorsBulkPayload.role` represents only the assignable request role (`EDITOR`); `CourseCollaboratorRole` in course and collaborator responses still represents `OWNER` and `EDITOR` for display. Bulk add cannot assign `OWNER`.
+
+### Signed-in home (catalog + continue learning)
+
+Callers: trending and continue learning in `src/api/callers/course/course-factory-review.ts (+ course-browser.ts)`, popular instructors in `src/api/callers/instructor/instructor-factory-catalog.ts (+ instructor-browser.ts)`. Keys are the request URL (`getTrendingCoursesKey`, `getContinueLearningKey`, `getPopularInstructorsKey`).
+
+| Service | Method | Path | Notes |
+|---------|--------|------|-------|
+| `listTrendingCoursesService` | GET | `/api/v1/catalog/courses/trending` | Public; optional `limit` (default 8, max 24); returns `TrendingCourseItem[]`, `[]` when `data` is null |
+| `listPopularInstructorsService` | GET | `/api/v1/catalog/instructors/popular` | Public; optional `limit` (default 4, max 12); returns `PopularInstructorItem[]` |
+| `listContinueLearningService` | GET | `/api/v1/learner-courses/continue` | Requires `course:read`; optional `limit` (default 4, max 10); returns `ContinueLearningItem[]` |
+
+Hooks: `useTrendingCourses(limit)`, `useContinueLearning(limit, userId)` (`src/api/hooks/course/useCourses.ts`), `usePopularInstructors(limit)` (`src/api/hooks/instructor/useInstructorCatalog.ts`), all over `useApiRowsQuery` with the application SWR defaults. `useContinueLearning` receives the signed-in user id only when that user holds `course:read` (`null` disables the fetch); the id is appended to the SWR key as a URL fragment so one user's list is never reused for another user in the same session. Expand More (`useExpandMore`, `src/hooks/home/use-expand-more.ts`) raises the limit once to the endpoint maximum. `thumbnail_url` and `avatar` are optional remote URLs rendered unoptimised.
 
 ### Course-admin (sysadmin catalog + trash)
 

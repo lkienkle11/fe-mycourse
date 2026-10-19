@@ -1,6 +1,6 @@
 # Pages (`fe-mycourse`)
 
-_Last audited: 2026-10-15 — taxonomy slug management UI (form-dialog editable slug + 3007 confirm; tree-node slug edit). Prior: 2026-09-29 — course slug management UI (create-dialog optional slug + 3007 confirm; basic-info editable slug). Prior: 2026-09-19 — route-based login/signup modal (`/login`, `/signup` + `@modal` intercepting slot), replacing modal-only Zustand auth. Prior: 2026-07-26 temporary signed-in `/{locale}/home`; 2026-07-06 roster `?portfolioId=` modal; Profiles screen removed; become-instructor route._
+_Last audited: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 — taxonomy slug management UI (form-dialog editable slug + 3007 confirm; tree-node slug edit). Prior: 2026-09-29 — course slug management UI (create-dialog optional slug + 3007 confirm; basic-info editable slug). Prior: 2026-09-19 — route-based login/signup modal (`/login`, `/signup` + `@modal` intercepting slot), replacing modal-only Zustand auth. Prior: 2026-07-26 temporary signed-in `/{locale}/home`; 2026-07-06 roster `?portfolioId=` modal; Profiles screen removed; become-instructor route._
 
 ## Current pages
 
@@ -8,7 +8,8 @@ _Last audited: 2026-10-15 — taxonomy slug management UI (form-dialog editable 
 |-----|------------|------------------|--------|
 | `/` | `src/app/page.tsx` | Redirect → `/vi` (default locale) | Implemented |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | `HomePage` (`src/screen/common/home/page.tsx`) | Implemented |
-| `/{locale}/home` | `src/app/[locale]/(web)/home/page.tsx` | `SignedInHomePage` — login-required temporary placeholder (`PRIVATE_ROUTES.home`); no route metadata | Temporary |
+| `/{locale}/home` | `src/app/[locale]/(web)/home/page.tsx` | `SignedInHomePage` — login-required signed-in home: hero carousel, Complete your Course, Trending Course, Popular Instructor (`PRIVATE_ROUTES.home`); no route metadata | Implemented |
+| `/{locale}/courses/{slug}` | `src/app/[locale]/(web)/courses/[slug]/page.tsx` | `CourseDetailPlaceholderPage` — temporary public "coming soon" page (`PUBLIC_RESOURCE_ROUTES.course`), no-index | Placeholder |
 | `/{locale}/login?next=…` | `src/app/[locale]/(web)/login/page.tsx` | `LoginPageContent` — full-page fallback (direct nav/refresh/shared link); intercepted as a modal overlay (`@modal/(.)login`) when navigated to in-app | Implemented |
 | `/{locale}/signup?next=…` | `src/app/[locale]/(web)/signup/page.tsx` | `SignupPageContent` — full-page fallback; intercepted as a modal overlay (`@modal/(.)signup`) when navigated to in-app | Implemented |
 | `/{locale}/become-instructor` | `src/app/[locale]/(web)/become-instructor/page.tsx` | `BecomeInstructorPage` — instructor application (states A–H) | Implemented (see `docs/instructor-application.md`) |
@@ -61,8 +62,8 @@ _Last audited: 2026-10-15 — taxonomy slug management UI (form-dialog editable 
 Route constants:
 - `PUBLIC_ROUTES` (`src/constants/route.ts`): public/no-login routes (`home` → `/`, `forgotPassword`, `confirmEmail`, `logout`, `login`, `signup`, **`becomeInstructor`**) — `login` and `signup` are `noindex` (not in `SEO_INDEXABLE_PUBLIC_ROUTE_KEYS`, `src/constants/seo/routes.ts`)
 - `PRIVATE_ROUTES` (`src/constants/route.ts`): login-required routes (`home` → `/home`, `admin`, `instructor`, `sysadmin`, `account`)
-- `PUBLIC_RESOURCE_ROUTES` / `PRIVATE_RESOURCE_ROUTES` (`src/constants/route.ts`): dynamic templates (`:param`) for resource pages
-- Route builders/helpers live in `src/lib/navigation/routes.ts` (for example `signedInHomeHref`, `loginHref(nextPath?)` / `signupHref(nextPath?)` building `/login?next=…` / `/signup?next=…`, `instructorCourseEditorHref(courseId)` for `/instructor/courses/:courseId/info` and `instructorCourseEditorTabHref(courseId, tab)` for the route-backed editor tabs)
+- `PUBLIC_RESOURCE_ROUTES` (`course` → `/courses/:slug`) / `PRIVATE_RESOURCE_ROUTES` (`src/constants/route.ts`): dynamic templates (`:param`) for resource pages
+- Route builders/helpers live in `src/lib/navigation/routes.ts` (for example `signedInHomeHref`, `courseDetailHref(slug)`, `loginHref(nextPath?)` / `signupHref(nextPath?)` building `/login?next=…` / `/signup?next=…`, `instructorCourseEditorHref(courseId)` for `/instructor/courses/:courseId/info` and `instructorCourseEditorTabHref(courseId, tab)` for the route-backed editor tabs)
 
 `loginHref` / `signupHref` are the route constants for auth (superseding the old "no `auth.login`/`auth.signup` constants" note — login/signup are real routes now, not modal-only).
 
@@ -72,7 +73,7 @@ Route constants:
 |------|--------|
 | Login / Signup pages | Route-based (`/login`, `/signup`) — dedicated full pages, intercepted as a `LoginSignupPopup` modal via the `@modal` parallel slot when navigated to in-app |
 | Guest home `/` | Marketing mock `HomePage` |
-| Signed-in home `/home` | Temporary placeholder + client auth gate; Figma UI not shipped |
+| Signed-in home `/home` | Implemented: hero carousel + three data sections (continue learning, trending, popular instructors) + client auth gate; no route metadata |
 | Admin pages | Implemented: dashboard shell, taxonomy, instructors, course review |
 | Instructor pages | Implemented: dashboard shell, courses list/editor, tickets |
 | Sysadmin pages | Implemented: dashboard shell, taxonomy, instructors, course review |
@@ -97,4 +98,4 @@ See also [`screens.md`](./screens.md), [`router.md`](./router.md), [`taxonomy-ad
 
 ## Home SEO foundation (take-note)
 
-Guest home remains mock. Signed-in `/home` exists as a **temporary** login-required placeholder (`SignedInHomePage`); full Figma UI and API data are later work. The route ships **without** page metadata (product decision); crawl disallow derives from `PRIVATE_ROUTES`. SEO/performance helpers under `src/lib/**` remain unused by pages. See [`seo-ranking-setup.md`](./seo-ranking-setup.md) § “Tích hợp home” and [`screens.md`](./screens.md).
+Guest home remains mock. Signed-in `/home` is a login-required page (`SignedInHomePage`) showing real catalog and continue-learning data. The route ships **without** page metadata (product decision); crawl disallow derives from `PRIVATE_ROUTES`. SEO/performance helpers under `src/lib/**` remain unused by pages. See [`seo-ranking-setup.md`](./seo-ranking-setup.md) § “Tích hợp home” and [`screens.md`](./screens.md).

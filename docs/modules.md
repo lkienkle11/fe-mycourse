@@ -1,6 +1,6 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-10-15 (user slug contract: `MeResponse.slug`, `CourseCollaborator` composed from `UserPickerCandidate`, `updateMeSchema.slug`). Prior: 2026-10-15 (Taxonomy slug management UI: editable root + per-node slug, 3007 recommended-slug confirm via shared hook). Prior: 2026-09-29 (Course slug management UI: editable slug on create + basic-info, 3007 recommended-slug confirm). Prior: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code retained). Prior: 2026-06-17 (course read-path performance: `include_outline`, `include_images`, browser-verified info tab)._
+_Last audited: 2026-10-18 (signed-in home hero carousel reworked to the three Figma slides: no arrow buttons, drag/swipe, 3 s autoplay that restarts on manual change via `useCarouselAutoplay`). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract: `MeResponse.slug`, `CourseCollaborator` composed from `UserPickerCandidate`, `updateMeSchema.slug`). Prior: 2026-10-15 (Taxonomy slug management UI: editable root + per-node slug, 3007 recommended-slug confirm via shared hook). Prior: 2026-09-29 (Course slug management UI: editable slug on create + basic-info, 3007 recommended-slug confirm). Prior: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code retained). Prior: 2026-06-17 (course read-path performance: `include_outline`, `include_images`, browser-verified info tab)._
 
 
 ## Module map
@@ -105,6 +105,15 @@ _Last audited: 2026-10-15 (user slug contract: `MeResponse.slug`, `CourseCollabo
 - **UI**: `PermissionGate` (`src/components/shared/permission-gate.tsx`); user menu via `useFilteredUserMenuGroups` in `UserMenuDropdownItems`; dashboard sidebar via `useFilteredDashboardItems` in `DashboardLayout`.
 - **Note**: `MeResponse` has authoritative `permissions: string[]` plus display-only `roles: string[]`; `/me` preserves the BE-provided role order and may include unknown role names. Gate UI by permission, never by role name alone. `MeResponse.slug` is the user slug (`""` until the BE assigns one; display data, never an identity key) and `avatar_url` / `avatar_object_key` are optional because the BE omits them when empty.
 
+## Home catalog module
+
+- **Routes**: `API_PUBLIC_ROUTES.catalog` (`trendingCourses`, `popularInstructors`), `API_PRIVATE_ROUTES.course.continueLearning`; `PUBLIC_RESOURCE_ROUTES.course` (`/courses/:slug`, placeholder).
+- **Types**: `CourseOwnerSummary`, `CourseCardBase`, `TrendingCourseItem`, `ContinueLearningItem` (`src/types/course.ts`), `PopularInstructorItem` (`src/types/instructor.ts`).
+- **API**: `listTrendingCoursesService`, `listContinueLearningService` (course callers); `listPopularInstructorsService` (instructor callers); hooks `useTrendingCourses`, `useContinueLearning`, `usePopularInstructors`; limits in `src/constants/home.ts`; `useExpandMore` and `useCarouselAutoplay` in `src/hooks/home/`.
+- **UI**: `src/components/home/signed-in/*` (`HeroCarousel` (3 Figma slides, drag/swipe + dots, 3 s autoplay via `useCarouselAutoplay`), `HomeSectionShell`, `ExpandMoreFooter`, three sections, three cards, `CourseCardFrame` / `CourseOwnerLine`) composed by `SignedInHomePage`; `UserAvatar` and `CourseThumbnail` (`src/components/shared/`); `CourseDetailPlaceholderPage` for `/courses/[slug]`.
+- **i18n**: `home.signedIn.*` in `src/messages/en.ts` and `vi.ts`.
+- **Rules**: no price, rating or badge (the backend does not return them); `slug` and `owner_slug` are tolerated when empty or absent and never used as keys; Expand More extends the list in place (see the comment in `useExpandMore`); instructor cards are not links.
+
 ## Me API module
 
 - **Routes**: `API_PRIVATE_ROUTES.user` — `getMe`, `patchMe`, `deleteMe`, `hardDeleteMe`, `getMyPermissions`.
@@ -150,6 +159,6 @@ See [`delivery.md`](./delivery.md) and [`folder-structure.md`](./folder-structur
 - **SEO runtime**: `src/lib/seo/**` — metadata factory, site-config validation, canonical/robots/sitemap helpers, JSON-LD + ranking builders, `seoFetch` over `serverRawFetch`, TEMPORARY dormant env cache helper (`temporary-cache-policy.ts`, flag off).
 - **Performance**: `src/lib/performance/**` — image sizes/LCP policy, resource-hint builders (not injected).
 - **Security web**: `src/lib/security/web/**` — crawl policy from route constants, client redact, JSON-LD sanitize, draft headers.
-- **Signed-in home (temporary)**: `PRIVATE_ROUTES.home` → `src/app/[locale]/(web)/home/page.tsx` + `SignedInHomePage`; robots `privateApp`; no Figma UI / no API yet.
+- **Signed-in home**: `PRIVATE_ROUTES.home` → `src/app/[locale]/(web)/home/page.tsx` + `SignedInHomePage` (hero carousel, Complete your Course, Trending Course, Popular Instructor; client auth gate; data from the catalog and learner-courses APIs); no route metadata (product decision); `/courses/[slug]` is a temporary placeholder page.
 - **Docs**: [`seo-ranking-setup.md`](./seo-ranking-setup.md), [`security-hardening-notes.md`](./security-hardening-notes.md).
-- **Non-goals remaining**: no broad page/layout SEO wire; no `publicCacheProfiles` entries; no full Figma `/home`.
+- **Non-goals remaining**: no broad page/layout SEO wire; no `publicCacheProfiles` entries (the home data is fetched client side).

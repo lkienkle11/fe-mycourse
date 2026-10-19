@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-10-15 (user slug contract: `MeResponse`, `UserPickerCandidate` / `CourseCollaborator` identity shape); 2026-10-15 (taxonomy slug management UI: `useSlugConflictFlow`, `FormField` / `SlugField`, `payload.ts`, `tree.ts`, per-node slug in `TaxonomyTreeEditor`, `SlugInput` reuse in taxonomy). Prior: 2026-09-29 (course slug management UI: `SlugInput`, `sanitizeSlugInput`, `extractRecommendedSlug`, `useCourseCreateFlow`, `ApiErrorCode.SlugAlreadyExists`). Prior: 2026-07-10 (Homepage marketing images under `public/assets/images/home`); before that: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
+_Last audited: 2026-10-18 (hero photo slides use the uncropped 1536×1024 Figma sources so the framing matches Figma; signed-in home hero carousel reworked to the three Figma slides: no arrow buttons, drag/swipe, 3 s autoplay that restarts on manual change via `useCarouselAutoplay`). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract: `MeResponse`, `UserPickerCandidate` / `CourseCollaborator` identity shape); 2026-10-15 (taxonomy slug management UI: `useSlugConflictFlow`, `FormField` / `SlugField`, `payload.ts`, `tree.ts`, per-node slug in `TaxonomyTreeEditor`, `SlugInput` reuse in taxonomy). Prior: 2026-09-29 (course slug management UI: `SlugInput`, `sanitizeSlugInput`, `extractRecommendedSlug`, `useCourseCreateFlow`, `ApiErrorCode.SlugAlreadyExists`). Prior: 2026-07-10 (Homepage marketing images under `public/assets/images/home`); before that: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -44,7 +44,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Static images (WebP)
 - **Path**: `public/assets/images/home/**` (import via `@public/assets/images/home/...` or public URL `/assets/images/home/...`)
 - **Purpose**: Marketing homepage illustrations, social-proof avatars, course card thumbnails, and career promo media.
-- **Scope**: `HeroSection`, `TopCoursesSection`, `AdvancedPromoSection`, `TrendingCoursesSection`, and `CourseCard` when `imageUrl` is set.
+- **Scope**: `HeroSection`, `TopCoursesSection`, `AdvancedPromoSection`, `TrendingCoursesSection`, `CourseCard` when `imageUrl` is set, and `HeroCarousel` (signed-in home).
 - **Reuse Rule**: Follow the mapping table in [`docs/components.md`](./components.md) § `home/` — do not point homepage slots at ad-hoc paths outside this tree.
 
 | Subfolder | Files | Used by |
@@ -54,6 +54,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 | `course-section/` | `web-development-img.webp`, `ui-ux-design-img.webp`, `data-science-machine-learning-img.webp`, `digital-marketing-img.webp` | `TOP_COURSES[*].imageUrl` |
 | `career-advancement/` | `career-advancement.webp` | `AdvancedPromoSection` |
 | `course-section-trending/` | `gpt-course-img.webp`, `nextjs-course-img.webp`, `finance-course-img.webp` | `TRENDING_COURSES[*].imageUrl` |
+| `hero/` | `tile-1.webp` … `tile-8.webp` (slide 1), `instructor-recording.webp` (slide 2) and `learner-comfortable.webp` (slide 3), both the uncropped 1536×1024 Figma sources | `HeroCarousel` |
 
 ---
 
@@ -158,7 +159,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant object
 - **Path**: `src/constants/api-route.ts`
 - **Purpose**: All public (unauthenticated) BE API endpoint paths. Prevents scattered hardcoded strings.
-- **Current Entries**: `auth.login`, `auth.register`, `auth.confirm`, `auth.refresh`, `auth.logout`.
+- **Current Entries**: `auth.login`, `auth.register`, `auth.confirm`, `auth.refresh`, `auth.logout`, `auth.google`, `auth.googleOnetap`, `auth.discord`, `auth.x`, `catalog.trendingCourses`, `catalog.popularInstructors`.
 - **Scope**: API callers, refresh Route Handler / runtime refresh adapters.
 - **Dependencies**: none.
 
@@ -167,7 +168,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant object
 - **Path**: `src/constants/api-route.ts`
 - **Purpose**: All authenticated BE API endpoint paths.
-- **Current Entries**: grouped constants for `user`, `taxonomy`, `media`, `instructor`, `course`.
+- **Current Entries**: grouped constants for `user`, `taxonomy`, `media`, `instructor`, `course` (including `course.continueLearning`).
 - **Scope**: API callers.
 - **Dependencies**: none.
 
@@ -176,7 +177,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Type**: Constant object
 - **Path**: `src/constants/route.ts`
 - **Purpose**: FE client-side route constants (paths for navigation).
-- **Current Entries**: `home`, `forgotPassword`, `confirmEmail`, `logout` (paths without locale prefix — use `@/i18n/navigation`).
+- **Current Entries**: `home`, `becomeInstructor`, `forgotPassword`, `confirmEmail`, `logout`, `login`, `signup` (paths without locale prefix — use `@/i18n/navigation`).
 - **Scope**: Navigation helpers, links, router.
 - **Dependencies**: none.
 
@@ -194,6 +195,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Path**: `src/constants/route.ts`
 - **Purpose**: Dynamic FE route templates with `:param` placeholders for resource/detail pages.
 - **Current Entries**:
+  - `PUBLIC_RESOURCE_ROUTES.course` (`/courses/:slug`, temporary placeholder page)
   - `PRIVATE_RESOURCE_ROUTES.instructor.courseEditor` (`/instructor/courses/:courseId/info`)
   - `PRIVATE_RESOURCE_ROUTES.sysadmin.courseReviewPreview` (`/sysadmin/courses/reviewing/:courseId/preview`)
 - **Scope**: Navigation helpers and screens that need parameterized routes.
@@ -211,7 +213,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `homeHref`, `signedInHomeHref`, `forgotPasswordHref`, `logoutHref`, `adminRootHref`, `instructorCoursesHref`, `sysadminCoursesAllHref`, `sysadminCoursesReviewingHref`, `sysadminCoursesTrashHref`, `sysadminCourseReviewPreviewHref`, `accountMyCoursesHref`, ...
 - **Type**: Constant strings
 - **Path**: `src/lib/navigation/routes.ts`
-- **Purpose**: Shared route outputs generated from route builders to avoid duplicated conversion in call sites. `homeHref` = public guest `/`; `signedInHomeHref` = private `/home`.
+- **Purpose**: Shared route outputs generated from route builders to avoid duplicated conversion in call sites. `homeHref` = public guest `/`; `signedInHomeHref` = private `/home`; `courseDetailHref(slug)` = public `/courses/{slug}` (builder function, placeholder page).
 - **Scope**: auth components, header/user menu constants, dashboard constants, signed-in home route.
 - **Dependencies**: route builder functions in same module.
 
@@ -712,6 +714,46 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Purpose**: Convert curriculum `estimated_duration_ms` between API milliseconds and locale-aware display (`1h25m30s` / `1g25p30g`) or H/M/S form fields. Unit suffixes come from i18n `course.common.durationUnitHours|Minutes|Seconds` via `buildDurationUnits(tCommon)` — not hardcoded in the util.
 - **Scope**: Course editor outline labels, TEXT/QUIZ sub-lesson dialog duration inputs, VIDEO read-only hint from selected media.
 - **Dependencies**: `useTranslations("course.common")`; exported from `src/lib/utils/index.ts`.
+
+### Asset: UserAvatar
+- **Name**: `UserAvatar`
+- **Type**: React component
+- **Path**: `src/components/shared/user-avatar.tsx`
+- **Purpose**: User picture (`next/image`) or coloured initials (`pickCharacter`) in a circle; size and shape come from `className`.
+- **Scope**: `UserMenu`, `SidebarAuthFooter`, `InstructorUserCell`, `InstructorProfileViewDialog`, `InstructorRosterPage` columns, `PopularInstructorCard`.
+- **Reuse Rule**: Do not hand-roll picture-or-initials avatars; pass `unoptimized` for remote API pictures.
+- **Dependencies**: `pickCharacter`, `cn`.
+
+### Asset: CourseThumbnail
+- **Name**: `CourseThumbnail`
+- **Type**: React component
+- **Path**: `src/components/shared/course-thumbnail.tsx`
+- **Purpose**: 16:9 remote course thumbnail (`unoptimized`) with a placeholder and optional overlay children.
+- **Scope**: `ContinueLearningCard`, `TrendingCourseCard`.
+- **Dependencies**: `IMAGE_SIZES_COURSE_CARD`.
+
+### Asset: useExpandMore
+- **Name**: `useExpandMore`
+- **Type**: React hook
+- **Path**: `src/hooks/home/use-expand-more.ts`
+- **Purpose**: Initial list limit raised once to the endpoint maximum (Expand More on the signed-in home).
+- **Scope**: `HomeContinueLearningSection`, `HomeTrendingSection`; limits in `src/constants/home.ts`.
+- **Reuse Rule**: Expand More extends the list in place by product decision; ask the user (`AskUserQuestion`) before changing it to navigation.
+
+### Asset: useCarouselAutoplay
+- **Name**: `useCarouselAutoplay`
+- **Type**: React hook
+- **Path**: `src/hooks/home/use-carousel-autoplay.ts`
+- **Purpose**: Auto-advances an embla carousel to the right every `intervalMs`; re-arms on `select` and `settle` (so a manual swipe or dot click restarts the countdown), pauses on `pointerDown`, stays off under `prefers-reduced-motion`.
+- **Scope**: `HeroCarousel` (`HOME_HERO_AUTOPLAY_INTERVAL_MS` = 3000 in `src/constants/home.ts`).
+- **Reuse Rule**: Reuse for any other embla carousel that needs autoplay instead of adding `embla-carousel-autoplay`.
+
+### Asset: Home catalog hooks and callers
+- **Name**: `useTrendingCourses`, `useContinueLearning`, `usePopularInstructors`; `listTrendingCoursesService`, `listContinueLearningService`, `listPopularInstructorsService`
+- **Type**: SWR hooks and caller services
+- **Path**: `src/api/hooks/course/useCourses.ts`, `src/api/hooks/instructor/useInstructorCatalog.ts`, `src/api/callers/course/course-factory-review.ts`, `src/api/callers/instructor/instructor-factory-catalog.ts`
+- **Purpose**: Read the three signed-in home endpoints; types `CourseOwnerSummary`, `CourseCardBase`, `TrendingCourseItem`, `ContinueLearningItem` (`src/types/course.ts`) and `PopularInstructorItem` (`src/types/instructor.ts`, picture key `avatar`, not merged with `UserPickerCandidate`).
+- **Reuse Rule**: `useContinueLearning` takes the signed-in user id (or `null`); keep `slug` / `owner_slug` out of identity keys.
 
 ### Asset: useCourseOutlineReorder
 - **Name**: `useCourseOutlineReorder`
@@ -1555,7 +1597,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ### Asset: image SEO presets / resource hints
 - **Path**: runtime helpers in `src/lib/performance/image-seo.ts`, `resource-hints.ts`; values in `src/constants/seo/image.ts`; contracts in `src/types/seo/performance.ts`
-- **Purpose**: sizes/LCP/CLS policy constants from home `course-card` / hero patterns; hint builders not injected.
+- **Purpose**: sizes/LCP/CLS policy constants from home `course-card` / hero patterns (plus `IMAGE_SIZES_HERO_TILE` and `IMAGE_SIZES_HERO_PHOTO` for the signed-in hero carousel); hint builders not injected.
 - **Reuse Rule**: No duplicate `next/image` wrapper this phase.
 
 ### Asset: crawl-policy / redact-client-payload / security-headers-presets

@@ -2,15 +2,19 @@
 
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { HeroCarousel } from "@/components/home/signed-in/hero-carousel";
+import { HomeContinueLearningSection } from "@/components/home/signed-in/home-continue-learning-section";
+import { HomePopularInstructorsSection } from "@/components/home/signed-in/home-popular-instructors-section";
+import { HomeTrendingSection } from "@/components/home/signed-in/home-trending-section";
 import { Button } from "@/components/ui/button";
 import { useGetMe } from "@/hooks/auth";
 import { Link } from "@/i18n/navigation";
 import { loginHref, signedInHomeHref } from "@/lib/navigation/routes";
 
 /**
- * Temporary signed-in homepage at `/home`.
- * Auth gate reuses the route-based login modal + `next` pattern (become-instructor State A).
- * Full Figma layout is a later task — no API fetch here.
+ * Signed-in homepage at `/home`: hero carousel, Complete your Course, Trending Course and Popular Instructor.
+ * Auth gate reuses the route-based login modal + `next` pattern (become-instructor State A);
+ * no home data is requested for a guest.
  */
 export function SignedInHomePage() {
   const t = useTranslations("home.signedIn");
@@ -43,9 +47,11 @@ export function SignedInHomePage() {
   }
 
   return (
-    <section className="container mx-auto flex max-w-3xl flex-col gap-3 px-4 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-      <p className="text-sm text-muted-foreground">{t("temporaryNotice")}</p>
-    </section>
+    <div className="container mx-auto flex max-w-[1229px] flex-col gap-11 px-4 py-6">
+      <HeroCarousel />
+      <HomeContinueLearningSection />
+      <HomeTrendingSection />
+      <HomePopularInstructorsSection />
+    </div>
   );
 }
