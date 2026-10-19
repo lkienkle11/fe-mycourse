@@ -62,3 +62,5 @@ export const listInstructorTicketMessagesService =
   browserInstructorCallers.listInstructorTicketMessagesService;
 export const addInstructorTicketMessageService =
   browserInstructorCallers.addInstructorTicketMessageService;
+export const listPopularInstructorsService =
+  browserInstructorCallers.listPopularInstructorsService;

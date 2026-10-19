@@ -69,6 +69,10 @@ export const listCourseReviewHistoryService =
   browserCourseCallers.listCourseReviewHistoryService;
 export const listPublishedCoursesService =
   browserCourseCallers.listPublishedCoursesService;
+export const listTrendingCoursesService =
+  browserCourseCallers.listTrendingCoursesService;
+export const listContinueLearningService =
+  browserCourseCallers.listContinueLearningService;
 export const getLearningCourseService =
   browserCourseCallers.getLearningCourseService;
 export const enrollInCourseService = browserCourseCallers.enrollInCourseService;

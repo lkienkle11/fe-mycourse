@@ -13,6 +13,7 @@ import type {
 import type {
   AcquireCourseLeasePayload,
   ApproveCourseDraftPayload,
+  ContinueLearningItem,
   CourseDetail,
   CourseEnrollment,
   CourseLease,
@@ -22,10 +23,13 @@ import type {
   CourseReviewHistoryItem,
   RejectCourseDraftPayload,
   ReleaseCourseLeasePayload,
+  TrendingCourseItem,
 } from "@/types/course";
 import {
   courseUrl,
+  getContinueLearningKey,
   getCourseReviewHistoryKey,
+  getTrendingCoursesKey,
   requireUrl,
 } from "./course-keys";
 
@@ -168,6 +172,24 @@ export function createCourseReviewCallers(methods: ApiMethods) {
     return data.data ?? [];
   }
 
+  async function listTrendingCoursesService(
+    limit?: number,
+  ): Promise<TrendingCourseItem[]> {
+    const { data } = await methods.apiFetch<ApiResponse<TrendingCourseItem[]>>(
+      getTrendingCoursesKey(limit),
+    );
+    return data.data ?? [];
+  }
+
+  async function listContinueLearningService(
+    limit?: number,
+  ): Promise<ContinueLearningItem[]> {
+    const { data } = await methods.apiFetch<
+      ApiResponse<ContinueLearningItem[]>
+    >(getContinueLearningKey(limit));
+    return data.data ?? [];
+  }
+
   async function getLearningCourseService(
     courseId: string,
   ): Promise<CourseDetail> {
@@ -262,6 +284,8 @@ export function createCourseReviewCallers(methods: ApiMethods) {
     rejectCourseReviewService,
     listCourseReviewHistoryService,
     listPublishedCoursesService,
+    listTrendingCoursesService,
+    listContinueLearningService,
     getLearningCourseService,
     enrollInCourseService,
     getCourseProgressService,

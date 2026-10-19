@@ -47,6 +47,36 @@ export type CourseListItem = Course & {
   draft_review_status?: CourseVersionStatus | "";
 };
 
+/** Owner fields shared by every course-card shape the API returns. */
+export type CourseOwnerSummary = {
+  owner_display_name?: string;
+  /** Owner user slug; omitted by the backend when empty. Test for falsiness, never compare to "". */
+  owner_slug?: string;
+};
+
+/** Fields common to the home course cards (trending and continue learning). */
+export type CourseCardBase = CourseOwnerSummary & {
+  slug: string;
+  title: string;
+  thumbnail_url?: string;
+};
+
+/** `GET /api/v1/catalog/courses/trending` item (published-only projection; no price, rating or badge). */
+export type TrendingCourseItem = CourseCardBase & {
+  id: string;
+  short_description: string;
+  created_at: number;
+};
+
+/** `GET /api/v1/learner-courses/continue` item; the counts include every sub-lesson kind. */
+export type ContinueLearningItem = CourseCardBase & {
+  course_id: string;
+  completed_sub_lessons: number;
+  total_sub_lessons: number;
+  progress_percent: number;
+  last_activity_at: number;
+};
+
 export type CourseVersion = {
   id: string;
   course_id: string;

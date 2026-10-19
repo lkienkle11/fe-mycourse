@@ -2,20 +2,29 @@
 
 import {
   getAdminCoursesKey,
+  getContinueLearningKey,
   getCourseDetailKey,
   getCourseDetailService,
   getCourseReviewQueueKey,
   getEditableCoursesKey,
   getLearningCourseService,
   getTrashedCoursesKey,
+  getTrendingCoursesKey,
   listAdminCoursesService,
+  listContinueLearningService,
   listEditableCoursesService,
   listPendingCourseReviewsService,
   listPublishedCoursesService,
   listTrashedCoursesService,
+  listTrendingCoursesService,
 } from "@/api/callers/course";
 import { useApiDetailQuery, useApiRowsQuery } from "@/api/hooks/shared";
-import type { CourseDetail, CourseListItem } from "@/types/course";
+import type {
+  ContinueLearningItem,
+  CourseDetail,
+  CourseListItem,
+  TrendingCourseItem,
+} from "@/types/course";
 
 export function useEditableCourses() {
   return useApiRowsQuery<CourseListItem>(
@@ -77,5 +86,25 @@ export function useTrashedCourses() {
     getTrashedCoursesKey(),
     listTrashedCoursesService,
     { revalidateOnFocus: true },
+  );
+}
+
+export function useTrendingCourses(limit: number) {
+  return useApiRowsQuery<TrendingCourseItem>(
+    getTrendingCoursesKey(limit),
+    () => listTrendingCoursesService(limit),
+    // Public data: keep showing the shorter list while the expanded one loads.
+    { keepPreviousData: true },
+  );
+}
+
+/**
+ * `userId` must be the signed-in user's id when that user may read courses and `null`
+ * otherwise (a `null` key disables the fetch); it also scopes the SWR cache entry per user.
+ */
+export function useContinueLearning(limit: number, userId: string | null) {
+  return useApiRowsQuery<ContinueLearningItem>(
+    userId ? getContinueLearningKey(limit, userId) : null,
+    () => listContinueLearningService(limit),
   );
 }

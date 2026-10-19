@@ -1,3 +1,4 @@
+import { useMeStore } from "@/store/auth";
 import type { MeResponse } from "@/types/auth";
 
 /** Synthetic `MeResponse` factory — never real user data/tokens. */
@@ -17,4 +18,19 @@ export function buildMeResponse(
     roles: [],
     ...overrides,
   };
+}
+
+/** Puts a signed-in user (and its permissions) into the Zustand me store, as `useSyncMeFromAuth` would. */
+export function seedSignedInMe(
+  permissions: string[] = [],
+  overrides: Partial<MeResponse> = {},
+): MeResponse {
+  const me = buildMeResponse({ permissions, ...overrides });
+  useMeStore.setState({
+    me,
+    isLoading: false,
+    isError: undefined,
+    mePermissions: permissions,
+  });
+  return me;
 }

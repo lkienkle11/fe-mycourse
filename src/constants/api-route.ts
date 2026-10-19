@@ -11,6 +11,10 @@ export const API_PUBLIC_ROUTES = {
     x: "/api/v1/auth/x",
     discord: "/api/v1/auth/discord",
   },
+  catalog: {
+    trendingCourses: "/api/v1/catalog/courses/trending",
+    popularInstructors: "/api/v1/catalog/instructors/popular",
+  },
 } as const;
 
 // Required authentication
@@ -91,6 +95,7 @@ export const API_PRIVATE_ROUTES = {
     learnerById: "/api/v1/learner-courses/:courseId",
     learnerEnroll: "/api/v1/learner-courses/:courseId/enroll",
     learnerProgress: "/api/v1/learner-courses/:courseId/progress",
+    continueLearning: "/api/v1/learner-courses/continue",
     adminCourses: "/api/v1/course-admin/courses",
     adminCoursesTrash: "/api/v1/course-admin/courses/trash",
     adminCourseTrash: "/api/v1/course-admin/courses/:courseId/trash",
