@@ -1,16 +1,15 @@
 "use client";
 
 import { ChevronsUpDown } from "lucide-react";
-import Image from "next/image";
 import { AuthButton } from "@/components/common/auth-menu/auth-button";
 import { UserMenuDropdownItems } from "@/components/common/auth-menu/user-menu-dropdown-items";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useGetMe } from "@/hooks";
-import { pickCharacter } from "@/lib/utils";
 
 interface SidebarAuthFooterProps {
   onNavigate?: () => void;
@@ -40,35 +39,20 @@ export function SidebarAuthFooter({ onNavigate }: SidebarAuthFooterProps) {
     );
   }
 
-  const { label, color, backgroundColor } = pickCharacter(me.display_name);
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         className="flex w-full flex-row items-center justify-between gap-2 rounded-md border border-object-black/10 bg-white/95 px-2 py-1.5 hover:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="Open account menu"
       >
-        {me.avatar_url ? (
-          <Image
-            src={me.avatar_url}
-            alt=""
-            width={40}
-            height={40}
-            className="size-10 shrink-0 rounded-md object-cover"
-          />
-        ) : (
-          <div
-            className="flex size-10 shrink-0 items-center justify-center rounded-md"
-            style={{ backgroundColor }}
-          >
-            <span
-              style={{ color }}
-              className="text-base font-semibold leading-none"
-            >
-              {label}
-            </span>
-          </div>
-        )}
+        <UserAvatar
+          name={me.display_name}
+          src={me.avatar_url}
+          alt=""
+          size={40}
+          className="size-10 rounded-md"
+          textClassName="text-base"
+        />
         <span className="min-w-0 flex-1 truncate text-left text-sm font-medium text-object-black/90">
           {me.display_name}
         </span>
