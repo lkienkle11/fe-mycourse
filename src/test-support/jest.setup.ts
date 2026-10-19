@@ -27,6 +27,20 @@ if (typeof window !== "undefined") {
     };
   }
 
+  if (!window.IntersectionObserver) {
+    window.IntersectionObserver = class IntersectionObserver {
+      readonly root = null;
+      readonly rootMargin = "";
+      readonly thresholds = [];
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    };
+  }
+
   if (!window.matchMedia) {
     window.matchMedia = jest.fn<(query: string) => MediaQueryList>(
       (query) =>

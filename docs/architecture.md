@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-10-15 (taxonomy slug UI: `SlugInput` and `extractRecommendedSlug` now shared by course and taxonomy; `useSlugConflictFlow`; shared `FormField`, `tree.ts`, `payload.ts`; `SortableTreeEditor` merged into `TaxonomyTreeEditor`). Prior: 2026-09-16 (Technology Stack: added Jest/RTL/MSW unit/integration tests and Playwright browser tests rows; Quality gates section and Related Docs updated for `e2e-browser.yml` and `testing.md` — see `docs/testing.md`). Prior: 2026-06-17 (Turbopack dev tuning, `clean:next` / `dev:clean` scripts)._
+_Last audited: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (taxonomy slug UI: `SlugInput` and `extractRecommendedSlug` now shared by course and taxonomy; `useSlugConflictFlow`; shared `FormField`, `tree.ts`, `payload.ts`; `SortableTreeEditor` merged into `TaxonomyTreeEditor`). Prior: 2026-09-16 (Technology Stack: added Jest/RTL/MSW unit/integration tests and Playwright browser tests rows; Quality gates section and Related Docs updated for `e2e-browser.yml` and `testing.md` — see `docs/testing.md`). Prior: 2026-06-17 (Turbopack dev tuning, `clean:next` / `dev:clean` scripts)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -106,6 +106,7 @@ fe/
 │   │       ├── (web)/
 │   │       │   ├── layout.tsx      # Web shell — Header, <main>, Footer
 │   │       │   └── page.tsx        # Home route → HomePage
+│   │       │   # home/page.tsx → SignedInHomePage; courses/[slug]/page.tsx → CourseDetailPlaceholderPage
 │   │       ├── admin/              # DashboardLayout; taxonomy + instructors/*
 │   │       ├── instructor/         # DashboardLayout; tickets
 │   │       └── sysadmin/           # DashboardLayout; taxonomy + instructors/*
@@ -113,7 +114,8 @@ fe/
 │   ├── screen/                     # Page-level screen components (async server components)
 │   │   ├── index.ts                # Barrel: common + admin + instructor + sysadmin
 │   │   ├── common/home/page.tsx    # HomePage (guest)
-│   │   ├── common/home/signed-in-home-page.tsx  # SignedInHomePage (temporary /home)
+│   │   ├── common/home/signed-in-home-page.tsx  # SignedInHomePage (/home: hero + catalog sections)
+│   │   ├── common/course/course-detail-placeholder-page.tsx  # CourseDetailPlaceholderPage (/courses/[slug])
 │   │   ├── admin/page.tsx          # AdminDashboardPage
 │   │   ├── instructor/page.tsx
 │   │   └── sysadmin/page.tsx
@@ -129,7 +131,7 @@ fe/
 │   │   │   └── auth-menu/          # AuthLayout, AuthButton, LoginSignupPopup,
 │   │   │                           # LoginContent, SignupContent, UserMenu,
 │   │   │                           # auth-client.ts delegates to server actions, auth-social-login/
-│   │   ├── home/                   # Home page sections (HeroSection, CourseCard, …)
+│   │   ├── home/                   # Guest home sections (HeroSection, CourseCard, …); signed-in/ = signed-in home (HeroCarousel, sections, cards)
 │   │   ├── shared/                 # Cross-feature components (SearchBar, …)
 │   │   ├── providers/
 │   │   │   └── app-providers.tsx   # SWRConfig, EventsStreamProvider, MeSwrSync, LanguageLocaleSync, auth tab sync
@@ -431,12 +433,18 @@ Trade-off with filesystem cache disabled: **slightly slower cold compile** after
 // src/constants/route.ts
 PUBLIC_ROUTES = {
   home: "/",
+  becomeInstructor: "/become-instructor",
   forgotPassword: "/forgot-password", // constant kept; login Link commented until page exists
   confirmEmail: "/confirm-email",
   logout: "/logout",
+  login: "/login",
+  signup: "/signup",
 }
 
+PUBLIC_RESOURCE_ROUTES = { course: "/courses/:slug" } // dynamic templates for public pages
+
 PRIVATE_ROUTES = {
+  home: "/home",
   admin: { ... },
   instructor: { root: "/instructor", courses: "/instructor/courses", ... },
   sysadmin: { ... },
@@ -475,7 +483,11 @@ API_PUBLIC_ROUTES.auth.confirm   → POST /api/v1/auth/confirm
 API_PUBLIC_ROUTES.auth.refresh   → POST /api/v1/auth/refresh
 API_PUBLIC_ROUTES.auth.logout    → POST /api/v1/auth/logout
 
+API_PUBLIC_ROUTES.catalog.trendingCourses     → GET /api/v1/catalog/courses/trending
+API_PUBLIC_ROUTES.catalog.popularInstructors  → GET /api/v1/catalog/instructors/popular
+
 API_PRIVATE_ROUTES.user.getMe    → GET  /api/v1/me
+API_PRIVATE_ROUTES.course.continueLearning → GET /api/v1/learner-courses/continue
 ```
 
 All paths use the `NEXT_PUBLIC_API_URL` base URL (via `apiTransport`).

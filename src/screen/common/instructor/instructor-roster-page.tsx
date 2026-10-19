@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -24,6 +23,7 @@ import {
 } from "@/components/features/instructor/instructor-action-controls";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { PermissionGate } from "@/components/shared/permission-gate";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Button } from "@/components/ui/button";
 import { PERMISSIONS } from "@/constants/permissions";
 import { useRegisterDashboardPageHeader } from "@/hooks/dashboard";
@@ -33,7 +33,6 @@ import {
   resolveInstructorApplicationProfile,
   resolveInstructorDisplayName,
 } from "@/lib/instructor-application/helpers";
-import { pickCharacter } from "@/lib/utils";
 import { toastApiError } from "@/lib/utils/api-error";
 import { finalizeBulkUserPickerSubmit } from "@/lib/utils/user-picker-bulk-submit";
 import type {
@@ -141,32 +140,14 @@ export function InstructorRosterPage() {
       {
         id: "avatar",
         header: t("columns.avatar"),
-        cell: (row) => {
-          const { label, color, backgroundColor } = pickCharacter(
-            row.full_name,
-          );
-          return row.avatar ? (
-            <Image
-              src={row.avatar}
-              alt={`${row.full_name} avatar`}
-              width={32}
-              height={32}
-              className="size-8 rounded-full object-cover"
-            />
-          ) : (
-            <div
-              className="flex size-8 items-center justify-center rounded-full"
-              style={{ backgroundColor }}
-            >
-              <span
-                style={{ color }}
-                className="text-xs font-semibold leading-none"
-              >
-                {label}
-              </span>
-            </div>
-          );
-        },
+        cell: (row) => (
+          <UserAvatar
+            name={row.full_name}
+            src={row.avatar}
+            size={32}
+            className="size-8"
+          />
+        ),
       },
       {
         id: "full_name",

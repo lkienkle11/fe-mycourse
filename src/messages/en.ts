@@ -32,13 +32,51 @@ const messages = {
       placeholder: "What do you want to learn today?",
     },
     signedIn: {
-      title: "Welcome back",
-      temporaryNotice:
-        "This signed-in homepage is temporary. Personalized recommendations will arrive here later.",
       loginRequired: {
         title: "Sign in to continue",
         description: "This page is available after you sign in.",
         login: "Sign in",
+      },
+      hero: {
+        label: "Featured highlights",
+        headline: "Learn something new everyday.",
+        subheadline: "Become professionals and ready to join the world.",
+        instructor: {
+          headline: "Learn from the best.",
+          subheadline: "Courses built by real industry experts.",
+        },
+        learner: {
+          headline: "Learn at your own pace.",
+          subheadline: "Anytime, anywhere, no deadlines.",
+        },
+        goToSlide: "Go to slide {index}",
+        slideLabel: "Slide {index} of {total}",
+      },
+      sectionDescription: "We know the best things for You. Top picks for You.",
+      retry: "Try again",
+      expandMore: "Expand More",
+      continueLearning: {
+        title: "Complete your Course",
+        progress: "{completed}/{total} sub-lessons completed",
+        progressLabel: "Progress in {title}",
+        empty: "You have no courses in progress yet.",
+        error: "We could not load your courses.",
+      },
+      trending: {
+        title: "Trending Course",
+        empty: "No trending courses yet.",
+        error: "We could not load trending courses.",
+      },
+      popularInstructors: {
+        title: "Popular Instructor",
+        empty: "No instructors to show yet.",
+        error: "We could not load instructors.",
+      },
+      courseCard: { imageAlt: "{title} thumbnail" },
+      coursePlaceholder: {
+        title: "Course page coming soon",
+        description: "The detailed course page is not available yet.",
+        back: "Back to home",
       },
     },
   },

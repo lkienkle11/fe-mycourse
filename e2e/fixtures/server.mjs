@@ -61,7 +61,56 @@ const USERS = {
     permissions: [],
     roles: ["learner"],
   },
+  /** Learner who can read courses (the continue-learning endpoint needs `course:read`). */
+  "home-learner@example.test": {
+    id: "user-home-learner",
+    password: "Passw0rd!1",
+    display_name: "Home Learner",
+    slug: "home-learner",
+    permissions: ["course:read"],
+    roles: ["learner"],
+  },
 };
+
+/** Home catalog fixtures: synthetic rows; limits are clamped like the backend (default, max). */
+const TRENDING_LIMITS = { fallback: 8, max: 24 };
+const CONTINUE_LIMITS = { fallback: 4, max: 10 };
+const POPULAR_LIMITS = { fallback: 4, max: 12 };
+
+function clampLimit(url, { fallback, max }) {
+  const raw = Number(url.searchParams.get("limit"));
+  if (!Number.isInteger(raw) || raw < 1) return fallback;
+  return Math.min(raw, max);
+}
+
+const TRENDING_ROWS = Array.from({ length: 24 }, (_, i) => ({
+  id: `trending-${i + 1}`,
+  slug: `trending-course-${i + 1}`,
+  title: `Trending Course ${i + 1}`,
+  short_description: `Short description ${i + 1}`,
+  owner_display_name: "Fixture Instructor",
+  owner_slug: "fixture-instructor",
+  created_at: 1_760_000_000 - i,
+}));
+
+const CONTINUE_ROWS = Array.from({ length: 10 }, (_, i) => ({
+  course_id: `continue-${i + 1}`,
+  slug: `continue-course-${i + 1}`,
+  title: `Continue Course ${i + 1}`,
+  owner_display_name: "Fixture Instructor",
+  completed_sub_lessons: i + 1,
+  total_sub_lessons: 20,
+  progress_percent: ((i + 1) / 20) * 100,
+  last_activity_at: 1_760_000_000 - i,
+}));
+
+const POPULAR_ROWS = Array.from({ length: 6 }, (_, i) => ({
+  user_id: `popular-${i + 1}`,
+  display_name: `Popular Instructor ${i + 1}`,
+  slug: `popular-instructor-${i + 1}`,
+  subtitle: `Subtitle ${i + 1}`,
+  course_count: 6 - i,
+}));
 
 const CANDIDATE_USER = {
   user_id: "user-candidate",
@@ -697,6 +746,28 @@ async function handle(req, res) {
 
     if (method === "GET" && pathname.startsWith("/api/v1/taxonomy/")) {
       return json(res, 200, envelope(0, "ok", emptyPaginated([])));
+    }
+
+    if (method === "GET" && pathname === "/api/v1/catalog/courses/trending") {
+      const limit = clampLimit(url, TRENDING_LIMITS);
+      return json(res, 200, envelope(0, "ok", TRENDING_ROWS.slice(0, limit)));
+    }
+
+    if (
+      method === "GET" &&
+      pathname === "/api/v1/catalog/instructors/popular"
+    ) {
+      const limit = clampLimit(url, POPULAR_LIMITS);
+      return json(res, 200, envelope(0, "ok", POPULAR_ROWS.slice(0, limit)));
+    }
+
+    if (method === "GET" && pathname === "/api/v1/learner-courses/continue") {
+      const session = authFromCookie(req);
+      if (!session || session.revoked || session.expired) {
+        return json(res, 401, envelope(3002, "Unauthorized", null));
+      }
+      const limit = clampLimit(url, CONTINUE_LIMITS);
+      return json(res, 200, envelope(0, "ok", CONTINUE_ROWS.slice(0, limit)));
     }
 
     if (method === "GET" && pathname === "/api/v1/courses/my") {

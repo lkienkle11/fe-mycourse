@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-10-15 (taxonomy slug UI: form-dialog editable root slug + 3007 confirm, per-node tree slug). Prior: 2026-09-29 (course slug UI: create dialog optional slug + 3007 confirm; info tab editable slug). Prior: 2026-09-19 (route-based login/signup modal: `/login` + `/signup` pages, `@modal` parallel/intercepting slot, `LoginSignupPopup` no longer mounted in `header.tsx` / `DashboardLayout`, Zustand `authAction`/`nextLink` removed). Prior: 2026-07-26 temporary signed-in `/home` route + SignedInHomePage; 2026-07-10 Homepage sections use `public/assets/images/home` static assets; 2026-07-08 Discord + Google on login/signup popup._
+_Last audited: 2026-10-18 (signed-in home hero carousel reworked to the three Figma slides: no arrow buttons, drag/swipe, 3 s autoplay that restarts on manual change via `useCarouselAutoplay`). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (taxonomy slug UI: form-dialog editable root slug + 3007 confirm, per-node tree slug). Prior: 2026-09-29 (course slug UI: create dialog optional slug + 3007 confirm; info tab editable slug). Prior: 2026-09-19 (route-based login/signup modal: `/login` + `/signup` pages, `@modal` parallel/intercepting slot, `LoginSignupPopup` no longer mounted in `header.tsx` / `DashboardLayout`, Zustand `authAction`/`nextLink` removed). Prior: 2026-07-26 temporary signed-in `/home` route + SignedInHomePage; 2026-07-10 Homepage sections use `public/assets/images/home` static assets; 2026-07-08 Discord + Google on login/signup popup._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -28,6 +28,8 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 | `/auth/discord/callback` | `src/app/auth/discord/callback/page.tsx` | **Discord OAuth popup callback** (locale-less, **English-only** copy) — posts `code`/`state`/`error` to `window.opener` then closes; fallback text + Back-to-home link when no opener |
 | `/auth/x/callback` | `src/app/auth/x/callback/page.tsx` | **X OAuth popup callback** (locale-less, **English-only** copy, retained) — posts `code`/`state`/`error` to `window.opener` then closes; not wired to login/signup popup |
 | `/{locale}` | `src/app/[locale]/(web)/page.tsx` | **Home page** — renders `HomePage` |
+| `/{locale}/home` | `src/app/[locale]/(web)/home/page.tsx` | **Signed-in home** — renders `SignedInHomePage` (login required) |
+| `/{locale}/courses/{slug}` | `src/app/[locale]/(web)/courses/[slug]/page.tsx` | **Course placeholder** — renders `CourseDetailPlaceholderPage` (temporary, no-index) |
 | `/{locale}/become-instructor` | `src/app/[locale]/(web)/become-instructor/page.tsx` | **Active** — `BecomeInstructorPage` (instructor application states A–H); see [`instructor-application.md`](./instructor-application.md) |
 | `/{locale}/confirm-email` | Active | Email confirmation page (`ConfirmEmailContent` → `confirmAction`) |
 | `/{locale}/logout` | Active | Logout page (`LogoutContent` → `logoutAction`, cross-tab `broadcast:logout`) |
@@ -72,7 +74,7 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 
 ## Public vs Private Routes
 
-- **Public routes (no login required):** values in `PUBLIC_ROUTES` (`home`, `forgotPassword`, `confirmEmail`, `logout`).
+- **Public routes (no login required):** values in `PUBLIC_ROUTES` (`home`, `forgotPassword`, `confirmEmail`, `logout`) and the resource template `PUBLIC_RESOURCE_ROUTES.course` (`/courses/:slug`).
 - **Private routes (login required):** values in `PRIVATE_ROUTES` (admin/instructor/sysadmin/account groups).
 
 This split is intentionally centralized in `src/constants/route.ts` so UI config and navigation share one route source.
@@ -96,7 +98,7 @@ src/app/layout.tsx                          Root layout
     │   <AppProviders>                      → `SWRConfig` (`provider: meCacheProvider` — persists only the `/me` cache entry to `sessionStorage`) + `MeSwrSync` + `LanguageLocaleSync` + stream/auth tab sync + `children`
     │
     ├── src/app/[locale]/(web)/layout.tsx   Web shell layout
-    │     <BecomeInstructorPromoBanner /> + <Header /> + <GoogleOneTapHost /> + <main> + <Footer /> → HomePage, become-instructor, confirm-email, logout
+    │     <BecomeInstructorPromoBanner /> + <Header /> + <GoogleOneTapHost /> + <main> + <Footer /> → HomePage, SignedInHomePage (/home), CourseDetailPlaceholderPage (/courses/[slug]), become-instructor, confirm-email, logout
     ├── src/app/[locale]/admin/layout.tsx   DashboardLayout (admin items, `admin:modify`)
     ├── src/app/[locale]/instructor/layout.tsx
     └── src/app/[locale]/sysadmin/layout.tsx
@@ -444,7 +446,8 @@ _No `src/components/demo/` folder — removed 2026-06-17 (unused demo `RegisterF
 
 | Namespace | Usage |
 |-----------|-------|
-| `"home"` | Header title, search placeholder |
+| `"home"` | Header title, search placeholder (see `home.signedIn` for the signed-in home) |
+| `"home.signedIn"` | Signed-in home: `loginRequired.*`, `hero.*`, `sectionDescription`, `retry`, `expandMore`, `continueLearning.*`, `trending.*`, `popularInstructors.*`, `courseCard.imageAlt`, `coursePlaceholder.*` |
 | `"commonHeader"` | Mobile menu (`menu.open`, `browse.categoriesTitle`, `menu.language`, `menu.account`) |
 | `"commonFooter"` | Footer brand, copyright, course link labels |
 | `"auth"` | Auth forms; Zod keys resolved via `useTranslations("auth")` |
@@ -558,13 +561,14 @@ Symbol and edge counts change as the codebase grows. Refresh the local graph wit
 | Instructor admin routes, permissions, API | [`docs/instructor-admin.md`](instructor-admin.md) |
 
 
-## Signed-in home `/home` (temporary)
+## Signed-in home `/home`
 
-**File:** `src/screen/common/home/signed-in-home-page.tsx` — client component.
+**File:** `src/screen/common/home/signed-in-home-page.tsx` — client component composing `src/components/home/signed-in/*`.
 
 **Route:** `src/app/[locale]/(web)/home/page.tsx` → `PRIVATE_ROUTES.home` (`/home`).
 
-- Login-required: while `useGetMe` loads, show a spinner; guests see a login CTA — `<Link href={loginHref(signedInHomeHref)}>` — that navigates to `/login?next=/home` (same idea as become-instructor State A; `LoginSignupPopup` opens as a modal overlay via the `@modal` intercepting route rather than a Zustand-driven modal).
-- Authenticated users see a **temporary placeholder** (title + short notice). No Figma hero/chips/course grids, no API fetch.
-- **No route metadata** (`generateMetadata` intentionally omitted per product decision). Crawl protection derives from `PRIVATE_ROUTES` disallow lists. Do not emit Course/Offer JSON-LD from illustration data.
-- Full Figma signed-in layout remains documented in [`seo-ranking-setup.md`](./seo-ranking-setup.md) for a later implementation pass.
+- Login-required: while `useGetMe` loads, show a spinner; guests see a login CTA — `<Link href={loginHref(signedInHomeHref)}>` — that navigates to `/login?next=/home` (same idea as become-instructor State A; the login modal opens through the `@modal` intercepting route). No home request is made for a guest.
+- Signed-in users see, in order: `HeroCarousel` (three Figma slides, no arrow buttons, drag/swipe and dots, 3 s autoplay that restarts on manual change, one `h1`); **Complete your Course** (`useContinueLearning`, only when the user holds `course:read`; initial 3, Expand More → 10; progress bar and "completed/total sub-lessons completed"); **Trending Course** (`useTrendingCourses`; initial 8, Expand More → 24; no price, rating or badge); **Popular Instructor** (`usePopularInstructors`; 4 cards, not linked).
+- Each data section handles loading (skeletons), empty and error (with retry) independently through `HomeSectionShell`. Course cards link to `/courses/{slug}` (temporary placeholder) when the slug is non-empty; Expand More extends the list in place and does not navigate.
+- Remote thumbnails and instructor pictures use `next/image` with `unoptimized`; the hero images are static assets under `public/assets/images/home/hero/`.
+- **No route metadata** (`generateMetadata` intentionally omitted per product decision). Crawl protection derives from `PRIVATE_ROUTES` disallow lists. Do not emit Course/Offer JSON-LD from this data.

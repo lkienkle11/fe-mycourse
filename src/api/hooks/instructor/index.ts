@@ -1,4 +1,5 @@
 export * from "./useInstructorApplications";
+export * from "./useInstructorCatalog";
 export * from "./useInstructorExpertise";
 export * from "./useInstructorProfiles";
 export * from "./useInstructorRoster";

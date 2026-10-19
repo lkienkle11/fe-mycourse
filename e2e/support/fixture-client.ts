@@ -16,4 +16,5 @@ export const FIXTURE_USERS = {
   instructor: { email: "instructor@example.test", password: "Passw0rd!1" },
   admin: { email: "admin@example.test", password: "Passw0rd!1" },
   learner: { email: "learner@example.test", password: "Passw0rd!1" },
+  homeLearner: { email: "home-learner@example.test", password: "Passw0rd!1" },
 } as const;

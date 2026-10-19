@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import { loginHref, signupHref } from "./routes";
+import { courseDetailHref, loginHref, signupHref } from "./routes";
 
 describe("loginHref / signupHref", () => {
   it("builds a plain destination with no next param", () => {
@@ -18,5 +18,15 @@ describe("loginHref / signupHref", () => {
 
   it("omits the next param when given null", () => {
     expect(loginHref(null)).toBe("/login");
+  });
+});
+
+describe("courseDetailHref", () => {
+  it("builds the public course path from the slug", () => {
+    expect(courseDetailHref("intro-to-go")).toBe("/courses/intro-to-go");
+  });
+
+  it("encodes characters that are not path safe", () => {
+    expect(courseDetailHref("a b/c")).toBe("/courses/a%20b%2Fc");
   });
 });

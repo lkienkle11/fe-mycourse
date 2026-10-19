@@ -1,5 +1,5 @@
 /** Instructor SWR/query keys + list query helpers. */
-import { API_PRIVATE_ROUTES } from "@/constants/api-route";
+import { API_PRIVATE_ROUTES, API_PUBLIC_ROUTES } from "@/constants/api-route";
 import { apiListQueryToRecord, buildQueryParams } from "@/lib/utils";
 import type {
   InstructorListFilters,
@@ -137,4 +137,11 @@ export function getInstructorTicketMessagesKey(ticketId: string): string {
   });
   if (!url) throw new Error("Invalid ticket messages URL");
   return url;
+}
+
+export function getPopularInstructorsKey(limit?: number): string | null {
+  return buildQueryParams(
+    API_PUBLIC_ROUTES.catalog.popularInstructors,
+    limit == null ? {} : { limit: String(limit) },
+  );
 }

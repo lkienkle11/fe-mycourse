@@ -1,6 +1,6 @@
 # API Overview (`fe-mycourse`)
 
-_Last audited: 2026-10-15 (user slug contract: `MeResponse.slug`, optional avatar fields, optional `slug` in `PATCH /me`, `slug` on collaborator / candidate / roster / application rows, optional `CourseListItem.owner_slug`). Prior: 2026-10-15 (taxonomy slug create/update contract; 3007 on taxonomy create). Prior: 2026-07-22 (browser `[API]` Console only when NODE_ENV=development; server sanitized logs; prod browser silent)._
+_Last audited: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract: `MeResponse.slug`, optional avatar fields, optional `slug` in `PATCH /me`, `slug` on collaborator / candidate / roster / application rows, optional `CourseListItem.owner_slug`). Prior: 2026-10-15 (taxonomy slug create/update contract; 3007 on taxonomy create). Prior: 2026-07-22 (browser `[API]` Console only when NODE_ENV=development; server sanitized logs; prod browser silent)._
 
 ## Scope
 Frontend API layer lives in `src/api/` and is used by `src/actions/` and client hooks.
@@ -53,6 +53,15 @@ Transport code is grouped by folder (SoT owners stay as separate files inside fo
 - `POST /api/v1/auth/confirm` — confirm email and issue tokens (`confirmAction`, `confirmService`)
 - `POST /api/v1/auth/refresh`
 - `POST /api/v1/auth/logout`
+
+## Home catalog routes
+
+- Public (no JWT required by the backend; called through the same `apiFetch`, so errors are reported like every other call), constants in `API_PUBLIC_ROUTES.catalog`:
+  - `GET /api/v1/catalog/courses/trending?limit=` (default 8, maximum 24) → `TrendingCourseItem[]` (`id`, `slug`, `title`, `short_description`, optional `thumbnail_url`, `owner_display_name`, `owner_slug`, `created_at`; no price, rating or badge). Caller `listTrendingCoursesService` (`src/api/callers/course/course-factory-review.ts`), hook `useTrendingCourses`.
+  - `GET /api/v1/catalog/instructors/popular?limit=` (default 4, maximum 12) → `PopularInstructorItem[]` (`user_id`, `display_name`, `slug`, optional `avatar`, `subtitle`, `course_count`; the picture key is `avatar`, not `avatar_url`). Caller `listPopularInstructorsService` (`src/api/callers/instructor/instructor-factory-catalog.ts`), hook `usePopularInstructors`.
+- Private, constant `API_PRIVATE_ROUTES.course.continueLearning`: `GET /api/v1/learner-courses/continue?limit=` (default 4, maximum 10; requires `course:read`) → `ContinueLearningItem[]` (`course_id`, `slug`, `title`, optional `thumbnail_url`, `owner_display_name`, `owner_slug`, `completed_sub_lessons`, `total_sub_lessons`, `progress_percent`, `last_activity_at`; the counts include every sub-lesson kind). Caller `listContinueLearningService`, hook `useContinueLearning(limit, userId)` (`null` key unless the user is signed in and holds `course:read`; the user id only scopes the SWR cache entry as a URL fragment and is never sent).
+- `slug` may be `""` and `owner_slug` may be absent until the backend backfill has run; consumers test for falsiness and never use slugs as keys.
+- These calls are client-side SWR calls: the home data is not fetched with `serverRawFetch` / `seoFetch` and no `publicCacheProfiles` entry is registered.
 
 ## Me routes (private)
 
@@ -147,4 +156,4 @@ See `docs/api-using.md` § API error i18n.
 
 ## SEO fetch consumer (unused)
 
-`src/lib/seo/data/seo-fetch.ts` is a thin typed consumer of `serverRawFetch` + `cache-policy`. It does **not** add a parallel HTTP stack and does **not** register production cache profiles. See [`seo-ranking-setup.md`](./seo-ranking-setup.md) and [`api-using.md`](./api-using.md).
+`src/lib/seo/data/seo-fetch.ts` is a thin typed consumer of `serverRawFetch` + `cache-policy`. It does **not** add a parallel HTTP stack and does **not** register production cache profiles; the signed-in home catalog endpoints are read through the browser callers and SWR, not through `seoFetch`. See [`seo-ranking-setup.md`](./seo-ranking-setup.md) and [`api-using.md`](./api-using.md).

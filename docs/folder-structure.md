@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-10-15 (user slug contract: `updateMeSchema` optional `slug`, `buildMeResponse` carries `slug`; colocated tests are not listed per file in this document); 2026-10-15 (taxonomy slug UI: `src/hooks/slug/use-slug-conflict-flow.ts`, `src/schema/shared/slug.ts`, `src/lib/utils/{tree,payload}.ts`, `src/constants/taxonomy/limits.ts`, `src/components/shared/{form-field,slug-field,slug-conflict-confirm-dialog}.tsx`, tree editor merged into `src/components/features/taxonomy/taxonomy-tree-editor.tsx`, `e2e/tests/taxonomy-slug.spec.ts`). Prior: 2026-09-29 (course slug UI: `slug-input.tsx`, `use-course-create-flow.ts`, `slug.ts` `sanitizeSlugInput`, `e2e/tests/course-slug.spec.ts`). Prior: 2026-09-16 (added `e2e/`, `src/test-support/`, `scripts/e2e-lifecycle.mjs`, `jest.config.ts`, `playwright.config.ts`; `src/**/*.test.ts(x)` colocated test files across the source tree — see `docs/testing.md`). Prior: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained); 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
+_Last audited: 2026-10-18 (signed-in home hero carousel reworked to the three Figma slides: no arrow buttons, drag/swipe, 3 s autoplay that restarts on manual change via `useCarouselAutoplay`). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract: `updateMeSchema` optional `slug`, `buildMeResponse` carries `slug`; colocated tests are not listed per file in this document); 2026-10-15 (taxonomy slug UI: `src/hooks/slug/use-slug-conflict-flow.ts`, `src/schema/shared/slug.ts`, `src/lib/utils/{tree,payload}.ts`, `src/constants/taxonomy/limits.ts`, `src/components/shared/{form-field,slug-field,slug-conflict-confirm-dialog}.tsx`, tree editor merged into `src/components/features/taxonomy/taxonomy-tree-editor.tsx`, `e2e/tests/taxonomy-slug.spec.ts`). Prior: 2026-09-29 (course slug UI: `slug-input.tsx`, `use-course-create-flow.ts`, `slug.ts` `sanitizeSlugInput`, `e2e/tests/course-slug.spec.ts`). Prior: 2026-09-16 (added `e2e/`, `src/test-support/`, `scripts/e2e-lifecycle.mjs`, `jest.config.ts`, `playwright.config.ts`; `src/**/*.test.ts(x)` colocated test files across the source tree — see `docs/testing.md`). Prior: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained); 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -77,7 +77,8 @@ src/app/
     │   ├── layout.tsx      # Web shell: Header + GoogleOneTapHost + GSI script + <main> + Footer
     │   ├── not-found.tsx   # Web 404 → NotFoundPage showHeader={false}
     │   ├── page.tsx        # Guest home → HomePage
-    │   ├── home/page.tsx   # Signed-in home → SignedInHomePage (temporary, login-required)
+    │   ├── home/page.tsx   # Signed-in home → SignedInHomePage (login-required)
+    │   ├── courses/[slug]/page.tsx  # Course placeholder → CourseDetailPlaceholderPage (public, no-index)
     │   ├── become-instructor/page.tsx
     │   ├── confirm-email/page.tsx
     │   ├── logout/page.tsx
@@ -137,7 +138,7 @@ src/screen/
 │   │   └── instructor-tickets-admin-page.tsx
 │   ├── home/
 │   │   ├── page.tsx                 # HomePage — guest marketing sections
-│   │   └── signed-in-home-page.tsx  # SignedInHomePage — temporary login-required /home
+│   │   └── signed-in-home-page.tsx  # SignedInHomePage — login-required /home (hero + catalog sections)
 │   ├── not-found/
 │   │   ├── index.ts
 │   │   └── not-found-page.tsx  # NotFoundPage — localized 404 (image, i18n copy, CTA)
@@ -181,10 +182,13 @@ src/components/
 │                           #   LoginContent, SignupContent, UserMenu,
 │                           #   auth/auth-form-fields.tsx (Zod i18n validation translate),
 │                           #   auth-social-login/ (Discord + Google on popup; wired via useDiscordLogin / useGoogleLogin)
-├── home/                   # Home page section components
+├── home/                   # Guest home section components
 │                           #   HeroSection, SearchSection, TopCoursesSection,
 │                           #   AdvancedPromoSection, TrendingCoursesSection,
 │                           #   UpcomingWebinarsSection, PromoSection, CourseCard
+│   └── signed-in/          # Signed-in home: HeroCarousel, HomeSectionShell, ExpandMoreFooter,
+│                           #   Home{ContinueLearning,Trending,PopularInstructors}Section,
+│                           #   ContinueLearningCard, TrendingCourseCard, PopularInstructorCard, CourseCardFrame/CourseOwnerLine
 ├── features/
 │   ├── course/             # CourseStatusBadge, CourseBasicInfoTab,
 │   │                       # CourseOutlineTab, CourseOutlineRowActions, CourseCollaboratorsTab,
@@ -198,7 +202,8 @@ src/components/
 │                           #   PermissionGate, ConfirmDeleteDialog, DagreTreeDialog, DataTable,
 │                           #   DeltaEditor, DeltaEditorLinkDialog, DeltaViewer, SortableList (TouchSensor mobile),
 │                           #   SlugInput, FormField, SlugField, SlugConflictConfirmDialog, PreviewPdf (dynamic client-only) + preview-pdf-viewer,
-│                           #   SearchBar (stub), ImageFileField
+│                           #   SearchBar (stub), ImageFileField,
+│                           #   UserAvatar, CourseThumbnail (import by file path, not via the barrel)
 │                           #   Consumers: course editor + become-instructor bio (restricted DeltaEditor) +
 │                           #   InstructorProfileViewDialog bio (DeltaViewer)
 ├── providers/
@@ -266,8 +271,8 @@ src/api/
 │   │   ├── auth-factory.ts  # isomorphic createAuthCallers + types (no Zustand)
 │   │   ├── auth-browser.ts  # browser singleton services (browserApiMethods)
 │   │   └── index.ts         # re-exports factory + browser (client OK; Server Actions use factory path)
-│   ├── course/ …            # course-factory* isomorphic; course-browser.ts = browser bindings
-│   ├── instructor/ …        # instructor-factory.ts composes roster/application/profile/expertise/ticket; instructor-browser.ts
+│   ├── course/ …            # course-factory* isomorphic (incl. trending + continue learning in course-factory-review.ts); course-browser.ts = browser bindings
+│   ├── instructor/ …        # instructor-factory.ts composes roster/application/profile/expertise/ticket/catalog (popular instructors); instructor-browser.ts
 │   └── …                    # same factory vs browser split for media/taxonomy
 └── hooks/                   # SWR hooks
 ```
@@ -324,6 +329,10 @@ src/hooks/
 │   ├── index.ts            # useDashboardPageHeaderOverride, useRegisterDashboardPageHeader
 │   ├── use-dashboard-page-header-override.ts
 │   └── use-register-dashboard-page-header.ts
+├── home/
+│   ├── index.ts            # useExpandMore, useCarouselAutoplay
+│   ├── use-carousel-autoplay.ts # Embla autoplay (3 s, restarts on manual change)
+│   └── use-expand-more.ts  # Initial list limit raised once to the endpoint maximum (Expand More)
 ├── events/
 │   ├── index.ts            # Barrel: useStreamEvent + per-channel hooks
 │   ├── use-stream-event.ts # subscribeStreamEvents + optional source/type filter
@@ -432,7 +441,8 @@ Error messages in schemas use **i18n keys** (not hardcoded strings). Resolve in 
 
 ```
 src/constants/
-├── api-route.ts            # API_PUBLIC_ROUTES (auth incl. google/googleOnetap/discord/x) + API_PRIVATE_ROUTES (me, taxonomy, media, instructor, …)
+├── api-route.ts            # API_PUBLIC_ROUTES (auth incl. google/googleOnetap/discord/x; catalog: trending courses, popular instructors) + API_PRIVATE_ROUTES (me, taxonomy, media, instructor, course incl. continueLearning, …)
+├── home.ts                 # Signed-in home list limits (initial and maximum)
 ├── api-error-code.ts       # ApiErrorCode — mirrors be/internal/shared/errors/errcode_codes.go (incl. OAuth 4013–4019, 4023–4025; 4018/4020–4022/4026 FE-local)
 ├── seo/
 │   ├── index.ts            # Data-only barrel
