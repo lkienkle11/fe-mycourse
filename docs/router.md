@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-09-19 (route-based login/signup modal via `@modal` parallel + intercepting routes, replacing the Zustand-driven `LoginSignupPopup`). Prior: 2026-07-26 temporary signed-in `/home` under `(web)` + `PRIVATE_ROUTES.home`; 2026-07-22 unmounted account/forgot-password; OAuth COOP; OAuth callback middleware bypass._
+_Last audited: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-09-19 (route-based login/signup modal via `@modal` parallel + intercepting routes, replacing the Zustand-driven `LoginSignupPopup`). Prior: 2026-07-26 temporary signed-in `/home` under `(web)` + `PRIVATE_ROUTES.home`; 2026-07-22 unmounted account/forgot-password; OAuth COOP; OAuth callback middleware bypass._
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
 
@@ -81,7 +81,8 @@ export const config = {
 /[locale]/@modal        → src/app/[locale]/@modal/(.)signup/page.tsx    intercepts same-level `/signup` → <LoginSignupPopup type="signup" />
 /[locale]/              → src/app/[locale]/(web)/layout.tsx  Header + main + Footer
 /[locale]/              → src/app/[locale]/(web)/page.tsx    HomePage (guest marketing)
-/[locale]/home          → src/app/[locale]/(web)/home/page.tsx  SignedInHomePage (login-required, temporary placeholder)
+/[locale]/home          → src/app/[locale]/(web)/home/page.tsx  SignedInHomePage (login-required; hero + continue learning + trending + popular instructors)
+/[locale]/courses/[slug] → src/app/[locale]/(web)/courses/[slug]/page.tsx  CourseDetailPlaceholderPage (public, no-index placeholder)
 /[locale]/login         → src/app/[locale]/(web)/login/page.tsx  LoginPageContent (full-page fallback; intercepted as a modal when navigated to in-app)
 /[locale]/signup        → src/app/[locale]/(web)/signup/page.tsx  SignupPageContent (full-page fallback; intercepted as a modal when navigated to in-app)
 /[locale]/become-instructor → src/app/[locale]/(web)/become-instructor/page.tsx  BecomeInstructorPage
@@ -188,8 +189,10 @@ src/app/[locale]/
 |-----|-----------|--------|--------|
 | `/vi` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
 | `/en` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
-| `/vi/home` | `[locale]/(web)/home/page.tsx` | `SignedInHomePage` — login-required temporary placeholder (Figma UI not shipped) | ✅ Temporary |
-| `/en/home` | same | same | ✅ Temporary |
+| `/vi/home` | `[locale]/(web)/home/page.tsx` | `SignedInHomePage` — login-required signed-in home (hero, Complete your Course, Trending Course, Popular Instructor) | ✅ Implemented |
+| `/en/home` | same | same | ✅ Implemented |
+| `/vi/courses/{slug}` | `[locale]/(web)/courses/[slug]/page.tsx` | `CourseDetailPlaceholderPage` — temporary public placeholder, no-index | ✅ Placeholder |
+| `/en/courses/{slug}` | same | same | ✅ Placeholder |
 | `/vi/login?next=…` | `[locale]/(web)/login/page.tsx` | `LoginPageContent` — full-page fallback; intercepted as a modal (`@modal/(.)login`) when navigated to in-app | ✅ Implemented |
 | `/en/login?next=…` | same | same | ✅ Implemented |
 | `/vi/signup?next=…` | `[locale]/(web)/signup/page.tsx` | `SignupPageContent` — full-page fallback; intercepted as a modal (`@modal/(.)signup`) when navigated to in-app | ✅ Implemented |
@@ -236,7 +239,7 @@ src/app/[locale]/
 
 Temporary classification for app navigation:
 
-- **Public routes (no login required):** `PUBLIC_ROUTES.home` (`/`), `PUBLIC_ROUTES.forgotPassword`, `PUBLIC_ROUTES.confirmEmail`, `PUBLIC_ROUTES.logout`, `PUBLIC_ROUTES.becomeInstructor` (page requires login at runtime — State A shows login CTA).
+- **Public routes (no login required):** `PUBLIC_ROUTES.home` (`/`), `PUBLIC_ROUTES.forgotPassword`, `PUBLIC_ROUTES.confirmEmail`, `PUBLIC_ROUTES.logout`, `PUBLIC_ROUTES.becomeInstructor` (page requires login at runtime — State A shows login CTA). Public resource route: `PUBLIC_RESOURCE_ROUTES.course` (`/courses/:slug`, temporary placeholder).
 - **Private routes (login required):** all entries under `PRIVATE_ROUTES` including `PRIVATE_ROUTES.home` (`/home`), plus `admin`, `instructor`, `sysadmin`, and `account` groups.
 - **Resource routes (dynamic params `:param`):**
   - `PUBLIC_RESOURCE_ROUTES` for public dynamic routes.
@@ -255,7 +258,7 @@ This classification is defined in `src/constants/route.ts` and used by shared me
 Root layout            (src/app/layout.tsx)
   └─ Locale layout     (src/app/[locale]/layout.tsx)
         ├─ Web layout  (src/app/[locale]/(web)/layout.tsx)
-        │     └─ Page  (HomePage, SignedInHomePage `/home`, become-instructor, confirm-email, logout)
+        │     └─ Page  (HomePage, SignedInHomePage `/home`, CourseDetailPlaceholderPage `/courses/[slug]`, become-instructor, confirm-email, logout)
         ├─ Admin layout (DashboardLayout + admin items)
         ├─ Instructor layout
         └─ Sysadmin layout
@@ -393,11 +396,11 @@ src/screen/common/course/course-review-page.tsx   → CourseReviewPage (shared b
 | Path | Intent | Status |
 | --- | --- | --- |
 | `/` (locale home via `PUBLIC_ROUTES.home`) | Guest marketing home | Exists (mock). Future SEO wire optional. **Only** default SEO-indexable public key today. `homeHref` still points here. |
-| `/home` (`PRIVATE_ROUTES.home`) | Signed-in homepage | **Temporary route shipped.** `(web)` shell + client auth gate; placeholder UI (no Figma sections, no API fetch, **no route metadata**). Crawl disallow derives from `PRIVATE_ROUTES` (includes `/home`). Full Figma layout is a later task. |
+| `/home` (`PRIVATE_ROUTES.home`) | Signed-in homepage | **Shipped.** `(web)` shell + client auth gate; hero carousel and three data sections fed by the catalog and learner-courses APIs; **no route metadata**. Crawl disallow derives from `PRIVATE_ROUTES` (includes `/home`). |
 
 **Auth gate:** guests on `/home` see a login CTA (`<Link href={loginHref(signedInHomeHref)}>`) that navigates to `/login?next=/home` (same pattern as become-instructor State A). `/login` is a dedicated route now — intercepted as a modal overlay when the navigation happens client-side, and a full page on direct/hard navigation. `next` is a validated URL query param read by `useAuthNextParam()` (`isSafeInternalPath` **and** `isAuthRoutePath` — a `next` of `/login`/`/signup` itself is rejected too), not a Zustand field.
 
-**Href helpers:** `homeHref` = public `/`; `signedInHomeHref` = private `/home`. Logo / `navigateToHome` still use `homeHref` until product decides brand-home should follow auth state.
+**Href helpers:** `homeHref` = public `/`; `signedInHomeHref` = private `/home`; `courseDetailHref(slug)` = public `/courses/{slug}` (placeholder page). Logo / `navigateToHome` still use `homeHref` until product decides brand-home should follow auth state.
 
 **Public-routable ≠ SEO-indexable:** `forgotPassword` / `confirmEmail` / `logout` (and other non-allow-listed `PUBLIC_ROUTES` keys) stay publicly routable but must use `noindex` and are **excluded** from default sitemap entries (`SEO_INDEXABLE_PUBLIC_ROUTE_KEYS`).
 

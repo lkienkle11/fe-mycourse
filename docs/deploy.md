@@ -1,6 +1,6 @@
 # Deploying MyCourse Frontend on Ubuntu 24.04
 
-_Last audited: 2026-09-16 (added `e2e-browser.yml` browser-test workflow — runs on PRs unlike `deploy-dev.yml`; `test` job now runs the real Jest suite, not a placeholder — see `docs/testing.md`). Prior: 2026-07-09 (CI secrets: dev implemented + stg/main placeholder names); 2026-07-09 (GitHub Actions secrets list + workflow YAML snippet); 2026-06-17._
+_Last audited: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-09-16 (added `e2e-browser.yml` browser-test workflow — runs on PRs unlike `deploy-dev.yml`; `test` job now runs the real Jest suite, not a placeholder — see `docs/testing.md`). Prior: 2026-07-09 (CI secrets: dev implemented + stg/main placeholder names); 2026-07-09 (GitHub Actions secrets list + workflow YAML snippet); 2026-06-17._
 
 
 This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.
@@ -922,7 +922,7 @@ sudo nginx -t                  # valid config after certbot edits?
 | Locale layout | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider` + `AppProviders` (SWR) |
 | Web shell layout | `src/app/[locale]/(web)/layout.tsx` | `Header` + `<main>` + `Footer` (from `@/components/common`) |
 | Home screen (guest) | `src/screen/common/home/page.tsx` | Assembles 7 marketing sections |
-| Signed-in home (temporary) | `src/screen/common/home/signed-in-home-page.tsx` | Login-required placeholder at `/{locale}/home` |
+| Signed-in home | `src/screen/common/home/signed-in-home-page.tsx` | Login-required home at `/{locale}/home` (hero, continue learning, trending, popular instructors; client-side API calls); `/{locale}/courses/{slug}` is a temporary placeholder |
 | API client transport | `src/api/transport/api-transport.ts`, `src/api/xior/client.ts` | Xior 0.8.3 over Next.js Fetch + runtime auth + refresh |
 | API helpers | `src/api/core/methods.ts` | `apiFetch`, `apiPost`, `apiPut`, `apiDelete`, `apiOptions` → `ApiResult<T>` |
 | Raw HTTP + barrel | `src/api/core/raw-http.ts`, `src/api/xior/client.ts`, `src/api/index.ts` | Xior-backed `raw*`; `index.ts` re-exports `api*` + `raw*` |
