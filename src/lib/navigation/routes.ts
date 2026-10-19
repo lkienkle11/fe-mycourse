@@ -2,6 +2,7 @@ import {
   AUTH_NEXT_QUERY_PARAM,
   PRIVATE_RESOURCE_ROUTES as privateResourceRoutes,
   PRIVATE_ROUTES as privateRoutes,
+  PUBLIC_RESOURCE_ROUTES as publicResourceRoutes,
   PUBLIC_ROUTES as publicRoutes,
 } from "@/constants/route";
 import { buildQueryParams } from "@/lib/utils/url";
@@ -60,6 +61,10 @@ export function toPrivateResourceRoute(
   fragment?: string,
 ): string {
   return buildRoute(route, query, params, fragment);
+}
+
+export function courseDetailHref(slug: string): string {
+  return toPublicResourceRoute(publicResourceRoutes.course, { slug });
 }
 
 export function instructorCourseEditorHref(

@@ -1,3 +1,4 @@
+export * from "./course/course-detail-placeholder-page";
 export * from "./home/page";
 export * from "./home/signed-in-home-page";
 export * from "./instructor";

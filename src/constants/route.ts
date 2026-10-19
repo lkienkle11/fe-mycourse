@@ -12,7 +12,7 @@ export const PUBLIC_ROUTES = {
 export const AUTH_NEXT_QUERY_PARAM = "next";
 
 export const PRIVATE_ROUTES = {
-  /** Signed-in homepage (temporary placeholder UI until Figma home ships). */
+  /** Signed-in homepage (hero, Complete your Course, Trending Course, Popular Instructor). */
   home: "/home",
   admin: {
     root: "/admin",
@@ -76,7 +76,10 @@ export const PRIVATE_ROUTES = {
   },
 } as const;
 
-export const PUBLIC_RESOURCE_ROUTES = {} as const;
+export const PUBLIC_RESOURCE_ROUTES = {
+  /** Course detail page (temporary placeholder until the real page is built). */
+  course: "/courses/:slug",
+} as const;
 
 export const PRIVATE_RESOURCE_ROUTES = {
   instructor: {
