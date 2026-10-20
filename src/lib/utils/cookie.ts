@@ -1,4 +1,5 @@
 import Cookies from "js-cookie";
+import { AUTH_COOKIE_NAMES } from "@/constants/auth-cookie";
 import { isServer } from "./runtime";
 
 export type CookieSameSite = "strict" | "lax" | "none";
@@ -91,19 +92,6 @@ export async function getCookieValue(name: string): Promise<string | null> {
 }
 
 /**
- * Writes a cookie value.
- * - Client: via js-cookie.
- * - Server: via next/headers.
- *   Only works inside a Server Action or Route Handler (not a pure RSC).
- *   Failures are swallowed silently.
- */
-const AUTH_COOKIE_NAMES = [
-  "access_token",
-  "refresh_token",
-  "session_id",
-] as const;
-
-/**
  * Xóa auth cookies phía client — no-op khi cookies là HttpOnly (logout qua Server Action).
  * @deprecated HttpOnly auth cookies không thể xóa bằng JS; dùng clearAuthSessionCookies.
  */
@@ -111,6 +99,13 @@ export function clearAuthCookiesClient(): void {
   // HttpOnly cookies are cleared server-side via logoutAction / clearAuthSessionCookies.
 }
 
+/**
+ * Writes a cookie value.
+ * - Client: via js-cookie.
+ * - Server: via next/headers.
+ *   Only works inside a Server Action or Route Handler (not a pure RSC).
+ *   Failures are swallowed silently.
+ */
 export async function setCookieValue(
   name: string,
   value: string,
