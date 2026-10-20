@@ -1,6 +1,6 @@
 # Folder Structure (`fe-mycourse`)
 
-_Last audited: 2026-10-18 (signed-in home hero carousel reworked to the three Figma slides: no arrow buttons, drag/swipe, 3 s autoplay that restarts on manual change via `useCarouselAutoplay`). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract: `updateMeSchema` optional `slug`, `buildMeResponse` carries `slug`; colocated tests are not listed per file in this document); 2026-10-15 (taxonomy slug UI: `src/hooks/slug/use-slug-conflict-flow.ts`, `src/schema/shared/slug.ts`, `src/lib/utils/{tree,payload}.ts`, `src/constants/taxonomy/limits.ts`, `src/components/shared/{form-field,slug-field,slug-conflict-confirm-dialog}.tsx`, tree editor merged into `src/components/features/taxonomy/taxonomy-tree-editor.tsx`, `e2e/tests/taxonomy-slug.spec.ts`). Prior: 2026-09-29 (course slug UI: `slug-input.tsx`, `use-course-create-flow.ts`, `slug.ts` `sanitizeSlugInput`, `e2e/tests/course-slug.spec.ts`). Prior: 2026-09-16 (added `e2e/`, `src/test-support/`, `scripts/e2e-lifecycle.mjs`, `jest.config.ts`, `playwright.config.ts`; `src/**/*.test.ts(x)` colocated test files across the source tree — see `docs/testing.md`). Prior: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained); 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
+_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-18 (signed-in home hero carousel reworked to the three Figma slides: no arrow buttons, drag/swipe, 3 s autoplay that restarts on manual change via `useCarouselAutoplay`). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract: `updateMeSchema` optional `slug`, `buildMeResponse` carries `slug`; colocated tests are not listed per file in this document); 2026-10-15 (taxonomy slug UI: `src/hooks/slug/use-slug-conflict-flow.ts`, `src/schema/shared/slug.ts`, `src/lib/utils/{tree,payload}.ts`, `src/constants/taxonomy/limits.ts`, `src/components/shared/{form-field,slug-field,slug-conflict-confirm-dialog}.tsx`, tree editor merged into `src/components/features/taxonomy/taxonomy-tree-editor.tsx`, `e2e/tests/taxonomy-slug.spec.ts`). Prior: 2026-09-29 (course slug UI: `slug-input.tsx`, `use-course-create-flow.ts`, `slug.ts` `sanitizeSlugInput`, `e2e/tests/course-slug.spec.ts`). Prior: 2026-09-16 (added `e2e/`, `src/test-support/`, `scripts/e2e-lifecycle.mjs`, `jest.config.ts`, `playwright.config.ts`; `src/**/*.test.ts(x)` colocated test files across the source tree — see `docs/testing.md`). Prior: 2026-07-08 (Discord OAuth: server actions, hooks, callback; popup uses Discord not X; X code retained); 2026-06-08 (validation schemas, api-error utils, error-codes messages)._
 
 
 Full directory tree with purpose of every folder. Keep this file updated whenever folders are added, moved, or removed.
@@ -56,9 +56,11 @@ Entry point for all routing. Every folder corresponds to a URL segment.
 
 ```
 src/app/
-├── layout.tsx              # Root layout: loads fonts (Roboto, Gilroy, GeistMono), mounts Sonner <Toaster>
+├── layout.tsx              # Root layout: loads fonts (Roboto, Gilroy, GeistMono), mounts Sonner <Toaster>, <html lang> from getLocale(), metadata title = DEFAULT_SITE_NAME
 │                           # (no third-party auth scripts — GSI loads in (web)/layout.tsx only)
-├── page.tsx                # Root page: immediately redirects browser to /vi (default locale)
+├── page.tsx                # Root page: fallback redirect to routing.defaultLocale (src/proxy.ts redirects / first)
+├── robots.ts               # robots.txt route (buildRobotsTxtRules; force-dynamic, runtime SITE_URL)
+├── sitemap.ts              # sitemap.xml route (buildSitemapEntries; force-dynamic, runtime SITE_URL)
 ├── not-found.tsx           # Global 404: NextIntlClientProvider + AppProviders + NotFoundPage
 ├── globals.css             # Global CSS resets and Tailwind base imports
 ├── utils.css               # Utility CSS classes shared across layouts
@@ -70,14 +72,16 @@ src/app/
     ├── layout.tsx          # Locale layout: NextIntlClientProvider + AppProviders; renders {children} + {modal} (@modal slot)
     ├── not-found.tsx       # Locale-level 404 → NotFoundPage (inherits providers from layout)
     ├── @modal/             # Parallel route slot for the login/signup route modal
-    │   ├── default.tsx     # Renders null when no intercepted route is active
+    │   ├── default.tsx     # Renders null on a hard load with no intercepted route
+    │   ├── page.tsx        # Renders null on the locale root (clears the slot on soft navigation)
+    │   ├── [...catchAll]/page.tsx  # Renders null on every other non-intercepted route (clears the slot)
     │   ├── (.)login/page.tsx   # Intercepted /login → <LoginSignupPopup type="login" />
     │   └── (.)signup/page.tsx  # Intercepted /signup → <LoginSignupPopup type="signup" />
     ├── (web)/              # Route group: marketing + signed-in home shell (no prefix in URL)
     │   ├── layout.tsx      # Web shell: Header + GoogleOneTapHost + GSI script + <main> + Footer
     │   ├── not-found.tsx   # Web 404 → NotFoundPage showHeader={false}
-    │   ├── page.tsx        # Guest home → HomePage
-    │   ├── home/page.tsx   # Signed-in home → SignedInHomePage (login-required)
+    │   ├── page.tsx        # Guest home → HomePage (generateMetadata + Organization JSON-LD; signed-in browsers redirected to /home by src/proxy.ts)
+    │   ├── home/page.tsx   # Signed-in home → SignedInHomePage (login-required; generateMetadata: title + noindex)
     │   ├── courses/[slug]/page.tsx  # Course placeholder → CourseDetailPlaceholderPage (public, no-index)
     │   ├── become-instructor/page.tsx
     │   ├── confirm-email/page.tsx
@@ -319,7 +323,7 @@ src/hooks/
 │   ├── use-google-one-tap.ts  # GSI One Tap prompt for guests → googleOneTapAction (auto-dismiss when logged in)
 │   ├── use-discord-login.ts   # Discord OAuth popup + postMessage listener (DISCORD_OAUTH_MESSAGE_TYPE) → discordLoginAction
 │   ├── use-x-login.ts         # X OAuth popup + postMessage listener (X_OAUTH_MESSAGE_TYPE) → xLoginAction; retained, not on popup
-│   └── use-oauth-post-auth.ts # Shared post-auth: mutateMe + onAuthenticated(nextPath ?? homeHref)
+│   └── use-oauth-post-auth.ts # Shared post-auth: mutateMe + onAuthenticated(resolvePostAuthHref(nextPath))
 ├── course/
 │   ├── index.ts            # Barrel: use-course-editor-state, use-course-outline-reorder, use-course-create-flow
 │   ├── use-course-editor-state.ts  # Course editor state, lease handling, translated toasts
@@ -442,12 +446,13 @@ Error messages in schemas use **i18n keys** (not hardcoded strings). Resolve in 
 ```
 src/constants/
 ├── api-route.ts            # API_PUBLIC_ROUTES (auth incl. google/googleOnetap/discord/x; catalog: trending courses, popular instructors) + API_PRIVATE_ROUTES (me, taxonomy, media, instructor, course incl. continueLearning, …)
+├── auth-cookie.ts          # ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, SESSION_ID_COOKIE, AUTH_SESSION_EXPIRES_AT_COOKIE, LEGACY_AUTH_SESSION_MAX_AGE_COOKIE, AUTH_COOKIE_NAMES (the three token cookies browser JS must not write) — single source of auth cookie names (re-exported by constants/index.ts; used by proxy helper, server-auth, auth-session, cookie, refresh route, auth actions)
 ├── home.ts                 # Signed-in home list limits (initial and maximum)
 ├── api-error-code.ts       # ApiErrorCode — mirrors be/internal/shared/errors/errcode_codes.go (incl. OAuth 4013–4019, 4023–4025; 4018/4020–4022/4026 FE-local)
 ├── seo/
 │   ├── index.ts            # Data-only barrel
 │   ├── metadata.ts         # Site defaults, OG dimensions, title/description limits
-│   ├── routes.ts           # SEO_INDEXABLE_PUBLIC_ROUTE_KEYS + SIGNED_IN_HOME_PATH (/home)
+│   ├── routes.ts           # SEO_INDEXABLE_PUBLIC_ROUTE_KEYS
 │   ├── rendering.ts        # SEO_RENDERING_MODE + SEO_ISR_HINTS + TEMPORARY dormant env cache flag
 │   ├── image.ts            # Image sizes presets + font CWV owner
 │   └── robots.ts           # Indexable/noindex/private-app Metadata robots values
@@ -490,7 +495,8 @@ src/lib/language/
 src/lib/
 ├── navigation/
 │   ├── home.ts             # navigateToHome(router) + re-exports homeHref / signedInHomeHref
-│   ├── routes.ts           # route builders + shared href constants (public/private/resource)
+│   ├── routes.ts           # route builders + shared href constants (public/private/resource), incl. homeHref, signedInHomeHref, defaultPostAuthHref (= signedInHomeHref), resolvePostAuthHref(nextPath)
+│   ├── signed-in-home-redirect.ts # hasAuthSessionCookies(cookies), getLocaleRootLocale(pathname), resolveSignedInHomeRedirectPath({ pathname, hasSession }), resolveGuestHomeRedirectPath({ pathname, hasSession }) — pure logic for the src/proxy.ts signed-in /{locale} redirect
 │   ├── flatten-route-tree.ts # flattenRouteTreePaths — shared nested route-constant → string[] (crawl + sitemap)
 │   └── dashboard-page-header.ts  # dashboard route metadata resolver (consumes static constants + shared dashboard types; nav-tree lookups via `findTreeNodeById` / `findTreePath` from `src/lib/utils/tree.ts`)
 ├── swr/
@@ -528,10 +534,10 @@ src/lib/
 │   ├── slug.ts             # sanitizeSlugInput(), SLUG_MAX_LENGTH, SLUG_PATTERN, isSlugAdjusted() (course + taxonomy slug rules; import via `@/lib/utils/slug` — not re-exported by the barrel; the omit-blank / omit-unchanged payload rule is `payload.ts`)
 │   ├── react.ts            # useUniqueId() — stable ID generator for accessibility
 │   ├── user.ts             # pickCharacter() — avatar initial picker
-│   ├── cookie.ts           # isomorphic getCookieValue / setCookieValue; buildCookieOptions
+│   ├── cookie.ts           # isomorphic getCookieValue / setCookieValue; buildCookieOptions (auth cookie names from constants/auth-cookie.ts)
 │   ├── permission.ts       # satisfiesPermissions, PERMISSION_NAME_TO_ID, filterPermissionNavTree, id lookup
 │   ├── dashboard.ts        # filterDashboardItems (wraps filterPermissionNavTree)
-│   └── auth-session.ts     # SERVER ONLY — setAuthSessionCookies, auth_session_expires_at, resolveRefreshMaxAgeFromBe
+│   └── auth-session.ts     # SERVER ONLY — setAuthSessionCookies, auth_session_expires_at, resolveRefreshMaxAgeFromBe (cookie names from constants/auth-cookie.ts)
 ├── font.ts                 # next/font definitions: Roboto, Gilroy, GeistMono
 └── http.ts                 # Placeholder for future HTTP utilities
 ```
@@ -580,12 +586,13 @@ src/messages/
 
 Global API error namespace: `errors.codes` (numeric string keys). Module validation namespaces: `auth.validation`, `me.validation`, `media.validation`, `taxonomy.form.validation`, `instructor.validation`, `course.validation`.
 
-### `src/proxy.ts` — Next.js Middleware
+### `src/proxy.ts` and `src/instrumentation.ts` — Next.js Middleware and server start hook
 
 ```
-src/proxy.ts                # next-intl middleware (createMiddleware(routing)) + config.matcher
+src/proxy.ts                # wraps next-intl middleware (createMiddleware(routing)); locale root + refresh_token + session_id cookies -> 307 /{locale}/home (Cache-Control: private, no-store; Vary: Cookie on the redirect only) + config.matcher
                             # Next.js 16 uses src/proxy.ts for request proxy/middleware-style handling.
-                            # Matcher excludes locale-less OAuth callbacks: auth/discord/callback, auth/x/callback
+                            # Matcher excludes api, trpc, _next, _vercel, locale-less OAuth callbacks (auth/discord/callback, auth/x/callback) and any path with a dot (/robots.txt, /sitemap.xml)
+src/instrumentation.ts      # register(): in a production Node server (not next build) validates the runtime-only SITE_URL via resolveSiteConfig; logs and process.exit(1) when missing/invalid
 ```
 
 ---
@@ -663,25 +670,29 @@ e2e/
     ├── course-editing.spec.ts    # collaborator submission through the real picker UI; keyboard-driven outline section reorder (@dnd-kit KeyboardSensor)
     ├── course-error-states.spec.ts # StatusErrorPage forbidden variant on a non-collaborator course
     ├── course-slug.spec.ts       # optional slug on create, 409/3007 recommended-slug confirm (Yes/No), basic-info slug edit
+    ├── home.spec.ts              # guest home page
+    ├── seo.spec.ts               # guest home metadata (canonical, hreflang, OG), robots.txt, sitemap.xml, /home noindex
+    ├── signed-in-redirect.spec.ts # signed-in /{locale} -> /{locale}/home redirect
     ├── taxonomy-slug.spec.ts     # root slug on create, 409/3007 recommended-slug confirm (Yes/No), update slug-adjusted toast, per-node slug edit
     └── locale-404.spec.ts        # valid locale / unknown route / unsupported locale
 ```
 
 
-### `src/lib/seo/`, `src/lib/performance/`, `src/lib/security/web/` — Unused SEO foundation (2026-07-25)
+### `src/lib/seo/`, `src/lib/performance/`, `src/lib/security/web/` — SEO foundation (consumed by home metadata, robots.txt and sitemap.xml)
 
-`src/lib/security/web/safe-redirect.ts` is the one exception below — it's wired and used by `useAuthNextParam` (`hooks/auth/use-auth-next-param.ts`).
+The consumed helpers are `site-config`, `build-page-metadata`, `canonical` (`buildLanguageAlternates`), `robots-presets`, `robots-txt`, `indexable-routes`, `sitemap-builder`, `json-ld` + `ranking/organization`, and `crawl-policy` (used by the home pages, `src/app/robots.ts`, `src/app/sitemap.ts`); `src/lib/security/web/safe-redirect.ts` is used by `useAuthNextParam` (`hooks/auth/use-auth-next-param.ts`). The remaining helpers (other ranking builders, `seo-fetch`, `temporary-cache-policy`, performance hints) are not consumed yet.
 
 ```
 src/lib/
 ├── seo/
-│   ├── site-config.ts
-│   ├── build-page-metadata.ts
-│   ├── canonical.ts
+│   ├── site-config.ts           # resolveSiteConfig (https origin; http://localhost accepted outside production), SiteConfigError
+│   ├── build-page-metadata.ts   # buildPageMetadata — title/description/canonical/hreflang (per locale + x-default)/OG/Twitter/robots
+│   ├── canonical.ts             # buildCanonicalUrl, localizedPathname, toAbsoluteUrl, buildLanguageAlternates (shared by build-page-metadata and sitemap-builder)
 │   ├── robots-presets.ts
+│   ├── robots-txt.ts            # buildRobotsTxtRules — pure robots.txt rules for src/app/robots.ts
 │   ├── indexable-routes.ts      # Predicates/path builders over constants/seo/routes
-│   ├── sitemap-builder.ts
-│   ├── json-ld.tsx              # JsonLd lives here (not src/components) for Knip unused-files
+│   ├── sitemap-builder.ts       # buildSitemapEntries (hreflang alternates via buildLanguageAlternates), listPublicStaticPathnames
+│   ├── json-ld.tsx              # JsonLd lives here (not src/components); rendered by the guest home page
 │   ├── index.ts                 # optional barrel
 │   ├── ranking/                 # Runtime Organization/Course/Person/Breadcrumb/Article/Video/FAQ builders
 │   └── data/
@@ -699,4 +710,4 @@ src/lib/
         └── safe-redirect.ts          # isSafeInternalPath + isAuthRoutePath — used by useAuthNextParam (login/signup `next` param)
 ```
 
-See [`seo-ranking-setup.md`](./seo-ranking-setup.md). Not wired to pages/layouts this phase.
+See [`seo-ranking-setup.md`](./seo-ranking-setup.md). Wired to `/{locale}` and `/{locale}/home` metadata, `src/app/robots.ts` and `src/app/sitemap.ts`; not wired to the root layout beyond `title`.

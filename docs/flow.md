@@ -1,6 +1,6 @@
 # Execution Flows (`fe`)
 
-_Last audited: 2026-07-09 (OAuth callback middleware bypass for locale-less popup routes). Prior: 2026-07-08 (Discord + Google OAuth on popup; X code retained)._
+_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-07-09 (OAuth callback middleware bypass for locale-less popup routes). Prior: 2026-07-08 (Discord + Google OAuth on popup; X code retained)._
 
 
 This document traces the major user-visible and technical flows in the MyCourse frontend. Flows are derived from the **GitNexus** process index for repo **`fe-mycourse`** (12 tracked execution chains across the **Auth** and **Api** clusters) and from direct source inspection. Regenerate the graph after large UI changes with `npx gitnexus analyze --force` from the **fe-mycourse** repo root.
@@ -118,6 +118,8 @@ TTL is **not** hardcoded on FE — it comes from BE `Set-Cookie`. Fallback: `aut
 
 After a successful login, `login-content.tsx` calls **`mutateMe()`** from `useGetMe()` (Zustand mirror synced from SWR). This forces an immediate `GET /api/v1/me` with the new cookies; `AuthLayout` switches from `AuthButton` to `UserMenu`.
 
+**Signed-in home redirect:** once the `refresh_token` and `session_id` cookies exist, a request for the locale root (`/vi`, `/en`) is answered by `src/proxy.ts` with a 307 to `/{locale}/home` (`Cache-Control: private, no-store`, `Vary: Cookie` on the redirect only). The check is presence-only; `/{locale}/home` remains a client-side gate, so an expired or stale cookie shows the sign-in prompt instead of looping. Cookie names come from `src/constants/auth-cookie.ts`.
+
 **Errors in UI:** `translateApiErrorCode(useTranslations("errors.codes"), result.code)` — never `result.message`.
 
 ---
@@ -128,7 +130,7 @@ After a successful login, `login-content.tsx` calls **`mutateMe()`** from `useGe
 
 > **Popup UI:** `AuthSocialLogin` shows **Discord + Google** only.
 
-> **Callback routing:** Provider `redirect_uri` is locale-less (`/auth/discord/callback`, `/auth/x/callback`). `src/proxy.ts` matcher excludes these paths so next-intl does not redirect to `/{locale}/auth/...` (404 → popup never completes login). See `docs/router.md` § Middleware.
+> **Callback routing:** Provider `redirect_uri` is locale-less (`/auth/discord/callback`, `/auth/x/callback`). `src/proxy.ts` matcher excludes these paths so next-intl does not redirect to `/{locale}/auth/...` (404 → popup never completes login). See `docs/router.md` § Middleware: Locale Enforcement and Signed-in Home Redirect.
 
 ### Discord sequence
 
@@ -186,7 +188,7 @@ SignupContent (client, locale from useLocale())
 
 ## 2b. Email Confirm Flow
 
-**Goal:** User clicks email link → FE page confirms → session cookies set → redirect home.
+**Goal:** User clicks email link → FE page confirms → session cookies set → redirect to the signed-in home (`/home`).
 
 ```
 GET /{locale}/confirm-email?token=...
@@ -194,7 +196,7 @@ GET /{locale}/confirm-email?token=...
     → confirmAction({ token })           ["use server"]
       → confirmService                   POST /api/v1/auth/confirm
       → setAuthSessionCookies (shared with login)
-    → mutateMe() + broadcast confirm_success + router.replace("/")
+    → mutateMe() + broadcast confirm_success + router.replace(defaultPostAuthHref)   # "/home"
 ```
 
 **Other tabs:** Background tabs receive `confirm_success` via `BroadcastChannel`. If the tab is hidden, `useAuthConfirmTabSync` sets `sessionStorage` (`mycourse:pending_auth_tab_reload`). When the user focuses that tab, the page reloads so `/me` reflects the new session. The tab that performed confirm does not reload again.
@@ -203,7 +205,7 @@ GET /{locale}/confirm-email?token=...
 
 ## 2c. Logout Flow
 
-**Goal:** User clicks Logout in `UserMenu` → dedicated page revokes BE session → cookies cleared → redirect home.
+**Goal:** User clicks Logout in `UserMenu` → dedicated page revokes BE session → cookies cleared → redirect to the guest home (`/`, `homeHref`).
 
 ```
 GET /{locale}/logout
@@ -396,7 +398,7 @@ import { loginHref, signupHref } from "@/lib/navigation/routes";
 <Link href={signupHref(nextPath)}>Sign up</Link>
 ```
 
-`loginHref` / `signupHref` (`src/lib/navigation/routes.ts`) build `/login?next=<nextPath>` / `/signup?next=<nextPath>` via the existing `buildQueryParams` helper (mirrors the existing `homeHref`/`logoutHref` pattern).
+`loginHref` / `signupHref` (`src/lib/navigation/routes.ts`) build `/login?next=<nextPath>` / `/signup?next=<nextPath>` via the existing `buildQueryParams` helper (mirrors the existing `homeHref`/`signedInHomeHref`/`logoutHref` pattern).
 
 | Trigger | Href |
 |---------|------|
@@ -408,7 +410,8 @@ import { loginHref, signupHref } from "@/lib/navigation/routes";
 
 A soft navigation to `/login` or `/signup` from anywhere in the app is intercepted as a modal overlay by the `@modal` parallel-route slot (`src/app/[locale]/@modal/`, rendered alongside `children` from `src/app/[locale]/layout.tsx`):
 
-- `@modal/default.tsx` — returns `null` when no intercepted route is active.
+- `@modal/default.tsx` — returns `null` on a hard load with no intercepted route.
+- `@modal/page.tsx` and `@modal/[...catchAll]/page.tsx` — return `null` for the locale root and every other route, so a soft navigation away from the modal (for example the post-login push to `/home`) clears the slot instead of leaving the stale popup mounted.
 - `@modal/(.)login/page.tsx`, `@modal/(.)signup/page.tsx` — each renders `<LoginSignupPopup type="login" | "signup" />` on top of whatever page the visitor was viewing.
 
 This interception is unconditional for **any** soft (client-side) navigation matching the pattern — Next.js has no supported way to opt a specific `Link`/`router.push` call out of it. That is why every "I don't want a modal here" case above (`AuthButton` on an auth route, the full-page cross-link) is solved the same way: render a plain `<a href>` (a real, hard navigation) instead of `Link`, since only a hard load bypasses the interceptor.
@@ -417,7 +420,7 @@ A hard/direct navigation to the same URL with **no** `next` (refresh, shared lin
 
 `LoginSignupPopup` no longer reads any store — it takes `type` as a prop and manages its own local `open` state. Closing sets `open=false` (letting the Radix Dialog exit animation play) then calls `router.back()` after the same delay.
 
-**Already authenticated:** `useRedirectIfAuthenticated(nextPath)` (`src/hooks/auth/use-redirect-if-authenticated.ts`), called by both `LoginContent` and `SignupContent`, redirects to `nextPath ?? homeHref` via `router.replace` and renders `null` for that one frame instead of the form — but only when `useGetMe().me` was **already truthy on the first resolved check after mount**, snapshotted once and never re-evaluated. It deliberately does not react to a *later* guest→authenticated transition while mounted, since that's the login/signup this same form just performed (already handled by `onSubmit`'s own `onAuthenticated` callback) — an earlier version did react to it and raced that callback, recomputing `nextPath` as `null` after the URL had moved on and bouncing to `homeHref` instead of the real destination (caught via an e2e run where a learner's post-login redirect got hijacked).
+**Already authenticated:** `useRedirectIfAuthenticated(nextPath)` (`src/hooks/auth/use-redirect-if-authenticated.ts`), called by both `LoginContent` and `SignupContent`, redirects to `resolvePostAuthHref(nextPath)` via `router.replace` and renders `null` for that one frame instead of the form — but only when `useGetMe().me` was **already truthy on the first resolved check after mount**, snapshotted once and never re-evaluated. It deliberately does not react to a *later* guest→authenticated transition while mounted, since that's the login/signup this same form just performed (already handled by `onSubmit`'s own `onAuthenticated` callback) — an earlier version did react to it and raced that callback, recomputing `nextPath` as `null` after the URL had moved on and bouncing to the default destination instead of the real destination (caught via an e2e run where a learner's post-login redirect got hijacked).
 
 **Post-auth redirect:** The `next` query param carries the intended destination. `useAuthNextParam()` (`src/hooks/auth/use-auth-next-param.ts`) reads it via `useSearchParams` and validates it with **both** `isSafeInternalPath` (same-origin check) **and** `isAuthRoutePath` (`src/lib/security/web/safe-redirect.ts`) — a `next` of `/login` or `/signup` itself is rejected too, not just a cross-origin one, since otherwise it self-propagates through every login/signup cross-link. `LoginContent`/`SignupContent` and `useOAuthPostAuth` all read the destination through this hook and hand it to the `onAuthenticated` callback supplied by `LoginSignupPopup`.
 

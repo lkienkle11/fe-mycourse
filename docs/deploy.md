@@ -1,6 +1,6 @@
 # Deploying MyCourse Frontend on Ubuntu 24.04
 
-_Last audited: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-09-16 (added `e2e-browser.yml` browser-test workflow — runs on PRs unlike `deploy-dev.yml`; `test` job now runs the real Jest suite, not a placeholder — see `docs/testing.md`). Prior: 2026-07-09 (CI secrets: dev implemented + stg/main placeholder names); 2026-07-09 (GitHub Actions secrets list + workflow YAML snippet); 2026-06-17._
+_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-09-16 (added `e2e-browser.yml` browser-test workflow — runs on PRs unlike `deploy-dev.yml`; `test` job now runs the real Jest suite, not a placeholder — see `docs/testing.md`). Prior: 2026-07-09 (CI secrets: dev implemented + stg/main placeholder names); 2026-07-09 (GitHub Actions secrets list + workflow YAML snippet); 2026-06-17._
 
 
 This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.
@@ -19,11 +19,11 @@ This is the **frontend** deployment runbook for the MyCourse Next.js application
 | PM2 process name | **Manual runbook:** `mycourse-web` · **Repo CI (`dev`):** `mycourse-web-dev` (see `ecosystem.config.cjs`) |
 | Deploy path | **Example:** `/opt/mycourse/fe` · **CI secret:** `DEPLOY_PATH_DEV` → server directory checked out for `dev` (often `/var/www/fe-mycourse` in `ecosystem.config.cjs`) |
 | Nginx vhost | `yourdomain.net` / `www.yourdomain.net` → `127.0.0.1:3000` |
-| Required env var | `NEXT_PUBLIC_API_URL` (must be set **before** `npm run build`) |
+| Required env vars | `NEXT_PUBLIC_API_URL` (must be set **before** `npm run build`); `SITE_URL` (server-only, **runtime** — read from the env file at `next start`, never at build; the server exits at start without a valid value — see [`SITE_URL`](#site_url)) |
 | Optional env var | `AUTH_COOKIE_DOMAIN` (needed when FE and API are on different subdomains) |
 | Optional stream env | `NEXT_PUBLIC_STREAM_SSE_URL`, `NEXT_PUBLIC_STREAM_WS_URL`, `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` (see [Variable reference table](#variable-reference-table)) |
 | Node.js version | 22 LTS (match [backend deploy guide](../../be-mycourse/docs/deploy.md)) |
-| GitHub Actions | **Dev:** push **`dev`** → `deploy-dev.yml` test/build; automatic deploy temporarily paused. **Staging / prod:** placeholder `*_STG` / `*_MAIN` secrets — workflows not in repo. **Browser tests:** `e2e-browser.yml` runs on PRs to `dev`/`main` and pushes to `dev` (separate from `deploy-dev.yml`) — see [`testing.md`](./testing.md) ([Appendix G](#appendix-g--cicd-github-actions)) |
+| GitHub Actions | **Dev:** push **`dev`** → `deploy-dev.yml` test/build; automatic deploy temporarily paused. **Staging / prod:** placeholder `*_STG` / `*_MAIN` secrets — workflows not in repo. **Browser tests:** `e2e-browser.yml` runs on PRs to `dev`/`main` and pushes to `dev` (separate from `deploy-dev.yml`) — see [`testing.md`](./testing.md) ([Appendix G](#appendix-g--cicd-github-actions)). `SITE_URL` is not a GitHub Actions secret and no workflow sets it for the build. |
 
 > **PM2 process names:** This runbook uses **`mycourse-web`** in examples for a single manual app. The repo’s **`ecosystem.config.cjs`** and **GitHub Actions** use **`mycourse-web-dev`** (and staging/prod siblings). Use the name that matches `pm2 list` on your server (e.g. `pm2 logs mycourse-web-dev`).
 
@@ -41,7 +41,7 @@ Run steps **in order**. Each step notes whether it can be skipped if you already
 2. **DNS:** `yourdomain.net` and `www.yourdomain.net` must resolve to this server's IP **before** requesting TLS certificates.
 3. **API URL:** Obtain the public HTTPS base URL of the Go API (e.g. `https://api.yourdomain.net`). This is the value for `NEXT_PUBLIC_API_URL`.
 4. **Backend CORS:** Ensure `CORS_ALLOWED_ORIGINS` in the backend includes `https://yourdomain.net` and `https://www.yourdomain.net` (no trailing slashes).
-5. 
+5. **Public site origin:** Decide the canonical frontend origin (e.g. `https://yourdomain.net` or `https://www.yourdomain.net`) — the same host used for the OAuth callback URLs. This is the value for the runtime variable `SITE_URL` (pure `https` origin, no path). Dev and staging servers use their own domain, never the production one.
 
 ---
 
@@ -154,6 +154,13 @@ nano /opt/mycourse/fe/.env.production.local
 # Public base URL of the Go API — used by the browser AND by Server Actions.
 # Must be HTTPS in production. Set this BEFORE running npm run build.
 NEXT_PUBLIC_API_URL=https://api.yourdomain.net
+
+# Canonical public origin of THIS frontend — server-only, read at runtime (not at build).
+# Pure https origin: no path, query, hash or credentials. Localhost/loopback is rejected
+# when the server runs with NODE_ENV=production (next start), including dev and staging.
+# Feeds metadataBase, canonical, hreflang, robots.txt and sitemap.xml. The server logs the
+# error and exits with code 1 at start when it is missing or invalid.
+SITE_URL=https://yourdomain.net
 ```
 
 #### Optional but important in production
@@ -178,6 +185,7 @@ API_URL=https://api.yourdomain.net
 | `NEXT_PUBLIC_API_URL` | **Yes** | Build + client + server | Base URL for all API calls. `NEXT_PUBLIC_*` variables are **inlined at `next build`** — you **must** rebuild after changing this. |
 | `AUTH_COOKIE_DOMAIN` | Prod recommended | Server only | Parent domain for `access_token`, `refresh_token`, `session_id` cookies. Passed to `getCookieDomain()` → included in `buildCookieOptions()` via `loginAction`. Without this on a multi-subdomain setup, cookies may not be sent to the API. |
 | `API_URL` | No | Server only | Server-side fallback API URL. Not exposed to the client bundle. Useful for private/internal network routing. |
+| `SITE_URL` | **Yes** (all `next start` servers) | Server only, **runtime** | Canonical frontend origin used by `src/lib/seo/site-config.ts` (`resolveSiteConfig`) for `metadataBase`, canonical, hreflang, `/robots.txt` and `/sitemap.xml`. Pure `https` origin; loopback hosts are rejected under `NODE_ENV=production`. Validated at server start by `src/instrumentation.ts`. Not a `NEXT_PUBLIC_*` variable, not a build arg, not a CI secret. |
 | `NEXT_PUBLIC_STREAM_SSE_URL` | No | Build + client | SSE stream URL; empty → SSE transport not started |
 | `NEXT_PUBLIC_STREAM_WS_URL` | No | Build + client | WebSocket URL (`wss://…`); empty → WS not started |
 | `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | Build + client | API base for NDJSON stream (path `/v1/events/stream` appended) |
@@ -188,6 +196,8 @@ API_URL=https://api.yourdomain.net
 | `NEXT_PUBLIC_X_CALLBACK_URL` | For X login (retained) | Build + client | Absolute X OAuth redirect URL (e.g. `https://yourdomain.net/auth/x/callback`). **Must byte-for-byte match the backend `X_CALLBACK_URL`**. |
 
 > **`NEXT_PUBLIC_*` warning:** These values are **baked into the JS bundle** at build time. If you change `NEXT_PUBLIC_API_URL` without rebuilding, old client code will still call the previous URL. Always rebuild after changing any `NEXT_PUBLIC_*` variable.
+
+> **`SITE_URL` is the opposite of `NEXT_PUBLIC_*`:** it is **never** baked into the bundle. It is read per request on the server, so changing it needs only a process restart (`pm2 reload … --update-env`), not a rebuild. `npm run build` succeeds with `SITE_URL` unset; `next start` does not.
 
 See also [`delivery.md`](./delivery.md) for envelope format and per-channel behavior.
 
@@ -270,6 +280,8 @@ server {
 }
 ```
 
+The vhost needs no SEO-specific rule: `/robots.txt` and `/sitemap.xml` are served by Next.js (no static file in nginx), and nginx has no `proxy_cache` for pages (`location /` sets `proxy_cache off`; only `/_next/static/` is cached). The signed-in redirect on `/{locale}` therefore always reaches the Next.js proxy.
+
 Enable and test:
 
 ```bash
@@ -317,7 +329,7 @@ After TLS is active, update `NEXT_PUBLIC_API_URL` to use `https://api.yourdomain
 
 ### Step 11 — Run Next.js under PM2
 
-The repository includes **`ecosystem.config.cjs`** at the frontend root with three apps (`mycourse-web-dev`, `mycourse-web-staging`, `mycourse-web-prod`) and per-environment `cwd` / `env_file`. Runtime deploy can pass shared `DEPLOY_PATH` only (current CI behavior), while per-env overrides (`DEPLOY_PATH_DEV/STG/MAIN`) remain optional. `env_file` defaults are `.env.local` (dev), `.env.staging` (staging), `.env.prod` (prod). CI for **`dev`** reloads **`mycourse-web-dev`** only.
+The repository includes **`ecosystem.config.cjs`** at the frontend root with three apps (`mycourse-web-dev`, `mycourse-web-staging`, `mycourse-web-prod`) and per-environment `cwd` / `env_file`. Runtime deploy can pass shared `DEPLOY_PATH` only (current CI behavior), while per-env overrides (`DEPLOY_PATH_DEV/STG/MAIN`) remain optional. The server env files `.env.local` (dev), `.env.staging` (staging) and `.env.prod` (prod) are the `env_file` defaults and must contain `SITE_URL` for that environment (runtime-only: PM2 passes it to `next start`, nothing is injected at build). CI for **`dev`** reloads **`mycourse-web-dev`** only.
 
 Create or update the PM2 ecosystem file. If you already have one from the backend guide at `/opt/mycourse/ecosystem.config.cjs`, add the `mycourse-web` entry:
 
@@ -352,6 +364,7 @@ module.exports = {
         NEXT_PUBLIC_API_URL: 'https://api.yourdomain.net',
         AUTH_COOKIE_DOMAIN: 'yourdomain.net',
         API_URL: 'https://api.yourdomain.net',
+        SITE_URL: 'https://yourdomain.net',
       },
     },
   ],
@@ -359,6 +372,8 @@ module.exports = {
 ```
 
 > **Note on `NEXT_PUBLIC_*` in PM2:** `NEXT_PUBLIC_API_URL` is baked into the bundle during `npm run build`. Setting it in PM2 `env` provides it for server-side reads at runtime but does **not** change the client bundle. Always ensure the same value is present when building.
+
+> **Note on `SITE_URL` in PM2:** unlike `NEXT_PUBLIC_API_URL`, `SITE_URL` is a pure runtime variable — setting it here (or in the `env_file`) is sufficient and no rebuild is needed. If it is missing or invalid, the process logs `SITE_URL must be a pure public https:// origin in production ...` and exits with code 1 at start (see [Troubleshooting](#siteconfigerror-on-start-server-or-container-exits-immediately)).
 
 Start PM2 and persist the process list:
 
@@ -382,21 +397,40 @@ pm2 logs mycourse-web --lines 50
 ```bash
 # HTTPS loads with locale redirect
 curl -sS -o /dev/null -w "%{http_code} %{redirect_url}\n" https://yourdomain.net
-# Expected: 307 https://yourdomain.net/vi   (or 200 if middleware redirect happens in Next.js)
+# Expected: 307 https://yourdomain.net/vi
 
-# Vietnamese home page
+# Vietnamese home page (guest: no auth cookies)
 curl -sS -o /dev/null -w "%{http_code}\n" https://yourdomain.net/vi
+# Expected: 200
 
-# English home page
+# English home page (guest)
 curl -sS -o /dev/null -w "%{http_code}\n" https://yourdomain.net/en
+# Expected: 200
+
+# Signed-in redirect: both refresh_token and session_id cookies present
+curl -sS -o /dev/null -D - -H "Cookie: refresh_token=x; session_id=y" https://yourdomain.net/vi \
+  | grep -i -E "^(HTTP|location|cache-control|vary)"
+# Expected: 307, location: https://yourdomain.net/vi/home, cache-control: private, no-store, vary: Cookie
+
+# Only one of the two cookies (or none) keeps the guest page
+curl -sS -o /dev/null -D - -H "Cookie: refresh_token=x" https://yourdomain.net/vi | grep -i -E "^(HTTP|cache-control)"
+# Expected: 200, cache-control containing no-store (Next.js dynamic page; no redirect)
+
+# SEO files (the host in the output must be SITE_URL)
+curl -sS https://yourdomain.net/robots.txt
+# Expected: 200, "Sitemap: https://yourdomain.net/sitemap.xml"
+curl -sS https://yourdomain.net/sitemap.xml
+# Expected: 200, <loc> entries on the SITE_URL host with hreflang alternates (vi, en, x-default)
 ```
 
 **Manual checks:**
-1. Open `https://yourdomain.net` in a browser — should redirect to `/vi` and render the home page (header, body, **footer** with `commonFooter` copy).
+1. Open `https://yourdomain.net` in a browser — should redirect to `/vi` and render the guest home page (header, body, **footer** with `commonFooter` copy). While logged in, opening `https://yourdomain.net/vi` (or `/en`) must redirect to `/vi/home`; while logged out, opening `https://yourdomain.net/vi/home` must redirect to `/vi`.
 2. Click the locale switcher — should navigate to `/en` (or vice versa).
 3. Open the login modal, enter credentials — should set cookies and show `UserMenu` (avatar).
 4. Hard-refresh — `UserMenu` should still be visible (SWR refetches `GET /api/v1/me`).
 5. Open DevTools → Application → Cookies — verify `access_token`, `refresh_token`, `session_id` are present with `SameSite=Lax`, `Domain=.yourdomain.net`, and **`HttpOnly` checked**.
+6. View source of `https://yourdomain.net/vi` — `<link rel="canonical">`, `hreflang` alternates and `og:url` use the `SITE_URL` host; `/vi/home` carries `noindex`.
+7. **Cloudflare / CDN (outside the repo):** confirm no cache rule or "Cache Everything" page rule covers `/`, `/vi` or `/en`; the signed-in redirect is per user (`Vary: Cookie`, `Cache-Control: private, no-store`) and a shared cache would serve one visitor's redirect to everyone.
 
 ---
 
@@ -406,7 +440,8 @@ curl -sS -o /dev/null -w "%{http_code}\n" https://yourdomain.net/en
 Frontend
   [ ] NEXT_PUBLIC_API_URL is the HTTPS API URL used at build time for this release.
   [ ] AUTH_COOKIE_DOMAIN is set to the parent domain (e.g. yourdomain.net).
-  [ ] src/proxy.ts exists and locale routing is enforced.
+  [ ] SITE_URL is set in the server env file (.env.local / .env.staging / .env.prod) to this environment's own https origin (no path; not the production domain on dev/staging) and the process started without exiting on the SITE_URL error.
+  [ ] src/proxy.ts exists, locale routing is enforced and a signed-in visit to /vi or /en redirects to /{locale}/home.
   [ ] npm run build completed without errors.
   [ ] npm prune --omit=dev completed (production node_modules only).
   [ ] PM2 mycourse-web is running and autorestart is enabled.
@@ -425,6 +460,8 @@ Integration
   [ ] GET /api/v1/me returns the authenticated user after login.
   [ ] Locale switcher navigates between /vi and /en correctly.
   [ ] Footer shows localized strings (`commonFooter`) and social icons load.
+  [ ] /robots.txt and /sitemap.xml return 200 and reference the SITE_URL host.
+  [ ] Cloudflare / CDN does not cache /, /vi or /en (no "Cache Everything"); nginx has no page cache.
 ```
 
 ---
@@ -461,6 +498,7 @@ Browser  ──────────────►  │  Nginx (TLS: yourdom
 | `NEXT_PUBLIC_API_URL` | **Yes** | ✅ baked into bundle | ✅ also read server-side | Public Go API base URL. No trailing slash. Must match `CORS_ALLOWED_ORIGINS` on the backend. |
 | `AUTH_COOKIE_DOMAIN` | Prod recommended | ❌ | ✅ Server Actions only | Parent domain for auth cookies. Without this, cookies set on `yourdomain.net` may not be sent to `api.yourdomain.net`. |
 | `API_URL` | No | ❌ | ✅ Server only | Server-side fallback for API base URL. Not exposed to browser. Useful for private network routing. |
+| `SITE_URL` | **Yes** (every `next start`) | ❌ not read at build | ✅ Server only (request time + `src/instrumentation.ts` at start) | Canonical frontend origin: pure `https` origin, no path/query/hash/userinfo, non-loopback in production (`http://localhost[:port]` / `http://127.0.0.1[:port]` accepted only outside production). Feeds metadata, `/robots.txt`, `/sitemap.xml`. Same host as the OAuth callback origins. |
 | `NEXT_PUBLIC_STREAM_SSE_URL` | No | ✅ | ✅ | SSE endpoint; empty disables transport |
 | `NEXT_PUBLIC_STREAM_WS_URL` | No | ✅ | ✅ | WebSocket URL; empty disables transport |
 | `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | ✅ | ✅ | NDJSON stream base URL (appends `/v1/events/stream`) |
@@ -470,20 +508,29 @@ Browser  ──────────────►  │  Nginx (TLS: yourdom
 | `NEXT_PUBLIC_X_CLIENT_ID` | For X login (retained) | ✅ baked into bundle | — | X OAuth2 client id. X code retained; not wired to popup. |
 | `NEXT_PUBLIC_X_CALLBACK_URL` | For X login (retained) | ✅ baked into bundle | — | Absolute X redirect URL; must byte-for-byte match backend `X_CALLBACK_URL`. |
 
-> **Build-time only:** because `NEXT_PUBLIC_*` are inlined during `next build`, setting these in the PM2 / container runtime env file has **no effect** on the browser bundle. They must be provided to whatever runs `next build` — the CI `build` job (via GitHub Secrets/Variables) or the Docker build-args — and you must **rebuild** after changing them.
+> **Build-time only:** because `NEXT_PUBLIC_*` are inlined during `next build`, setting these in the PM2 / container runtime env file has **no effect** on the browser bundle. They must be provided to whatever runs `next build` — the CI `build` job (via GitHub Secrets/Variables) or the Docker build-args — and you must **rebuild** after changing them. `SITE_URL` is the reverse: runtime-only, supplied through the env file (PM2 `env_file` / Docker `env_file`), never a CI secret or build arg, and changed with a restart only.
 
 ---
 
 ## Appendix C — Middleware (Locale Routing)
 
-`src/proxy.ts` contains the `next-intl` locale proxy middleware:
+`src/proxy.ts` wraps the `next-intl` locale proxy and adds the signed-in redirect:
 
 ```ts
-// src/proxy.ts
+// src/proxy.ts (shape)
 import createMiddleware from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
 
-export default createMiddleware(routing);
+const intlMiddleware = createMiddleware(routing);
+
+export default function proxy(request: NextRequest) {
+  // 1. next-intl resolves the locale (`/` -> 307 `/{locale}`).
+  // 2. Exact locale root (`/vi`, `/en`, optional trailing slash) + BOTH cookies
+  //    `refresh_token` and `session_id` (names from src/constants/auth-cookie.ts)
+  //    -> 307 `/{locale}/home` with `Cache-Control: private, no-store` and `Vary: Cookie`
+  //    (next-intl's Set-Cookie is copied onto the redirect).
+  // 3. Any other request passes through the next-intl response unchanged.
+}
 
 export const config = {
   matcher: [
@@ -492,17 +539,31 @@ export const config = {
 };
 ```
 
-Project uses `src/proxy.ts` as locale proxy middleware entry. Keep this file in place and ensure matcher remains correct.
+Project uses `src/proxy.ts` as the locale proxy and signed-in redirect entry. Keep this file in place and ensure the matcher remains correct. The matcher excludes every path containing a dot, so `/robots.txt` and `/sitemap.xml` (served by `src/app/robots.ts` and `src/app/sitemap.ts`) bypass the proxy.
 
 **OAuth callback exclusion (required):** `/auth/discord/callback` and `/auth/x/callback` are locale-less popup relay routes (`src/app/auth/*/callback/`). They must be excluded from the matcher so next-intl does not redirect them to `/vi/auth/...` (which 404s and breaks Discord/X popup login). `NEXT_PUBLIC_*_CALLBACK_URL` values must remain `<origin>/auth/discord/callback` and `<origin>/auth/x/callback` — not locale-prefixed.
 
+**Caching:** nginx has no page cache (`location /` sets `proxy_cache off`; only `/_next/static/` is cached), so no nginx change is needed for the redirect. Cloudflare / CDN cache rules live outside this repo — check manually that `/`, `/vi` and `/en` are not cached (no "Cache Everything"), otherwise one visitor's redirect can be served to others.
+
 **COOP header (Cloudflare / edge proxy):** Do **not** set `Cross-Origin-Opener-Policy: same-origin` on the FE marketing/auth origin if Discord/Google OAuth popups are used. Restrictive COOP can null `window.opener` and break popup `postMessage` / focus return. FE Next config does not emit COOP; verify Transform Rules / Response Headers at Cloudflare (or nginx). Compatible approach: omit COOP, or use a policy that still allows `window.opener` for same-site popups. `ERR_BLOCKED_BY_CLIENT` is typically an ad-blocker/extension — the API reporter treats it as **expected** (no custom `[API]` Console / Zustand).
 
-Verify locale redirect and OAuth callback reachability:
+Verify locale redirect, the signed-in redirect, SEO files and OAuth callback reachability:
 
 ```bash
 curl -sS -o /dev/null -w "%{http_code} %{redirect_url}\n" http://127.0.0.1:3000/
 # Expected: 307  http://127.0.0.1:3000/vi
+
+curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/vi
+# Expected: 200 (guest)
+
+curl -sS -o /dev/null -w "%{http_code} %{redirect_url}\n" -H "Cookie: refresh_token=x; session_id=y" http://127.0.0.1:3000/vi
+# Expected: 307  http://127.0.0.1:3000/vi/home   (Cache-Control: private, no-store; Vary: Cookie)
+
+curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/robots.txt
+# Expected: 200 (served by src/app/robots.ts, not the proxy)
+
+curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/sitemap.xml
+# Expected: 200
 
 curl -sS -o /dev/null -w "%{http_code} %{redirect_url}\n" http://127.0.0.1:3000/auth/discord/callback
 # Expected: 200 (no redirect to /vi/auth/discord/callback)
@@ -510,6 +571,8 @@ curl -sS -o /dev/null -w "%{http_code} %{redirect_url}\n" http://127.0.0.1:3000/
 curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/vi/auth/discord/callback
 # Expected: 404 (no locale-prefixed callback page — by design)
 ```
+
+(The loopback checks need a server that started successfully with `NODE_ENV=production`, so its `SITE_URL` must be a valid non-loopback `https` origin, e.g. a fake one such as `https://local.example.test`; the output URLs above still use the loopback request host.)
 
 ---
 
@@ -539,6 +602,8 @@ curl -sS -o /dev/null -w "%{http_code}\n" https://yourdomain.net/vi
 ```
 
 > `pm2 reload` sends a SIGINT, waits for the process to exit cleanly, then starts the new instance. The old instance keeps serving requests during startup of the new one.
+
+> `SITE_URL` is read from the env file at process start. If the release changes it, reload with `pm2 reload ecosystem.config.cjs --only <app> --update-env`; an invalid value makes the new instance log the `SITE_URL` error and exit with code 1 (no rebuild is involved).
 
 ---
 
@@ -620,7 +685,7 @@ File: **`.github/workflows/enforce-main-from-dev.yml`**. Trigger: **pull request
 
 File: **`.github/workflows/deploy-dev.yml`**. Trigger: **push to `dev`**. Concurrency: `fe-deploy-${{ github.ref }}` with **`cancel-in-progress: true`**.
 
-The active workflow runs **`test` → `build`**. The build job creates frontend bundle outputs on the runner (`.next`, `public`) and uploads them as the **`frontend-runtime`** artifact (`include-hidden-files: true` is required so hidden `.next` is included). Automatic VPS deployment is temporarily paused: the complete **`deploy`** job remains commented, so artifact download/verification, SSH, server Git synchronization, VPS `npm ci`, runtime `rsync`, and PM2 reload do not run. The commented block is the authoritative restoration source. Because the bundle is built in CI, `NEXT_PUBLIC_API_URL` and other required `NEXT_PUBLIC_*` values must remain available in the CI build environment.
+The active workflow runs **`test` → `build`**. The build job creates frontend bundle outputs on the runner (`.next`, `public`) and uploads them as the **`frontend-runtime`** artifact (`include-hidden-files: true` is required so hidden `.next` is included). Automatic VPS deployment is temporarily paused: the complete **`deploy`** job remains commented, so artifact download/verification, SSH, server Git synchronization, VPS `npm ci`, runtime `rsync`, and PM2 reload do not run. The commented block is the authoritative restoration source. Because the bundle is built in CI, `NEXT_PUBLIC_API_URL` and other required `NEXT_PUBLIC_*` values must remain available in the CI build environment. `SITE_URL` is not one of them: every consumer is request-time (all routes are dynamic; `robots.ts` and `sitemap.ts` are `force-dynamic`), `npm run build` passes with it unset, and it is supplied only by the server env file.
 
 ---
 
@@ -628,7 +693,7 @@ The active workflow runs **`test` → `build`**. The build job creates frontend 
 
 File: **`.github/workflows/e2e-browser.yml`**. Triggers: **pull requests** into `dev`/`main`, and **push to `dev`**. Concurrency: `fe-e2e-${{ github.ref }}` with **`cancel-in-progress: true`**. Unlike `deploy-dev.yml`, this workflow **does** run on pull requests.
 
-Steps: `npm ci` → `npm run test-all` (same gate as `deploy-dev.yml`'s `test` job) → `npx playwright install --with-deps chromium` → `npm run test:e2e` (starts the loopback fixture backend in `e2e/fixtures/server.mjs`, builds the Next app with `NEXT_PUBLIC_API_URL` pointed at it, starts `next start`, runs Playwright against Chromium, tears down both processes on success or failure). On failure, `playwright-report/` and `test-results/` are uploaded as an artifact. No secrets required — the fixture backend serves only synthetic accounts/tokens. See [`testing.md`](./testing.md) for the full harness. Hosted-run verification on GitHub's own infrastructure is pending until a real run is observed.
+Steps: `npm ci` → `npm run test-all` (same gate as `deploy-dev.yml`'s `test` job) → `npx playwright install --with-deps chromium` → `npm run test:e2e` (starts the loopback fixture backend in `e2e/fixtures/server.mjs`, builds the Next app with `NEXT_PUBLIC_API_URL` pointed at it, starts `next start` with the fake site origin `https://e2e.example.test` as `SITE_URL` (`serverEnv` in `scripts/e2e-lifecycle.mjs`), runs Playwright against Chromium, tears down both processes on success or failure). On failure, `playwright-report/` and `test-results/` are uploaded as an artifact. No secrets required — the fixture backend serves only synthetic accounts/tokens. See [`testing.md`](./testing.md) for the full harness. Hosted-run verification on GitHub's own infrastructure is pending until a real run is observed.
 
 ### GitHub Actions secrets by environment
 
@@ -661,9 +726,11 @@ Workflow: `.github/workflows/deploy-dev.yml` (push to `dev`).
 
 **Minimum for dev social login:** SSH trio + `DEPLOY_PATH_DEV` + API URL + Google + Discord client/callback (eight secrets through `NEXT_PUBLIC_DISCORD_CALLBACK_URL_DEV`).
 
+**`SITE_URL` is not a secret:** there is no `SITE_URL_DEV` and nothing maps to `SITE_URL` in the build job `env`. The dev server gets it from `.env.local` on the VPS (PM2 `env_file`), set to the dev domain (never the production one).
+
 #### Staging — placeholder (workflow not in repo)
 
-Planned: `deploy-staging.yml` on push to **`staging`**, reload **`mycourse-web-staging`**, runtime env **`.env.staging`**.
+Planned: `deploy-staging.yml` on push to **`staging`**, reload **`mycourse-web-staging`**, runtime env **`.env.staging`** (carries `SITE_URL` set to the staging domain; no `SITE_URL_STG` secret).
 
 | Secret | Maps to (build job `env`) | Example placeholder |
 |--------|---------------------------|---------------------|
@@ -680,7 +747,7 @@ Planned: `deploy-staging.yml` on push to **`staging`**, reload **`mycourse-web-s
 
 #### Production (`main`) — placeholder (workflow not in repo)
 
-Planned: `deploy-main.yml` on push to **`main`**, reload **`mycourse-web-prod`**, runtime env **`.env.prod`**.
+Planned: `deploy-main.yml` on push to **`main`**, reload **`mycourse-web-prod`**, runtime env **`.env.prod`** (carries `SITE_URL` set to the production origin; no `SITE_URL_MAIN` secret).
 
 | Secret | Maps to (build job `env`) | Example placeholder |
 |--------|---------------------------|---------------------|
@@ -828,6 +895,7 @@ jobs:
 - **`NEXT_PUBLIC_*` in CI** — because build happens on runner, these variables must exist in CI (secrets/vars). Changing them requires a new CI build to refresh the client bundle.
 - **Default PM2 env files** — `mycourse-web-dev` reads `.env.local`, `mycourse-web-staging` reads `.env.staging`, `mycourse-web-prod` reads `.env.prod` unless you override with `DEPLOY_ENV_FILE_DEV/STG/MAIN`.
 - **`AUTH_COOKIE_DOMAIN`** — runtime / server-side for cookies; keep on the server, not required in GitHub Actions for this workflow.
+- **`SITE_URL`** — server-only **runtime** variable supplied by the environment's env file (`.env.local` / `.env.staging` / `.env.prod` through PM2 `env_file`, or Docker `env_file`). It is not a GitHub Actions secret and is not added to any `env:` block or build step of `deploy-dev.yml`; the restored deploy job reloads PM2 with `--update-env` and the env file supplies the value.
 - **Backend CI** — branch **`master`** currently runs **`test` → `build`** with its complete deploy job also paused as comments — see [backend Appendix C](../../be-mycourse/docs/deploy.md#appendix-c--cicd-with-github-actions).
 - **Frontend quality in CI** — [`docs/quality.md`](./quality.md) (`test-all`, `check-all`, `deadcode`, `cycles`, `dupl`, `quality:deps`, `lint`, `biome`). Local only: `fix:biome`, `format:biome`.
 - **Frontend test harness** — [`docs/testing.md`](./testing.md) (Jest Node/jsdom + Playwright, `test:e2e` lifecycle, the fixture backend behind `e2e-browser.yml`).
@@ -868,7 +936,7 @@ ss -tlnp | grep 3000         # is port 3000 bound?
 
 ### Locale redirects not working (`/vi`, `/en` not enforced)
 
-The middleware file is not registered. See [Appendix C](#appendix-c--middleware-locale-routing-fix).
+The proxy file is not registered. See [Appendix C](#appendix-c--middleware-locale-routing).
 
 ```bash
 ls /opt/mycourse/fe/src/proxy.ts   # must exist
@@ -876,6 +944,25 @@ ls /opt/mycourse/fe/src/proxy.ts   # must exist
 # no rename required for this project setup
 npm run build && npm prune --omit=dev && pm2 reload mycourse-web
 ```
+
+### Signed-in visitors are not redirected from `/vi` or `/en` to `/vi/home`
+
+The proxy redirects only when **both** `refresh_token` and `session_id` cookies are sent. Check in DevTools that both exist for the FE host (see `AUTH_COOKIE_DOMAIN`). If the redirect works against `http://127.0.0.1:3000` but not through the public URL, a cache in front of the app is serving a stored response: Cloudflare / CDN must not cache `/`, `/vi`, `/en` (no "Cache Everything"). nginx itself has no page cache.
+
+### `SiteConfigError` on start (server or container exits immediately)
+
+`SITE_URL` is missing or invalid. At start `src/instrumentation.ts` logs `SITE_URL must be a pure public https:// origin in production ...` and exits with code 1 (so PM2 or the container runtime reports the crash instead of serving HTTP 500). Fix the env file used by the process and restart (no rebuild needed):
+
+```bash
+pm2 logs mycourse-web-dev --lines 50   # look for the SITE_URL error
+grep -n '^SITE_URL=' .env.local        # or .env.staging / .env.prod
+```
+
+Typical causes: variable not set in the env file; value has a path, query, hash or credentials (`https://example.com/app`); `http://` used in production; `localhost` / `127.0.0.1` used on a `next start` server (dev, staging and prod servers all run with `NODE_ENV=production`). Use a pure `https` origin of that environment's own domain, e.g. `SITE_URL=https://yourdomain.net`.
+
+### `/robots.txt` or `/sitemap.xml` shows the wrong host
+
+Both are generated per request from `SITE_URL`. Correct the value in the env file and restart; they do not depend on the build or on the request `Host` header.
 
 ### Login works but cookies are not sent to the API
 
@@ -917,7 +1004,10 @@ sudo nginx -t                  # valid config after certbot edits?
 | Area | Path | Notes |
 |------|------|-------|
 | Next.js config + i18n plugin | `next.config.ts` | next-intl plugin; `turbopack.root`, dev memory/cache/logging — see `docs/architecture.md#development-server` |
-| Middleware (locale routing) | `src/proxy.ts` | See Appendix C |
+| Middleware (locale routing + signed-in redirect) | `src/proxy.ts` | next-intl proxy plus `/{locale}` to `/{locale}/home` redirect for requests with both auth cookies; cookie names in `src/constants/auth-cookie.ts` — see Appendix C |
+| Site origin config | `src/lib/seo/site-config.ts` | `resolveSiteConfig` reads runtime `SITE_URL` and throws `SiteConfigError` on an invalid value — see [`SITE_URL`](#site_url) |
+| Startup validation | `src/instrumentation.ts` | `register()` validates `SITE_URL` at server start (nodejs runtime, `NODE_ENV=production`, skipped during `next build`); on failure logs the error and exits with code 1 |
+| robots.txt / sitemap.xml | `src/app/robots.ts`, `src/app/sitemap.ts` | `dynamic = "force-dynamic"`; served outside `src/proxy.ts` (matcher excludes dotted paths); no static copy in `public/` or nginx |
 | Root layout | `src/app/layout.tsx` | Fonts (Roboto, Gilroy, GeistMono), Toaster |
 | Locale layout | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider` + `AppProviders` (SWR) |
 | Web shell layout | `src/app/[locale]/(web)/layout.tsx` | `Header` + `<main>` + `Footer` (from `@/components/common`) |
@@ -949,18 +1039,20 @@ cp .env.local.example .env.local
 ./scripts/docker/health-check.sh local
 ```
 
-Full reference: **[`docs/docker.md`](docker.md)** — `NEXT_PUBLIC_*` build-args, port matrix, Swarm demo (not for CI).
+Full reference: **[`docs/docker.md`](docker.md)** — `NEXT_PUBLIC_*` build-args, runtime-only `SITE_URL` through `env_file`, port matrix, Swarm demo (not for CI).
 
 ---
 
 *For the full-stack VPS setup (Go API, Postgres, Redis, joint Nginx, CI/CD), always use **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** as the primary reference. Use this document for frontend-specific concerns only.*
 
 
-## Planned SITE_URL (take-note — not configured this phase)
+## SITE_URL
 
-Future **server-side only** `SITE_URL` must be a pure absolute `https://` frontend **origin** (scheme + host [+ optional port], pathname `/` or empty, **no** username/password, **no** query, **no** hash, no trailing slash after normalize). It feeds `metadataBase`, canonical, hreflang, sitemap, and absolute OG URLs via `src/lib/seo/site-config.ts`.
+`SITE_URL` is the **server-only, runtime-only** canonical origin of this frontend. It feeds `metadataBase`, canonical, hreflang, absolute OG URLs, `/robots.txt` and `/sitemap.xml` through `resolveSiteConfig` in `src/lib/seo/site-config.ts`.
 
-- Reject values like `https://example.com/app` or `https://example.com?x=1` — do not silently strip path/query into a different origin contract.
+- **Where it comes from:** the per-environment env file (`.env.local` for dev, `.env.staging`, `.env.prod`) via PM2 `env_file` and Docker `env_file`. It is never `NEXT_PUBLIC_`, never a Docker build arg and never a GitHub Actions secret; no CI build step sets it, and `npm run build` passes with it unset (all routes are dynamic; `robots.ts` and `sitemap.ts` are `force-dynamic`).
+- **Contract:** a pure absolute origin — scheme + host [+ port], pathname `/` or empty, **no** username/password, **no** query, **no** hash; the trailing slash is normalized away. Values such as `https://example.com/app` or `https://example.com?x=1` are rejected, not stripped. Under `NODE_ENV=production` (every `next start`: dev, staging and prod servers) the scheme must be `https` and the host must not be loopback; outside production `http://localhost[:port]` and `http://127.0.0.1[:port]` are also accepted.
+- **Start-up validation:** `src/instrumentation.ts` `register()` validates it when the server starts (nodejs runtime, `NODE_ENV=production`, skipped during `next build`). A missing or invalid value makes the process log `SITE_URL must be a pure public https:// origin in production ...` and exit with code 1 (PM2 / the container runtime reports it) instead of leaving a server that answers every request with HTTP 500.
+- **Which host:** the same host (www or apex) as the OAuth callback origins. Dev and staging use their own domain, never the production one. The e2e server uses the fake origin `https://e2e.example.test`.
 - Do **not** treat `NEXT_PUBLIC_API_URL` or `NEXT_PUBLIC_SITE_URL` as the site canonical origin.
-- This phase does **not** change `.env`, `.env.example`, nginx, or PM2.
-- Existing nginx security headers (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`) remain the deploy baseline; FE `security-headers-presets.ts` is an inactive draft aligned with them. See [`seo-ranking-setup.md`](./seo-ranking-setup.md) and [`security-hardening-notes.md`](./security-hardening-notes.md).
+- nginx is unchanged (no page cache, no static robots/sitemap). Existing nginx security headers (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`) remain the deploy baseline; FE `security-headers-presets.ts` is an inactive draft aligned with them. Cloudflare / CDN cache rules are outside the repo and must not cache `/`, `/vi`, `/en`. See [`seo-ranking-setup.md`](./seo-ranking-setup.md) and [`security-hardening-notes.md`](./security-hardening-notes.md).
