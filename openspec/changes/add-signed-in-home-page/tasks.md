@@ -166,6 +166,10 @@ Companion documents: `design.md` (decisions D1–D11, the codebase-wide capabili
 
 - [x] 13.1 Inspect only the committable Git surface (`git ls-files`, `git status --short`, `git check-ignore -v`): changed tests, fixtures, assets and docs contain only placeholders (`example.com`, `example.test`, synthetic slugs such as `fixture-learner`), no credentials, tokens, private endpoints or values derived from `.env`; mention environment variables by name only. Exported Figma asset URLs are short-lived and must not appear in any file. Verify: the report states that only the committable surface was inspected.
 
+## 13b. Follow-up: swipeable sections on mobile
+
+- [x] 13b.1 `HomeSectionShell` lays the skeletons and the content out as a scroll-snap row below `sm` (`flex snap-x snap-mandatory overflow-x-auto`, items `w-[85%] shrink-0 snap-start`, scrollbar hidden) and as the existing grid from `sm` (`sm:grid`, item sizing reset); the three sections pass their grid classes without the base `grid grid-cols-1 gap-*` (now `sm:` prefixed). Verify: computed styles at 1280 px are unchanged (4 columns of 284.25 px, gaps 20/24 and 20/20) and at 390 px the row scrolls (scrollWidth 629 against 358) with no page overflow; `home-section-shell.test.tsx` covers content and skeleton rows.
+
 ## 14. Mandatory End-of-Task Learning Summary
 
 - [x] 14.1 Update only `.context/session-<SESSION_ID>.md` after implementation, review, gates, GitNexus and docs are complete, with **What I Learned Today** (what existed and was reused, the avatar/section-header decisions, the Figma-vs-BE deviations, the SWR cache decision, any command failure) and **What I Should Learn or Do Next Time** (course detail page and Expand More question, instructor public page, `remotePatterns`, unverified backend rate limit and cache, the Figma navbar variant). Verify: both headings exist and every statement is true.
@@ -180,5 +184,5 @@ Companion documents: `design.md` (decisions D1–D11, the codebase-wide capabili
 
 ## 17. Commit Rules (AGENTS.md — Commit rules; Branch rename; Agent rule boundaries)
 
-- [ ] 17.1 Commit only if the user asks: title in English, one line `<type>: <title>`, no scope or parentheses, no body or footer, 15–72 characters, specific enough to explain the change (for example `feat: build the signed-in home page with catalog data`); let the Husky `pre-commit` hook run `make check-all` if present (this repository has no Husky or Makefile at this commit, so `npm run check-all` is the equivalent) and the `commit-msg` hook validate with commitlint; never `--no-verify`. Verify: `git log -1 --format=%s` is compliant.
-- [ ] 17.2 Branch rename rules apply only if the user asks to rename the branch; never push, delete remote branches or change upstream unless separately requested. Verify: no push or remote change was made.
+- [x] 17.1 Commit only if the user asks: title in English, one line `<type>: <title>`, no scope or parentheses, no body or footer, 15–72 characters, specific enough to explain the change (for example `feat: build the signed-in home page with catalog data`); let the Husky `pre-commit` hook run `make check-all` if present (this repository has no Husky or Makefile at this commit, so `npm run check-all` is the equivalent) and the `commit-msg` hook validate with commitlint; never `--no-verify`. Verify: `git log -1 --format=%s` is compliant.
+- [x] 17.2 Branch rename rules apply only if the user asks to rename the branch; never push, delete remote branches or change upstream unless separately requested. Verify: no push or remote change was made.

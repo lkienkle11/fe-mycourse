@@ -20,7 +20,7 @@ import { useOAuthPostAuth } from "@/hooks/auth/use-oauth-post-auth";
 import { useRedirectIfAuthenticated } from "@/hooks/auth/use-redirect-if-authenticated";
 import { getPathname, Link } from "@/i18n/navigation";
 // import { forgotPasswordHref } from "@/lib/navigation/routes";
-import { homeHref, signupHref } from "@/lib/navigation/routes";
+import { resolvePostAuthHref, signupHref } from "@/lib/navigation/routes";
 import { cn } from "@/lib/utils";
 import { translateApiErrorCode } from "@/lib/utils/api-error";
 import { type LoginFormValues, loginSchema } from "@/schema/auth";
@@ -113,7 +113,7 @@ export function LoginContent({
     const result = await handleAuthSubmit("login", values);
     if (result.success) {
       mutateMe();
-      onAuthenticated(nextPath ?? homeHref);
+      onAuthenticated(resolvePostAuthHref(nextPath));
     } else if (result.code === ApiErrorCode.EmailNotConfirmed) {
       setEmailNotConfirmed(true);
       setServerError(translateApiErrorCode(tErrors, result.code));

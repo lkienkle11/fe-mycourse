@@ -96,6 +96,20 @@ export function instructorCourseEditorTabHref(
 
 export const homeHref = toPublicRoute(publicRoutes.home);
 export const signedInHomeHref = toPrivateRoute(privateRoutes.home);
+/**
+ * Default destination after login / OAuth / confirm-email / already-signed-in
+ * when no safe `next` path exists.
+ */
+export const defaultPostAuthHref = signedInHomeHref;
+
+/**
+ * Where to send a user who just authenticated: the requested `next` path, or
+ * the signed-in home when there is none or it is the public homepage (the
+ * proxy would redirect `/` there anyway; going straight saves two navigations).
+ */
+export function resolvePostAuthHref(nextPath: string | null): string {
+  return !nextPath || nextPath === homeHref ? defaultPostAuthHref : nextPath;
+}
 export const forgotPasswordHref = toPublicRoute(publicRoutes.forgotPassword);
 export const confirmEmailHref = toPublicRoute(publicRoutes.confirmEmail);
 export const logoutHref = toPublicRoute(publicRoutes.logout);

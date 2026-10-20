@@ -21,7 +21,7 @@ export function HomePopularInstructorsSection() {
       isEmpty={rows.length === 0}
       onRetry={() => void mutate()}
       skeletonCount={HOME_POPULAR_INSTRUCTORS_LIMIT}
-      gridClassName="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
+      gridClassName="sm:grid-cols-2 sm:gap-5 lg:grid-cols-4"
       skeletonItemClassName="aspect-[285/400] w-full rounded-[30px]"
       emptyMessage={t("popularInstructors.empty")}
       errorMessage={t("popularInstructors.error")}

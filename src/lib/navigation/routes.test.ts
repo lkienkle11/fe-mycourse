@@ -1,5 +1,13 @@
 import { describe, expect, it } from "@jest/globals";
-import { courseDetailHref, loginHref, signupHref } from "./routes";
+import {
+  courseDetailHref,
+  defaultPostAuthHref,
+  homeHref,
+  loginHref,
+  resolvePostAuthHref,
+  signedInHomeHref,
+  signupHref,
+} from "./routes";
 
 describe("loginHref / signupHref", () => {
   it("builds a plain destination with no next param", () => {
@@ -28,5 +36,26 @@ describe("courseDetailHref", () => {
 
   it("encodes characters that are not path safe", () => {
     expect(courseDetailHref("a b/c")).toBe("/courses/a%20b%2Fc");
+  });
+});
+
+describe("defaultPostAuthHref", () => {
+  it("is the signed-in home", () => {
+    expect(defaultPostAuthHref).toBe("/home");
+    expect(defaultPostAuthHref).toBe(signedInHomeHref);
+  });
+});
+
+describe("resolvePostAuthHref", () => {
+  it("falls back to the signed-in home without a return path", () => {
+    expect(resolvePostAuthHref(null)).toBe(defaultPostAuthHref);
+  });
+
+  it("treats the public homepage as no return path", () => {
+    expect(resolvePostAuthHref(homeHref)).toBe(defaultPostAuthHref);
+  });
+
+  it("keeps any other safe return path", () => {
+    expect(resolvePostAuthHref("/instructor")).toBe("/instructor");
   });
 });

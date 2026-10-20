@@ -1,6 +1,6 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-10-15 (jscpd dedup table: shared tree / payload / slug / form-field / slug-conflict modules). Prior: 2026-09-16 (`test` now runs the real Jest suite — see [`docs/testing.md`](./testing.md); `deadcode`/Knip in `test-all` / `check-all`; CI `test` job uses `test-all`)._
+_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-15 (jscpd dedup table: shared tree / payload / slug / form-field / slug-conflict modules). Prior: 2026-09-16 (`test` now runs the real Jest suite — see [`docs/testing.md`](./testing.md); `deadcode`/Knip in `test-all` / `check-all`; CI `test` job uses `test-all`)._
 
 Checks for **dead code** (Knip), **circular imports** (Madge), **duplicate code** (jscpd), **ESLint**, and **Biome** under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs **`npm run test-all`** in the **`test`** job (`lint` → `biome` → `test` → `deadcode` → `quality:deps`), then **`npm run build`** in a separate **`build`** job (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 
@@ -59,7 +59,7 @@ It does **not** gate unused exported types under `src/types/**` (same `ignoreIss
 
 Run standalone: **`npm run deadcode`** (alias: `npx knip`). Included in **`test-all`** / **`check-all`** and CI **`test`** job on push to **`dev`**.
 
-Configuration: [`knip.json`](../knip.json). The built-in **Next.js plugin** (enabled via `"next"` in `dependencies`) supplies App Router entry patterns (`src/app/**/{page,layout,route,…}.tsx`, `src/proxy.ts`, `next.config.ts`, …).
+Configuration: [`knip.json`](../knip.json). The built-in **Next.js plugin** (enabled via `"next"` in `dependencies`) supplies App Router entry patterns (`src/app/**/{page,layout,route,robots,sitemap,…}.tsx`, `src/proxy.ts`, `src/instrumentation.ts`, `next.config.ts`, …).
 
 ### Scope (`knip.json`)
 
@@ -267,6 +267,6 @@ Do **not** use backend `make check-dupl` or `make check-architecture` in this fr
 | [`testing.md`](./testing.md) | Full Jest + Playwright harness — behavior matrix, fixtures, `test:e2e` lifecycle |
 
 
-## Unused SEO foundation (intentional)
+## SEO foundation and Knip
 
-Shared SEO/performance/security helpers under `src/lib/seo/**`, `src/lib/performance/**`, and `src/lib/security/web/**` are intentionally unused by pages/layouts this phase. Knip ignores `files` under `src/lib/**` and ignores `types` / `nsTypes` / `files` under all of `src/types/**` (including SEO contracts). **Do not** place unused orphans under `src/components/**` (`JsonLd` lives in `src/lib/seo/json-ld.tsx`). Gate remains `npm run check-all`. See [`seo-ranking-setup.md`](./seo-ranking-setup.md).
+The home metadata, `src/app/robots.ts`, `src/app/sitemap.ts`, `src/instrumentation.ts` and `src/proxy.ts` use the SEO and crawl helpers under `src/lib/seo/**` and `src/lib/security/web/**`. The other helpers there and under `src/lib/performance/**` (for example `seoFetch`, the non-Organization JSON-LD builders, the resource hints) are still not imported by any page. Knip ignores `files` under `src/lib/**` and ignores `types` / `nsTypes` / `files` under all of `src/types/**` (including SEO contracts). **Do not** place unused orphans under `src/components/**` (`JsonLd` lives in `src/lib/seo/json-ld.tsx`). Gate remains `npm run check-all`. See [`seo-ranking-setup.md`](./seo-ranking-setup.md).

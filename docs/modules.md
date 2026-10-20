@@ -1,16 +1,16 @@
 # Modules (`fe-mycourse`)
 
-_Last audited: 2026-10-18 (signed-in home hero carousel reworked to the three Figma slides: no arrow buttons, drag/swipe, 3 s autoplay that restarts on manual change via `useCarouselAutoplay`). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract: `MeResponse.slug`, `CourseCollaborator` composed from `UserPickerCandidate`, `updateMeSchema.slug`). Prior: 2026-10-15 (Taxonomy slug management UI: editable root + per-node slug, 3007 recommended-slug confirm via shared hook). Prior: 2026-09-29 (Course slug management UI: editable slug on create + basic-info, 3007 recommended-slug confirm). Prior: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code retained). Prior: 2026-06-17 (course read-path performance: `include_outline`, `include_images`, browser-verified info tab)._
+_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-18 (signed-in home hero carousel reworked to the three Figma slides: no arrow buttons, drag/swipe, 3 s autoplay that restarts on manual change via `useCarouselAutoplay`). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract: `MeResponse.slug`, `CourseCollaborator` composed from `UserPickerCandidate`, `updateMeSchema.slug`). Prior: 2026-10-15 (Taxonomy slug management UI: editable root + per-node slug, 3007 recommended-slug confirm via shared hook). Prior: 2026-09-29 (Course slug management UI: editable slug on create + basic-info, 3007 recommended-slug confirm). Prior: 2026-07-08 (Auth module: Discord + Google on popup; X OAuth code retained). Prior: 2026-06-17 (course read-path performance: `include_outline`, `include_images`, browser-verified info tab)._
 
 
 ## Module map
 - `Ui`: `src/components`, `src/screen`, `src/app/[locale]/(web)`, `src/app/[locale]/{admin,instructor,sysadmin}` (dashboard shells)
-- `Auth`: `src/actions/auth` (incl. `google-oauth.ts`, `discord-oauth.ts`, `x-oauth.ts`), `src/components/common/auth-menu` (incl. `auth-social-login`), `src/components/providers/google-one-tap-host.tsx`, `src/hooks/auth` (incl. `use-google-login`, `use-google-one-tap`, `use-discord-login`, `use-x-login`, `use-oauth-post-auth`), `src/app/auth/discord/callback`, `src/app/auth/x/callback`, `src/lib/utils/auth-action.ts`, `src/schema/auth`, `src/types/auth` (incl. `google-oauth.ts`)
+- `Auth`: `src/actions/auth` (incl. `google-oauth.ts`, `discord-oauth.ts`, `x-oauth.ts`), `src/components/common/auth-menu` (incl. `auth-social-login`), `src/components/providers/google-one-tap-host.tsx`, `src/hooks/auth` (incl. `use-google-login`, `use-google-one-tap`, `use-discord-login`, `use-x-login`, `use-oauth-post-auth`), `src/app/auth/discord/callback`, `src/app/auth/x/callback`, `src/lib/utils/auth-action.ts`, `src/constants/auth-cookie.ts`, `src/schema/auth`, `src/types/auth` (incl. `google-oauth.ts`)
 - `Api`: `src/api`, `src/constants/api-route.ts`, `src/constants/api-error-code.ts`, `src/types/api.ts`, `src/lib/utils/api.ts`, `src/lib/utils/api-error.ts`
 - `Validation + i18n errors`: `src/schema/**`, `src/messages/error-codes.ts`, `src/components/shared/required-label.tsx`, `src/components/shared/field-error.tsx`, `src/components/shared/form-field.tsx`, `src/lib/utils/validation-message.ts`
 - `Events`: `src/events`, `src/hooks/events`, `src/store/events`, `src/types/events`, `src/config/events`
 - `State`: `src/store` (auth, language, api-error, events), `src/hooks/auth`, `src/hooks/language`
-- `Routing + i18n`: `src/app`, `src/i18n`, `src/proxy.ts`, `src/messages`
+- `Routing + i18n`: `src/app`, `src/i18n`, `src/proxy.ts` (locale routing + signed-in home redirect + guest `/home` redirect), `src/lib/navigation/signed-in-home-redirect.ts`, `src/messages`
 - `Shared`: `src/lib/utils`, `src/constants`, `src/config`
 - `Taxonomy`: `src/types/taxonomy`, `src/constants/taxonomy`, `src/api/callers/taxonomy`, `src/components/features/taxonomy`, `src/screen/common/taxonomy`, app routes under `admin/taxonomy/*` and `sysadmin/taxonomy/*`
 - `Media`: `src/types/media`, `src/constants/media`, `src/api/callers/media`, `src/components/features/media` (collection popup; no dedicated route page yet)
@@ -140,7 +140,7 @@ _Last audited: 2026-10-18 (signed-in home hero carousel reworked to the three Fi
 
 ## Cross-module contracts
 - `Auth UI -> actions/auth/auth-client -> actions/auth -> api/callers` for login/signup submit; UI maps `result.code` via `translateApiErrorCode(tErrors, code)`.
-- `OAuth: AuthSocialLogin / GoogleOneTapHost -> hooks/auth (useDiscordLogin | useGoogleLogin | useGoogleOneTap [| useXLogin retained]) -> actions/auth/{discord-oauth,google-oauth,x-oauth} -> lib/utils/auth-action (finalizeAuthLoginAction) -> api/callers/auth`; success runs `useOAuthPostAuth(onAuthenticated)` (`mutateMe` + `onAuthenticated(nextPath ?? homeHref)`, `nextPath` from `useAuthNextParam`).
+- `OAuth: AuthSocialLogin / GoogleOneTapHost -> hooks/auth (useDiscordLogin | useGoogleLogin | useGoogleOneTap [| useXLogin retained]) -> actions/auth/{discord-oauth,google-oauth,x-oauth} -> lib/utils/auth-action (finalizeAuthLoginAction) -> api/callers/auth`; success runs `useOAuthPostAuth(onAuthenticated)` (`mutateMe` + `onAuthenticated(resolvePostAuthHref(nextPath))`, `nextPath` from `useAuthNextParam`).
 - `api/hooks/auth/useAuth -> hooks/auth/use-auth-store` for SWR-to-Zustand sync.
 - All feature `catch` blocks after API calls → `toastApiError(useTranslations("errors.codes"), error)` (Auth, Media, Taxonomy, Instructor, Course).
 - `api/api-transport` + runtime adapters depend on `lib/utils/cookie` / `auth-session` for token cookie read/write.
@@ -152,13 +152,14 @@ _Last audited: 2026-10-18 (signed-in home hero carousel reworked to the three Fi
 See [`delivery.md`](./delivery.md) and [`folder-structure.md`](./folder-structure.md) (`src/events/` tree).
 
 
-## SEO / Performance / Security web (foundation, unused)
+## SEO / Performance / Security web
 
 - **SEO contracts**: `src/types/seo/**` — type-only metadata, ranking, fetch/rendering, image-policy, and resource-hint contracts.
 - **SEO policy values**: `src/constants/seo/**` — data-only metadata defaults/limits, indexable route keys, rendering hints, image sizes, and robots presets.
-- **SEO runtime**: `src/lib/seo/**` — metadata factory, site-config validation, canonical/robots/sitemap helpers, JSON-LD + ranking builders, `seoFetch` over `serverRawFetch`, TEMPORARY dormant env cache helper (`temporary-cache-policy.ts`, flag off).
+- **SEO runtime**: `src/lib/seo/**` — metadata factory (`buildPageMetadata`, emits hreflang per locale + `x-default`), site-config validation (`resolveSiteConfig`, runtime-only `SITE_URL`), canonical/robots/sitemap helpers (`buildLanguageAlternates`, `buildRobotsTxtRules`, `buildSitemapEntries`), JSON-LD + ranking builders, `seoFetch` over `serverRawFetch`, TEMPORARY dormant env cache helper (`temporary-cache-policy.ts`, flag off).
+- **Consumers**: `generateMetadata` of `src/app/[locale]/(web)/page.tsx` (indexable, canonical, hreflang, OG/Twitter without image, Organization JSON-LD) and `src/app/[locale]/(web)/home/page.tsx` (title + `noindex,nofollow`); `src/app/robots.ts`; `src/app/sitemap.ts`; `src/instrumentation.ts` (validates `SITE_URL` at production server start; logs and exits non-zero when missing/invalid).
 - **Performance**: `src/lib/performance/**` — image sizes/LCP policy, resource-hint builders (not injected).
-- **Security web**: `src/lib/security/web/**` — crawl policy from route constants, client redact, JSON-LD sanitize, draft headers.
-- **Signed-in home**: `PRIVATE_ROUTES.home` → `src/app/[locale]/(web)/home/page.tsx` + `SignedInHomePage` (hero carousel, Complete your Course, Trending Course, Popular Instructor; client auth gate; data from the catalog and learner-courses APIs); no route metadata (product decision); `/courses/[slug]` is a temporary placeholder page.
+- **Security web**: `src/lib/security/web/**` — crawl policy from route constants (consumed by `robots.ts`), client redact, JSON-LD sanitize, draft headers.
+- **Signed-in home**: `PRIVATE_ROUTES.home` → `src/app/[locale]/(web)/home/page.tsx` + `SignedInHomePage` (hero carousel, Complete your Course, Trending Course, Popular Instructor; client auth gate; data from the catalog and learner-courses APIs); metadata = title + `noindex,nofollow`; `src/proxy.ts` redirects signed-in `/{locale}` visits to it; `/courses/[slug]` is a temporary placeholder page.
 - **Docs**: [`seo-ranking-setup.md`](./seo-ranking-setup.md), [`security-hardening-notes.md`](./security-hardening-notes.md).
-- **Non-goals remaining**: no broad page/layout SEO wire; no `publicCacheProfiles` entries (the home data is fetched client side).
+- **Non-goals remaining**: no page/layout SEO wire beyond the two home routes; no `publicCacheProfiles` entries (the home data is fetched client side).

@@ -39,7 +39,7 @@ export function HomeContinueLearningSection() {
       isEmpty={rows.length === 0}
       onRetry={() => void mutate()}
       skeletonCount={HOME_CONTINUE_INITIAL_LIMIT}
-      gridClassName="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:max-w-[895px] lg:grid-cols-3"
+      gridClassName="sm:grid-cols-2 sm:gap-5 lg:max-w-[895px] lg:grid-cols-3"
       skeletonItemClassName="h-[230px] w-full rounded-[23px]"
       emptyMessage={t("continueLearning.empty")}
       errorMessage={t("continueLearning.error")}

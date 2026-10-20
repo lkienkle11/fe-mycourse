@@ -8,7 +8,7 @@ type JsonLdProps = {
 
 /**
  * Server-friendly JSON-LD script. Escapes `<` to `\u003c` before embed.
- * Place under src/lib/seo (not src/components) while unused — Knip files policy.
+ * Lives under src/lib/seo next to the other SEO builders (not src/components).
  */
 export function JsonLd({ data, id }: JsonLdProps) {
   const sanitized = sanitizeJsonLdValue(data);

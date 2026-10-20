@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useGetMe } from "@/hooks/auth/use-auth-store";
 import { useRouter } from "@/i18n/navigation";
-import { homeHref } from "@/lib/navigation/routes";
+import { resolvePostAuthHref } from "@/lib/navigation/routes";
 
 type AuthSnapshot = "pending" | "authenticated" | "guest";
 
@@ -25,9 +25,9 @@ type AuthSnapshot = "pending" | "authenticated" | "guest";
  * too raced that callback: by the time this hook's effect fired, the URL had
  * often already moved on to the real destination (dropping its `next` query
  * param), so `useAuthNextParam()` recomputed `nextPath` as `null` and this
- * hook overwrote the correct redirect with a bounce to `homeHref` instead —
+ * hook overwrote the correct redirect with a bounce to the default destination instead —
  * caught via a fixture-backed e2e run where a learner's own post-login
- * redirect to `/instructor` got hijacked back to `/` this way.
+ * redirect to `/instructor` got hijacked back to the default destination this way.
  */
 export function useRedirectIfAuthenticated(nextPath: string | null): boolean {
   const { me, isLoading } = useGetMe();
@@ -40,7 +40,7 @@ export function useRedirectIfAuthenticated(nextPath: string | null): boolean {
 
   useEffect(() => {
     if (snapshot !== "authenticated") return;
-    router.replace(nextPath ?? homeHref);
+    router.replace(resolvePostAuthHref(nextPath));
   }, [snapshot, nextPath, router]);
 
   return snapshot === "authenticated";

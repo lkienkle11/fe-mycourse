@@ -1,6 +1,6 @@
 # Logic Flow
 
-_Last audited: 2026-10-15 (taxonomy create/update slug flow §10b; §10a source now includes the shared slug-conflict hook). Prior: 2026-07-08 (Discord + Google OAuth on popup; X code retained). Prior: 2026-06-26 (course admin ⋮ menu → dialog: `modal={false}` + deferred `onSelect` so `body` stays clickable after approve/trash flows). Prior: course version numbering §13, reject-fork draft, reorder nested merge._
+_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-15 (taxonomy create/update slug flow §10b; §10a source now includes the shared slug-conflict hook). Prior: 2026-07-08 (Discord + Google OAuth on popup; X code retained). Prior: 2026-06-26 (course admin ⋮ menu → dialog: `modal={false}` + deferred `onSelect` so `body` stays clickable after approve/trash flows). Prior: course version numbering §13, reject-fork draft, reorder nested merge._
 
 
 Key execution paths and control flows in `fe-mycourse`. Covers auth, token lifecycle, data fetching, and form submission patterns.
@@ -51,7 +51,7 @@ Server Action reads response:
   ↓
 Client receives AuthActionResult:
   - success=true  → mutateMe() [invalidate SWR cache]
-                    → onAuthenticated(nextPath ?? homeHref)   [prop supplied by LoginSignupPopup]
+                    → onAuthenticated(resolvePostAuthHref(nextPath))   [prop supplied by LoginSignupPopup; "/home" when next is missing or "/"]
                     → LoginSignupPopup sets open=false (exit animation), then router.push(destination)
   - success=false → translateApiErrorCode(tErrors, result.code) inline or toast — never result.message
 ```
@@ -76,7 +76,7 @@ finalizeAuthLoginAction (shared with email login)
   → set session cookies on success
   ↓
 useOAuthPostAuth(onAuthenticated) onSuccess:
-  mutateMe() + onAuthenticated(nextPath ?? homeHref)   [nextPath read via useAuthNextParam()]
+  mutateMe() + onAuthenticated(resolvePostAuthHref(nextPath))   [nextPath read via useAuthNextParam()]
   ↓
 Errors: translateApiErrorCode (BE 4013–4017/4019, 4023–4025; FE-local 4018, 4020–4022, 4026)
 ```
@@ -275,9 +275,11 @@ Re-login required after BE permission matrix changes (JWT cache).
 ## 7. i18n Text Resolution Flow
 
 ```
-next-intl middleware (src/proxy.ts)
-  → skipped for locale-less OAuth callbacks (/auth/discord/callback, /auth/x/callback)
-  → otherwise detects locale from URL prefix (/vi/... or /en/...)
+src/proxy.ts (next-intl middleware wrapper)
+  → skipped for locale-less OAuth callbacks (/auth/discord/callback, /auth/x/callback) and dotted paths (/robots.txt, /sitemap.xml)
+  → locale root (/vi or /en) AND refresh_token + session_id cookies present
+      → 307 /{locale}/home   (Cache-Control: private, no-store; Vary: Cookie; next-intl Set-Cookie copied)
+  → otherwise next-intl: detects locale from URL prefix (/vi/... or /en/...); "/" redirects to /{locale} (307, then the rule above)
   → sets locale cookie / header
 
 Server Component or Client Component:

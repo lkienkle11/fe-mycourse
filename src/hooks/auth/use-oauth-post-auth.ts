@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useGetMe } from "@/hooks/auth/use-auth-store";
-import { homeHref } from "@/lib/navigation/routes";
+import { resolvePostAuthHref } from "@/lib/navigation/routes";
 
 /**
  * Shared post-OAuth side effect: refresh the session, then hand the
@@ -23,6 +23,6 @@ export function useOAuthPostAuth(
 
   return useCallback(() => {
     mutateMe();
-    onAuthenticated(nextPath ?? homeHref);
+    onAuthenticated(resolvePostAuthHref(nextPath));
   }, [mutateMe, nextPath, onAuthenticated]);
 }

@@ -1,6 +1,6 @@
 # Reusable Assets
 
-_Last audited: 2026-10-18 (hero photo slides use the uncropped 1536×1024 Figma sources so the framing matches Figma; signed-in home hero carousel reworked to the three Figma slides: no arrow buttons, drag/swipe, 3 s autoplay that restarts on manual change via `useCarouselAutoplay`). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract: `MeResponse`, `UserPickerCandidate` / `CourseCollaborator` identity shape); 2026-10-15 (taxonomy slug management UI: `useSlugConflictFlow`, `FormField` / `SlugField`, `payload.ts`, `tree.ts`, per-node slug in `TaxonomyTreeEditor`, `SlugInput` reuse in taxonomy). Prior: 2026-09-29 (course slug management UI: `SlugInput`, `sanitizeSlugInput`, `extractRecommendedSlug`, `useCourseCreateFlow`, `ApiErrorCode.SlugAlreadyExists`). Prior: 2026-07-10 (Homepage marketing images under `public/assets/images/home`); before that: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
+_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-18 (hero photo slides use the uncropped 1536×1024 Figma sources so the framing matches Figma; signed-in home hero carousel reworked to the three Figma slides: no arrow buttons, drag/swipe, 3 s autoplay that restarts on manual change via `useCarouselAutoplay`). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract: `MeResponse`, `UserPickerCandidate` / `CourseCollaborator` identity shape); 2026-10-15 (taxonomy slug management UI: `useSlugConflictFlow`, `FormField` / `SlugField`, `payload.ts`, `tree.ts`, per-node slug in `TaxonomyTreeEditor`, `SlugInput` reuse in taxonomy). Prior: 2026-09-29 (course slug management UI: `SlugInput`, `sanitizeSlugInput`, `extractRecommendedSlug`, `useCourseCreateFlow`, `ApiErrorCode.SlugAlreadyExists`). Prior: 2026-07-10 (Homepage marketing images under `public/assets/images/home`); before that: 2026-06-14 (Quill SSR lazy load via `ensureQuillLoaded`)._
 
 
 All reusable utilities, types, hooks, stores, schemas, constants, and shared logic across `fe-mycourse`. Check this file **before** creating any new utility or type to prevent duplication.
@@ -116,10 +116,19 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: `src/api/callers/auth/auth-factory.ts (+ auth-browser.ts)`, `src/actions/auth/auth.ts`, `src/api/transport/api-transport.ts`, refresh proxy.
 - **Dependencies**: none.
 
+### Asset: Auth cookie names (ACCESS_TOKEN_COOKIE / REFRESH_TOKEN_COOKIE / SESSION_ID_COOKIE / AUTH_COOKIE_NAMES)
+- **Name**: `ACCESS_TOKEN_COOKIE`, `REFRESH_TOKEN_COOKIE`, `SESSION_ID_COOKIE`, `AUTH_SESSION_EXPIRES_AT_COOKIE`, `LEGACY_AUTH_SESSION_MAX_AGE_COOKIE`, `AUTH_COOKIE_NAMES`
+- **Type**: Constants (data only)
+- **Path**: `src/constants/auth-cookie.ts` (re-exported by `src/constants/index.ts`)
+- **Purpose**: Single source of the auth cookie names (`access_token`, `refresh_token`, `session_id`, `auth_session_expires_at`, legacy `auth_session_max_age`). `AUTH_COOKIE_NAMES` lists the three token cookies that browser JS must never write (`setCookieValue` guard).
+- **Scope**: `src/api/auth/server-auth.ts`, `src/lib/utils/auth-session.ts`, `src/lib/utils/cookie.ts`, `src/app/api/auth/refresh/route.ts`, `src/actions/auth/auth.ts`, and `hasAuthSessionCookies` in `src/lib/navigation/signed-in-home-redirect.ts` (used by `src/proxy.ts`).
+- **Dependencies**: none.
+- **Reuse Rule**: Never hard-code `"access_token"`, `"refresh_token"` or `"session_id"` as cookie names; import these constants.
+
 ### Asset: AUTH_SESSION_EXPIRES_AT_COOKIE / resolveRefreshMaxAgeFromBe
 - **Name**: `AUTH_SESSION_EXPIRES_AT_COOKIE`, `resolveRefreshMaxAgeFromBe()`, `refreshMaxAgeFromBeSetCookie()`, `expiresAtFromMaxAge()`, `remainingSecondsUntilExpiresAt()`
 - **Type**: Constant + server-only helpers
-- **Path**: `src/lib/utils/auth-session.ts`
+- **Path**: helpers in `src/lib/utils/auth-session.ts`; the cookie-name constant is defined in `src/constants/auth-cookie.ts`
 - **Purpose**: FE-only HttpOnly cookie storing **absolute session expiry** (Unix seconds) derived from BE `Set-Cookie` Max-Age. Fallback computes `expires_at - now` so non-remember sessions are never extended when Set-Cookie is unavailable.
 - **Scope**: `setAuthSessionCookies`, `clearAuthSessionCookies`, refresh proxy, login/confirm actions.
 - **Dependencies**: `parseMaxAgeForCookie` from `fetch-helpers` (`src/api/core/fetch-helpers.ts`).
@@ -209,13 +218,40 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Scope**: screens, shared menu/sidebar constants, navigation helpers.
 - **Dependencies**: `PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`, `buildQueryParams`.
 
-### Asset: pre-built navigation hrefs (`homeHref`, `signedInHomeHref`, `logoutHref`, `adminCoursesHref`, ...)
-- **Name**: `homeHref`, `signedInHomeHref`, `forgotPasswordHref`, `logoutHref`, `adminRootHref`, `instructorCoursesHref`, `sysadminCoursesAllHref`, `sysadminCoursesReviewingHref`, `sysadminCoursesTrashHref`, `sysadminCourseReviewPreviewHref`, `accountMyCoursesHref`, ...
+### Asset: pre-built navigation hrefs (`homeHref`, `signedInHomeHref`, `defaultPostAuthHref`, `logoutHref`, `adminCoursesHref`, ...)
+- **Name**: `homeHref`, `signedInHomeHref`, `defaultPostAuthHref`, `forgotPasswordHref`, `logoutHref`, `adminRootHref`, `instructorCoursesHref`, `sysadminCoursesAllHref`, `sysadminCoursesReviewingHref`, `sysadminCoursesTrashHref`, `sysadminCourseReviewPreviewHref`, `accountMyCoursesHref`, ...
 - **Type**: Constant strings
 - **Path**: `src/lib/navigation/routes.ts`
-- **Purpose**: Shared route outputs generated from route builders to avoid duplicated conversion in call sites. `homeHref` = public guest `/`; `signedInHomeHref` = private `/home`; `courseDetailHref(slug)` = public `/courses/{slug}` (builder function, placeholder page).
-- **Scope**: auth components, header/user menu constants, dashboard constants, signed-in home route.
+- **Purpose**: Shared route outputs generated from route builders to avoid duplicated conversion in call sites. `homeHref` = public guest `/`; `signedInHomeHref` = private `/home`; `defaultPostAuthHref` = `signedInHomeHref`, the default post-login/signup/OAuth/email-confirm destination; `courseDetailHref(slug)` = public `/courses/{slug}` (builder function, placeholder page).
+- **Scope**: auth components, header/user menu constants, dashboard constants, signed-in home route; `homeHref` also serves the brand logo, logout redirect, not-found / status-error and global-error links, and the canonical default.
 - **Dependencies**: route builder functions in same module.
+
+### Asset: `defaultPostAuthHref`
+- **Name**: `defaultPostAuthHref`
+- **Type**: Constant string (`= signedInHomeHref`, `/home`)
+- **Path**: `src/lib/navigation/routes.ts` (next to `signedInHomeHref`)
+- **Purpose**: The one named default destination after login, signup, OAuth and email confirmation when no valid `next` query param exists.
+- **Scope**: `login-content.tsx`, `use-oauth-post-auth.ts`, `use-redirect-if-authenticated.ts`, `login-signup-popup.tsx`, `confirm-email-content.tsx`.
+- **Dependencies**: `signedInHomeHref`.
+- **Reuse Rule**: Use it for any post-auth fallback; logout and brand links keep `homeHref`.
+
+### Asset: `resolvePostAuthHref(nextPath)`
+- **Name**: `resolvePostAuthHref`
+- **Type**: Utility function
+- **Path**: `src/lib/navigation/routes.ts` (next to `defaultPostAuthHref`)
+- **Purpose**: The post-auth destination: the validated `next` path, or `defaultPostAuthHref` when there is none or it is the public homepage `/` (the header Login link carries `next=/`; going straight to `/home` saves the `/` to `/{locale}` to `/{locale}/home` redirect hops).
+- **Scope**: `login-content.tsx`, `use-oauth-post-auth.ts`, `use-redirect-if-authenticated.ts`.
+- **Dependencies**: `homeHref`, `defaultPostAuthHref`.
+- **Reuse Rule**: Never write `nextPath ?? defaultPostAuthHref` at a call site; call this helper.
+
+### Asset: `resolveSignedInHomeRedirectPath` / `hasAuthSessionCookies`
+- **Name**: `resolveSignedInHomeRedirectPath({ pathname, hasSession })`, `hasAuthSessionCookies(cookies)`, `getLocaleRootLocale(pathname)`
+- **Type**: Pure utility functions (edge-safe)
+- **Path**: `src/lib/navigation/signed-in-home-redirect.ts`
+- **Purpose**: Decide whether a request for the locale root (`/vi`, `/en`, optional trailing slash) must be redirected to `/{locale}/home`: only when both `refresh_token` and `session_id` cookies are present (presence only, not validity). `resolveSignedInHomeRedirectPath` returns the target path or `null`; `getLocaleRootLocale` returns the locale of a locale-root pathname or `null`. `resolveGuestHomeRedirectPath` is the reverse rule: it returns `/{locale}` when a request for `/{locale}/home` lacks the session cookie pair, else `null`.
+- **Scope**: `src/proxy.ts`.
+- **Dependencies**: `routing` (`src/i18n/routing.ts`), `signedInHomeHref`, `REFRESH_TOKEN_COOKIE` / `SESSION_ID_COOKIE` (`src/constants/auth-cookie.ts`).
+- **Reuse Rule**: Keep the redirect rule in this helper; do not re-implement cookie or path checks in `proxy.ts` or components.
 
 ### Asset: `loginHref(nextPath?)` / `signupHref(nextPath?)`
 - **Name**: `loginHref`, `signupHref`
@@ -989,7 +1025,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `buildAuthCookieOptions(input: BuildHttpOnlyCookieOptionsInput)`
 - **Type**: Utility function
 - **Path**: `src/lib/utils/cookie.ts`
-- **Purpose**: Returns HttpOnly cookie options for auth session cookies (`access_token`, `refresh_token`, `session_id`). Used by `setAuthSessionCookies`.
+- **Purpose**: Returns HttpOnly cookie options for auth session cookies (`ACCESS_TOKEN_COOKIE`, `REFRESH_TOKEN_COOKIE`, `SESSION_ID_COOKIE` from `src/constants/auth-cookie.ts`). Used by `setAuthSessionCookies`.
 - **Scope**: `src/lib/utils/auth-session.ts`, Server Actions that set auth cookies.
 - **Dependencies**: none.
 
@@ -1150,9 +1186,9 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `useRedirectIfAuthenticated(nextPath: string | null): boolean`
 - **Type**: Custom hook
 - **Path**: `src/hooks/auth/use-redirect-if-authenticated.ts`
-- **Purpose**: Redirects away from `/login`/`/signup` (via `router.replace(nextPath ?? homeHref)`) when a session already existed **before this component ever rendered its form** (a stale tab, a race with a background navigation, a shared link opened twice) — never keeps showing the login/signup form in that case. Snapshots "was authenticated on the first resolved check" once (`"pending" | "authenticated" | "guest"`, via a `setState` guarded by a render-time condition — the same "store info from a previous render" pattern as `dashboard-layout.tsx`'s `frozenDenial`, not a ref mutated during render, which `react-hooks/refs` forbids here) and never re-evaluates after that. Deliberately does **not** react to a *later* transition from guest to authenticated while mounted — that transition is the login/signup this very form just performed, already handled by the caller's own `onAuthenticated` callback (`LoginContent`/`SignupContent`'s `onSubmit`, which fires `mutateMe()` without awaiting it). An earlier version reacted to every `me` change and raced that callback: by the time its effect fired, the URL had often already moved on to the real destination (dropping its `next` query param), so `useAuthNextParam()` recomputed `nextPath` as `null` and it overwrote the correct redirect with a bounce to `homeHref` — caught via a fixture-backed e2e run (`e2e/tests/auth.spec.ts`) where a learner's own post-login redirect to `/instructor` got hijacked back to `/`. Returns whether the authenticated-on-mount redirect is in flight, so the caller can render `null` for that one frame instead of flashing the form.
+- **Purpose**: Redirects away from `/login`/`/signup` (via `router.replace(resolvePostAuthHref(nextPath))`) when a session already existed **before this component ever rendered its form** (a stale tab, a race with a background navigation, a shared link opened twice) — never keeps showing the login/signup form in that case. Snapshots "was authenticated on the first resolved check" once (`"pending" | "authenticated" | "guest"`, via a `setState` guarded by a render-time condition — the same "store info from a previous render" pattern as `dashboard-layout.tsx`'s `frozenDenial`, not a ref mutated during render, which `react-hooks/refs` forbids here) and never re-evaluates after that. Deliberately does **not** react to a *later* transition from guest to authenticated while mounted — that transition is the login/signup this very form just performed, already handled by the caller's own `onAuthenticated` callback (`LoginContent`/`SignupContent`'s `onSubmit`, which fires `mutateMe()` without awaiting it). An earlier version reacted to every `me` change and raced that callback: by the time its effect fired, the URL had often already moved on to the real destination (dropping its `next` query param), so `useAuthNextParam()` recomputed `nextPath` as `null` and it overwrote the correct redirect with a bounce to the default destination — caught via a fixture-backed e2e run (`e2e/tests/auth.spec.ts`) where a learner's own post-login redirect to `/instructor` got hijacked back to `/`. Returns whether the authenticated-on-mount redirect is in flight, so the caller can render `null` for that one frame instead of flashing the form.
 - **Scope**: `LoginContent`, `SignupContent` (covers both the `LoginSignupPopup` modal and the `LoginPageContent`/`SignupPageContent` full-page fallback, since both render through these shared components).
-- **Dependencies**: `useGetMe` (`src/hooks/auth/use-auth-store.ts`), `@/i18n/navigation` (`useRouter`), `homeHref` (`src/lib/navigation/routes.ts`).
+- **Dependencies**: `useGetMe` (`src/hooks/auth/use-auth-store.ts`), `@/i18n/navigation` (`useRouter`), `resolvePostAuthHref` (`src/lib/navigation/routes.ts`).
 
 ### Asset: useAuthModalBackgroundBridge / AuthModalBackgroundBridge
 - **Name**: `useAuthModalBackgroundBridge()`, `AuthModalBackgroundBridge` (thin wrapper component, same pattern as `AuthConfirmTabSync`)
@@ -1303,7 +1339,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `loginAction(payload: LoginPayload): Promise<AuthActionResult>`
 - **Type**: Next.js Server Action (`"use server"`)
 - **Path**: `src/actions/auth/auth.ts`
-- **Purpose**: Handles login end-to-end on the server — calls `loginService`, sets `access_token`, `refresh_token`, `session_id` HttpOnly cookies for the browser, and returns `AuthActionResult`.
+- **Purpose**: Handles login end-to-end on the server — calls `loginService`, sets the `access_token`, `refresh_token`, `session_id` HttpOnly cookies (names from `src/constants/auth-cookie.ts`) for the browser, and returns `AuthActionResult`.
 - **Scope**: Login form's `onSubmit` handler in `login-content.tsx`. UI maps `result.code` via `translateApiErrorCode` — never `result.message`.
 - **Dependencies**: `loginService`, `buildCookieOptions`, `getCookieDomain`, `next/headers cookies()`.
 
@@ -1546,7 +1582,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ---
 
-## SEO / Performance / Security web (unused foundation — 2026-07-25)
+## SEO / Performance / Security web (home metadata, robots.txt, sitemap.xml)
 
 > Check [`seo-ranking-setup.md`](./seo-ranking-setup.md) before adding another metadata/JSON-LD/fetch helper. These assets sit on existing `serverRawFetch`, `cache-policy`, `route.ts`, `homeHref`/`getPathname`, `truncateUnicodeCodePoints`, `extractPlainText`, domain types, and `fetch-error` redact — do not fork them.
 
@@ -1554,16 +1590,43 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Name**: `buildPageMetadata`
 - **Type**: Pure factory → Next.js `Metadata`
 - **Path**: `src/lib/seo/build-page-metadata.ts` (+ runtime helpers under `src/lib/seo/**`; contracts under `src/types/seo/**`; policy values under `src/constants/seo/**`)
-- **Purpose**: Synthetic title/description/OG/Twitter/robots/canonical/hreflang from `SeoPageInput`. OG/Twitter **images omitted** until a real `SeoImage` is supplied (no `/og-default.png` placeholder).
-- **Dependencies**: `site-config` (pure `SITE_URL` origin), `routing`/`getPathname`, `truncateUnicodeCodePoints`, nav builders.
-- **Reuse Rule**: Call this from future `generateMetadata`; do not hand-copy OG tags per page. **Unused** this phase. Sitemap defaults use `SEO_INDEXABLE_PUBLIC_ROUTE_KEYS` (`home` only) — not raw `PUBLIC_ROUTES`.
+- **Purpose**: Title/description/OG/Twitter/robots/canonical/hreflang (per-locale canonical URLs plus `x-default`, via `buildLanguageAlternates`) from `SeoPageInput`. OG/Twitter **images omitted** until a real `SeoImage` is supplied (no `/og-default.png` placeholder).
+- **Dependencies**: `site-config` (pure `SITE_URL` origin), `buildLanguageAlternates` (`src/lib/seo/canonical.ts`), `routing`/`getPathname`, `truncateUnicodeCodePoints`, nav builders.
+- **Reuse Rule**: Call this from every `generateMetadata`; do not hand-copy OG tags per page. Consumers: `src/app/[locale]/(web)/page.tsx` (indexable) and `src/app/[locale]/(web)/home/page.tsx` (`privateApp` robots). Sitemap defaults use `SEO_INDEXABLE_PUBLIC_ROUTE_KEYS` (`home` only) — not raw `PUBLIC_ROUTES`.
+
+### Asset: buildLanguageAlternates
+- **Name**: `buildLanguageAlternates`
+- **Type**: Pure helper
+- **Path**: `src/lib/seo/canonical.ts`
+- **Purpose**: Builds the per-locale canonical URLs plus the `x-default` entry for one pathname.
+- **Scope**: `build-page-metadata.ts` (metadata `alternates.languages`) and `sitemap-builder.ts` (sitemap `alternates.languages`).
+- **Dependencies**: `buildCanonicalUrl`, `siteDefaultLocale`, `siteLocales`.
+- **Reuse Rule**: Never rebuild hreflang maps by hand; call this helper.
+
+### Asset: buildRobotsTxtRules
+- **Name**: `buildRobotsTxtRules`
+- **Type**: Pure helper
+- **Path**: `src/lib/seo/robots-txt.ts`
+- **Purpose**: Builds the robots.txt rules (allow the indexable public paths, disallow the private app paths, absolute sitemap URL) from `publicCrawlAllowPaths()` and `privateCrawlDisallowPaths()`.
+- **Scope**: `src/app/robots.ts`.
+- **Dependencies**: `crawl-policy` (`src/lib/security/web/crawl-policy.ts`), `localizedPathname` / `toAbsoluteUrl`, `resolveSiteConfig`.
+- **Reuse Rule**: Change the crawl policy in `crawl-policy.ts` / route constants, not in `robots.ts`.
+
+### Asset: resolveSiteConfig
+- **Name**: `resolveSiteConfig`, `parseAbsoluteHttpsOrigin`, `SiteConfigError`
+- **Type**: Pure validators
+- **Path**: `src/lib/seo/site-config.ts`
+- **Purpose**: Validates the runtime-only `SITE_URL` (pure https origin; `http://localhost` / `http://127.0.0.1` also accepted outside production) and returns the site config for `metadataBase`, canonical, sitemap and robots.
+- **Scope**: `buildPageMetadata`, `src/app/robots.ts`, `src/app/sitemap.ts`, the guest home page, `src/instrumentation.ts` (fails fast at production server start).
+- **Dependencies**: `routing`, `constants/seo/metadata`.
+- **Reuse Rule**: Never read `process.env.SITE_URL` elsewhere; no `NEXT_PUBLIC_*` fallback.
 
 ### Asset: flattenRouteTreePaths
 - **Name**: `flattenRouteTreePaths`
 - **Type**: Pure helper
 - **Path**: `src/lib/navigation/flatten-route-tree.ts`
 - **Purpose**: Recursively collect string paths from nested route-constant objects.
-- **Scope**: `crawl-policy.ts`, `sitemap-builder.ts` (private path listing).
+- **Scope**: `crawl-policy.ts` (private crawl disallow paths).
 - **Reuse Rule**: Do not copy another flatten recursion; import this helper.
 
 ### Asset: SEO_INDEXABLE_PUBLIC_ROUTE_KEYS
@@ -1579,7 +1642,7 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 - **Path**: `src/lib/seo/json-ld.tsx`, `src/lib/seo/ranking/*.ts`, `src/types/seo/ranking.ts`, `src/lib/security/web/sanitize-json-ld.ts`
 - **Purpose**: Schema.org JSON-LD from real domain types only.
 - **Dependencies**: `src/types/course|instructor|…`, `extractPlainText` when Delta text is supplied.
-- **Reuse Rule**: No mock home cards; fail closed on missing required fields.
+- **Reuse Rule**: No mock home cards; fail closed on missing required fields. `JsonLd` + `buildOrganizationJsonLd` are consumed by the guest home page; the other builders have no consumer yet.
 
 ### Asset: seoFetch
 - **Name**: `seoFetch`
@@ -1602,5 +1665,5 @@ All reusable utilities, types, hooks, stores, schemas, constants, and shared log
 
 ### Asset: crawl-policy / redact-client-payload / security-headers-presets
 - **Path**: `src/lib/security/web/*`
-- **Purpose**: Derive private crawl lists from `PRIVATE_ROUTES`; allow-list redact; draft headers align `deploy.md`.
+- **Purpose**: Derive private crawl lists from `PRIVATE_ROUTES` (`privateCrawlDisallowPaths`, `publicCrawlAllowPaths`, `signedInHomeRobotsMode`, consumed by `robots.ts` / `buildRobotsTxtRules` and the `/home` metadata); allow-list redact; draft headers align `deploy.md`.
 - **Docs**: [`security-hardening-notes.md`](./security-hardening-notes.md)
