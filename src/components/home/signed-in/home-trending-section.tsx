@@ -31,7 +31,7 @@ export function HomeTrendingSection() {
       isEmpty={rows.length === 0}
       onRetry={() => void mutate()}
       skeletonCount={HOME_TRENDING_INITIAL_LIMIT}
-      gridClassName="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-2 lg:grid-cols-4"
+      gridClassName="sm:grid-cols-2 sm:gap-x-5 sm:gap-y-6 lg:grid-cols-4"
       skeletonItemClassName="h-[318px] w-full rounded-[23px]"
       emptyMessage={t("trending.empty")}
       errorMessage={t("trending.error")}

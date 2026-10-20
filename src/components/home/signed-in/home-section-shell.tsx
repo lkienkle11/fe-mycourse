@@ -4,6 +4,16 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+
+/**
+ * Below `sm` the items of every home section form one swipeable row (native
+ * scroll-snap, like the hero carousel; each item takes 85% of the width so the
+ * next one peeks in). From `sm` up the row becomes a grid and the item sizing
+ * is reset, so `gridClassName` only needs to describe the grid from `sm`.
+ */
+const MOBILE_CAROUSEL_CLASS_NAME =
+  "flex snap-x snap-mandatory gap-5 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden *:w-[85%] *:shrink-0 *:snap-start sm:grid sm:overflow-visible sm:*:w-auto sm:*:shrink sm:*:snap-align-none";
 
 type HomeSectionShellProps = {
   title: string;
@@ -13,7 +23,7 @@ type HomeSectionShellProps = {
   isEmpty: boolean;
   onRetry: () => void;
   skeletonCount: number;
-  /** Grid classes shared by the skeleton placeholders and the content. */
+  /** Grid classes (applied from `sm` up) shared by the skeleton placeholders and the content. */
   gridClassName: string;
   skeletonItemClassName: string;
   emptyMessage: string;
@@ -43,7 +53,10 @@ export function HomeSectionShell({
   let body: ReactNode;
   if (isLoading) {
     body = (
-      <div className={gridClassName} aria-hidden>
+      <div
+        className={cn(MOBILE_CAROUSEL_CLASS_NAME, gridClassName)}
+        aria-hidden
+      >
         {[...Array(skeletonCount).keys()].map((placeholderId) => (
           <Skeleton key={placeholderId} className={skeletonItemClassName} />
         ))}
@@ -69,7 +82,11 @@ export function HomeSectionShell({
       </Empty>
     );
   } else {
-    body = <div className={gridClassName}>{children}</div>;
+    body = (
+      <div className={cn(MOBILE_CAROUSEL_CLASS_NAME, gridClassName)}>
+        {children}
+      </div>
+    );
   }
 
   return (
