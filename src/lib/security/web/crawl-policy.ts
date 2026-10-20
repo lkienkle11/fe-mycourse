@@ -7,8 +7,6 @@ import { PRIVATE_RESOURCE_ROUTES, PRIVATE_ROUTES } from "@/constants/route";
 import { flattenRouteTreePaths } from "@/lib/navigation/flatten-route-tree";
 import { listSeoIndexablePathnames } from "@/lib/seo/indexable-routes";
 
-export { SIGNED_IN_HOME_PATH } from "@/constants/seo/routes";
-
 /** Unique sorted private app path prefixes for robots Disallow. */
 export function privateCrawlDisallowPaths(): string[] {
   const paths = [
