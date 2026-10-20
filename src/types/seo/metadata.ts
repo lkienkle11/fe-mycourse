@@ -46,6 +46,19 @@ export type ResolveSiteConfigInput = {
    * Never reads NEXT_PUBLIC_SITE_URL / NEXT_PUBLIC_API_URL.
    */
   readEnv?: boolean;
+  /** Test injection for the production/non-production policy; defaults to `process.env.NODE_ENV`. */
+  nodeEnv?: string;
+};
+
+export type SiteOriginLoopbackPolicy = "reject" | "allow-http";
+
+export type ParseSiteOriginOptions = {
+  /**
+   * Omitted: https only, any host.
+   * "reject": https only AND the host must not be loopback (localhost, 127.0.0.1, [::1]).
+   * "allow-http": https any host, or http on localhost / 127.0.0.1 only.
+   */
+  loopback?: SiteOriginLoopbackPolicy;
 };
 
 export type BuildPageMetadataOptions = {
@@ -58,6 +71,19 @@ export type CanonicalInput = {
   pathname?: string;
   query?: Record<string, string>;
   site?: ResolveSiteConfigInput;
+};
+
+export type LanguageAlternatesInput = {
+  /** Locale-less app pathname, e.g. "/" or "/become-instructor". */
+  pathname?: string;
+  /** Defaults to the routing locales. */
+  locales?: readonly string[];
+  site?: ResolveSiteConfigInput;
+};
+
+export type BuildRobotsTxtRulesInput = {
+  site?: ResolveSiteConfigInput;
+  locales?: readonly string[];
 };
 
 export type SitemapEntry = {

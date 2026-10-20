@@ -8,9 +8,13 @@ import {
   SEO_DESCRIPTION_MAX_CODE_POINTS,
   SEO_TITLE_MAX_CODE_POINTS,
 } from "@/constants/seo/metadata";
-import { buildCanonicalUrl, toAbsoluteUrl } from "@/lib/seo/canonical";
+import {
+  buildCanonicalUrl,
+  buildLanguageAlternates,
+  toAbsoluteUrl,
+} from "@/lib/seo/canonical";
 import { robotsPreset } from "@/lib/seo/robots-presets";
-import { resolveSiteConfig, siteLocales } from "@/lib/seo/site-config";
+import { resolveSiteConfig } from "@/lib/seo/site-config";
 import { truncateUnicodeCodePoints } from "@/lib/utils/unicode-length";
 import type {
   BuildPageMetadataOptions,
@@ -49,14 +53,7 @@ export function buildPageMetadata(
   const image = resolveSeoImage(input, site.defaultOgImage);
   const imageUrl = image ? toAbsoluteUrl(site.siteUrl, image.url) : undefined;
 
-  const languages: Record<string, string> = {};
-  for (const locale of siteLocales()) {
-    languages[locale] = buildCanonicalUrl({
-      locale,
-      pathname,
-      site: siteOpts,
-    });
-  }
+  const languages = buildLanguageAlternates({ pathname, site: siteOpts });
 
   const ogType = input.type ?? "website";
   const robots = robotsPreset(input.robots ?? "indexable");
