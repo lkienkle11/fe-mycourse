@@ -32,6 +32,7 @@ const messages = {
       placeholder: "What do you want to learn today?",
     },
     signedIn: {
+      pageTitle: "Home",
       loginRequired: {
         title: "Sign in to continue",
         description: "This page is available after you sign in.",
@@ -280,6 +281,11 @@ const messages = {
     imageAlt: "Page not found illustration",
   },
   homepage: {
+    seo: {
+      title: "MyCourse - Learn online from industry experts",
+      description:
+        "Explore online courses taught by industry experts. Discover trending courses, learn from popular instructors, and build new skills at your own pace.",
+    },
     hero: {
       title1: "Unlock Your Potential with Our",
       title2: "Diverse Courses",
