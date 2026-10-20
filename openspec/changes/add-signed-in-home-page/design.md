@@ -268,6 +268,8 @@ None that would change the specs, the approach or the task breakdown. Decisions 
 
 ## Implementation notes (as built, 2026-10-16)
 
+- **Mobile sections (2026-10-20)**: below `sm` the three data sections are a CSS scroll-snap row instead of a one-column stack (`HomeSectionShell`, `MOBILE_CAROUSEL_CLASS_NAME`). Embla was not used: it would need the cards rendered twice or a JS media query (hydration mismatch risk), whereas native scroll snap swipes without JavaScript and leaves the `sm`+ grids untouched. No pagination dots (the 85% item width shows the next card).
+
 These replace the corresponding plan statements above where they differ:
 
 - **CAP-2 `SectionHeader`**: not created. Reading the four guest headers showed no identical markup (view-all button, centred badge, different description classes), and a single-consumer shared component would be premature, so the title and description block lives inside `HomeSectionShell`. The guest sections are untouched.
