@@ -1,6 +1,6 @@
 # API Usage Patterns (`fe-mycourse`)
 
-_Last audited: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract on `/me`, collaborators, candidates and course list owner). Prior: 2026-10-15 (taxonomy create/update slug contract and 3007 confirm flow). Prior: 2026-07-22 (server sanitized logs; browser no custom Console; compress body memo retained). Prior: raw GET cache; media 30s._
+_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (user slug contract on `/me`, collaborators, candidates and course list owner). Prior: 2026-10-15 (taxonomy create/update slug contract and 3007 confirm flow). Prior: 2026-07-22 (server sanitized logs; browser no custom Console; compress body memo retained). Prior: raw GET cache; media 30s._
 
 
 How the frontend communicates with the Go backend API. All patterns described here apply to both client-side (browser) and server-side (Server Actions / RSC) contexts.
@@ -174,6 +174,7 @@ The authenticated transport in `src/api/transport/api-transport.ts` handles sile
 - **Client**: uses a mutex (single refresh, queued requests) to avoid refresh stampedes.
 - **Client refresh transport**: browser calls FE proxy `POST /api/auth/refresh`; proxy relays tokens and rewrites cookies using BE `Set-Cookie` Max-Age or `auth_session_expires_at` fallback.
 - **Server (SSR)**: writable FromRequest transport persists rotated cookies via `setAuthSessionCookies` (same Max-Age relay).
+- **Cookie names:** every auth cookie name (`access_token`, `refresh_token`, `session_id`, `auth_session_expires_at`, and the legacy max-age cookie) is a constant in `src/constants/auth-cookie.ts` (`ACCESS_TOKEN_COOKIE`, `REFRESH_TOKEN_COOKIE`, `SESSION_ID_COOKIE`, `AUTH_SESSION_EXPIRES_AT_COOKIE`, `LEGACY_AUTH_SESSION_MAX_AGE_COOKIE`, `AUTH_COOKIE_NAMES`). `src/api/auth/server-auth.ts`, `src/lib/utils/auth-session.ts`, `src/lib/utils/cookie.ts`, `src/app/api/auth/refresh/route.ts`, `src/actions/auth/auth.ts` and `src/proxy.ts` (through `hasAuthSessionCookies`) import them; do not repeat the literals.
 - **Refresh upstream (BFF + server writable)**: `rawPostRefreshUpstream` in `src/api/auth/refresh-upstream-raw.ts` (not public `rawPost` options) hard-codes fail-closed `redirect: "error"` + trusted origin from the resolved API base URL.
 - After refresh: all queued requests are retried with the new token.
 - On refresh failure: all requests reject and `reportError` is called.
@@ -197,7 +198,7 @@ export async function loginAction(payload: LoginPayload): Promise<AuthActionResu
   }
   // Set cookies via next/headers
   const cookieStore = await cookies();
-  cookieStore.set("access_token", data.data.access_token, buildCookieOptions(...));
+  cookieStore.set(ACCESS_TOKEN_COOKIE, data.data.access_token, buildCookieOptions(...));
   return { success: true, message: data.message, code: 0 };
 }
 ```

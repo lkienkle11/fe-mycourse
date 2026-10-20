@@ -3,18 +3,14 @@ import "server-only";
 import { cookies } from "next/headers";
 import { sanitizeApiErrorCause } from "@/api/core/fetch-error";
 import { parseMaxAgeForCookie } from "@/api/core/fetch-helpers";
+import {
+  ACCESS_TOKEN_COOKIE,
+  AUTH_SESSION_EXPIRES_AT_COOKIE,
+  LEGACY_AUTH_SESSION_MAX_AGE_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  SESSION_ID_COOKIE,
+} from "@/constants/auth-cookie";
 import { buildAuthCookieOptions, getCookieDomain } from "./cookie";
-
-/**
- * HttpOnly cookie — absolute session expiry (Unix seconds).
- * FE-only, never sent to BE. Used when SSR refresh cannot read Set-Cookie headers.
- * Stores expiry, not relative Max-Age, so non-remember sessions cannot be extended
- * on fallback (BE uses remaining lifetime, not a renewed cap).
- */
-export const AUTH_SESSION_EXPIRES_AT_COOKIE = "auth_session_expires_at";
-
-/** Legacy cookie name (relative Max-Age) — cleared on read/write for migration. */
-const LEGACY_AUTH_SESSION_MAX_AGE_COOKIE = "auth_session_max_age";
 
 /** Reject bogus values (e.g. legacy relative seconds stored as "expiry"). */
 const MIN_VALID_EXPIRES_AT_UNIX = 1_577_836_800; // 2020-01-01 UTC
@@ -64,7 +60,7 @@ export function resolveRefreshMaxAgeFromBe({
 export function refreshMaxAgeFromBeSetCookie(
   setCookieHeaders: string | string[] | undefined,
 ): number | undefined {
-  return parseMaxAgeForCookie(setCookieHeaders, "refresh_token");
+  return parseMaxAgeForCookie(setCookieHeaders, REFRESH_TOKEN_COOKIE);
 }
 
 function readStoredExpiresAt(raw: string | undefined): number | undefined {
@@ -187,9 +183,9 @@ export async function setAuthSessionCookies({
   };
 
   try {
-    set("access_token", access_token);
-    set("refresh_token", refresh_token, resolvedMaxAge);
-    set("session_id", session_id, resolvedMaxAge);
+    set(ACCESS_TOKEN_COOKIE, access_token);
+    set(REFRESH_TOKEN_COOKIE, refresh_token, resolvedMaxAge);
+    set(SESSION_ID_COOKIE, session_id, resolvedMaxAge);
 
     // Fresh Set-Cookie → new absolute expiry. Fallback only → keep stored expiry (no extension).
     const sessionExpiresAt =
@@ -241,9 +237,9 @@ export async function clearAuthSessionCookies(): Promise<void> {
     domain,
   );
 
-  remove("access_token");
-  remove("refresh_token");
-  remove("session_id");
+  remove(ACCESS_TOKEN_COOKIE);
+  remove(REFRESH_TOKEN_COOKIE);
+  remove(SESSION_ID_COOKIE);
   remove(AUTH_SESSION_EXPIRES_AT_COOKIE);
   remove(LEGACY_AUTH_SESSION_MAX_AGE_COOKIE);
 }

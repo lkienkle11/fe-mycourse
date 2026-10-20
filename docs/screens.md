@@ -1,6 +1,6 @@
 # Screens & Routes (`fe`)
 
-_Last audited: 2026-10-18 (signed-in home hero carousel reworked to the three Figma slides: no arrow buttons, drag/swipe, 3 s autoplay that restarts on manual change via `useCarouselAutoplay`). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (taxonomy slug UI: form-dialog editable root slug + 3007 confirm, per-node tree slug). Prior: 2026-09-29 (course slug UI: create dialog optional slug + 3007 confirm; info tab editable slug). Prior: 2026-09-19 (route-based login/signup modal: `/login` + `/signup` pages, `@modal` parallel/intercepting slot, `LoginSignupPopup` no longer mounted in `header.tsx` / `DashboardLayout`, Zustand `authAction`/`nextLink` removed). Prior: 2026-07-26 temporary signed-in `/home` route + SignedInHomePage; 2026-07-10 Homepage sections use `public/assets/images/home` static assets; 2026-07-08 Discord + Google on login/signup popup._
+_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-18 (signed-in home hero carousel reworked to the three Figma slides: no arrow buttons, drag/swipe, 3 s autoplay that restarts on manual change via `useCarouselAutoplay`). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (taxonomy slug UI: form-dialog editable root slug + 3007 confirm, per-node tree slug). Prior: 2026-09-29 (course slug UI: create dialog optional slug + 3007 confirm; info tab editable slug). Prior: 2026-09-19 (route-based login/signup modal: `/login` + `/signup` pages, `@modal` parallel/intercepting slot, `LoginSignupPopup` no longer mounted in `header.tsx` / `DashboardLayout`, Zustand `authAction`/`nextLink` removed). Prior: 2026-07-26 temporary signed-in `/home` route + SignedInHomePage; 2026-07-10 Homepage sections use `public/assets/images/home` static assets; 2026-07-08 Discord + Google on login/signup popup._
 
 
 Inventory of **App Router** routes, primary screen compositions, major UI surfaces, and component trees. Locale behavior follows **`next-intl`**: paths are always prefixed with `/{locale}` (e.g. `/vi`, `/en`) because `localePrefix` is `"always"` in `src/i18n/routing.ts`. When in doubt about how a surface connects to the rest of the app, use GitNexus from this repo root, e.g. `npx gitnexus query -r fe-mycourse "web layout footer"` or `npx gitnexus context -r fe-mycourse Footer`.
@@ -14,9 +14,9 @@ Inventory of **App Router** routes, primary screen compositions, major UI surfac
 | Supported locales | `["en", "vi"]` | `src/i18n/routing.ts` |
 | Default locale | `vi` | `src/i18n/routing.ts` |
 | Locale prefix | `always` | `src/i18n/routing.ts` |
-| Middleware | `src/proxy.ts` | See `docs/deploy.md` Appendix C |
+| Middleware | `src/proxy.ts` | next-intl locale routing + signed-in `/{locale}` to `/{locale}/home` redirect; see `docs/router.md` and `docs/deploy.md` Appendix C |
 
-The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default locale) using the typed `redirect` helper from `src/i18n/navigation.ts`.
+A request for `/` is redirected by the proxy to `/{locale}` (307; `/vi` by default). The root page (`src/app/page.tsx`) is the fallback: it redirects to `routing.defaultLocale` using the typed `redirect` helper from `src/i18n/navigation.ts`.
 
 ---
 
@@ -24,11 +24,13 @@ The root page (`src/app/page.tsx`) immediately redirects to `/vi` (default local
 
 | URL pattern | Source file | What the user sees |
 |-------------|------------|---------------------|
-| `/` | `src/app/page.tsx` | **Locale redirect** → `/vi` (308 Permanent Redirect via `next-intl` navigation) |
+| `/` | `src/proxy.ts`, fallback `src/app/page.tsx` | **Locale redirect** → `/{locale}` (307 from the next-intl middleware; `/vi` by default); a signed-in browser then continues to `/{locale}/home` |
 | `/auth/discord/callback` | `src/app/auth/discord/callback/page.tsx` | **Discord OAuth popup callback** (locale-less, **English-only** copy) — posts `code`/`state`/`error` to `window.opener` then closes; fallback text + Back-to-home link when no opener |
 | `/auth/x/callback` | `src/app/auth/x/callback/page.tsx` | **X OAuth popup callback** (locale-less, **English-only** copy, retained) — posts `code`/`state`/`error` to `window.opener` then closes; not wired to login/signup popup |
-| `/{locale}` | `src/app/[locale]/(web)/page.tsx` | **Home page** — renders `HomePage` |
-| `/{locale}/home` | `src/app/[locale]/(web)/home/page.tsx` | **Signed-in home** — renders `SignedInHomePage` (login required) |
+| `/{locale}` | `src/app/[locale]/(web)/page.tsx` | **Home page** — renders `HomePage` (indexable: metadata + Organization JSON-LD); signed-in browsers are redirected to `/{locale}/home` by `src/proxy.ts` |
+| `/{locale}/home` | `src/app/[locale]/(web)/home/page.tsx` | **Signed-in home** — renders `SignedInHomePage` (login required, `noindex,nofollow`) |
+| `/robots.txt` | `src/app/robots.ts` | **robots.txt** from `buildRobotsTxtRules` |
+| `/sitemap.xml` | `src/app/sitemap.ts` | **sitemap.xml** from `buildSitemapEntries` |
 | `/{locale}/courses/{slug}` | `src/app/[locale]/(web)/courses/[slug]/page.tsx` | **Course placeholder** — renders `CourseDetailPlaceholderPage` (temporary, no-index) |
 | `/{locale}/become-instructor` | `src/app/[locale]/(web)/become-instructor/page.tsx` | **Active** — `BecomeInstructorPage` (instructor application states A–H); see [`instructor-application.md`](./instructor-application.md) |
 | `/{locale}/confirm-email` | Active | Email confirmation page (`ConfirmEmailContent` → `confirmAction`) |
@@ -85,7 +87,7 @@ This split is intentionally centralized in `src/constants/route.ts` so UI config
 
 ```
 src/app/layout.tsx                          Root layout
-│   HTML lang="vi", font variables (Roboto, Gilroy, GeistMono)
+│   <html lang> from await getLocale(), font variables (Roboto, Gilroy, GeistMono); metadata title = DEFAULT_SITE_NAME
 │   Google Identity Services script (accounts.google.com/gsi/client, afterInteractive)
 │   Sonner <Toaster position="top-right" richColors closeButton />
 │
@@ -130,6 +132,8 @@ Each layout layer adds a concern without re-rendering the parent:
 ## Home Screen (`HomePage`)
 
 **File:** `src/screen/common/home/page.tsx` — async Server Component.
+
+**Route metadata:** `src/app/[locale]/(web)/page.tsx` exports `generateMetadata` (`buildPageMetadata` with `homepage.seo.title` / `homepage.seo.description`, canonical, hreflang, OG/Twitter without image, indexable robots) and renders Organization JSON-LD through `JsonLd`. A signed-in browser never reaches this page: `src/proxy.ts` redirects `/{locale}` to `/{locale}/home` when `refresh_token` and `session_id` cookies are present.
 
 Assembles the **guest** marketing landing page from seven section components, all living under `src/components/home/`:
 
@@ -356,7 +360,7 @@ Switching between the login and sign up forms inside the modal is `<Link replace
 > The popup shows **Discord + Google** only. X OAuth actions/hooks and `/auth/x/callback` remain in the codebase but are **not** wired to `AuthSocialLogin`.
 
 - **Discord:** `useDiscordLogin` opens the OAuth popup (`startDiscordLoginAction` → authorize URL with `state`) and waits for the callback `postMessage`, then calls `discordLoginAction({ code, state })`. Success toasts `auth.socialLogin.discordSuccess`; cancel toasts `auth.socialLogin.discordCancelled`; errors resolve via `errors.codes.*` (BE `4023`–`4025`; FE-local `4018` on state mismatch, `4026` when client id or callback URL is missing).
-- **Google:** `useGoogleLogin` opens the GSI code-client popup and calls `googleLoginAction({ code, remember_me })`. `onSuccess` toasts `auth.socialLogin.googleSuccess` and runs `useOAuthPostAuth(onAuthenticated)` (`mutateMe()` then `onAuthenticated(nextPath ?? homeHref)`, `nextPath` from `useAuthNextParam()`); `onCancel` toasts `auth.socialLogin.googleCancelled`; `onError` shows the inline `translateApiErrorCode` message.
+- **Google:** `useGoogleLogin` opens the GSI code-client popup and calls `googleLoginAction({ code, remember_me })`. `onSuccess` toasts `auth.socialLogin.googleSuccess` and runs `useOAuthPostAuth(onAuthenticated)` (`mutateMe()` then `onAuthenticated(resolvePostAuthHref(nextPath))`, `nextPath` from `useAuthNextParam()`; `defaultPostAuthHref` is `/home`); `onCancel` toasts `auth.socialLogin.googleCancelled`; `onError` shows the inline `translateApiErrorCode` message.
 - **Google One Tap:** shown outside the modal by `GoogleOneTapHost` for guests only.
 
 **Dedicated auth pages:** `ConfirmEmailContent` (`/confirm-email`), `LogoutContent` (`/logout`), plus locale-less OAuth callback relays (English-only copy): `DiscordOAuthCallbackPage` (`/auth/discord/callback`) and retained `XOAuthCallbackPage` (`/auth/x/callback`).
@@ -567,8 +571,8 @@ Symbol and edge counts change as the codebase grows. Refresh the local graph wit
 
 **Route:** `src/app/[locale]/(web)/home/page.tsx` → `PRIVATE_ROUTES.home` (`/home`).
 
-- Login-required: while `useGetMe` loads, show a spinner; guests see a login CTA — `<Link href={loginHref(signedInHomeHref)}>` — that navigates to `/login?next=/home` (same idea as become-instructor State A; the login modal opens through the `@modal` intercepting route). No home request is made for a guest.
+- Login-required: while `useGetMe` loads, show a spinner; a guest without session cookies never reaches this page (`src/proxy.ts` redirects `/{locale}/home` to `/{locale}`); only a visitor with stale cookies sees a login CTA — `<Link href={loginHref(signedInHomeHref)}>` — that navigates to `/login?next=/home` (same idea as become-instructor State A; the login modal opens through the `@modal` intercepting route). No home request is made without a session.
 - Signed-in users see, in order: `HeroCarousel` (three Figma slides, no arrow buttons, drag/swipe and dots, 3 s autoplay that restarts on manual change, one `h1`); **Complete your Course** (`useContinueLearning`, only when the user holds `course:read`; initial 3, Expand More → 10; progress bar and "completed/total sub-lessons completed"); **Trending Course** (`useTrendingCourses`; initial 8, Expand More → 24; no price, rating or badge); **Popular Instructor** (`usePopularInstructors`; 4 cards, not linked).
-- Each data section handles loading (skeletons), empty and error (with retry) independently through `HomeSectionShell`. Course cards link to `/courses/{slug}` (temporary placeholder) when the slug is non-empty; Expand More extends the list in place and does not navigate.
+- Each data section handles loading (skeletons), empty and error (with retry) independently through `HomeSectionShell`. Below `sm` (640 px) the cards of Complete your Course, Trending Course and Popular Instructor form one horizontally swipeable scroll-snap row (each card 85% wide so the next one peeks in; no scrollbar, no page overflow); from `sm` up they keep the original grids (2 columns, 4 from `lg`; 3 for Complete your Course). Course cards link to `/courses/{slug}` (temporary placeholder) when the slug is non-empty; Expand More extends the list in place and does not navigate.
 - Remote thumbnails and instructor pictures use `next/image` with `unoptimized`; the hero images are static assets under `public/assets/images/home/hero/`.
-- **No route metadata** (`generateMetadata` intentionally omitted per product decision). Crawl protection derives from `PRIVATE_ROUTES` disallow lists. Do not emit Course/Offer JSON-LD from this data.
+- **Route metadata:** `generateMetadata` returns the localized title (`home.signedIn.pageTitle`) and `noindex,nofollow` (`privateApp` robots preset). Crawl protection also derives from `PRIVATE_ROUTES` disallow lists. The page stays a client-side login gate: a guest sees the sign-in prompt and is never redirected back to `/`, so a stale session cookie cannot cause a redirect loop. Do not emit Course/Offer JSON-LD from this data.

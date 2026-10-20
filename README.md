@@ -2,7 +2,7 @@
 
 Next.js **16.2** (App Router) client for **MyCourse**: React **19**, **Tailwind CSS 4**, **next-intl** (`en` / `vi`), **SWR**, **Xior 0.8.3** over the Next.js Fetch runtime (`ApiTransport`), **Zustand**, **react-hook-form** + **Zod**. The UI communicates with the Go API via `NEXT_PUBLIC_API_URL`.
 
-> **Locale routing:** Next.js **16** uses **`src/proxy.ts`** (not `middleware.ts`) for the `next-intl` locale proxy. Keep that file in place — see [`docs/deploy.md` Appendix C](docs/deploy.md#appendix-c--middleware-locale-routing-fix).
+> **Locale routing and signed-in redirect:** Next.js **16** uses **`src/proxy.ts`** (not `middleware.ts`) for the `next-intl` locale proxy. The same proxy redirects a signed-in visitor (both `refresh_token` and `session_id` cookies) from `/vi` or `/en` to `/{locale}/home`. Keep that file in place — see [`docs/deploy.md` Appendix C](docs/deploy.md#appendix-c--middleware-locale-routing).
 
 ## Getting started
 
@@ -13,7 +13,7 @@ npm run dev:clean    # wipe .next then start dev (use after cache bloat)
 npm run clean:next   # delete .next only
 ```
 
-Open the URL Next.js prints (default [http://localhost:3000](http://localhost:3000)). The root route redirects into the default locale (`vi`); localized paths look like `/vi` or `/en`.
+Open the URL Next.js prints (default [http://localhost:3000](http://localhost:3000)). The root route redirects into the default locale (`vi`); localized paths look like `/vi` or `/en` (guest home). A signed-in visitor on `/vi` or `/en` is redirected to `/vi/home` or `/en/home`. `/robots.txt` and `/sitemap.xml` are generated from the runtime `SITE_URL` (see Environment Variables).
 
 ### Dev performance (CPU / RAM)
 
@@ -78,12 +78,12 @@ The `docs/` folder is the **primary and authoritative documentation source** for
 | [`docs/dependencies.md`](docs/dependencies.md) | All runtime and dev dependencies — versions, roles, and usage rules |
 | [`docs/quality.md`](docs/quality.md) | ESLint, Biome, Knip / Madge / jscpd gates; `test-all` (CI) and `check-all` (local pre-PR); browser CI (`e2e-browser.yml`) |
 | [`docs/testing.md`](docs/testing.md) | Jest (Node/jsdom) + Playwright harness — behavior matrix, fixtures/MSW, `test:e2e` lifecycle, known Jest/SWC and jsdom limitations and their fixes |
-| [`docs/seo-ranking-setup.md`](docs/seo-ranking-setup.md) | **SEO / ranking / performance / security foundation** — unused helpers under `src/lib/seo|performance|security/web`; A/B/C reuse tables; `/` (guest mock home) vs `/home` (signed-in home fed by the catalog and learner-courses APIs) notes |
+| [`docs/seo-ranking-setup.md`](docs/seo-ranking-setup.md) | **SEO / ranking / performance / security foundation** — home metadata, `robots.txt`/`sitemap.xml`, `noindex` on `/home` and the runtime `SITE_URL` contract in `src/lib/seo`; helpers under `src/lib/performance|security/web`; A/B/C reuse tables; `/` (guest mock home) vs `/home` (signed-in home fed by the catalog and learner-courses APIs) notes |
 | [`docs/security-hardening-notes.md`](docs/security-hardening-notes.md) | FE crawl/redact/JSON-LD sanitize/header draft helpers + link to BE public-SEO notes |
 | [`docs/reusable-assets.md`](docs/reusable-assets.md) | All reusable utilities, hooks, types, schemas, stores, constants, API callers, and Server Actions |
 | [`docs/delivery.md`](docs/delivery.md) | **Realtime channels** — BroadcastChannel, WebSocket, SSE, NDJSON gRPC; envelope model, env vars, links to per-channel docs |
-| [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — Nginx, Certbot, PM2, env vars (`NEXT_PUBLIC_API_URL`, `AUTH_COOKIE_DOMAIN`, stream URLs), go-live checklist, rollback, troubleshooting, CI/CD |
-| [`docs/docker.md`](docs/docker.md) | Docker Compose alternative (local/VPS manual; PM2/CI unchanged) |
+| [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — Nginx, Certbot, PM2, env vars (`NEXT_PUBLIC_API_URL`, runtime-only `SITE_URL`, `AUTH_COOKIE_DOMAIN`, stream URLs), go-live checklist, rollback, troubleshooting, CI/CD |
+| [`docs/docker.md`](docs/docker.md) | Docker Compose alternative (local/VPS manual; PM2/CI unchanged; `SITE_URL` is a runtime `env_file` value, not a build-arg) |
 
 After large refactors, run **`npx gitnexus analyze --force`** in this repo so the local graph (`.gitnexus/`, ignored by git) and the generated **`CLAUDE.md` / `AGENTS.md`** header stats stay aligned with the code; use **`npx gitnexus query -r fe-mycourse "…"`** / **`npx gitnexus context -r fe-mycourse SymbolName`** when updating `docs/*.md`.
 
@@ -105,7 +105,7 @@ Pushes to feature branches or pull requests do not run **`deploy-dev.yml`**. Pus
 
 **Browser tests** run separately in [`.github/workflows/e2e-browser.yml`](.github/workflows/e2e-browser.yml): on pull requests into **`dev`**/**`main`** *and* on pushes to **`dev`** — this one *does* run on PRs. It installs dependencies, runs `npm run test-all`, provisions Chromium, then `npm run test:e2e` (loopback fixture backend + fixture-configured `next build`/`next start` + Playwright), uploading `playwright-report`/`test-results` on failure. See [`docs/testing.md`](docs/testing.md). Hosted-run verification on GitHub's own infrastructure is pending until a real run is observed.
 
-Secrets are stored under **Repository → Settings → Secrets and variables → Actions**. Names ending in `_DEV`, `_STG`, or `_MAIN` are **per-environment**; each suffix is read only when the matching deploy workflow runs on its branch (today: **`_DEV` only** on `dev` pushes).
+Secrets are stored under **Repository → Settings → Secrets and variables → Actions**. Names ending in `_DEV`, `_STG`, or `_MAIN` are **per-environment**; each suffix is read only when the matching deploy workflow runs on its branch (today: **`_DEV` only** on `dev` pushes). `SITE_URL` is **not** a GitHub Actions secret: it is a server-only runtime variable read from the environment's env file, and no workflow sets it for the build. The Dev, Staging and Production secret tables are unchanged.
 
 #### Dev — test/build active, deploy paused (`deploy-dev.yml`, branch `dev`)
 
@@ -169,11 +169,14 @@ Create a `.env` file at the project root (gitignored). In production use `.env.p
 | `NEXT_PUBLIC_API_URL` | **Yes** | Build + client + server | Base URL for the backend API. **Inlined at `next build`** — rebuild required after changing. | `http://localhost:8080` |
 | `AUTH_COOKIE_DOMAIN` | Prod only | Server only | Parent domain for auth cookies when FE and API are on separate subdomains. Leave unset on localhost. | `yourdomain.net` |
 | `API_URL` | No | Server only | Server-side fallback for `NEXT_PUBLIC_API_URL`. Not exposed to the client bundle. | `http://localhost:8080` |
+| `SITE_URL` | **Yes** for `next start` (all deployed environments) | Server only, **runtime** | Canonical frontend origin for metadata, `/robots.txt` and `/sitemap.xml`. Pure `https` origin (no path/query/hash/userinfo), not loopback in production; `http://localhost[:port]` accepted only outside production. Not read at build; validated at server start (the process logs the error and exits with code 1 if invalid). | `https://yourdomain.net` (local `next dev`: `http://localhost:3000`) |
 | `NEXT_PUBLIC_STREAM_SSE_URL` | No | Build + client | SSE stream URL; omit to disable SSE transport | `http://localhost:8080/v1/events/sse` |
 | `NEXT_PUBLIC_STREAM_WS_URL` | No | Build + client | WebSocket URL; omit to disable WS transport | `ws://localhost:8080/v1/events/ws` |
 | `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | Build + client | Base URL for NDJSON event stream (no trailing slash) | `http://localhost:8080` |
 
 `ApiTransport` (`src/api/transport/api-transport.ts`) resolves `baseURL` from `NEXT_PUBLIC_API_URL` (or `API_URL` as a server-side fallback). `AUTH_COOKIE_DOMAIN` is read by `loginAction` via `getCookieDomain()` to scope cookies for cross-subdomain auth.
+
+`SITE_URL` is resolved by `resolveSiteConfig` (`src/lib/seo/site-config.ts`) and validated at server start by `src/instrumentation.ts`. It is supplied through the per-environment env file (`.env.local`, `.env.staging`, `.env.prod`; PM2 `env_file`, Docker `env_file`) — never `NEXT_PUBLIC_`, a build-arg or a CI secret. See [`docs/deploy.md`](docs/deploy.md#site_url).
 
 **Stream events (v1):** `EventsStreamProvider` in `AppProviders` starts BroadcastChannel (always) plus SSE/WS/gRPC when the env vars above are set. See [`docs/delivery.md`](docs/delivery.md).
 

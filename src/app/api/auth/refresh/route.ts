@@ -13,6 +13,10 @@ import {
 import { ApiErrorCode } from "@/constants/api-error-code";
 import { API_PUBLIC_ROUTES } from "@/constants/api-route";
 import {
+  REFRESH_TOKEN_COOKIE,
+  SESSION_ID_COOKIE,
+} from "@/constants/auth-cookie";
+import {
   refreshMaxAgeFromBeSetCookie,
   setAuthSessionCookies,
 } from "@/lib/utils/auth-session";
@@ -96,8 +100,8 @@ export async function POST(): Promise<
   NextResponse<BrowserRefreshProxySuccess | BrowserRefreshProxyError>
 > {
   const cookieStore = await cookies();
-  const refreshToken = cookieStore.get("refresh_token")?.value;
-  const sessionId = cookieStore.get("session_id")?.value;
+  const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value;
+  const sessionId = cookieStore.get(SESSION_ID_COOKIE)?.value;
 
   if (!refreshToken?.trim() || !sessionId?.trim()) {
     return errorDto(401, ApiErrorCode.Unauthorized);

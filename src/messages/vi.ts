@@ -33,6 +33,7 @@ const messages = {
       placeholder: "Bạn muốn học gì hôm nay?",
     },
     signedIn: {
+      pageTitle: "Trang chủ",
       loginRequired: {
         title: "Đăng nhập để tiếp tục",
         description: "Trang này chỉ dành cho tài khoản đã đăng nhập.",
@@ -279,6 +280,11 @@ const messages = {
     imageAlt: "Hình minh họa không tìm thấy trang",
   },
   homepage: {
+    seo: {
+      title: "MyCourse - Học trực tuyến cùng chuyên gia",
+      description:
+        "Khám phá các khóa học trực tuyến do chuyên gia đầu ngành giảng dạy. Xem khóa học xu hướng, học cùng giảng viên nổi bật và nâng cao kỹ năng theo nhịp của bạn.",
+    },
     hero: {
       title1: "Khơi phá tiềm năng với các",
       title2: "Khóa học đa dạng",

@@ -10,6 +10,10 @@ import type {
 import { createAuthCallers } from "@/api/callers/auth/auth-factory";
 import { ApiErrorCode } from "@/constants/api-error-code";
 import {
+  REFRESH_TOKEN_COOKIE,
+  SESSION_ID_COOKIE,
+} from "@/constants/auth-cookie";
+import {
   finalizeAuthLoginAction,
   mapAuthApiError,
 } from "@/lib/utils/auth-action";
@@ -68,8 +72,8 @@ export async function confirmAction(
  */
 export async function logoutAction(): Promise<AuthActionResult> {
   const cookieStore = await cookies();
-  const refreshToken = cookieStore.get("refresh_token")?.value;
-  const sessionId = cookieStore.get("session_id")?.value;
+  const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value;
+  const sessionId = cookieStore.get(SESSION_ID_COOKIE)?.value;
 
   try {
     if (refreshToken && sessionId) {

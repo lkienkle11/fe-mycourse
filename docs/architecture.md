@@ -1,6 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (taxonomy slug UI: `SlugInput` and `extractRecommendedSlug` now shared by course and taxonomy; `useSlugConflictFlow`; shared `FormField`, `tree.ts`, `payload.ts`; `SortableTreeEditor` merged into `TaxonomyTreeEditor`). Prior: 2026-09-16 (Technology Stack: added Jest/RTL/MSW unit/integration tests and Playwright browser tests rows; Quality gates section and Related Docs updated for `e2e-browser.yml` and `testing.md` — see `docs/testing.md`). Prior: 2026-06-17 (Turbopack dev tuning, `clean:next` / `dev:clean` scripts)._
+_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (taxonomy slug UI: `SlugInput` and `extractRecommendedSlug` now shared by course and taxonomy; `useSlugConflictFlow`; shared `FormField`, `tree.ts`, `payload.ts`; `SortableTreeEditor` merged into `TaxonomyTreeEditor`). Prior: 2026-09-16 (Technology Stack: added Jest/RTL/MSW unit/integration tests and Playwright browser tests rows; Quality gates section and Related Docs updated for `e2e-browser.yml` and `testing.md` — see `docs/testing.md`). Prior: 2026-06-17 (Turbopack dev tuning, `clean:next` / `dev:clean` scripts)._
 
 
 This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
@@ -59,7 +59,7 @@ Loaded in `src/lib/font.ts` via `next/font/google` and applied as CSS variables 
 Browser
   └─ DNS → Nginx (TLS termination)
               └─ 127.0.0.1:3000 → next start (PM2: e.g. `mycourse-web` or `mycourse-web-dev` per `ecosystem.config.cjs`)
-                    ├─ Middleware (src/proxy.ts) -> locale redirect
+                    ├─ Middleware (src/proxy.ts) -> locale redirect; signed-in /{locale} -> /{locale}/home
                     ├─ App Router layout tree
                     │     ├─ Root layout (fonts, Toaster)
                     │     ├─ [locale] layout (NextIntlClientProvider + AppProviders)
@@ -99,14 +99,16 @@ flowchart TB
 fe/
 ├── src/
 │   ├── app/                        # Next.js App Router
-│   │   ├── layout.tsx              # Root layout — fonts, Toaster
-│   │   ├── page.tsx                # / → redirect to /vi
+│   │   ├── layout.tsx              # Root layout — fonts, Toaster, <html lang> from getLocale(), title = DEFAULT_SITE_NAME
+│   │   ├── page.tsx                # / → redirect to routing.defaultLocale (fallback; the proxy redirects first)
+│   │   ├── robots.ts               # robots.txt (buildRobotsTxtRules)
+│   │   ├── sitemap.ts              # sitemap.xml (buildSitemapEntries)
 │   │   └── [locale]/
 │   │       ├── layout.tsx          # Locale layout — NextIntlClientProvider + AppProviders
 │   │       ├── (web)/
 │   │       │   ├── layout.tsx      # Web shell — Header, <main>, Footer
-│   │       │   └── page.tsx        # Home route → HomePage
-│   │       │   # home/page.tsx → SignedInHomePage; courses/[slug]/page.tsx → CourseDetailPlaceholderPage
+│   │       │   └── page.tsx        # Home route → HomePage (generateMetadata + Organization JSON-LD)
+│   │       │   # home/page.tsx → SignedInHomePage (generateMetadata: title + noindex); courses/[slug]/page.tsx → CourseDetailPlaceholderPage
 │   │       ├── admin/              # DashboardLayout; taxonomy + instructors/*
 │   │       ├── instructor/         # DashboardLayout; tickets
 │   │       └── sysadmin/           # DashboardLayout; taxonomy + instructors/*
@@ -182,6 +184,7 @@ fe/
 │   ├── constants/
 │   │   ├── api-route.ts            # API_PUBLIC_ROUTES, API_PRIVATE_ROUTES
 │   │   ├── api-error-code.ts       # ApiErrorCode (mirrors be/internal/shared/errors/errcode_codes.go)
+│   │   ├── auth-cookie.ts          # ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, SESSION_ID_COOKIE, AUTH_SESSION_EXPIRES_AT_COOKIE, LEGACY_AUTH_SESSION_MAX_AGE_COOKIE, AUTH_COOKIE_NAMES — single source of auth cookie names
 │   │   ├── route.ts                # PUBLIC_ROUTES + PRIVATE_ROUTES + PUBLIC_RESOURCE_ROUTES + PRIVATE_RESOURCE_ROUTES
 │   │   ├── browse-menu.ts          # BROWSE_MENU_ITEMS
 │   │   └── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (types: types/user-menu.ts)
@@ -223,7 +226,8 @@ fe/
 │   │   ├── vi.ts                   # Vietnamese (satisfies Messages)
 │   │   └── types.ts                # Messages type from en.ts
 │   │
-│   └── proxy.ts                    # next-intl middleware + matcher
+│   ├── instrumentation.ts          # register(): validates SITE_URL at server start (logs and exits 1 when missing/invalid)
+│   └── proxy.ts                    # next-intl middleware + signed-in /{locale} -> /{locale}/home redirect + matcher
 │                                   # Locale proxy entry for next-intl routing
 │
 ├── docs/
@@ -266,7 +270,7 @@ Covers everything related to authentication UI and server-side token management:
 | `loginSchema` / `signupSchema` | `schema/auth/auth.ts` | Zod schemas with i18n error keys |
 | `useGetMe` / `useSyncMeFromAuth` | `hooks/auth/use-auth-store.ts` | `/me` Zustand mirror (`useMeStore`, `store/auth/auth.ts`); SWR sync via `MeSwrSync` |
 | `useAuthNextParam` | `hooks/auth/use-auth-next-param.ts` | Reads/validates the `next` query param on `/login`, `/signup` (via `isSafeInternalPath` + `isAuthRoutePath`); strips an invalid value via a raw `history.replaceState`, not `router.replace` (avoids triggering `@modal` interception) |
-| `useRedirectIfAuthenticated` | `hooks/auth/use-redirect-if-authenticated.ts` | Redirects away from `/login`/`/signup` when `useGetMe().me` was already set on first mount — snapshotted once, not re-evaluated on a later login/signup transition |
+| `useRedirectIfAuthenticated` | `hooks/auth/use-redirect-if-authenticated.ts` | Redirects away from `/login`/`/signup` to `resolvePostAuthHref(nextPath)` when `useGetMe().me` was already set on first mount — snapshotted once, not re-evaluated on a later login/signup transition |
 | `loginHref` / `signupHref` | `lib/navigation/routes.ts` | Build `/login?next=...` / `/signup?next=...` — the app's single way to open the login/signup route modal |
 | `useCustomLanguage` / `useSyncLanguageFromLocale` | `hooks/language/*` | Language label/code store (no React Context) |
 | `useLanguageStore` | `store/language/language-store.ts` | `languageCode`, `locale`, `languageLabel` |
@@ -323,7 +327,7 @@ Login and signup calls are proxied through Next.js Server Actions (`"use server"
 
 ### 2. HttpOnly Auth Cookies — Cookie-Based Session
 
-Auth tokens (`access_token`, `refresh_token`, `session_id`) are stored as **HttpOnly**, `SameSite=Lax` cookies. Client-side JavaScript cannot read them (XSS blast radius reduced). The browser sends cookies on API requests via `credentials: "include"`; the Go backend reads the JWT from the `access_token` cookie when no `Authorization` header is present. Server-side Next.js code still reads HttpOnly cookies via `next/headers` and attaches `Authorization: Bearer …` when proxying to the API.
+Auth tokens (`access_token`, `refresh_token`, `session_id`; names defined once in `src/constants/auth-cookie.ts`) are stored as **HttpOnly**, `SameSite=Lax` cookies. Client-side JavaScript cannot read them (XSS blast radius reduced). The browser sends cookies on API requests via `credentials: "include"`; the Go backend reads the JWT from the `access_token` cookie when no `Authorization` header is present. Server-side Next.js code still reads HttpOnly cookies via `next/headers` and attaches `Authorization: Bearer …` when proxying to the API. The proxy only checks that `refresh_token` and `session_id` are present (not valid) to decide the signed-in `/{locale}` redirect.
 
 `buildAuthCookieOptions` (auth cookies) enforces `httpOnly: true` and `secure: true` in production. After silent refresh, the FE BFF proxy and server writable refresh rewrite cookies via `setAuthSessionCookies` using BE `Set-Cookie` Max-Age when available, otherwise the persisted `auth_session_expires_at` HttpOnly cookie. Upstream refresh uses `rawPostRefreshUpstream` (fail-closed redirect + trusted origin); public `rawPost` does not expose those controls.
 
@@ -421,9 +425,9 @@ Trade-off with filesystem cache disabled: **slightly slower cold compile** after
 
 ---
 
-## Middleware: Locale Routing
+## Middleware: Locale Routing and Signed-in Home Redirect
 
-`src/proxy.ts` exports the next-intl locale proxy middleware (`createMiddleware(routing)`) and `config.matcher` used to enforce locale-prefixed routes. The matcher excludes locale-less OAuth popup callbacks (`/auth/discord/callback`, `/auth/x/callback`) so provider redirects are not rewritten to `/{locale}/auth/...` (which would 404 and break popup login).
+`src/proxy.ts` wraps the next-intl locale middleware (`createMiddleware(routing)`) and exports `config.matcher` used to enforce locale-prefixed routes. When the request path is exactly a locale root (`/vi`, `/en`, optional trailing slash) and both `refresh_token` and `session_id` cookies are present (presence only, not validity), it answers 307 to `/{locale}/home` with `Cache-Control: private, no-store` and `Vary: Cookie` (set on the redirect only), copying next-intl's Set-Cookie headers. `/` is first redirected by next-intl to `/{locale}` and then handled (two hops). The reverse rule (`resolveGuestHomeRedirectPath`) sends a request for `/{locale}/home` that lacks either cookie to the public `/{locale}` (307, same cache headers), so a guest never sees a sign-in prompt on `/home`. Crawlers send no cookies, so they always see the public homepage. The pure decision is `resolveSignedInHomeRedirectPath` / `hasAuthSessionCookies` / `getLocaleRootLocale` in `src/lib/navigation/signed-in-home-redirect.ts`. The matcher excludes locale-less OAuth popup callbacks (`/auth/discord/callback`, `/auth/x/callback`) so provider redirects are not rewritten to `/{locale}/auth/...` (which would 404 and break popup login), and any path containing a dot, so `/robots.txt` and `/sitemap.xml` bypass the proxy.
 
 ---
 
@@ -530,6 +534,6 @@ On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/
 | [`../be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md) | Full-stack VPS: Go API, Postgres, Redis, joint Nginx |
 
 
-## SEO foundation layer (unused, 2026-07-25)
+## SEO layer (home metadata, robots.txt, sitemap.xml)
 
-Synthetic SEO helpers live under `src/lib/seo|performance|security/web` and **consume** the existing API stack (`serverRawFetch` + empty fail-closed `publicCacheProfiles`). Planned frontend origin is server-side `SITE_URL` for `metadataBase`/canonical — **not** `NEXT_PUBLIC_API_URL`. Details: [`seo-ranking-setup.md`](./seo-ranking-setup.md).
+SEO helpers live under `src/lib/seo|performance|security/web` and **consume** the existing API stack (`serverRawFetch` + empty fail-closed `publicCacheProfiles`). The frontend origin is the runtime-only server-side `SITE_URL` (used for `metadataBase`/canonical/sitemap, validated at server start by `src/instrumentation.ts`, which logs and exits with code 1 when it is missing or invalid; `http://localhost` is accepted outside production) — **not** `NEXT_PUBLIC_API_URL`. Consumers: `generateMetadata` of `/{locale}` (`buildPageMetadata`, canonical, hreflang `vi` + `en` + `x-default`, Organization JSON-LD) and `/{locale}/home` (title + `noindex,nofollow`), `src/app/robots.ts` (`buildRobotsTxtRules` over `publicCrawlAllowPaths` / `privateCrawlDisallowPaths`) and `src/app/sitemap.ts` (`buildSitemapEntries`). Helpers not yet consumed by pages: ranking builders other than Organization, `seoFetch`, performance resource hints. Details: [`seo-ranking-setup.md`](./seo-ranking-setup.md).

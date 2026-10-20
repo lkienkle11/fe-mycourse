@@ -50,6 +50,30 @@ describe("HomeSectionShell", () => {
     expect(screen.queryByText("footer")).not.toBeInTheDocument();
   });
 
+  it("lays the items out as a swipeable snap row on mobile and a grid from sm", () => {
+    renderShell({ gridClassName: "sm:grid-cols-2" });
+    const row = screen.getByText("content").parentElement;
+    expect(row).toHaveClass(
+      "flex",
+      "snap-x",
+      "snap-mandatory",
+      "overflow-x-auto",
+      "sm:grid",
+      "sm:grid-cols-2",
+    );
+  });
+
+  it("gives the skeletons the same row so the layout does not jump", () => {
+    const { container } = renderShell({
+      isLoading: true,
+      gridClassName: "sm:grid-cols-2",
+    });
+    const row = container.querySelector(
+      '[data-slot="skeleton"]',
+    )?.parentElement;
+    expect(row).toHaveClass("flex", "snap-x", "sm:grid", "sm:grid-cols-2");
+  });
+
   it("renders the empty message", () => {
     renderShell({ isEmpty: true });
     expect(screen.getByText("Nothing here")).toBeInTheDocument();

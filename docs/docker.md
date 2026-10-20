@@ -32,6 +32,7 @@ cp .env.local.example .env.local
 cd fe-mycourse
 cp .env.local.example .env.local
 # Set NEXT_PUBLIC_API_URL (must match your API — local or cloud)
+# Set SITE_URL (runtime env_file value; the container runs next start with NODE_ENV=production, so it must be a non-loopback https origin such as https://local.example.test, otherwise the container logs the SITE_URL error and exits with code 1; the http://localhost:3000 default in .env.local.example only suits next dev)
 
 ./scripts/docker/compose-up.sh local
 ./scripts/docker/health-check.sh local
@@ -83,13 +84,14 @@ PowerShell:
   - `NEXT_PUBLIC_API_URL` (required)
   - `NEXT_PUBLIC_STREAM_SSE_URL`, `NEXT_PUBLIC_STREAM_WS_URL`, `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` (optional)
   - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `NEXT_PUBLIC_DISCORD_CLIENT_ID`, `NEXT_PUBLIC_DISCORD_CALLBACK_URL`, `NEXT_PUBLIC_X_CLIENT_ID`, `NEXT_PUBLIC_X_CALLBACK_URL` (OAuth — Discord + Google required for popup social login; X build-args retained for legacy code path)
+  - **Not a build-arg:** `SITE_URL` (server-only runtime variable; `npm run build` passes without it)
 - **Prune:** `npm prune --omit=dev` after build — drops devDependencies from `node_modules` before the runner stage (same as VPS deploy in [`docs/deploy.md`](deploy.md))
 - **Run:** copy `.next`, `node_modules`, `public`, `package.json`; `npm run start`
 - **No** `output: 'standalone'` — same constraint as [`docs/deploy.md`](deploy.md)
 
 > **OAuth build-args are mandatory to avoid FE-local errors `4020` / `4026`.** All `NEXT_PUBLIC_*` are inlined at `next build`. If `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is absent at build time, the Google button throws `4020 (google_not_configured)` in the browser even when the value exists in the runtime env file. If `NEXT_PUBLIC_DISCORD_CLIENT_ID` or `NEXT_PUBLIC_DISCORD_CALLBACK_URL` is absent, the Discord button throws `4026`. The same rule applies to every build path: `Dockerfile`, `scripts/docker/build-image.{sh,ps1}`, `docker/compose.*.yml`, and the CI `build` job in `.github/workflows/deploy-dev.yml` — keep the build-arg list identical across all of them.
 
-`AUTH_COOKIE_DOMAIN` is **runtime** only (Server Actions) — set in env file, not build-args.
+`AUTH_COOKIE_DOMAIN` (Server Actions) and `SITE_URL` (canonical origin for metadata, `/robots.txt`, `/sitemap.xml`) are **runtime** only — set them in the env file (`env_file` in `docker/compose.*.yml`), never as build-args. `src/instrumentation.ts` validates `SITE_URL` when the container starts: a missing value, a path, `http://` or a loopback host makes the container log `SITE_URL must be a pure public https:// origin in production ...` and exit with code 1 (check `docker compose -f docker/compose.<env>.yml logs`). Use the environment's own https domain; dev and staging never use the production one.
 
 ---
 
@@ -102,6 +104,8 @@ PowerShell:
 ```
 
 Changing env in a running container **without rebuild** does not update the browser bundle.
+
+Changing `SITE_URL` needs no rebuild: edit the env file and recreate the container (`docker compose -f docker/compose.<env>.yml up -d --force-recreate`), because `env_file` is read when the container is created.
 
 ---
 

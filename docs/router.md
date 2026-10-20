@@ -1,6 +1,6 @@
 # Routing (`fe-mycourse`)
 
-_Last audited: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-09-19 (route-based login/signup modal via `@modal` parallel + intercepting routes, replacing the Zustand-driven `LoginSignupPopup`). Prior: 2026-07-26 temporary signed-in `/home` under `(web)` + `PRIVATE_ROUTES.home`; 2026-07-22 unmounted account/forgot-password; OAuth COOP; OAuth callback middleware bypass._
+_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-09-19 (route-based login/signup modal via `@modal` parallel + intercepting routes, replacing the Zustand-driven `LoginSignupPopup`). Prior: 2026-07-26 temporary signed-in `/home` under `(web)` + `PRIVATE_ROUTES.home`; 2026-07-22 unmounted account/forgot-password; OAuth COOP; OAuth callback middleware bypass._
 
 How URL routing is structured in the Next.js App Router, including locale handling, route groups, and navigation conventions.
 
@@ -11,7 +11,7 @@ How URL routing is structured in the Next.js App Router, including locale handli
 | Layer | Technology | File |
 |-------|-----------|------|
 | Framework | Next.js App Router (file-system routing) | `src/app/` |
-| Locale routing | next-intl proxy middleware | `src/proxy.ts` |
+| Locale routing | next-intl proxy middleware plus the signed-in `/{locale}` redirect | `src/proxy.ts` |
 | Locale config | `defineRouting` | `src/i18n/routing.ts` |
 | Navigation helpers | next-intl typed wrappers | `src/i18n/navigation.ts` |
 
@@ -37,22 +37,35 @@ All URLs are prefixed with the locale:
 | `/vi` | Vietnamese | Home |
 | `/en` | English | Home |
 
-Root `/` automatically redirects to `/vi` (default locale) via `src/app/page.tsx`.
+Root `/` is redirected by the next-intl middleware to `/{locale}` (307; `/vi` by default). `src/app/page.tsx` (using `routing.defaultLocale`) is the fallback if the proxy does not run. A signed-in browser then takes a second hop from `/{locale}` to `/{locale}/home` (see "Middleware: Locale Enforcement and Signed-in Home Redirect").
 
 ---
 
-## Middleware: Locale Enforcement
+## Middleware: Locale Enforcement and Signed-in Home Redirect
 
-`src/proxy.ts` exports the next-intl middleware that enforces locale prefixes on every request **except** locale-less OAuth callback routes.
+`src/proxy.ts` wraps the next-intl middleware (`createMiddleware(routing)`). It enforces locale prefixes on every request **except** locale-less OAuth callback routes and any path containing a dot (so `/robots.txt` and `/sitemap.xml` bypass it), and it redirects signed-in visitors from the locale root to `/{locale}/home`.
 
 > `src/proxy.ts` is the active locale proxy entry used in this project.
 
+- **Locale root only:** the redirect applies when the pathname is exactly `/vi` or `/en` (an optional trailing slash is accepted). `/en/login` and every other path are untouched.
+- **Session check (presence only):** both cookies `refresh_token` and `session_id` must be present; the token is not validated. The pure decision lives in `src/lib/navigation/signed-in-home-redirect.ts` (`resolveSignedInHomeRedirectPath({ pathname, hasSession })`, `hasAuthSessionCookies(cookies)`, `getLocaleRootLocale(pathname)`); cookie names come from `src/constants/auth-cookie.ts`.
+- **Response:** 307 to `/{locale}/home` with `Cache-Control: private, no-store` and `Vary: Cookie` set on the redirect only; the Set-Cookie headers produced by next-intl are copied onto the redirect. Guest locale-root responses are not modified by the redirect logic.
+- **Two hops from `/`:** `/` is first redirected by next-intl to `/{locale}` (307) and then handled by the rule above.
+- **Crawlers:** bots send no auth cookies, so they always receive the public homepage.
+- **Guests on `/{locale}/home`:** the same proxy answers a request for exactly `/vi/home` or `/en/home` (optional trailing slash) that lacks either session cookie with a 307 to the public homepage `/{locale}`, with `Cache-Control: private, no-store` and `Vary: Cookie`, so a guest never sees a sign-in prompt on `/home`. The pure decision is `resolveGuestHomeRedirectPath({ pathname, hasSession })` in `src/lib/navigation/signed-in-home-redirect.ts`.
+- **No redirect loop:** the two rules are mutually exclusive (one needs both cookies, the other lacks one). A stale cookie pair still counts as a session, so it reaches `/{locale}/home`, which keeps its client-side sign-in prompt and never redirects back to `/`.
+
 ```ts
-// src/proxy.ts
+// src/proxy.ts (shape)
 import createMiddleware from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
 
-export default createMiddleware(routing);
+const intlMiddleware = createMiddleware(routing);
+
+export default function proxy(request: NextRequest) {
+  // locale-root + auth cookies -> 307 /{locale}/home (private, no-store, Vary: Cookie)
+  // otherwise the next-intl response
+}
 
 export const config = {
   matcher: [
@@ -72,16 +85,20 @@ export const config = {
 ## App Router Tree
 
 ```
-/                       → src/app/page.tsx               redirect → /vi
+/                       → src/proxy.ts (next-intl) redirect → /{locale}; src/app/page.tsx fallback redirect → routing.defaultLocale
+/robots.txt             → src/app/robots.ts              robots.txt (bypasses src/proxy.ts: path contains a dot)
+/sitemap.xml            → src/app/sitemap.ts             sitemap.xml with hreflang alternates (bypasses src/proxy.ts)
 /auth/discord/callback  → src/app/auth/discord/callback/page.tsx  Discord OAuth popup callback (locale-less, no prefix)
 /auth/x/callback        → src/app/auth/x/callback/page.tsx  X OAuth popup callback (locale-less; retained, not wired to modal)
 /[locale]/              → src/app/[locale]/layout.tsx     NextIntlClientProvider + AppProviders, renders `children` + `modal` (parallel slot)
-/[locale]/@modal        → src/app/[locale]/@modal/default.tsx           parallel slot fallback (renders null on any non-intercepted route)
+/[locale]/@modal        → src/app/[locale]/@modal/default.tsx           parallel slot fallback on a hard load (renders null)
+/[locale]/@modal        → src/app/[locale]/@modal/page.tsx              clears the slot on the locale root (renders null)
+/[locale]/@modal        → src/app/[locale]/@modal/[...catchAll]/page.tsx clears the slot on every other non-intercepted route (renders null)
 /[locale]/@modal        → src/app/[locale]/@modal/(.)login/page.tsx     intercepts same-level `/login` → <LoginSignupPopup type="login" />
 /[locale]/@modal        → src/app/[locale]/@modal/(.)signup/page.tsx    intercepts same-level `/signup` → <LoginSignupPopup type="signup" />
 /[locale]/              → src/app/[locale]/(web)/layout.tsx  Header + main + Footer
-/[locale]/              → src/app/[locale]/(web)/page.tsx    HomePage (guest marketing)
-/[locale]/home          → src/app/[locale]/(web)/home/page.tsx  SignedInHomePage (login-required; hero + continue learning + trending + popular instructors)
+/[locale]/              → src/app/[locale]/(web)/page.tsx    HomePage (guest marketing, indexable: generateMetadata + Organization JSON-LD; signed-in browsers are redirected to /[locale]/home by src/proxy.ts)
+/[locale]/home          → src/app/[locale]/(web)/home/page.tsx  SignedInHomePage (login-required client gate; hero + continue learning + trending + popular instructors; generateMetadata = title + noindex,nofollow)
 /[locale]/courses/[slug] → src/app/[locale]/(web)/courses/[slug]/page.tsx  CourseDetailPlaceholderPage (public, no-index placeholder)
 /[locale]/login         → src/app/[locale]/(web)/login/page.tsx  LoginPageContent (full-page fallback; intercepted as a modal when navigated to in-app)
 /[locale]/signup        → src/app/[locale]/(web)/signup/page.tsx  SignupPageContent (full-page fallback; intercepted as a modal when navigated to in-app)
@@ -129,7 +146,8 @@ export default async function LocaleLayout({ children, modal, params }: LocaleLa
 
 The slot lives at `src/app/[locale]/@modal/`:
 
-- `default.tsx` — renders `null`; used whenever the current navigation doesn't match an intercepted route.
+- `default.tsx` — renders `null`; used on a hard load that doesn't match an intercepted route.
+- `page.tsx` and `[...catchAll]/page.tsx` — render `null` and match the locale root and every other route. On a **soft** navigation Next.js keeps the previous content of a parallel slot that has no match, so without them a post-login `router.push` to `/home` left the login modal mounted (and re-opened after the server redirect from `/`) on top of the signed-in home.
 - `(.)login/page.tsx` — a same-level [intercepting route](https://nextjs.org/docs/app/building-your-application/routing/intercepting-routes) that matches `/login`; renders `<LoginSignupPopup type="login" />`.
 - `(.)signup/page.tsx` — same pattern for `/signup`, rendering `<LoginSignupPopup type="signup" />`.
 
@@ -187,10 +205,12 @@ src/app/[locale]/
 
 | URL | Component | Screen | Status |
 |-----|-----------|--------|--------|
-| `/vi` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
-| `/en` | `[locale]/(web)/page.tsx` | `HomePage` | ✅ Implemented |
-| `/vi/home` | `[locale]/(web)/home/page.tsx` | `SignedInHomePage` — login-required signed-in home (hero, Complete your Course, Trending Course, Popular Instructor) | ✅ Implemented |
+| `/vi` | `[locale]/(web)/page.tsx` | `HomePage` — guest home, indexable (metadata + Organization JSON-LD); a signed-in browser is redirected to `/vi/home` by `src/proxy.ts` | ✅ Implemented |
+| `/en` | `[locale]/(web)/page.tsx` | `HomePage` — same, redirects a signed-in browser to `/en/home` | ✅ Implemented |
+| `/vi/home` | `[locale]/(web)/home/page.tsx` | `SignedInHomePage` — login-required signed-in home (hero, Complete your Course, Trending Course, Popular Instructor); `noindex,nofollow` | ✅ Implemented |
 | `/en/home` | same | same | ✅ Implemented |
+| `/robots.txt` | `src/app/robots.ts` | robots rules built by `buildRobotsTxtRules` | ✅ Implemented |
+| `/sitemap.xml` | `src/app/sitemap.ts` | `buildSitemapEntries` over the SEO-indexable pathnames | ✅ Implemented |
 | `/vi/courses/{slug}` | `[locale]/(web)/courses/[slug]/page.tsx` | `CourseDetailPlaceholderPage` — temporary public placeholder, no-index | ✅ Placeholder |
 | `/en/courses/{slug}` | same | same | ✅ Placeholder |
 | `/vi/login?next=…` | `[locale]/(web)/login/page.tsx` | `LoginPageContent` — full-page fallback; intercepted as a modal (`@modal/(.)login`) when navigated to in-app | ✅ Implemented |
@@ -266,7 +286,7 @@ Root layout            (src/app/layout.tsx)
 
 | Layout file | What it mounts |
 |-------------|---------------|
-| `src/app/layout.tsx` | Global fonts (Roboto, Gilroy, GeistMono as CSS vars), `<Toaster>` (Sonner) |
+| `src/app/layout.tsx` | Global fonts (Roboto, Gilroy, GeistMono as CSS vars), `<Toaster>` (Sonner), `<html lang>` from `await getLocale()`, root metadata `title: DEFAULT_SITE_NAME` (page-level `generateMetadata` supplies title and description) |
 | `src/app/[locale]/layout.tsx` | `NextIntlClientProvider`, `AppProviders` (`SWRConfig` with `provider: meCacheProvider`, `EventsStreamProvider`, `MeSwrSync`, `LanguageLocaleSync`, auth tab sync) |
 | `src/app/[locale]/(web)/layout.tsx` | `Header`, `<main>` content area, `Footer` |
 | `src/app/[locale]/admin/layout.tsx` | `RoleDashboardLayout` → `DashboardLayout` (`ADMIN_DASHBOARD_ITEMS`, `admin:modify` gate) + shared dashboard page header |
@@ -358,7 +378,7 @@ router.push(
 - `toPublicRoute` / `toPrivateRoute`
 - `toPublicResourceRoute` / `toPrivateResourceRoute`
 - feature helpers like `instructorCourseEditorHref(courseId)` and `instructorCourseEditorTabHref(courseId, tab)`
-- pre-built href constants like `homeHref`, `logoutHref`, `adminCoursesHref`
+- pre-built href constants like `homeHref`, `signedInHomeHref`, `defaultPostAuthHref`, `logoutHref`, `adminCoursesHref`
 
 For reusable home navigation touchpoints (logo/title in header/dashboard), use `src/lib/navigation/home.ts`:
 
@@ -395,13 +415,13 @@ src/screen/common/course/course-review-page.tsx   → CourseReviewPage (shared b
 
 | Path | Intent | Status |
 | --- | --- | --- |
-| `/` (locale home via `PUBLIC_ROUTES.home`) | Guest marketing home | Exists (mock). Future SEO wire optional. **Only** default SEO-indexable public key today. `homeHref` still points here. |
-| `/home` (`PRIVATE_ROUTES.home`) | Signed-in homepage | **Shipped.** `(web)` shell + client auth gate; hero carousel and three data sections fed by the catalog and learner-courses APIs; **no route metadata**. Crawl disallow derives from `PRIVATE_ROUTES` (includes `/home`). |
+| `/` (locale home via `PUBLIC_ROUTES.home`) | Guest marketing home | Shipped (mock course data). Indexable: `generateMetadata` via `buildPageMetadata` (`homepage.seo.title` / `homepage.seo.description`, canonical, hreflang `vi` + `en` + `x-default`, OG/Twitter without image) and Organization JSON-LD. **Only** SEO-indexable public key. `homeHref` points here. Signed-in browsers never see it: `src/proxy.ts` redirects `/{locale}` to `/{locale}/home` when `refresh_token` and `session_id` cookies are present. |
+| `/home` (`PRIVATE_ROUTES.home`) | Signed-in homepage | **Shipped.** `(web)` shell + client auth gate; hero carousel and three data sections fed by the catalog and learner-courses APIs. `generateMetadata` returns the localized title (`home.signedIn.pageTitle`) and `noindex,nofollow` (`privateApp` robots preset). Crawl disallow derives from `PRIVATE_ROUTES` (includes `/home`). Guests see the sign-in prompt; there is no redirect back to `/`. |
 
-**Auth gate:** guests on `/home` see a login CTA (`<Link href={loginHref(signedInHomeHref)}>`) that navigates to `/login?next=/home` (same pattern as become-instructor State A). `/login` is a dedicated route now — intercepted as a modal overlay when the navigation happens client-side, and a full page on direct/hard navigation. `next` is a validated URL query param read by `useAuthNextParam()` (`isSafeInternalPath` **and** `isAuthRoutePath` — a `next` of `/login`/`/signup` itself is rejected too), not a Zustand field.
+**Auth gate:** a guest (no session cookies) never renders `/home`: `src/proxy.ts` redirects it to `/{locale}`. Only a visitor holding stale session cookies reaches the client-side login CTA (`<Link href={loginHref(signedInHomeHref)}>`) that navigates to `/login?next=/home` (same pattern as become-instructor State A). `/login` is a dedicated route now — intercepted as a modal overlay when the navigation happens client-side, and a full page on direct/hard navigation. `next` is a validated URL query param read by `useAuthNextParam()` (`isSafeInternalPath` **and** `isAuthRoutePath` — a `next` of `/login`/`/signup` itself is rejected too), not a Zustand field.
 
-**Href helpers:** `homeHref` = public `/`; `signedInHomeHref` = private `/home`; `courseDetailHref(slug)` = public `/courses/{slug}` (placeholder page). Logo / `navigateToHome` still use `homeHref` until product decides brand-home should follow auth state.
+**Href helpers:** `homeHref` = public `/`; `signedInHomeHref` = private `/home`; `courseDetailHref(slug)` = public `/courses/{slug}` (placeholder page). `defaultPostAuthHref` = `signedInHomeHref`, the default destination after login, signup, OAuth and email confirmation (used when no valid `next` param exists). Logout, the brand logo / header links, `navigateToHome`, not-found / status-error "back to home" and global-error keep `homeHref`; a signed-in user who clicks the logo lands on `/{locale}` and is redirected to `/{locale}/home` by `src/proxy.ts`.
 
 **Public-routable ≠ SEO-indexable:** `forgotPassword` / `confirmEmail` / `logout` (and other non-allow-listed `PUBLIC_ROUTES` keys) stay publicly routable but must use `noindex` and are **excluded** from default sitemap entries (`SEO_INDEXABLE_PUBLIC_ROUTE_KEYS`).
 
-Crawl disallow lists for private app areas must **derive** from `PRIVATE_ROUTES` / `PRIVATE_RESOURCE_ROUTES` via `flattenRouteTreePaths` (`src/lib/navigation/flatten-route-tree.ts` → `src/lib/security/web/crawl-policy.ts`), not a hard-coded second list. Locale: `localePrefix: "always"`. Details: [`seo-ranking-setup.md`](./seo-ranking-setup.md).
+Crawl disallow lists for private app areas must **derive** from `PRIVATE_ROUTES` / `PRIVATE_RESOURCE_ROUTES` via `flattenRouteTreePaths` (`src/lib/navigation/flatten-route-tree.ts` → `src/lib/security/web/crawl-policy.ts`), not a hard-coded second list. Locale: `localePrefix: "always"`. `src/app/robots.ts` consumes `buildRobotsTxtRules` (`src/lib/seo/robots-txt.ts`, over `publicCrawlAllowPaths` / `privateCrawlDisallowPaths`) and `src/app/sitemap.ts` consumes `buildSitemapEntries`; both read the runtime-only `SITE_URL` (validated at server start by `src/instrumentation.ts`, which logs and exits with code 1 on a missing or invalid value). Details: [`seo-ranking-setup.md`](./seo-ranking-setup.md).

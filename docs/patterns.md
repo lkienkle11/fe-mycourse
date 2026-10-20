@@ -1,6 +1,6 @@
 # Coding Patterns and Conventions (`fe-mycourse`)
 
-_Last audited: 2026-10-15 (§15 Slug fields: taxonomy slugs editable, shared `useSlugConflictFlow`, optional write-payload helpers `payload.ts`; §6 Forms: `FormField`, shared `resolveValidationMessage`). Prior: 2026-09-16 (Adding New Features Checklist: added a test-coverage checklist item pointing to `testing.md` and `src/test-support/`). Prior: 2026-06-29 (SearchableSelect `useApiInfiniteListQuery` + `getRowKey` page-merge dedupe); shared `deferDropdownAction` + `DeferredDropdownMenuItem` for menu→dialog flows (2026-06-26)._
+_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-15 (§15 Slug fields: taxonomy slugs editable, shared `useSlugConflictFlow`, optional write-payload helpers `payload.ts`; §6 Forms: `FormField`, shared `resolveValidationMessage`). Prior: 2026-09-16 (Adding New Features Checklist: added a test-coverage checklist item pointing to `testing.md` and `src/test-support/`). Prior: 2026-06-29 (SearchableSelect `useApiInfiniteListQuery` + `getRowKey` page-merge dedupe); shared `deferDropdownAction` + `DeferredDropdownMenuItem` for menu→dialog flows (2026-06-26)._
 
 
 Rules and repeatable patterns every developer and AI agent must follow when adding or modifying code in this project.
@@ -498,10 +498,11 @@ Always use the isomorphic helpers — never access cookies directly:
 
 ```ts
 import { getCookieValue, setCookieValue } from "@/lib/utils";
+import { ACCESS_TOKEN_COOKIE } from "@/constants/auth-cookie";
 
 // Works in both browser and server context
-const token = getCookieValue("access_token");
-setCookieValue("access_token", newToken, buildCookieOptions({ ... }));
+const token = getCookieValue(ACCESS_TOKEN_COOKIE);
+setCookieValue(ACCESS_TOKEN_COOKIE, newToken, buildCookieOptions({ ... }));
 ```
 
 **Server Actions only** — after login/confirm, set auth cookies via:
@@ -511,6 +512,8 @@ import { setAuthSessionCookies } from "@/lib/utils/auth-session"; // not from @/
 ```
 
 `auth-session.ts` uses `next/headers` and `import "server-only"` so it must never be re-exported from the client-safe barrel.
+
+Auth cookie names live in `src/constants/auth-cookie.ts` (`ACCESS_TOKEN_COOKIE`, `REFRESH_TOKEN_COOKIE`, `SESSION_ID_COOKIE`, `AUTH_SESSION_EXPIRES_AT_COOKIE`, `LEGACY_AUTH_SESSION_MAX_AGE_COOKIE`, `AUTH_COOKIE_NAMES`). Never write the literal cookie string in a helper, action or route handler.
 
 ---
 
@@ -595,15 +598,17 @@ Before writing code for a new feature:
 - [ ] Add new i18n strings to both `en.ts` and `vi.ts` (keep `vi.ts` satisfying `Messages`)
 - [ ] Add/update route values in `src/constants/route.ts` (`PUBLIC_ROUTES`, `PRIVATE_ROUTES`, `PUBLIC_RESOURCE_ROUTES`, `PRIVATE_RESOURCE_ROUTES`)
 - [ ] Build runtime URLs through `src/lib/navigation/routes.ts` helpers (no route string interpolation in screens/components)
+- [ ] Post-auth default destination is `defaultPostAuthHref` (= `signedInHomeHref`); `homeHref` is only for the guest home, brand links, logout and canonical
 - [ ] Add API route constants to `src/constants/api-route.ts`
 - [ ] Update `docs/` after implementation
 
 
-## Synthetic SEO metadata (unused foundation)
+## Synthetic SEO metadata
 
-- Prefer `buildPageMetadata` over hand-written OG/Twitter per page (when wiring is approved).
-- Public SEO data must go through `seoFetch` → `serverRawFetch` → `cache-policy` (fail-closed while registry empty). Never bypass the registry.
+- Use `buildPageMetadata` instead of hand-written OG/Twitter per page (the guest home does); a private page such as `/home` returns only `title` plus `robots: robotsPreset(...)` from `generateMetadata`.
+- Read the site origin only through `resolveSiteConfig` (server-only runtime `SITE_URL`); never `process.env.SITE_URL` in a page, and never `NEXT_PUBLIC_` for it.
+- Public SEO data must go through `seoFetch` → `serverRawFetch` → `cache-policy` (fail-closed while registry empty; `seoFetch` is not wired yet). Never bypass the registry.
 - Do not fetch SEO-critical HTML content only inside client `useEffect`.
-- JSON-LD builders require real domain-typed fields; never invent ratings/prices from mock UI.
+- JSON-LD builders require real domain-typed fields; never invent ratings/prices from mock UI (the guest home renders Organization with name and URL only).
 - Keep the TEMPORARY dormant env cache hint (`SEO_TEMPORARY_ENV_CACHE_POLICY` + `resolveSeoTemporaryRevalidateSeconds`) until a permanent policy replaces it — leave `enabled: false` unless deliberately wiring revalidate.
 - See [`seo-ranking-setup.md`](./seo-ranking-setup.md).

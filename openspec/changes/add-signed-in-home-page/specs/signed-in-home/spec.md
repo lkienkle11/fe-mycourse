@@ -5,10 +5,10 @@ Defines what a signed-in learner sees and can do on the `/home` page: the login 
 ## ADDED Requirements
 
 ### Requirement: Login gate on the signed-in home
-The `/home` page SHALL show a loading indicator while the current-user request is pending, SHALL show a "Sign in" call to action that navigates to the login route with `/home` as the return path when no user is signed in, and SHALL render the home sections only for a signed-in user. The page SHALL NOT request any home data while no user is signed in.
+The `/home` page SHALL show a loading indicator while the current-user request is pending, SHALL show a "Sign in" call to action that navigates to the login route with `/home` as the return path when session cookies exist but no user can be loaded (an expired session; visitors without session cookies are redirected to the public homepage before the page renders, see `signed-in-home-entry`), and SHALL render the home sections only for a signed-in user. The page SHALL NOT request any home data while no user is signed in.
 
-#### Scenario: Guest opens /home
-- **WHEN** a visitor without a session opens `/home`
+#### Scenario: Expired session opens /home
+- **WHEN** a visitor holding stale session cookies, for whom no user can be loaded, opens `/home`
 - **THEN** the page shows the sign-in prompt and its call to action leads to the login route with `next=/home`
 - **AND** no request to the three home endpoints is made
 
@@ -92,6 +92,17 @@ Complete your Course and Trending Course SHALL each offer an Expand More control
 #### Scenario: Fewer items than requested
 - **WHEN** the initial response contains fewer items than the initial limit
 - **THEN** the Expand More control is not shown
+
+### Requirement: Swipeable sections on mobile
+Below the `sm` breakpoint (640 px), the items of Complete your Course, Trending Course and Popular Instructor SHALL form one horizontally swipeable row with scroll snapping (each item about 85% of the row width so the next one peeks in), without a visible scrollbar and without horizontal scrolling of the page. From `sm` up the sections SHALL keep their existing grids (columns, gaps and card sizes unchanged). The loading skeletons SHALL use the same row so the layout does not jump.
+
+#### Scenario: Mobile viewport
+- **WHEN** the page is shown in a viewport narrower than 640 px and a section has more than one item
+- **THEN** its items are laid out in one row that scrolls horizontally with snapping and the document itself does not scroll horizontally
+
+#### Scenario: Tablet and desktop viewport
+- **WHEN** the viewport is 640 px or wider
+- **THEN** Trending Course and Popular Instructor are grids (2 columns from `sm`, 4 from `lg`) and Complete your Course is a grid (2 columns from `sm`, 3 from `lg`) with the same gaps as before
 
 ### Requirement: Loading, empty and error states per section
 Each data section SHALL show skeleton placeholders matching its card layout while its request is pending, an empty-state message when the response is an empty list, and an error message with a retry control when the request fails. A failure in one section SHALL NOT hide or break the other sections. The retry control SHALL re-request only that section.

@@ -99,6 +99,7 @@ async function main() {
     const serverEnv = {
       NEXT_PUBLIC_API_URL: FIXTURE_URL,
       PORT: String(APP_PORT),
+      SITE_URL: "https://e2e.example.test",
     };
     spawnChild(
       "next start",

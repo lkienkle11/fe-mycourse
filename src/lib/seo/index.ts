@@ -1,6 +1,7 @@
 export { buildPageMetadata } from "@/lib/seo/build-page-metadata";
 export {
   buildCanonicalUrl,
+  buildLanguageAlternates,
   localizedPathname,
   toAbsoluteUrl,
 } from "@/lib/seo/canonical";
@@ -17,6 +18,7 @@ export {
   robotsModeForPublicRouteKey,
   robotsPreset,
 } from "@/lib/seo/robots-presets";
+export { buildRobotsTxtRules } from "@/lib/seo/robots-txt";
 export {
   parseAbsoluteHttpsOrigin,
   parseAbsoluteHttpsUrl,
@@ -27,7 +29,6 @@ export {
 } from "@/lib/seo/site-config";
 export {
   buildSitemapEntries,
-  listPrivatePathPrefixes,
   listPublicStaticPathnames,
 } from "@/lib/seo/sitemap-builder";
 export type * from "@/types/seo";

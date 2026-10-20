@@ -7,7 +7,7 @@ import { confirmAction } from "@/actions/auth";
 import { useGetMe } from "@/hooks";
 import { useSendBroadcastOutbound } from "@/hooks/events/broadcast/use-send-broadcast-outbound";
 import { useRouter } from "@/i18n/navigation";
-import { homeHref } from "@/lib/navigation/routes";
+import { defaultPostAuthHref } from "@/lib/navigation/routes";
 import { translateApiErrorCode } from "@/lib/utils/api-error";
 
 type ConfirmStatus = "loading" | "missing" | "error" | "success";
@@ -40,7 +40,7 @@ export function ConfirmEmailContent() {
           type: "confirm_success",
           payload: { messageId: `confirm-${Date.now()}` },
         });
-        router.replace(homeHref);
+        router.replace(defaultPostAuthHref);
         return;
       }
       setErrorMessage(translateApiErrorCode(tErrors, result.code));

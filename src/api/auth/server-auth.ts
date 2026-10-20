@@ -6,6 +6,11 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { API_PUBLIC_ROUTES } from "@/constants/api-route";
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  SESSION_ID_COOKIE,
+} from "@/constants/auth-cookie";
 import type { ApiResponse } from "@/types/api";
 import type { RefreshTokenResponse } from "@/types/auth";
 import {
@@ -38,9 +43,9 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 export async function readAuthCookiesFromRequest(): Promise<AuthCookieBag> {
   const store = await cookies();
   return {
-    accessToken: store.get("access_token")?.value,
-    refreshToken: store.get("refresh_token")?.value,
-    sessionId: store.get("session_id")?.value,
+    accessToken: store.get(ACCESS_TOKEN_COOKIE)?.value,
+    refreshToken: store.get(REFRESH_TOKEN_COOKIE)?.value,
+    sessionId: store.get(SESSION_ID_COOKIE)?.value,
   };
 }
 
@@ -79,7 +84,7 @@ export async function refreshUpstreamSession(
     const tokens = validateRotatedTokens(envelope?.data);
     const refreshMaxAge = parseMaxAgeForCookie(
       setCookieHeaders,
-      "refresh_token",
+      REFRESH_TOKEN_COOKIE,
     );
     return {
       tokens,
