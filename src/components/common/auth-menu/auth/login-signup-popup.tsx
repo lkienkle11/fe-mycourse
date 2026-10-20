@@ -11,7 +11,7 @@ import {
 } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
-import { homeHref } from "@/lib/navigation/routes";
+import { defaultPostAuthHref } from "@/lib/navigation/routes";
 import { cn } from "@/lib/utils";
 import { LoginContent } from "./login-content";
 import { LoginSignupLayout } from "./login-signup-layout";
@@ -42,7 +42,7 @@ export function LoginSignupPopup({
   }
 
   function handleAuthenticated(destination: string) {
-    closeWithAnimation(() => router.push(destination || homeHref));
+    closeWithAnimation(() => router.push(destination || defaultPostAuthHref));
   }
 
   const title = type === "signup" ? "Sign up" : "Sign in";
