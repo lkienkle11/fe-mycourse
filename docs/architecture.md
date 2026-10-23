@@ -1,9 +1,6 @@
 # Frontend Architecture (`fe-mycourse`)
 
-_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-10-15 (taxonomy slug UI: `SlugInput` and `extractRecommendedSlug` now shared by course and taxonomy; `useSlugConflictFlow`; shared `FormField`, `tree.ts`, `payload.ts`; `SortableTreeEditor` merged into `TaxonomyTreeEditor`). Prior: 2026-09-16 (Technology Stack: added Jest/RTL/MSW unit/integration tests and Playwright browser tests rows; Quality gates section and Related Docs updated for `e2e-browser.yml` and `testing.md` — see `docs/testing.md`). Prior: 2026-06-17 (Turbopack dev tuning, `clean:next` / `dev:clean` scripts)._
-
-
-This document describes how the **MyCourse** Next.js application is structured, including its technology stack, directory layout, functional clusters, design decisions, and cross-cutting concerns. GitNexus index **`fe-mycourse`** (2026-05-21): **~219** files under `src/`, **1570** symbols, **3189** relationships, **69** execution flows, **27** clusters. Refresh: `npx gitnexus analyze --force` from repo root.
+How the **MyCourse** Next.js application is structured: technology stack, directory map, design decisions, environment, cross-cutting conventions and the API layer. Routes/layouts/locale are in [`PAGES.md`](PAGES.md); per-feature rules in [`FEATURES.md`](FEATURES.md); reusable assets in [`SHARED.md`](SHARED.md). Code graph numbers (symbols, clusters, flows) change with every commit: read them from `npx gitnexus status` / `.gitnexus/meta.json` and the GitNexus block in `AGENTS.md`, never from this file.
 
 ---
 
@@ -11,45 +8,56 @@ This document describes how the **MyCourse** Next.js application is structured, 
 
 | Layer | Technology | Version | Notes |
 |-------|-----------|---------|-------|
-| Framework | Next.js (App Router) | 16.2.1 | Server Components, Server Actions, Middleware |
-| UI library | React | 19.2.4 | Concurrent features, `use client` / `use server` boundary |
+| Framework | Next.js (App Router) | 16.2.1 | Server Components, Server Actions, `src/proxy.ts` (not `middleware.ts`) |
+| UI library | React | 19.2.4 | `use client` / `use server` boundary |
 | Styling | Tailwind CSS | 4.x | PostCSS plugin (`@tailwindcss/postcss`) |
-| Component primitives | Radix UI (`radix-ui` + legacy `@radix-ui/*`) | various | Headless primitives; shadcn v4 batch uses unified `radix-ui` package |
-| Design system | shadcn | 4.2.0 | `components.json` style `radix-nova`; **54** files under `src/components/ui/`; **no Base UI**; full catalog except Combobox |
+| Component primitives | Radix UI (`radix-ui` + legacy `@radix-ui/*`) | various | Headless primitives; shadcn v4 batch uses the unified `radix-ui` package |
+| Design system | shadcn | 4.2.0 | `components.json` style `radix-nova`; 54 files under `src/components/ui/`; no Base UI; full catalog except Combobox |
 | Charts / carousel / calendar | recharts, embla-carousel-react, react-day-picker | 3.x / 8.x / 10.x | Installed via shadcn `chart`, `carousel`, `calendar` |
-| DnD / tree edit | @dnd-kit/* | 6.x | `SortableList` in `src/components/shared/`; `TaxonomyTreeEditor` (nested sortable tree built on `SortableList`) in `src/components/features/taxonomy/` |
-| Tree graph | @xyflow/react, dagre | 12.x / 0.8.x | `DagreTreeDialog` (`nodesDraggable` default true) + `dagre-tree.ts` |
-| Legacy tree pkg | @nosferatu500/react-sortable-tree | 5.x | Installed; taxonomy form uses `TaxonomyTreeEditor` (@dnd-kit via `SortableList`) instead |
+| DnD / tree edit | @dnd-kit/* | 6.x | `SortableList` in `src/components/shared/`; `TaxonomyTreeEditor` in `src/components/features/taxonomy/` |
+| Tree graph | @xyflow/react, dagre | 12.x / 0.8.x | `DagreTreeDialog` + `dagre-tree.ts` |
+| Legacy tree pkg | @nosferatu500/react-sortable-tree | 5.x | Installed; the taxonomy form uses `TaxonomyTreeEditor` instead |
 | Forms | react-hook-form + zod | 7.x / 4.x | `@hookform/resolvers` bridges the two |
-| i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` (no `ja` routing). Taxonomy **data** labels localize from BE via query `locale` / translation tables — see `docs/taxonomy-admin.md`. |
-| Data fetching (client) | SWR | 2.x | Shared `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup, **3 min** `errorRetryInterval`, `provider: meCacheProvider`) for hooks under the provider; `useAuth` sets its own SWR options |
-| HTTP client | Xior 0.8.3 over Next.js Fetch (`ApiTransport`) | exact-pinned `xior` | Shared raw executor + isolated per-request authenticated executors with request/response interceptors; six `api*` + six `raw*` helpers |
-| Global state | Zustand | 5.x | Provider-free stores (auth, me, stream event log) |
-| Realtime (client) | BroadcastChannel, SSE, WebSocket, NDJSON fetch | — | See [`docs/delivery.md`](./delivery.md) |
+| i18n | next-intl | 4.x | Locales `en` and `vi`, `localePrefix: "always"` (no `ja` routing); taxonomy data labels localize from the BE via query `locale` |
+| Data fetching (client) | SWR | 2.x | `SWRConfig` in `AppProviders` (`revalidateOnFocus: false`, 30 s dedup, 3 min `errorRetryInterval`, `provider: meCacheProvider`); hooks override per subscription |
+| HTTP client | Xior 0.8.3 over Next.js Fetch (`ApiTransport`) | exact-pinned | Shared raw executor + isolated per-request authenticated executors with request/response interceptors; six `api*` + six `raw*` helpers |
+| Global state | Zustand | 5.x | Provider-free stores (me, language, api-error, stream event log, dashboard header) |
+| Realtime (client) | BroadcastChannel, SSE, WebSocket, NDJSON fetch | - | See `realtime-streams` in [`FEATURES.md`](FEATURES.md) |
 | Stream libraries | `reconnecting-websocket`, `@microsoft/fetch-event-source` | 4.x / 2.x | Transports in `src/events/` |
-| Toasts | Sonner | 2.x | Mounted in root layout, `position: "top-right"` |
-| Cookies (client) | js-cookie | 3.x | Read/write in browser context; `next/headers` used server-side |
-| Server boundary | server-only | 0.0.1 | `import "server-only"` in `auth-session.ts` — excluded from `@/lib/utils` barrel |
-| Icons | lucide-react, react-icons, @phosphor-icons/react | 1.x / 5.6.0 / 2.1.10 | Lucide = default; react-icons = brands/FA/MD; Phosphor = ~9k icons + weight variants |
+| Toasts | Sonner | 2.x | Mounted in the root layout, `position: "top-right"` |
+| Cookies (client) | js-cookie | 3.x | Browser context; `next/headers` server-side |
+| Server boundary | server-only | 0.0.1 | `import "server-only"` in `auth-session.ts`, excluded from the `@/lib/utils` barrel |
+| Icons | lucide-react, react-icons, @phosphor-icons/react | 1.x / 5.6.0 / 2.1.10 | Lucide default; react-icons = brands/FA/MD; Phosphor = extra glyphs + weights |
 | Type checker | TypeScript | 5.x | Strict mode |
-| Linter / formatter | ESLint 9 + Biome 2 | — | ESLint for Next rules; Biome check in CI; `fix:biome` / `format:biome` local only |
-| Commit lint | commitlint | 20.x | Conventional Commits via `lint:commit` script |
-| Dependency graph | madge | 8.x | `npm run cycles` — circular static imports in `src/`; CI via `test-all` → `quality:deps` |
-| Clone detection | jscpd | 4.x | `npm run dupl` — `.jscpd.json` (excludes `src/components/ui/**`); CI via `test-all` → `quality:deps` |
-| Dead-code detection | knip | 6.17.1 | `npm run deadcode` — [`knip.json`](../knip.json): unused component/screen files (`src/types/**` unused-type reports ignored); CI via `test-all` |
-| ESLint + Biome (CI) | eslint + @biomejs/biome | 9 / 2.x | `npm run test-all` in CI `test` job; `src/constants/**` data-only rules — [`quality.md`](./quality.md) |
-| Unit/integration tests | Jest (via `next/jest`) + React Testing Library + MSW | 30.5.1 / 16.3.3 / 2.11.1 (exact) | `npm test` — Node project (auth/transport/refresh-route) + jsdom project (everything else); CI via `test-all` — [`testing.md`](./testing.md) |
-| Browser tests | Playwright (Chromium) | 1.63.0 (exact) | `npm run test:e2e` — loopback fixture backend (`e2e/fixtures/server.mjs`) + fixture-configured `next build`/`next start`; CI via `.github/workflows/e2e-browser.yml` — [`testing.md`](./testing.md) |
+| Linter / formatter | ESLint 9 + Biome 2 | - | ESLint for Next + `src/constants|types|screen` rules; Biome check in CI; `fix:biome` / `format:biome` local only |
+| Commit lint | commitlint | 20.x | `npm run lint:commit` (`--from=HEAD~1 --to=HEAD`) |
+| Dependency graph | madge | 8.x | `npm run cycles`; CI via `test-all` -> `quality:deps` |
+| Clone detection | jscpd | 4.x | `npm run dupl` (`.jscpd.json` excludes `src/components/ui/**`) |
+| Dead-code detection | knip | 6.17.1 | `npm run deadcode` (`knip.json`: unused component/screen files; `src/types/**` unused-type reports ignored) |
+| Unit/integration tests | Jest (`next/jest`) + React Testing Library + MSW | 30.5.1 / 16.3.3 / 2.11.1 (exact) | `npm test`: Node project (auth/transport/refresh-route) + jsdom project; see [`testing.md`](testing.md) |
+| Browser tests | Playwright (Chromium) | 1.63.0 (exact) | `npm run test:e2e`: loopback fixture backend + fixture-configured `next build`/`next start`; CI `e2e-browser.yml`; see [`testing.md`](testing.md) |
+
+Dependency rules:
+
+1. Do not add duplicate functionality: check `package.json` and [`SHARED.md`](SHARED.md) first (`clsx` + `tailwind-merge` are already `cn()`). Pin versions exactly: `npm install --save-exact <pkg>@<version>` (never a bare `npm install <pkg>`, which writes a `^` range), then `npm ci` to verify the lockfile; this covers the test stack too (Jest, RTL, MSW, Playwright, undici). Do not add a second test runner, HTTP-mock library or browser-automation library without updating [`testing.md`](testing.md).
+2. State split: Zustand is UI/global state, SWR is server data; never fetch remote data with Zustand.
+3. Validation: Zod + `zodResolver`; messages are i18n keys.
+4. Styling: Tailwind utilities only; `cn()` for conditionals; `class-variance-authority` for component variants.
+5. Radix: use the wrappers in `src/components/ui/`; never import Radix primitives into feature components.
+6. Icons: default `lucide-react`; `react-icons` for brand logos and legacy FA/MD glyphs (sub-path imports only); `@phosphor-icons/react` for extra glyphs/weights (import only what you use). Do not add a fourth icon library.
+7. Toasts: `sonner` (`toast.success`, `toast.error`).
+8. Stream events: subscribe with `hooks/events/*`; send with `postSocketOutbound` / `postBroadcastOutbound`; do not add a second WebSocket/SSE library without updating the `realtime-streams` entry.
+9. Server-only modules: `import "server-only"` at file top (e.g. `auth-session.ts`); never re-export from a client-safe barrel (`@/lib/utils`).
+10. Overrides: `@swc/helpers` pinned to 0.5.21 (avoids transitive version conflicts).
+11. Next.js 16.2 may differ from older versions: read `node_modules/next/dist/docs/` before using new Next.js features.
+12. Quill is used directly through a thin wrapper (`DeltaEditor`), not `react-quill`: `react-quill@2.0.0` peer-depends on React <= 18 and breaks `npm ci` on React 19. Quill is never imported at module top level (`ensureQuillLoaded()` in `src/lib/quill/delta-editor-quill.ts`), so SSR and shared barrel imports (e.g. header `SearchBar` from `@/components/shared`) do not throw on `document`.
+13. `pdfjs-dist` lists optional Node dep `canvas`: Turbopack production builds alias it to `src/lib/stubs/canvas.ts`, and `PreviewPdf` uses `next/dynamic` `{ ssr: false }`; never import `@react-pdf-viewer/*` or `pdfjs-dist` at module top level outside the viewer file.
+14. Radix: new shadcn components use the unified `radix-ui` package; some pre-batch wrappers still use legacy `@radix-ui/*` import paths (avatar, separator, checkbox, dialog, dropdown-menu). `msw` stays pinned at 2.11.1 (2.12.0 pulls the ESM-only `rettime` that `next/jest`'s SWC transform cannot consume). Knip only auto-detects the literal `jest.config.ts`, so `knip.json` lists `src/test-support/jest.setup.node.ts` as an explicit `entry`.
+15. Do not install `@base-ui/react` or run `shadcn add combobox` (use `Select` + `Popover` + `Command`).
 
 ### Fonts
 
-Loaded in `src/lib/font.ts` via `next/font/google` and applied as CSS variables in the root layout:
-
-| Variable | Font | Usage |
-|----------|------|-------|
-| `--font-roboto` | Roboto | Body text (default via `font-roboto` class) |
-| `--font-gilroy` | Gilroy (via local or Google) | Headings / display |
-| `--font-geist-mono` | Geist Mono | Code / monospace |
+Loaded in `src/lib/font.ts` via `next/font/google` and applied as CSS variables in the root layout: `--font-roboto` (body, default via `font-roboto`), `--font-gilroy` (headings/display, local or Google), `--font-geist-mono` (code).
 
 ---
 
@@ -57,331 +65,118 @@ Loaded in `src/lib/font.ts` via `next/font/google` and applied as CSS variables 
 
 ```
 Browser
-  └─ DNS → Nginx (TLS termination)
-              └─ 127.0.0.1:3000 → next start (PM2: e.g. `mycourse-web` or `mycourse-web-dev` per `ecosystem.config.cjs`)
-                    ├─ Middleware (src/proxy.ts) -> locale redirect; signed-in /{locale} -> /{locale}/home
-                    ├─ App Router layout tree
-                    │     ├─ Root layout (fonts, Toaster)
-                    │     ├─ [locale] layout (NextIntlClientProvider + AppProviders)
-                    │     └─ (web) layout (Header + main + Footer)
-                    │           └─ HomePage / future pages
-                    └─ Server Actions → NEXT_PUBLIC_API_URL (Go API on :8080)
-```
-
----
-
-## App Router Layout Hierarchy
-
-```mermaid
-flowchart TB
-  RL["src/app/layout.tsx\n(Root: fonts, Toaster)"]
-  LL["src/app/[locale]/layout.tsx\n(NextIntlClientProvider + AppProviders)"]
-  WL["src/app/[locale]/(web)/layout.tsx\n(Header + <main> + Footer)"]
-  HP["src/app/[locale]/(web)/page.tsx\n→ HomePage screen"]
-
-  RL --> LL --> WL --> HP
-
-  WL -->|renders| Header["Header\n(SearchBar, LocaleSwitcher, AuthLayout)"]
-  WL -->|renders| Footer["Footer\n(course links, i18n commonFooter,\nFooterSocial: X / IG / FB)"]
-  Header -->|client| AuthLayout["AuthLayout\n(useGetMe: skeleton / UserMenu / AuthButton)"]
-  AuthLayout -->|modal| LoginSignupPopup["LoginSignupPopup\n(LoginContent / SignupContent)"]
-  LoginSignupPopup -->|server action| SA["loginAction / registerAction / confirmAction / logoutAction\n(src/actions/auth/auth.ts)"]
-  SA -->|HTTP server-to-server| GoAPI["Go API\n(NEXT_PUBLIC_API_URL)"]
-
-  HP -->|assembles| Sections["HeroSection, SearchSection,\nTopCoursesSection, AdvancedPromoSection,\nTrendingCoursesSection, UpcomingWebinarsSection,\nPromoSection"]
+  └─ DNS -> Nginx (TLS termination)
+              └─ 127.0.0.1:3000 -> next start (PM2: mycourse-web / mycourse-web-dev per ecosystem.config.cjs)
+                    ├─ src/proxy.ts -> locale redirect; signed-in /{locale} <-> /{locale}/home (see PAGES.md)
+                    ├─ App Router layout tree (root -> [locale] -> (web) | admin | instructor | sysadmin)
+                    └─ Server Actions / BFF route -> NEXT_PUBLIC_API_URL (Go API on :8080)
 ```
 
 ---
 
 ## Directory Map
 
+Single source of truth for where code lives. Folder-level detail is derivable with `ls`; this section keeps what `ls` cannot say.
+
 ```
-fe/
-├── src/
-│   ├── app/                        # Next.js App Router
-│   │   ├── layout.tsx              # Root layout — fonts, Toaster, <html lang> from getLocale(), title = DEFAULT_SITE_NAME
-│   │   ├── page.tsx                # / → redirect to routing.defaultLocale (fallback; the proxy redirects first)
-│   │   ├── robots.ts               # robots.txt (buildRobotsTxtRules)
-│   │   ├── sitemap.ts              # sitemap.xml (buildSitemapEntries)
-│   │   └── [locale]/
-│   │       ├── layout.tsx          # Locale layout — NextIntlClientProvider + AppProviders
-│   │       ├── (web)/
-│   │       │   ├── layout.tsx      # Web shell — Header, <main>, Footer
-│   │       │   └── page.tsx        # Home route → HomePage (generateMetadata + Organization JSON-LD)
-│   │       │   # home/page.tsx → SignedInHomePage (generateMetadata: title + noindex); courses/[slug]/page.tsx → CourseDetailPlaceholderPage
-│   │       ├── admin/              # DashboardLayout; taxonomy + instructors/*
-│   │       ├── instructor/         # DashboardLayout; tickets
-│   │       └── sysadmin/           # DashboardLayout; taxonomy + instructors/*
-│   │
-│   ├── screen/                     # Page-level screen components (async server components)
-│   │   ├── index.ts                # Barrel: common + admin + instructor + sysadmin
-│   │   ├── common/home/page.tsx    # HomePage (guest)
-│   │   ├── common/home/signed-in-home-page.tsx  # SignedInHomePage (/home: hero + catalog sections)
-│   │   ├── common/course/course-detail-placeholder-page.tsx  # CourseDetailPlaceholderPage (/courses/[slug])
-│   │   ├── admin/page.tsx          # AdminDashboardPage
-│   │   ├── instructor/page.tsx
-│   │   └── sysadmin/page.tsx
-│   │
-│   ├── components/
-│   │   ├── ui/                     # Radix/shadcn primitives (Button, Dialog, Input, …)
-│   │   ├── common/
-│   │   │   ├── index.ts            # Barrel: auth-menu, dashboard, footer, header
-│   │   │   ├── dashboard/          # DashboardLayout, RoleDashboardLayout (+ locale chrome helpers), DashboardSidebar, DashboardUnauthorized (deprecated, unused)
-│   │   │   ├── header/             # Header (RSC), HeaderDashboard, HeaderBrowseNav, HeaderMobileBar/Sidebar,
-│   │   │                           # BrandLogoLink, BrowseSidebarMenu, SidebarAuthFooter, LocaleSwitcher
-│   │   │   ├── footer/             # Footer (RSC), FooterSocial (client social icons)
-│   │   │   └── auth-menu/          # AuthLayout, AuthButton, LoginSignupPopup,
-│   │   │                           # LoginContent, SignupContent, UserMenu,
-│   │   │                           # auth-client.ts delegates to server actions, auth-social-login/
-│   │   ├── home/                   # Guest home sections (HeroSection, CourseCard, …); signed-in/ = signed-in home (HeroCarousel, sections, cards)
-│   │   ├── shared/                 # Cross-feature components (SearchBar, …)
-│   │   ├── providers/
-│   │   │   └── app-providers.tsx   # SWRConfig, EventsStreamProvider, MeSwrSync, LanguageLocaleSync, auth tab sync
-│   │
-│   ├── actions/
-│   │   └── auth/auth.ts            # "use server": loginAction, registerAction, confirmAction, logoutAction (+ deprecated signupAction alias)
-│   │
-│   ├── api/
-│   │   ├── index.ts                # Barrel: api* + raw* + ApiTransport (no server-only)
-│   │   ├── core/                   # Fetch policy/executor + methods/raw
-│   │   ├── xior/                   # Xior factory + raw/auth interceptors over Next.js Fetch
-│   │   ├── transport/              # createApiTransport + browserApiMethods
-│   │   ├── auth/                   # refresh + runtime adapters
-│   │   ├── server/                 # cache-policy + serverRawFetch
-│   │   ├── callers/                # Domain services
-│   │   └── hooks/                  # SWR hooks
-│   │   ├── methods.ts              # api* helpers + option types → ApiResult<T>
-│   │   ├── fetch-helpers.ts        # Shared header/cookie helpers
-│   │   ├── raw-http.ts             # raw* Xior-backed HTTP (refresh path)
-│   │   ├── server-raw-http.ts      # server-only public-cache raw fetch + profiles
-│   │   ├── cache.ts                # (DISABLED) Client IndexedDB + server Map cache layer
-│   │   ├── runtime/                # browser-auth (+ adapter types), server-auth (+ writable methods)
-│   │   ├── callers/
-│   │   │   └── auth/auth.ts        # login/register/confirm/logout + getMe/patchMe/deleteMe/getMyPermissions
-│   │   └── hooks/
-│   │       └── auth/useAuth.ts     # SWR hook: { me, isLoading, error, mutate }
-│   │
-│   ├── store/
-│   │   ├── auth/auth.ts            # useAuthStore, useMeStore
-│   │   ├── language/               # useLanguageStore (languageCode, languageLabel)
-│   │   ├── api-error-store.ts      # useApiError
-│   │   ├── events/                 # stream event log + per-channel selectors
-│   │   └── use-app-store.ts        # useAppStore — placeholder
-│   │
-│   ├── hooks/
-│   │   ├── auth/                   # useAuthStore, useGetMe, useSyncMeFromAuth
-│   │   ├── language/               # useCustomLanguage, useSyncLanguageFromLocale
-│   │   ├── events/                 # useStreamEvent, per-transport hooks
-│   │   └── use-mobile.ts           # useIsMobile
-│   │
-│   ├── types/
-│   │   ├── api.ts                  # ApiResult, ApiResponse, ApiPageInfo, ApiErrorCodeValue (types only)
-│   │   └── auth/auth.ts            # MeResponse, LoginResponse, RefreshTokenResponse
-│   │
-│   ├── schema/                     # Zod: auth, me, media, shared (slug fields), taxonomy, instructor, course (barrel @/schema)
-│   │   └── auth/auth.ts            # loginSchema, signupSchema (Zod + i18n keys)
-│   │
-│   ├── constants/
-│   │   ├── api-route.ts            # API_PUBLIC_ROUTES, API_PRIVATE_ROUTES
-│   │   ├── api-error-code.ts       # ApiErrorCode (mirrors be/internal/shared/errors/errcode_codes.go)
-│   │   ├── auth-cookie.ts          # ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, SESSION_ID_COOKIE, AUTH_SESSION_EXPIRES_AT_COOKIE, LEGACY_AUTH_SESSION_MAX_AGE_COOKIE, AUTH_COOKIE_NAMES — single source of auth cookie names
-│   │   ├── route.ts                # PUBLIC_ROUTES + PRIVATE_ROUTES + PUBLIC_RESOURCE_ROUTES + PRIVATE_RESOURCE_ROUTES
-│   │   ├── browse-menu.ts          # BROWSE_MENU_ITEMS
-│   │   └── common.ts               # HEADER_DROPDOWN_ITEMS, LANGUAGE_OPTIONS (types: types/user-menu.ts)
-│   │
-│   ├── lib/
-│   │   ├── language/               # resolveCustomLanguage, resolveLanguageCode
-│   │   ├── navigation/             # route builders + shared href helpers
-│   │   ├── utils/                  # Shared helpers — import `@/lib/utils` (barrel: index.ts)
-│   │   │   ├── index.ts            # Re-exports
-│   │   │   ├── cn.ts               # cn() (clsx + tailwind-merge)
-│   │   │   ├── url.ts              # buildQueryParams()
-│   │   │   ├── list-query.ts       # apiListQueryToRecord()
-│   │   │   ├── format-bytes.ts     # formatBytes()
-│   │   │   ├── media.ts            # media upload/list helpers
-│   │   │   ├── payload.ts          # omitWhenBlank(), changedNonBlank(), payloadField() — optional write-payload fields (import `@/lib/utils/payload`)
-│   │   │   ├── slug.ts             # sanitizeSlugInput(), SLUG_PATTERN, SLUG_MAX_LENGTH, isSlugAdjusted() (import `@/lib/utils/slug`)
-│   │   │   ├── tree.ts             # generic `{ id, children? }` helpers: walkTree, flattenTree, countTreeNodes, getTreeMaxDepth, findTreePath, findTreeNodeById, updateTreeNode (import `@/lib/utils/tree`)
-│   │   │   ├── react.ts            # useUniqueId()
-│   │   │   ├── user.ts             # pickCharacter()
-│   │   │   └── cookie.ts           # cookie types, domain, build options, isomorphic get/set
-│   │   ├── font.ts                 # next/font definitions (Roboto, Gilroy, GeistMono)
-│   │   └── http.ts                 # (placeholder / future HTTP utilities)
-│   │
-│   ├── config/
-│   │   ├── load-config.ts          # Dynamic config loader (extend as needed)
-│   │   └── items/items-config.ts   # Feature flag / item config
-│   │
-│   ├── i18n/
-│   │   ├── routing.ts              # defineRouting — locales, defaultLocale, localePrefix
-│   │   ├── request.ts              # getRequestConfig — message loading per locale
-│   │   └── navigation.ts          # next-intl navigation helpers (Link, redirect, …)
-│   │
-│   ├── lib/i18n/
-│   │   ├── load-messages.ts        # loadMessages / preloadAllMessages (memoized per process)
-│   │   └── index.ts
-│   │
-│   ├── messages/
-│   │   ├── en.ts                   # English translations (as const)
-│   │   ├── vi.ts                   # Vietnamese (satisfies Messages)
-│   │   └── types.ts                # Messages type from en.ts
-│   │
-│   ├── instrumentation.ts          # register(): validates SITE_URL at server start (logs and exits 1 when missing/invalid)
-│   └── proxy.ts                    # next-intl middleware + signed-in /{locale} -> /{locale}/home redirect + matcher
-│                                   # Locale proxy entry for next-intl routing
-│
-├── docs/
-│   ├── architecture.md             # This file
-│   ├── deploy.md                   # Production deployment runbook
-│   ├── flow.md                     # Auth and API execution flows
-│   └── screens.md                  # Routes and UI surfaces
-│
-├── public/                         # Static assets (icons, images)
-├── next.config.ts                  # Next.js config + next-intl plugin
-├── components.json                 # shadcn configuration
-├── biome.json                      # Biome linter/formatter config
+fe-mycourse/
+├── AGENTS.md / CLAUDE.md   agent instructions (CLAUDE.md imports AGENTS.md via @AGENTS.md; GitNexus block auto-managed in both)
+├── .ai/skills/             project skills; .claude/ and .cursor/ hold OpenSpec commands/skills
+├── openspec/               changes/ (active), changes/archive/, specs/ (capability specs)
+├── src/                    all application code; unit/integration *.test.ts(x) are colocated next to the source
+├── e2e/                    Playwright: fixtures/server.mjs (loopback fixture backend), support/, tests/*.spec.ts
+├── public/                 static assets served as-is
+├── docs/                   this documentation set (see "Documentation set" below)
+├── scripts/                docker/ (compose-up/down, build, health: .sh/.ps1/.cmd), e2e-lifecycle.mjs (test:e2e lifecycle)
+├── docker/, Dockerfile     compose.*.yml + stack.*.yml; multi-stage Node 22 image (see docker.md)
+├── .github/workflows/      enforce-main-from-dev.yml, deploy-dev.yml (test -> build, deploy temporarily commented), e2e-browser.yml
+├── next.config.ts          next-intl plugin, Turbopack dev tuning, `canvas` stub alias, transpilePackages for ESM-only test deps
+├── jest.config.ts, playwright.config.ts, eslint.config.mjs, biome.json, knip.json, .jscpd.json, commitlint.config.cjs, tsconfig.json
+├── ecosystem.config.cjs    PM2 apps mycourse-web-dev / staging / prod
 └── package.json
 ```
 
----
+`src/` (one line per folder; conventions in bold):
 
-## Functional Clusters (GitNexus)
+| Folder | Role |
+|--------|------|
+| `app/` | App Router routes, layouts, `robots.ts`, `sitemap.ts`, `not-found.tsx`, `global-error.tsx`, `auth/{discord,x}/callback` (locale-less), `api/auth/refresh/route.ts` (BFF), `globals.css`, `utils.css` (incl. the `scrollbar-app` utility) |
+| `screen/` | **Pages only**: ESLint restricts each module folder to `index.ts` plus `page.tsx` or `*-page.tsx`; reusable UI goes to `components/`; no tests here (cover screens with e2e) |
+| `components/` | `ui/` (shadcn/Radix, do not hand-edit structural logic), `common/` (layout chrome: `header`, `footer`, `dashboard`, `auth-menu`), `home/` (guest sections + `signed-in/`), `features/` (`course`, `taxonomy`, `instructor`, `media`), `shared/` (cross-feature presentational), `providers/`, `auth/` (OAuth callback relay) |
+| `actions/` | Server Actions (`"use server"`) per domain, e.g. `actions/auth/*` |
+| `api/` | `core/` (fetch policy, helpers, body, redirect, `methods`, `raw-http`), `xior/`, `transport/`, `auth/` (refresh + runtime adapters), `server/` (public cache policy + `serverRawFetch`), `callers/<domain>/` (`*-factory.ts` isomorphic + `*-browser.ts`), `hooks/<domain>/` (SWR), `cache.ts` (dormant), `index.ts` barrel |
+| `store/` | Provider-free Zustand stores: `auth` (`useMeStore`), `language`, `dashboard`, `events`, `api-error-store.ts`, `use-app-store.ts` (placeholder) |
+| `hooks/` | `auth`, `course`, `dashboard`, `events`, `home`, `instructor`, `language`, `quill`, `searchable-select`, `slug`, `user-picker`, `use-mobile.ts` |
+| `events/` | Realtime ingest: `core/`, `registry/`, `providers/`, per-transport `broadcast|sse|socket|gRPC` |
+| `types/` | **Type-only** files (no `const`, functions, or `export *`; value imports from `@/constants/**` allowed only to derive types); runtime maps like `ApiErrorCode` live in `constants/`, helpers like `isApiSuccess()` in `lib/utils/` |
+| `schema/` | Zod schemas by domain (`auth`, `me`, `media`, `shared` slug fields, `taxonomy`, `instructor`, `course`); barrel `@/schema` |
+| `constants/` | **Data-only** modules (no functions, type exports or `.tsx`); helpers go to `lib/utils/`, types to `types/` |
+| `lib/` | `utils/` (barrel `@/lib/utils`, client-safe only), `navigation/`, `seo/`, `performance/`, `security/web/`, `quill/`, `swr/`, `language/`, `i18n/`, `auth/`, `instructor-application/`, `become-instructor-banner/`, `stubs/`, `font.ts`, `pdf-worker-url.ts` |
+| `config/` | Runtime config (`load-config.ts`, `items/`, `events/` per channel) |
+| `i18n/` | `routing.ts`, `request.ts`, `navigation.ts` |
+| `messages/` | `en.ts`, `vi.ts` (`satisfies Messages`), `error-codes.ts`, `types.ts` |
+| `test-support/` | Test-only fixtures/helpers, never imported by production code (see [`testing.md`](testing.md)) |
+| `proxy.ts`, `instrumentation.ts` | Locale proxy + home redirects; `register()` validating `SITE_URL` at server start |
 
-The graph groups the codebase into three cohesive modules:
+Barrel and import rules: every feature folder has an `index.ts`; consumers import from the barrel (`@/components/common`), not the implementation file; components use named exports only (no default exports); use `@/` aliases and never relative traversal beyond one level; `import type` for type-only imports. Exceptions to the barrel: server-only files (`@/lib/utils/auth-session`), `@/lib/utils/slug`, `@/lib/utils/payload`, `@/lib/utils/tree`, `@/lib/utils/taxonomy/form-submit` (import the file directly to avoid cycles or leaking server code), and `UserAvatar` / `CourseThumbnail` (import by file path, not the `shared` barrel). Unit/integration tests are colocated; `knip.json` uses `ignoreFiles` for barrels.
 
-### `Auth` cluster — 15 symbols, 79% cohesion
+### Module map (clusters)
 
-Covers everything related to authentication UI and server-side token management:
+- `Ui`: `src/components`, `src/screen`, `src/app/[locale]/(web)`, dashboard shells.
+- `Auth`: `src/actions/auth`, `components/common/auth-menu`, `components/providers/google-one-tap-host.tsx`, `hooks/auth`, OAuth callback routes, `lib/utils/auth-action.ts`, `constants/auth-cookie.ts`, `schema/auth`, `types/auth`.
+- `Api`: `src/api`, `constants/api-route.ts`, `constants/api-error-code.ts`, `types/api.ts`, `lib/utils/{api,api-error}.ts`.
+- `Validation + i18n errors`: `schema/**`, `messages/error-codes.ts`, `components/shared/{required-label,field-error,form-field}.tsx`, `lib/utils/validation-message.ts`.
+- `Events`: `events`, `hooks/events`, `store/events`, `types/events`, `config/events`.
+- `State`: `store`, `hooks/auth`, `hooks/language`.
+- `Routing + i18n`: `app`, `i18n`, `proxy.ts`, `lib/navigation/signed-in-home-redirect.ts`, `messages`.
+- `Shared`: `lib/utils`, `constants`, `config`.
+- Feature modules (`Taxonomy`, `Media`, `Instructor application`, `Instructor`, `Course`) map to the entries of the same name in [`FEATURES.md`](FEATURES.md).
 
-| Symbol | File | Role |
-|--------|------|------|
-| `LoginContent` | `auth-menu/auth/login-content.tsx` | Login form (react-hook-form + zodResolver) |
-| `SignupContent` | `auth-menu/auth/signup-content.tsx` | Signup form (react-hook-form + zodResolver) |
-| `LoginSignupPopup` | `auth-menu/auth/login-signup-popup.tsx` | Dialog that switches between login/signup tabs |
-| `AuthButton` | `auth-menu/auth-button.tsx` | CTA button shown when not authenticated |
-| `AuthLayout` | `auth-menu/auth-layout.tsx` | Header chrome: skeleton / `UserMenu` / `AuthButton` |
-| `UserMenu` | `auth-menu/user-menu.tsx` | Avatar dropdown for authenticated users |
-| `handleAuthSubmit` | `actions/auth/auth-client.ts` | Client-side submit helper → `loginAction` / `registerAction` (UI type `"signup"`) |
-| `loginAction` | `actions/auth/auth.ts` | `"use server"` — login, sets cookies |
-| `registerAction` | `actions/auth/auth.ts` | `"use server"` — register (201, no cookies until confirm) |
-| `confirmAction` | `actions/auth/auth.ts` | `"use server"` — email confirm, sets cookies |
-| `logoutAction` | `actions/auth/auth.ts` | `"use server"` — revoke session, clear cookies |
-| `signupAction` | `actions/auth/auth.ts` | **Deprecated alias** of `registerAction` |
-| `loginSchema` / `signupSchema` | `schema/auth/auth.ts` | Zod schemas with i18n error keys |
-| `useGetMe` / `useSyncMeFromAuth` | `hooks/auth/use-auth-store.ts` | `/me` Zustand mirror (`useMeStore`, `store/auth/auth.ts`); SWR sync via `MeSwrSync` |
-| `useAuthNextParam` | `hooks/auth/use-auth-next-param.ts` | Reads/validates the `next` query param on `/login`, `/signup` (via `isSafeInternalPath` + `isAuthRoutePath`); strips an invalid value via a raw `history.replaceState`, not `router.replace` (avoids triggering `@modal` interception) |
-| `useRedirectIfAuthenticated` | `hooks/auth/use-redirect-if-authenticated.ts` | Redirects away from `/login`/`/signup` to `resolvePostAuthHref(nextPath)` when `useGetMe().me` was already set on first mount — snapshotted once, not re-evaluated on a later login/signup transition |
-| `loginHref` / `signupHref` | `lib/navigation/routes.ts` | Build `/login?next=...` / `/signup?next=...` — the app's single way to open the login/signup route modal |
-| `useCustomLanguage` / `useSyncLanguageFromLocale` | `hooks/language/*` | Language label/code store (no React Context) |
-| `useLanguageStore` | `store/language/language-store.ts` | `languageCode`, `locale`, `languageLabel` |
+Cross-module contracts: `Auth UI -> actions/auth/auth-client -> actions/auth -> api/callers` for submit, UI maps `result.code` via `translateApiErrorCode(tErrors, code)`; OAuth: `AuthSocialLogin / GoogleOneTapHost -> hooks/auth -> actions/auth/{discord-oauth,google-oauth,x-oauth} -> lib/utils/auth-action (finalizeAuthLoginAction) -> api/callers/auth`; `api/hooks/auth/useAuth -> hooks/auth/use-auth-store` for SWR-to-Zustand sync; every feature `catch` after an API call -> `toastApiError(useTranslations("errors.codes"), error)`; `api/api-transport` + runtime adapters depend on `lib/utils/cookie` / `auth-session` for token cookies; `AppProviders -> EventsStreamProvider -> events/registry` starts transports which call `events/core/publish` -> `store/events`; feature UI listens via `hooks/events/*`.
 
-### `Api` cluster — 18 symbols, 100% cohesion
+`AppProviders` (`src/components/providers/app-providers.tsx`) hosts `SWRConfig`, `EventsStreamProvider`, null-render sync components (`MeSwrSync`, `LanguageLocaleSync`, `AuthConfirmTabSync`, `AuthLogoutTabSync`, `AuthModalBackgroundBridge`) and `children`; there is no React Context for language (`src/lib/language/resolve-language.ts`).
 
-All HTTP communication and token lifecycle management:
+### Documentation set
 
-| Symbol | File | Role |
-|--------|------|------|
-| `createApiTransport` | `api/transport/api-transport.ts` | Authenticated transport factory; creates an isolated Xior executor per request while retaining refresh eligibility/state |
-| `apiTransport` | `api/transport/api-transport.ts` | Browser singleton shared by browser callers |
-| browser/server refresh adapters | `api/auth/browser-auth.ts`, `api/auth/server-auth.ts`, `api/auth/refresh-upstream-raw.ts` | Browser proxy + writable server refresh via credential-safe raw helper |
-| `createWritableServerApiMethods` | `api/auth/server-auth.ts` | Server Actions: request-scoped writable `ApiMethods` |
-| `refreshBrowserSession` | `api/auth/browser-auth.ts` | Browser single-flight refresh promise |
-| `rawPost` / `rawFetch` / … | `api/core/raw-http.ts` | Shared raw Xior executor → `ApiResult<T>` (no MyCourse auth); raw GET may pass optional `cache` |
-| `apiFetch` / `apiPost` / `apiPut` / `apiDelete` / `apiOptions` | `api/core/methods.ts` | Low-level helpers on `apiTransport` → `ApiResult<T>` |
-| `getMeService` / `patchMeService` / `deleteMeService` / `getMyPermissionsService` | `api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | Me API callers |
-| `toastApiError` / `translateApiErrorCode` | `lib/utils/api-error.ts` | Map `response.code` → `errors.codes.{code}` |
-| `extractRecommendedSlug` | `lib/utils/api-error.ts` | Read `data.recommended_slug` from a `409` / code 3007 (`SlugAlreadyExists`) create error (create-course and taxonomy create) |
-| `RequiredLabel` / `FieldError` | `components/shared/` | Form required asterisk + inline Zod errors |
-| `FormField` | `components/shared/form-field.tsx` | Labelled field block: `RequiredLabel` (`htmlFor`) + control + optional muted hint + `FieldError`; `SlugField` is `FormField` + `SlugInput`; used by the course create dialog, the course basic-info tab and the taxonomy form dialog |
-| `SlugInput` | `components/shared/slug-input.tsx` | Editable slug field (filters through `sanitizeSlugInput`: `a-z 0-9 -`, whitespace becomes `-`, max 255); used by the course create dialog (optional), the course basic-info tab (required), the taxonomy form root slug and per-node tree slugs |
-| `useSlugConflictFlow` | `hooks/slug/use-slug-conflict-flow.ts` | Generic create-with-optional-slug submit: on `409` / 3007 exposes the BE `recommended_slug` for a stacked `ConfirmActionDialog` (accept resubmits, dismiss returns to the form); used by course create and taxonomy create |
-| `optionalSlugField` / `requiredSlugField` | `schema/shared/slug.ts` | The single slug zod rule set (blank-allowed / required first, then `SLUG_PATTERN` + `SLUG_MAX_LENGTH`) used by the course and taxonomy schemas and by tree-node slug validation |
-| `omitWhenBlank` / `changedNonBlank` / `payloadField` | `lib/utils/payload.ts` | The single "omit blank / omit unchanged" rule for optional write-payload fields (course + taxonomy builders) |
-| `isSlugAdjusted` | `lib/utils/slug.ts` | "The server adjusted the slug" check (sent vs saved) shared by course and taxonomy |
-| `walkTree` / `flattenTree` / `countTreeNodes` / `getTreeMaxDepth` / `findTreePath` / `findTreeNodeById` / `updateTreeNode` | `lib/utils/tree.ts` | Generic `{ id, children? }` tree helpers shared by taxonomy, the dashboard nav resolver and the dagre layout |
-| `loginService` | `api/callers/auth/auth-factory.ts (+ auth-browser.ts)` | `POST /api/v1/auth/login` |
-| `listMediaFiles` / `uploadMediaFiles` / `deleteMediaFile` | `api/callers/media/media-factory.ts (+ media-browser.ts)` | Media library CRUD (multipart upload with 30s timeout, delete by `object_key`) |
-| `useMediaFiles` | `api/hooks/media/useMediaFiles.ts` | SWR hook for paginated media list |
-| `useAuth` | `api/hooks/auth/useAuth.ts` | SWR hook for current user |
-| `useApiError` | `store/api-error-store.ts` | Global error store (max 20 entries) |
-| `ApiResult<T>` / `ApiResponse<T>` | `types/api.ts` | Shared envelope types |
-
-### `Ui` cluster — 51 symbols, 95% cohesion
-
-Design-system primitives and presentational components:
-
-| Area | Files |
-|------|-------|
-| Radix/shadcn primitives | Full set in `src/components/ui/` (54 modules) — see [`docs/components.md`](./components.md) inventory table |
-| Layout utilities | `cn()`, `buildQueryParams()`, `apiListQueryToRecord()`, `formatBytes()` |
-| Home sections | `HeroSection`, `SearchSection`, `TopCoursesSection`, `AdvancedPromoSection`, `TrendingCoursesSection`, `UpcomingWebinarsSection`, `PromoSection`, `CourseCard` |
-| Header / global | `Header`, `HeaderDashboard`, `DashboardLayout`, `LocaleSwitcher`, `SearchBar`, `Footer`, `FooterSocial` |
+`docs/` is the fixed set `ARCHITECTURE.md`, `PAGES.md`, `FEATURES.md`, `SHARED.md`, `ALL-SPRINTS.md` plus satellites `deploy.md`, `docker.md`, `quality.md`, `testing.md` and dated handoff notes. Never add a new docs file: add or edit an entry. See the "Repository specifics" section of `AGENTS.md` for the update rules.
 
 ---
 
 ## Key Design Decisions
 
-### 1. Server Actions for Login — Privacy by Default
+1. **Server Actions for login.** Login/signup calls go through `"use server"` actions: the browser network panel never sees the Go API endpoint or the raw token exchange, and the server relays `Set-Cookie` reliably.
+2. **HttpOnly auth cookies.** `access_token`, `refresh_token`, `session_id` (names in `src/constants/auth-cookie.ts`) are `HttpOnly`, `SameSite=Lax`, `secure` in production (`buildAuthCookieOptions`). Browser calls use `credentials: "include"` and the BE reads the JWT from the `access_token` cookie when no `Authorization` header is present; server code reads cookies via `next/headers` and attaches `Authorization: Bearer`. After silent refresh the BFF proxy and server writable refresh rewrite cookies through `setAuthSessionCookies` with BE `Set-Cookie` Max-Age (fallback `auth_session_expires_at`); upstream refresh uses `rawPostRefreshUpstream` (fail-closed redirect + trusted origin; public `rawPost` does not expose those controls). The proxy's home redirect only checks cookie presence and is not an auth gate. Follow-ups (not done): stop returning raw tokens in the JSON body (BE-03), enable CSRF middleware (BE-04).
+3. **Isomorphic cookie layer.** `getCookieValue` / `setCookieValue` (`src/lib/utils/cookie.ts`, `@/lib/utils`) switch between `js-cookie` and `next/headers`, so the same transport reporter logic runs in RSC/Server Action and browser. `setAuthSessionCookies` (`src/lib/utils/auth-session.ts`, `import "server-only"`) is excluded from the barrel so Client Components never pull in `next/headers`; Server Actions import `@/lib/utils/auth-session` directly.
+4. **Token refresh mutex (client only).** Concurrent eligible browser requests share one module-scoped refresh promise (`refreshBrowserSession`); waiters share success or failure and a waiter abort does not cancel the shared refresh; server writable requests are request-scoped and do not use single-flight; failure attaches a sanitized cause to the original `ApiHttpError`; the browser always targets an absolute same-origin URL (`window.location.origin + /api/auth/refresh`).
+5. **SWR for the current user.** `useAuth` caches `GET /api/v1/me` (`shouldRetryOnError: false`, `revalidateOnFocus: true`), revalidates on mount everywhere except `/login`/`/signup` when the persisted `/me` cache is < 30 s old (details in `auth`). `useMyInstructorApplication` deliberately does not revalidate on focus and exposes bootstrap-only `isLoading`.
+6. **Zustand for UI state.** `/me` mirror (`useMeStore`), language (`useLanguageStore`), API errors, stream log and dashboard header override live in provider-free stores; the old auth-modal Zustand state is gone (login/signup is route-based, see `PAGES.md`).
+7. **Unified stream pipeline.** BroadcastChannel/SSE/WebSocket/NDJSON share one ingest path (transport -> `normalizeInboundEnvelope` -> `useStreamEventsStore.push` (`last` + rolling `log`, max 100) -> `subscribeStreamEvents` -> hooks); `EventsStreamProvider` starts transports when env/config allows.
+8. **API response envelope.** Every Go endpoint returns `{ code, message, data }`; `code === 0` is success. `ApiErrorCode` (`src/constants/api-error-code.ts`) mirrors `be/internal/shared/errors/errcode_codes.go` 1:1; success check `isApiSuccess()` (`src/lib/utils/api.ts`); user-facing errors only through `toastApiError` / `translateApiErrorCode`, never the BE `message`.
 
-Login and signup calls are proxied through Next.js Server Actions (`"use server"`). The browser's network panel never sees the Go API endpoint or the raw token exchange. This also lets the server relay `Set-Cookie` headers back to the browser reliably.
+### Caching layer (temporarily disabled)
 
-### 2. HttpOnly Auth Cookies — Cookie-Based Session
-
-Auth tokens (`access_token`, `refresh_token`, `session_id`; names defined once in `src/constants/auth-cookie.ts`) are stored as **HttpOnly**, `SameSite=Lax` cookies. Client-side JavaScript cannot read them (XSS blast radius reduced). The browser sends cookies on API requests via `credentials: "include"`; the Go backend reads the JWT from the `access_token` cookie when no `Authorization` header is present. Server-side Next.js code still reads HttpOnly cookies via `next/headers` and attaches `Authorization: Bearer …` when proxying to the API. The proxy only checks that `refresh_token` and `session_id` are present (not valid) to decide the signed-in `/{locale}` redirect.
-
-`buildAuthCookieOptions` (auth cookies) enforces `httpOnly: true` and `secure: true` in production. After silent refresh, the FE BFF proxy and server writable refresh rewrite cookies via `setAuthSessionCookies` using BE `Set-Cookie` Max-Age when available, otherwise the persisted `auth_session_expires_at` HttpOnly cookie. Upstream refresh uses `rawPostRefreshUpstream` (fail-closed redirect + trusted origin); public `rawPost` does not expose those controls.
-
-**Follow-up (not in this pass):** stop returning raw tokens in JSON body (BE-03), enable CSRF middleware (BE-04).
-
-### 3. Isomorphic Cookie Layer
-
-`getCookieValue` / `setCookieValue` in `src/lib/utils/cookie.ts` (re-exported from `src/lib/utils/index.ts` as `@/lib/utils`) transparently switch between `js-cookie` (browser) and `next/headers` (server). This allows the same Fetch transport reporter logic to run in both RSC/Server Action and browser contexts without code duplication.
-
-`setAuthSessionCookies` lives in `src/lib/utils/auth-session.ts` with `import "server-only"` — it is **excluded** from the `@/lib/utils` barrel so Client Components never pull in `next/headers`. Server Actions import it directly: `@/lib/utils/auth-session`.
-
-### 4. Token Refresh Mutex (Client Only)
-
-When multiple concurrent browser requests are eligible for silent refresh simultaneously, only **one** refresh call is issued (`refreshBrowserSession` module-scoped Promise). Waiters share the same success or failure; waiter abort does not cancel the shared refresh. Server writable requests are request-scoped and do not use browser single-flight. Refresh failure attaches a sanitized cause to the original protected-request `ApiHttpError`. Browser refresh always targets an absolute same-origin URL (`window.location.origin + /api/auth/refresh`) so URL validation succeeds.
-
-### 5. SWR for Current User
-
-`useAuth` uses SWR to cache the `GET /api/v1/me` response with options defined in `src/api/hooks/auth/useAuth.ts` (including `shouldRetryOnError: false` and hook-level `revalidateOnFocus: true`). It revalidates on mount (SWR's default) on every route **except** `/login`/`/signup`, where it skips the on-mount fetch if `meCacheProvider`'s (`src/lib/swr/me-cache-provider.ts`) persisted `/me` cache is less than 30 s old — this is what lets a fast bounce between the two full-page routes (each a hard nav) make zero redundant `/me` calls, while a reload of any protected route still always re-checks the session. Scoping the skip that narrowly matters: an earlier, unscoped version skipped it everywhere, which let a revoked/expired session go undetected across a reload of a protected page; `e2e/tests/auth.spec.ts` caught it (see the hook's own doc comment). `AppProviders` wraps the app in `SWRConfig` with `revalidateOnFocus: false`, a 30-second dedup interval, a **3-minute** `errorRetryInterval` (constants in `src/constants/swr.ts`), and a `provider: meCacheProvider` cache so hooks that allow error retry do not hammer the BE every 5 seconds. `MeSwrSync` (a null-render child) calls `useSyncMeFromAuth` **inside** that provider so the internal `useAuth` shares the same client SWR context as the rest of the subtree. After a successful login, `login-content.tsx` invokes **`mutateMe()`** from `useGetMe()` to refresh the Zustand `/me` slice immediately.
-
-`useMyInstructorApplication` intentionally does **not** revalidate on focus and exposes bootstrap-only `isLoading` so `BecomeInstructorPage` does not unmount the form when the user returns to the tab. See `docs/instructor-application.md`.
-
-### 6. Zustand for UI State
-
-Auth modal state (`useAuthStore`), `/me` mirror (`useMeStore`), language (`useLanguageStore`), API errors, and stream log live in **provider-free** Zustand stores.
-
-`AppProviders` null-render sync children: `MeSwrSync` (`useSyncMeFromAuth`), `LanguageLocaleSync` (`useSyncLanguageFromLocale`), plus auth tab sync. **No** React Context for language — see `src/lib/language/resolve-language.ts`.
-
-### 7. Unified Stream Event Pipeline
-
-Realtime messages from BroadcastChannel, SSE, WebSocket, and NDJSON gRPC share one ingest path:
-
-1. Transport parses raw JSON (or string on BroadcastChannel).
-2. `normalizeInboundEnvelope` validates envelope + payload (Zod).
-3. `useStreamEventsStore.push` keeps `last` + rolling `log` (max 100).
-4. `subscribeStreamEvents` notifies hooks (`useStreamEvent`, `useWebSocketStreamEvent`, …).
-
-`EventsStreamProvider` starts transports on mount when env/config allows. See [`delivery.md`](./delivery.md) and `src/events/`.
-
-### 8. API Response Envelope
-
-All Go API endpoints return a standard `{ code, message, data }` envelope (mirroring `be/pkg/response/response.go`). `code === 0` means success; any other value is an application error. The `ApiErrorCode` constant map in `src/constants/api-error-code.ts` mirrors `be/internal/shared/errors/errcode_codes.go` (1:1). Success checks: `isApiSuccess()` in `src/lib/utils/api.ts`. User-facing errors: `toastApiError` / `translateApiErrorCode` in `src/lib/utils/api-error.ts` — never display BE `message`.
+`src/api/cache.ts` implements a dual-layer cache (client IndexedDB, server in-process `Map`). The integration in `apiFetch` is commented out (`// TODO: re-enable`); the default baseline TTL is 1 s and callers can pass `caching: { ttlSeconds: N }` or `caching: false`.
 
 ---
 
 ## Environment Variables
 
+Single authoritative table (README and `deploy.md` point here). `NEXT_PUBLIC_*` are **inlined at `next build`**: they must reach whatever runs the build (the CI `build` job via GitHub Secrets/Variables, or Docker build-args) and need a rebuild after a change; setting them only in the PM2/container runtime env has no effect on the browser bundle. `SITE_URL` is the reverse: runtime-only.
+
 | Variable | Required | Set at | Description |
 |----------|----------|--------|-------------|
-| `NEXT_PUBLIC_API_URL` | **Yes** | Build + runtime | Base URL of the Go API (e.g. `https://api.yourdomain.net`). Inlined at `next build`. |
-| `AUTH_COOKIE_DOMAIN` | Prod only | Server runtime | Parent domain for auth cookies when FE and API are on separate subdomains (e.g. `yourdomain.net`). Passed to `getCookieDomain()` → included in `buildCookieOptions()`. Leave unset on localhost. |
-| `API_URL` | Fallback | Server runtime | Server-side fallback for `NEXT_PUBLIC_API_URL` in pure SSR contexts (not prefixed, so never inlined into client bundle). |
-| `NEXT_PUBLIC_STREAM_SSE_URL` | No | Build | SSE endpoint; empty disables SSE transport |
-| `NEXT_PUBLIC_STREAM_WS_URL` | No | Build | WebSocket URL (`wss://…`); empty disables WS |
-| `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | Build | Base URL for NDJSON stream (`/v1/events/stream` appended) |
+| `NEXT_PUBLIC_API_URL` | **Yes** | Build + runtime | Public Go API base URL, no trailing slash; must match BE `CORS_ALLOWED_ORIGINS`. Also read server-side. |
+| `AUTH_COOKIE_DOMAIN` | Prod recommended | Server runtime (Server Actions) | Parent domain for auth cookies when FE and API are on separate subdomains (e.g. `yourdomain.net`); passed to `getCookieDomain()` -> `buildCookieOptions()`; leave unset on localhost. Must equal the BE value. |
+| `API_URL` | No | Server runtime | Server-side fallback for the API base URL (pure SSR, private network routing); never in the client bundle. |
+| `SITE_URL` | **Yes** (every `next start`) | Server runtime only | Canonical frontend origin (rules in `seo-web`): pure `https` origin, non-loopback in production; `http://localhost[:port]` / `http://127.0.0.1[:port]` only outside production. Not read at build; validated at server start (logs and exits 1 if invalid). Same host as the OAuth callbacks' origin. Supplied through the per-environment env file (`.env.local`, `.env.staging`, `.env.prod`; PM2 `env_file`, Docker `env_file`). |
+| `NEXT_PUBLIC_STREAM_SSE_URL` | No | Build | SSE endpoint; empty disables SSE |
+| `NEXT_PUBLIC_STREAM_WS_URL` | No | Build | WebSocket URL (`wss://...`); empty disables WS |
+| `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | Build | NDJSON stream base URL (`/v1/events/stream` appended); empty disables it |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | For Google login | Build | Google Identity Services client id; must be present at build time, otherwise the Google button throws FE-local `4020`; empty disables the Google button + One Tap |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID` | For Discord login | Build | Discord OAuth2 client id; empty disables the Discord button |
+| `NEXT_PUBLIC_DISCORD_CALLBACK_URL` | For Discord login | Build | Absolute redirect URL `<origin>/auth/discord/callback`; byte-for-byte equal to BE `DISCORD_CALLBACK_URL` |
+| `NEXT_PUBLIC_X_CLIENT_ID` / `NEXT_PUBLIC_X_CALLBACK_URL` | For X login (retained) | Build | X OAuth2 client id / redirect URL (`<origin>/auth/x/callback`, equal to BE `X_CALLBACK_URL`); X code retained, not wired to the popup |
+| `NEXT_PUBLIC_PDF_WORKER_URL` | No | Build | Optional PDF.js worker URL override (HTTPS, CORS); default jsDelivr URL built from the installed `pdfjs-dist` version |
 
 ---
 
@@ -389,151 +184,119 @@ All Go API endpoints return a standard `{ code, message, data }` envelope (mirro
 
 | File | Role |
 |------|------|
-| `src/i18n/routing.ts` | `defineRouting` — locales `["en","vi"]`, `defaultLocale: "vi"`, `localePrefix: "always"` |
-| `src/i18n/request.ts` | `getRequestConfig` — `loadMessages(locale)`; dev calls `preloadAllMessages()` once per process |
-| `src/i18n/navigation.ts` | Typed `Link`, `redirect`, `useRouter`, `usePathname` from `next-intl/navigation` |
-| `src/lib/i18n/load-messages.ts` | `loadMessages`, `preloadAllMessages` (memoized) — dynamic import `@/messages/en` / `@/messages/vi` |
-| `src/messages/en.ts` | English copy (`commonFooter`, `home`, `auth`, `homepage`, …) |
-| `src/messages/vi.ts` | Vietnamese copy (default locale); `satisfies Messages` |
+| `src/i18n/routing.ts` | `defineRouting`: locales `["en","vi"]`, `defaultLocale: "vi"`, `localePrefix: "always"` |
+| `src/i18n/request.ts` | `getRequestConfig`: `loadMessages(locale)`; dev calls `preloadAllMessages()` once per process |
+| `src/i18n/navigation.ts` | Typed `Link`, `redirect`, `useRouter`, `usePathname` |
+| `src/lib/i18n/load-messages.ts` | `loadMessages`, `preloadAllMessages` (memoized), dynamic import of `@/messages/en` / `vi` |
+| `src/messages/{en,vi}.ts` | Copy; `vi.ts` is the default locale and `satisfies Messages` (`types.ts`); `error-codes.ts` holds `errors.codes.{code}` |
 | `src/types/i18n.d.ts` | `AppConfig.Messages` augmentation for typed `useTranslations` keys |
-| `next.config.ts` | next-intl plugin + Turbopack dev tuning (see [Development server](#development-server)) |
 
-Validation error messages in Zod schemas (`loginSchema`, `signupSchema`) use **i18n keys** (e.g. `"validation.email"`). `AuthEmailField`, `AuthPasswordField`, and `AuthFullNameField` in `auth-form-fields.tsx` resolve keys with the shared `resolveValidationMessage` (`src/lib/utils/validation-message.ts`) over `useTranslations("auth")` and render them with the shared `FieldError`; a key is resolved only when `error.message` is set (never `t(undefined)`).
+Rules: all user-visible text goes through `useTranslations` (client) / `getTranslations` (server); add every string to **both** `en.ts` and `vi.ts`; never import locale lists, use `routing` (`const { locales, defaultLocale } = routing`); always use the typed wrappers from `@/i18n/navigation`, never `next/link` (breaks locale routing); UI i18n is `en`/`vi` only (no `messages/ja.ts`, no `ja` routing). UI chrome comes from `useTranslations`; data/content locale comes from `useLocale()` passed as the API query `locale` (taxonomy list/picker names, instructor chips); do not invent a second FE locale store for reads. Two error namespaces, never mixed: API failure => `errors.codes.{code}` (`tErrors("4004")`), form validation => `{module}.validation.*` (`tValidation("title")`). Server components resolve language with `resolveCustomLanguage(await getLocale())`; client components read `useCustomLanguage()` (`languageCode`, `locale`, `languageLabel`) fed once by `LanguageLocaleSync`. `LocaleSwitcher` links must use `usePathname()` as `href` (never hard-code `href="/"`).
 
 ---
 
 ## Development server
 
-`npm run dev` runs **Next.js 16 Turbopack** (default bundler for dev). Configuration lives in [`next.config.ts`](../next.config.ts):
-
-| Setting | Value | Why |
-|---------|-------|-----|
-| `turbopack.root` | App directory (`import.meta.url` dirname) | Prevents Turbopack from tracing sibling repos in a multi-root workspace |
-| `turbopack.resolveAlias.canvas` | `src/lib/stubs/canvas.ts` | Stubs optional Node `canvas` import from `pdfjs-dist` so production Turbopack builds succeed |
-| `experimental.turbopackMemoryLimit` | 4 GiB | Caps RAM during long dev sessions |
-| `experimental.turbopackFileSystemCacheForDev` | `false` | Avoids unbounded `.next/dev/cache/turbopack` growth (multi-GB disk + heavy I/O) |
-| `logging.browserToTerminal` | `false` | Stops forwarding browser console to the terminal (less dev-server overhead) |
-
-**Maintenance scripts** ([`package.json`](../package.json)):
-
-| Script | Purpose |
-|--------|---------|
-| `npm run clean:next` | `rm -rf .next` — drop dev/build cache |
-| `npm run dev:clean` | `clean:next` then `next dev` — use when CPU/RAM spikes after long sessions |
-
-Trade-off with filesystem cache disabled: **slightly slower cold compile** after restart, but stable CPU/RAM/disk on developer machines.
+`npm run dev` runs Next.js 16 Turbopack. Settings in `next.config.ts`: `turbopack.root` = app directory (prevents tracing sibling repos in a multi-root workspace); `turbopack.resolveAlias.canvas` = `src/lib/stubs/canvas.ts` (stubs optional Node `canvas` from `pdfjs-dist` so production builds succeed); `experimental.turbopackMemoryLimit` 4 GiB; `experimental.turbopackFileSystemCacheForDev` `false` (avoids unbounded `.next/dev/cache/turbopack` growth; trade-off: slightly slower cold compile, stable CPU/RAM/disk); `logging.browserToTerminal` `false`. Maintenance scripts: `npm run clean:next` (`rm -rf .next`), `npm run dev:clean` (`clean:next` then `next dev`, for CPU/RAM spikes after long sessions). Parallel-slot route changes need a dev-server restart. Quality gates and CI: see [`quality.md`](quality.md) and [`testing.md`](testing.md); the local gate is `npm run check-all` (`test-all` plus `build`); CI on `dev` runs `npm run test-all` in the `test` job, then `npm run build`.
 
 ---
 
-## Middleware: Locale Routing and Signed-in Home Redirect
+## Conventions
 
-`src/proxy.ts` wraps the next-intl locale middleware (`createMiddleware(routing)`) and exports `config.matcher` used to enforce locale-prefixed routes. When the request path is exactly a locale root (`/vi`, `/en`, optional trailing slash) and both `refresh_token` and `session_id` cookies are present (presence only, not validity), it answers 307 to `/{locale}/home` with `Cache-Control: private, no-store` and `Vary: Cookie` (set on the redirect only), copying next-intl's Set-Cookie headers. `/` is first redirected by next-intl to `/{locale}` and then handled (two hops). The reverse rule (`resolveGuestHomeRedirectPath`) sends a request for `/{locale}/home` that lacks either cookie to the public `/{locale}` (307, same cache headers), so a guest never sees a sign-in prompt on `/home`. Crawlers send no cookies, so they always see the public homepage. The pure decision is `resolveSignedInHomeRedirectPath` / `hasAuthSessionCookies` / `getLocaleRootLocale` in `src/lib/navigation/signed-in-home-redirect.ts`. The matcher excludes locale-less OAuth popup callbacks (`/auth/discord/callback`, `/auth/x/callback`) so provider redirects are not rewritten to `/{locale}/auth/...` (which would 404 and break popup login), and any path containing a dot, so `/robots.txt` and `/sitemap.xml` bypass the proxy.
+### Files and components
 
----
+| Type | Convention | Example |
+|------|-----------|---------|
+| React components | `kebab-case.tsx`, `PascalCase` named export | `auth-layout.tsx` |
+| Hooks | `use-kebab-case.ts` | `use-auth-store.ts` |
+| Utilities, type files, schema files | `kebab-case.ts` | `cookie.ts`, `api.ts` |
+| Barrel files | always `index.ts` | `src/api/index.ts` |
+| Server Actions | `kebab-case.ts` in `src/actions/<domain>/` | `auth.ts` |
 
-## Route Constants
+Default to Server Components; add `"use client"` only for hooks (`useState`, `useEffect`, SWR, Zustand), event handlers, Radix interactive primitives and `useTranslations`; keep `getTranslations` and async data fetching on the server. Styling: `cn()` from `@/lib/utils` for conditionals, no inline `style={{}}` for layout, Tailwind class order layout -> spacing -> sizing -> typography -> color -> effects; scrollable containers use the `scrollbar-app` utility (`src/app/utils.css`, 4 px gray scrollbar). Libraries that touch `document` at import (e.g. `quill`) never use a top-level `import Quill from "quill"`: `import type Quill` for refs, `await ensureQuillLoaded()` from `@/lib/quill` inside `useEffect`, helpers call `getQuill()` afterwards (keeps `@/components/shared` barrel exports safe during SSR). `JsonLd` lives under `src/lib/seo/` (not `components/`) so it does not count against Knip `files`.
 
-```ts
-// src/constants/route.ts
-PUBLIC_ROUTES = {
-  home: "/",
-  becomeInstructor: "/become-instructor",
-  forgotPassword: "/forgot-password", // constant kept; login Link commented until page exists
-  confirmEmail: "/confirm-email",
-  logout: "/logout",
-  login: "/login",
-  signup: "/signup",
-}
+### State management
 
-PUBLIC_RESOURCE_ROUTES = { course: "/courses/:slug" } // dynamic templates for public pages
+| State type | Tool | Example |
+|------------|------|---------|
+| Server data (async, cached) | SWR | `useAuth`, `useCourses` |
+| Global UI state (sync) | Zustand (no Provider; import directly) | `useMeStore`, `useLanguageStore`, `useApiError`, `useStreamEventsStore` |
+| Realtime push | Events pipeline + hooks | `useWebSocketStreamEvent`, `useSseStreamEvent` |
+| Local component state | `useState` | form open/close toggles |
+| URL/navigation state | `useRouter` / `usePathname` | active nav item; login/signup modal (`@modal` + `next`) |
 
-PRIVATE_ROUTES = {
-  home: "/home",
-  admin: { ... },
-  instructor: { root: "/instructor", courses: "/instructor/courses", ... },
-  sysadmin: { ... },
-  account: { ... }, // constants kept; HEADER_DROPDOWN_ACCOUNT_GROUPS_PENDING not spread until pages exist
-}
+SWR keys are named constants defined once next to the caller (`getMeEndpointKey = "/api/v1/me"` in `auth-factory.ts`) and reused for `mutate(key)`.
 
-PUBLIC_RESOURCE_ROUTES = { ... }     // dynamic templates for public pages
-PRIVATE_RESOURCE_ROUTES = {
-  instructor: {
-    courseEditor: "/instructor/courses/:courseId/info",
-    courseEditorTab: "/instructor/courses/:courseId/:tab",
-  },
-}
-```
+**SearchableSelect (infinite list):** data layer `useApiInfiniteListQuery` (`useSWRInfinite` in `src/api/hooks/shared.ts`: merged `rows` with optional `getRowKey` dedupe, `loadMore`, `hasMore`, `mutate`/`retry`); UI wiring `useSearchablePaginatedOptions` (popover open state, debounced search to the SWR key (resets infinite `size` to 1), pinned `selectedLabel`, client `excludeValues`, fetch gated by `enabled && open`, `getRowKey: (item) => mapToOption(item).value`); presentational `SearchableSelect` (`Popover` + `Command`). Consumers pass `getPageKey(params)` using existing caller key builders (`getInstructorRosterListKey`, `getTaxonomyListKey`), never ad-hoc `fetchPage`; SWR uses `fetchPaginatedListByKey` on the canonical URL; close/reopen reuses the cache (`revalidateOnFocus: false`, `revalidateFirstPage: false`). Precedent: `useUserMultiSelectPickerState` + `useInstructorRosterCandidates`.
 
-Runtime href generation is centralized in `src/lib/navigation/routes.ts`. Keep account/forgot-password constants; temporarily **comment** Link/menu usage (not delete) so Next does not prefetch 404. See `docs/router.md` § Unmounted account / forgot-password paths.
+### Forms, validation and errors
 
-```ts
-toPublicRoute(PUBLIC_ROUTES.home)
-toPrivateRoute(PRIVATE_ROUTES.admin.courses)
-instructorCourseEditorHref(courseId)
-instructorCourseEditorTabHref(courseId, "outline")
-```
+All forms use `react-hook-form` + `zodResolver`; pass the react-hook-form `error` to the field component, never `t(errors.*.message)` in form shells (`t(undefined)` throws `MISSING_MESSAGE`). Standard flow: (1) define the Zod schema in `src/schema/<domain>/` with **i18n-key messages** (`z.string().email({ message: "validation.email" })`, never hard-coded text) and export the inferred type; (2) `useForm({ resolver: zodResolver(schema) })`; (3) `handleSubmit(onSubmit)`; (4) call a Server Action rather than the API directly for sensitive operations; (5) on `result.success` update UI / `mutate` SWR / navigate or close the modal, otherwise `translateApiErrorCode(tErrors, result.code)`, never `result.message`. Translate keys with `resolveValidationMessage(t, message)` (`src/lib/utils/validation-message.ts`; the translator is typed `(key: never) => string`, so pass the scoped `useTranslations(...)` result directly) for inline errors and `toastValidationError()` for pre-submit `safeParse` failures. Validation namespaces: `auth.validation.*`, `me.validation.*`, `media.validation.*`, `taxonomy.form.validation.*` (resolved via `useTranslations("taxonomy.form")` + `validation.*`), `instructor.validation.*`, `course.validation.*`. Use `FormField` (`RequiredLabel` + control + hint + `FieldError`) for labelled dialog fields; `RequiredLabel` + `FieldError` directly only where the layout differs (selects, `DeltaEditor`, `ImageFileField`, review textarea blocks).
 
-All FE internal navigation uses these route maps + helper builders (menus/sidebar/screen navigation) instead of hardcoded/interpolated path strings.
+**API errors:** never show the BE JSON `message`; resolve by numeric `code`: `toastApiError(tErrors, error)` in `catch` blocks and `translateApiErrorCode(tErrors, result.code)` for Server Action results; copy lives in `errors.codes.{code}` (`src/messages/error-codes.ts` -> `en.ts`/`vi.ts`); unknown codes fall back to `errors.codes.9999`; the BE has no taxonomy/course/instructor-specific numeric codes (they reuse shared `2xxx`/`3xxx`; media also `9011`-`9019`, incl. `R2BucketNotConfigured = 9019`); no per-module semantic keys (`auth.errors.emailAlreadyExists`). `toastApiError` is for a **mutation** failure (screen stays usable); for a **primary data-load** failure render `StatusErrorPage` using `classifyApiError(error)` (`unknown` falls back to the screen's generic state); do not toast a primary-load failure nor full-page a mutation failure (first consumer `editor-page.tsx`; variants in `dashboards-and-access`).
 
----
+**Optional write-payload fields** use one rule (`src/lib/utils/payload.ts`): include an optional string/id in a create/update body only when non-blank and, on update, only when it differs from the persisted value: `omitWhenBlank`, `changedNonBlank(value, persisted)`, spread `payloadField(key, value)`; never hand-roll `trim()` / `value || undefined`. Consumers: `toCreateCoursePayload`, `toUpdateCourseBasicInfoPayload` (`preview_video_file_id`, `slug`), the taxonomy `prepare*SubmitPayload` builders (`image_file_id`, `slug`), sub-lesson `media_url`.
 
-## API Routes
+**Slug fields:** slugs (course, taxonomy root and per-node) are editable and independent of the name/title; reuse `SlugInput`/`SlugField`, `sanitizeSlugInput`, `SLUG_PATTERN`, `SLUG_MAX_LENGTH` (255), `isSlugAdjusted`, `requiredSlugField`/`optionalSlugField`, one `TaxonomyTreeNode` type, and `useSlugConflictFlow` for 409/3007 (`course-editor`, `taxonomy-admin`). The FE has no name-to-slug generator (the BE generates slugs); never add one.
 
-```ts
-// src/constants/api-route.ts
-API_PUBLIC_ROUTES.auth.login     → POST /api/v1/auth/login
-API_PUBLIC_ROUTES.auth.register  → POST /api/v1/auth/register
-API_PUBLIC_ROUTES.auth.confirm   → POST /api/v1/auth/confirm
-API_PUBLIC_ROUTES.auth.refresh   → POST /api/v1/auth/refresh
-API_PUBLIC_ROUTES.auth.logout    → POST /api/v1/auth/logout
+**Paginated lists:** use `ApiListQueryParams` (`src/types/api.ts`) and `apiListQueryToRecord()` (`src/lib/utils/list-query.ts`) + `buildQueryParams`; domain filters alias or extend it (media adds `category`/`sort_order`; taxonomy keeps `sort_desc` and adds `search_by`, `search_value`, `locale`, `include_images`). Use `formatBytes()` for file sizes.
 
-API_PUBLIC_ROUTES.catalog.trendingCourses     → GET /api/v1/catalog/courses/trending
-API_PUBLIC_ROUTES.catalog.popularInstructors  → GET /api/v1/catalog/instructors/popular
+### UI patterns
 
-API_PRIVATE_ROUTES.user.getMe    → GET  /api/v1/me
-API_PRIVATE_ROUTES.course.continueLearning → GET /api/v1/learner-courses/continue
-```
+- **DropdownMenu -> Dialog/AlertDialog (row actions):** `<DropdownMenu modal={false}>` (`CourseAdminTableActionsMenu`, `CourseOutlineRowActions`) + `DeferredDropdownMenuItem` (`onAction`) instead of raw `onClick`/inline `setTimeout`; `deferDropdownAction()` (`src/lib/utils/defer-dropdown-action.ts`) runs the callback on the next tick so the menu unmounts before the dialog mounts; without this Radix can leave `body { pointer-events: none }` and freeze the dashboard until reload. Reuse points: `CourseReviewRowActions`, `course-admin-all-page`, `course-admin-trash-page`.
+- **Popover combobox inside Dialog:** a Dialog sets `body { pointer-events: none }` and a default portaled `PopoverContent` inherits it (list not scrollable/clickable). `PopoverContent` has `portal?: boolean` (default `true`); the taxonomy locale picker uses `portal={false}`. Do not change shared defaults; before editing `PopoverContent` grep importers (currently `TaxonomyLocaleTabsSection` + `SearchableSelect`; GitNexus `impact` may report 0 callers on a stale index, trust grep).
+- **Stacked confirm dialogs:** `ConfirmActionDialog stacked` shares the parent's Dialog primitive family; two copies of `@radix-ui/react-focus-scope` cause a `RangeError` (nested dialogs).
+- **Error boundary vs 404:** see [`PAGES.md`](PAGES.md).
 
-All paths use the `NEXT_PUBLIC_API_URL` base URL (via `apiTransport`).
+### TypeScript
+
+Strict mode, no `any`; `import type` for type-only imports; `@/` aliases only.
+
+### Adding a new feature checklist
+
+- Read the relevant [`FEATURES.md`](FEATURES.md) entry (and `PAGES.md` / `ARCHITECTURE.md` when the task crosses features or routes); check [`SHARED.md`](SHARED.md) before adding any utility, hook, type or component.
+- Run `npx gitnexus analyze` when the index is stale; before a PR run `npm run check-all` (optionally `npm run fix:biome` first; CI `test` on `dev` runs `npm run test-all`).
+- If the change touches a behavior in the [`testing.md`](testing.md) matrix, colocate a `*.test.ts(x)` and reuse `src/test-support/` helpers (`renderWithProviders`, `mock-app-router`, MSW `server`); never use `jest.mock()` (does not hoist under this project's `next/jest` transform).
+- Placement: server data fetching in `src/api/callers/<domain>/`; SWR hooks in `src/api/hooks/<domain>/`; Server Actions in `src/actions/<domain>/`; Zustand stores in `src/store/`; API route constants in `src/constants/api-route.ts`; page routes in `src/constants/route.ts` with URLs built via `src/lib/navigation/routes.ts`; strings in both `en.ts` and `vi.ts`.
+- Post-auth default destination is `defaultPostAuthHref`; `homeHref` only for the guest home, brand links, logout and canonical.
+- After implementation update the touched entries in `docs/` (never a new file).
 
 ---
 
-## Caching Layer (Temporarily Disabled)
+## API layer
 
-`src/api/cache.ts` implements a dual-layer cache:
-- **Client:** IndexedDB (persists across page reloads within TTL)
-- **Server:** Module-level `Map` (in-process, per-worker)
+### Layout
 
-The cache integration in `apiFetch` is currently commented out (`// TODO: re-enable`). Default baseline TTL is 1 second; callers can pass `caching: { ttlSeconds: N }` or `caching: false`.
+| Folder | Role |
+|--------|------|
+| `src/api/core/` | Xior-backed executor, Fetch policy/body/helpers/errors (`fetch-error.ts`, `fetch-helpers.ts`, `fetch-core-body.ts`, `fetch-core.ts`), `methods.ts` (`createApiMethods(transport)`), `raw-http.ts` |
+| `src/api/xior/` | Exact-pinned Xior client factory: raw executor + authenticated request-scoped executors and lifecycle interceptors over Next.js Fetch; Xior plugins (retry, refresh, cache, dedupe, throttle, progress) are intentionally disabled |
+| `src/api/transport/` | `api-transport.ts` (`createApiTransport`, injectable reporter, no Zustand) + `browser-api-methods.ts` (`browserApiMethods` + Zustand reporter install) |
+| `src/api/auth/` | `auth-refresh.ts` (eligibility, `validateRotatedTokens`, exact envelopes), `auth-runtime.ts` (adapter types), `refresh-upstream-raw.ts`, `browser-auth.ts` (single-flight), `server-auth.ts` (`server-only`, `createWritableServerApiMethods`) |
+| `src/api/server/` | `cache-policy.ts` (endpoint-bound public cache registry, empty) + `server-raw-http.ts` (`serverRawFetch`: no auth cookies/signal/credentials) |
+| `src/api/callers/<domain>/` | `create*Callers` in `*-factory.ts` (isomorphic, **no** `browserApiMethods`/Zustand) + `*-browser.ts` (browser singletons); **Server Actions import the `*-factory` path only**, never a module that evaluates browser bindings |
+| `src/api/hooks/<domain>/` | SWR hooks (`shared.ts` holds `useApiRowsQuery`, `useApiListQuery`, `useApiDetailQuery`, `useApiInfiniteListQuery`) |
 
----
+Prefer `@/api/...` paths under `core/`, `transport/`, `auth/`, `server/`; app code may use the `@/api` barrel for `api*` / `raw*` / errors. Canonical single-owner files stay separate inside these folders; do not inline them for line-budget.
 
-## Quality gates
+### Contracts
 
-Lint (`eslint`, `biome`), `npx tsc --noEmit`, and `npm run build` are the primary local checks (baseline **2026-06-17** — see [`quality.md`](./quality.md)). Import-cycle, duplication, and dead-code gates:
+- Never hard-code API paths: use `API_PUBLIC_ROUTES` / `API_PRIVATE_ROUTES` (`src/constants/api-route.ts`); add a constant for each new endpoint. Base URL from `NEXT_PUBLIC_API_URL` (or `API_URL` server-side); never hard-code.
+- Response envelope `ApiResponse<T> { code: number; message: string; data: T }` (`code 0` = success, `data` null on error); low-level return `ApiResult<T> { data, statusCode, headers, cookies }`; paginated data returns `ApiPageInfo { page, per_page, total_items, total_pages }` (`data.result` + `data.page_info`).
+- Call methods (import from `@/api`): `apiFetch`, `apiPost`, `apiPut`, `apiDelete`, `apiOptions` (+ six `raw*`). Check both layers: `catch` for transport/HTTP failure (`ApiHttpError` / `ApiTransportError`) and `data.code !== 0` for business failure. Never call native `fetch` for MyCourse API routes (it bypasses auth refresh and error reporting).
+- Authenticated defaults: `cache: "no-store"` on browser and server, timeout **10 s** (per-request `options.timeout` in ms, e.g. media upload 30 s); optional mutation `compress?: boolean` (default false; gzip JSON POST/PUT/PATCH once into a replayable body shared by refresh retry and redirect hops; sets `Content-Encoding: gzip`, removes `Content-Length`; compression starts only after the abort/timeout lifecycle is armed; FormData/GET/DELETE/OPTIONS never compressed; no production caller sets it yet because the BE does not decompress gzip). Authenticated headers are attached automatically; never set `Authorization` manually.
+- `fetch-core`: orchestration `prepareFetchCoreRequest` -> `dispatchFetchResponse` -> `readResponseData` -> `toFetchCoreOutcome`; timeout/abort through body-read; overall redirect deadline; trusted-origin redirect loop (`followServerRedirects`, 301/302/303/307/308 only, awaits intermediate body `cancel()`); redirect TypeError classification only in `classifyFetchFailure`; project query encoding and replayable-body construction stay policy owners (stricter than Xior's generic encoder).
+- `serverRawFetch` = `assertServerRawFetchOptions` + `resolveServerRawCacheOptions` + `executeFetchCore`; `rawPostRefreshUpstream` hard-codes `redirect: "error"` + `resolveTrustedOrigin(baseURL)` and is used by the BFF route and `refreshUpstreamSession`; error parsing is `parseApiErrorEnvelope` / `throwApiPolicyError` in `core/fetch-error.ts`.
+- Raw helpers (`rawFetch` / `rawPost` / ...): public options `headers`, `cookies`, `params`, `timeout`, `withCredentials`, `baseURL`, `signal`, optional `cache?: RequestCache` honored only for raw GET (omitted: browser GET omits the Fetch cache, server GET `no-store`; POST/PUT/PATCH/DELETE/OPTIONS always `no-store`); `force-cache` is an opt-in browser cache mode, **not** a 30 s TTL (exact TTL needs `Cache-Control: max-age`, an app Cache Storage timestamp, or Next `revalidate` via `serverRawFetch` profiles); no public `redirect`/`trustedOrigin`. Use `raw*` only for refresh and third-party URLs (`remote-data.ts`, `wikidata-company.ts`), never for private MyCourse routes.
+- Do not use: direct `fetch`/third-party HTTP for the MyCourse API; hard-coded paths; manual `Authorization`; `response.message` in UI; semantic per-module error keys for API errors.
+- Server redirect/SEO fetch: `seoFetch` is unused (see `seo-web`); `refreshBrowserSession` has no `AbortSignal` parameter (public authenticated options omit signal; adapter single-flight only).
 
-- `npm run deadcode` — Knip ([`knip.json`](../knip.json)): unused modules in `src/components/**` / `src/screen/**` (not functions/constants/deps; `src/types/**` unused-type reports ignored). **PASS** (0 findings).
-- `npm run fix:biome` — safe Biome auto-fix locally (`biome check --write`; unsafe e.g. unused imports need `--unsafe`).
-- `npm run cycles` — Madge circular import detection (uses `tsconfig` path aliases).
-- `npm run dupl` — jscpd clone detection against `src/` (skips shadcn `src/components/ui/**`; see [`quality.md`](./quality.md)).
-- `npm run quality:deps` — Madge + jscpd in sequence.
+### Global SWR defaults and hook rules
 
-On push to **`dev`**, [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml) runs **`npm run test-all`** in the **`test`** job, then **`npm run build`** in **`build`** (same pattern as backend **`make test-all`** → **`build`** in `be-mycourse`). On pull requests to **`dev`**/**`main`** and pushes to **`dev`**, [`.github/workflows/e2e-browser.yml`](../.github/workflows/e2e-browser.yml) additionally runs `test-all` then the Playwright browser suite (`npm run test:e2e`) against a fixture-configured production build — see [`testing.md`](./testing.md). Locally, use **`npm run check-all`** (FE) or **`make check-all`** (BE) for the full pre-PR gate, plus **`npm run test:e2e`** for browser coverage.
+`AppProviders` wraps the tree in `SWRConfig` with `src/constants/swr.ts` defaults and `provider: meCacheProvider`: `revalidateOnFocus: false`, `dedupingInterval: 30_000`, `errorRetryInterval: 180_000` (3 min instead of SWR's 5 s), client-only singleton cache that persists only `/me` to `sessionStorage`. Hooks may override: `useAuth` (focus on, no error retry, scoped on-mount skip), `useMyInstructorApplication` (no focus, no retry, bootstrap-only `isLoading`); hooks that omit `shouldRetryOnError: false` retry at the 3-minute interval. A new hook: named key constant, fetcher in `src/api/callers/<domain>/<domain>.ts`, hook in `src/api/hooks/<domain>/use<Domain>.ts`.
 
----
+### Error reporting
 
-## Related Docs
+`reportApiError` (`src/api/transport/api-transport.ts`) must not log or store the BE body `message`, tokens, cookies, session ids, Authorization headers or sensitive bodies; for `ApiHttpError` it builds FE-owned copy from status (+ `appCode`) and keeps the raw body only on `ApiHttpError.response.data` for code mappers. Reporter matrix (no env flag): **expected** (never custom Console, never Zustand): guest `GET /api/v1/me` 401, `ERR_BLOCKED_BY_CLIENT`, `ApiRefreshRequiredError`; **logged**: other 4xx, 5xx, `ApiTimeoutError`, `ApiAbortError`, `ApiNetworkError` (non-blocked), `ApiResponseParseError`, `ApiPolicyError`, `ApiRequestReplayError`; custom `[API]` Console only when `isServer()` OR `NODE_ENV === "development"` (production browser prints none: guest homepage => 0 custom lines); Zustand `useApiError` push is browser-only for the logged set (last 20 entries); do not blanket-skip status < 500. `toastApiError` uses the numeric `code` -> i18n, development may `console.debug({ code, message })`. The browser refresh BFF maps upstream `ApiTimeoutError` to **504** and other network failures to **502** (classify with `instanceof`, never regex on `error.message`; a safe substring is allowed only for blocked-by-client detection) and answers with allowlisted codes + fixed safe messages. `parseMaxAgeForCookie`: Max-Age digits must end at `;`, whitespace or end-of-attribute, otherwise `undefined` (fail closed). Do not silence a bad navigation by hiding console output: prevent the missing-route `Link`/prefetch instead.
 
-| Doc | Contents |
-|-----|----------|
-| [`docs/quality.md`](quality.md) | Madge / jscpd scripts, thresholds, baseline results |
-| [`docs/testing.md`](testing.md) | Jest (Node/jsdom) + Playwright harness, behavior matrix, `test:e2e` lifecycle |
-| [`docs/flow.md`](flow.md) | Auth and API execution flows with sequence diagrams |
-| [`docs/screens.md`](screens.md) | App Router routes, layouts, and UI surfaces |
-| [`docs/deploy.md`](deploy.md) | Production deployment runbook (Ubuntu 24.04, PM2, Nginx, TLS) |
-| [`../be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md) | Full-stack VPS: Go API, Postgres, Redis, joint Nginx |
-
-
-## SEO layer (home metadata, robots.txt, sitemap.xml)
-
-SEO helpers live under `src/lib/seo|performance|security/web` and **consume** the existing API stack (`serverRawFetch` + empty fail-closed `publicCacheProfiles`). The frontend origin is the runtime-only server-side `SITE_URL` (used for `metadataBase`/canonical/sitemap, validated at server start by `src/instrumentation.ts`, which logs and exits with code 1 when it is missing or invalid; `http://localhost` is accepted outside production) — **not** `NEXT_PUBLIC_API_URL`. Consumers: `generateMetadata` of `/{locale}` (`buildPageMetadata`, canonical, hreflang `vi` + `en` + `x-default`, Organization JSON-LD) and `/{locale}/home` (title + `noindex,nofollow`), `src/app/robots.ts` (`buildRobotsTxtRules` over `publicCrawlAllowPaths` / `privateCrawlDisallowPaths`) and `src/app/sitemap.ts` (`buildSitemapEntries`). Helpers not yet consumed by pages: ranking builders other than Organization, `seoFetch`, performance resource hints. Details: [`seo-ranking-setup.md`](./seo-ranking-setup.md).
+Feature-specific endpoint lists live in the matching [`FEATURES.md`](FEATURES.md) entry (`API:` line); the generic per-call patterns above apply to all of them.
