@@ -1,6 +1,6 @@
 # Deploying MyCourse Frontend on Ubuntu 24.04
 
-_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-16 (signed-in home page: hero carousel, Complete your Course, Trending Course and Popular Instructor read the catalog and learner-courses APIs; temporary `/courses/[slug]` placeholder; `UserAvatar` and `CourseThumbnail` under `src/components/shared`). Prior: 2026-09-16 (added `e2e-browser.yml` browser-test workflow — runs on PRs unlike `deploy-dev.yml`; `test` job now runs the real Jest suite, not a placeholder — see `docs/testing.md`). Prior: 2026-07-09 (CI secrets: dev implemented + stg/main placeholder names); 2026-07-09 (GitHub Actions secrets list + workflow YAML snippet); 2026-06-17._
+_Last updated: 2026-10-22._
 
 
 This is the **frontend** deployment runbook for the MyCourse Next.js application. It uses the same style and naming conventions as **[`be-mycourse/docs/deploy.md`](../../be-mycourse/docs/deploy.md)** — follow that guide first for DNS, Postgres, Redis, and the Go API service.
@@ -199,7 +199,7 @@ API_URL=https://api.yourdomain.net
 
 > **`SITE_URL` is the opposite of `NEXT_PUBLIC_*`:** it is **never** baked into the bundle. It is read per request on the server, so changing it needs only a process restart (`pm2 reload … --update-env`), not a rebuild. `npm run build` succeeds with `SITE_URL` unset; `next start` does not.
 
-See also [`delivery.md`](./delivery.md) for envelope format and per-channel behavior.
+See also [`FEATURES.md`](./FEATURES.md) (`realtime-streams`) for the envelope format and per-channel behavior.
 
 ---
 
@@ -493,20 +493,7 @@ Browser  ──────────────►  │  Nginx (TLS: yourdom
 
 ## Appendix B — Environment Variables Reference
 
-| Variable | Required | Build-time | Runtime | Description |
-|----------|----------|-----------|---------|-------------|
-| `NEXT_PUBLIC_API_URL` | **Yes** | ✅ baked into bundle | ✅ also read server-side | Public Go API base URL. No trailing slash. Must match `CORS_ALLOWED_ORIGINS` on the backend. |
-| `AUTH_COOKIE_DOMAIN` | Prod recommended | ❌ | ✅ Server Actions only | Parent domain for auth cookies. Without this, cookies set on `yourdomain.net` may not be sent to `api.yourdomain.net`. |
-| `API_URL` | No | ❌ | ✅ Server only | Server-side fallback for API base URL. Not exposed to browser. Useful for private network routing. |
-| `SITE_URL` | **Yes** (every `next start`) | ❌ not read at build | ✅ Server only (request time + `src/instrumentation.ts` at start) | Canonical frontend origin: pure `https` origin, no path/query/hash/userinfo, non-loopback in production (`http://localhost[:port]` / `http://127.0.0.1[:port]` accepted only outside production). Feeds metadata, `/robots.txt`, `/sitemap.xml`. Same host as the OAuth callback origins. |
-| `NEXT_PUBLIC_STREAM_SSE_URL` | No | ✅ | ✅ | SSE endpoint; empty disables transport |
-| `NEXT_PUBLIC_STREAM_WS_URL` | No | ✅ | ✅ | WebSocket URL; empty disables transport |
-| `NEXT_PUBLIC_STREAM_GRPC_BASE_URL` | No | ✅ | ✅ | NDJSON stream base URL (appends `/v1/events/stream`) |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | For Google login | ✅ baked into bundle | — | Google Identity Services client id. **Must be present at build time**, otherwise the Google button throws FE-local `4020 (google_not_configured)`. Empty disables the Google button + One Tap. |
-| `NEXT_PUBLIC_DISCORD_CLIENT_ID` | For Discord login | ✅ baked into bundle | — | Discord OAuth2 client id. Empty disables the Discord button on the login/signup popup. |
-| `NEXT_PUBLIC_DISCORD_CALLBACK_URL` | For Discord login | ✅ baked into bundle | — | Absolute Discord redirect URL; must byte-for-byte match backend `DISCORD_CALLBACK_URL`. |
-| `NEXT_PUBLIC_X_CLIENT_ID` | For X login (retained) | ✅ baked into bundle | — | X OAuth2 client id. X code retained; not wired to popup. |
-| `NEXT_PUBLIC_X_CALLBACK_URL` | For X login (retained) | ✅ baked into bundle | — | Absolute X redirect URL; must byte-for-byte match backend `X_CALLBACK_URL`. |
+The authoritative variable table (required/optional, build vs runtime, descriptions) is in [`ARCHITECTURE.md`](./ARCHITECTURE.md#environment-variables); this appendix keeps only the operational rules.
 
 > **Build-time only:** because `NEXT_PUBLIC_*` are inlined during `next build`, setting these in the PM2 / container runtime env file has **no effect** on the browser bundle. They must be provided to whatever runs `next build` — the CI `build` job (via GitHub Secrets/Variables) or the Docker build-args — and you must **rebuild** after changing them. `SITE_URL` is the reverse: runtime-only, supplied through the env file (PM2 `env_file` / Docker `env_file`), never a CI secret or build arg, and changed with a restart only.
 
@@ -514,34 +501,10 @@ Browser  ──────────────►  │  Nginx (TLS: yourdom
 
 ## Appendix C — Middleware (Locale Routing)
 
-`src/proxy.ts` wraps the `next-intl` locale proxy and adds the signed-in redirect:
+`src/proxy.ts` (next-intl locale routing plus the signed-in/guest `/{locale}` <-> `/{locale}/home` redirects) is documented in [`PAGES.md`](./PAGES.md#middleware-locale-enforcement-and-home-redirects). Deploy-time requirements only:
 
-```ts
-// src/proxy.ts (shape)
-import createMiddleware from "next-intl/middleware";
-import { routing } from "@/i18n/routing";
-
-const intlMiddleware = createMiddleware(routing);
-
-export default function proxy(request: NextRequest) {
-  // 1. next-intl resolves the locale (`/` -> 307 `/{locale}`).
-  // 2. Exact locale root (`/vi`, `/en`, optional trailing slash) + BOTH cookies
-  //    `refresh_token` and `session_id` (names from src/constants/auth-cookie.ts)
-  //    -> 307 `/{locale}/home` with `Cache-Control: private, no-store` and `Vary: Cookie`
-  //    (next-intl's Set-Cookie is copied onto the redirect).
-  // 3. Any other request passes through the next-intl response unchanged.
-}
-
-export const config = {
-  matcher: [
-    "/((?!api|trpc|_next|_vercel|auth/discord/callback|auth/x/callback|.*\\..*).*)",
-  ],
-};
-```
-
-Project uses `src/proxy.ts` as the locale proxy and signed-in redirect entry. Keep this file in place and ensure the matcher remains correct. The matcher excludes every path containing a dot, so `/robots.txt` and `/sitemap.xml` (served by `src/app/robots.ts` and `src/app/sitemap.ts`) bypass the proxy.
-
-**OAuth callback exclusion (required):** `/auth/discord/callback` and `/auth/x/callback` are locale-less popup relay routes (`src/app/auth/*/callback/`). They must be excluded from the matcher so next-intl does not redirect them to `/vi/auth/...` (which 404s and breaks Discord/X popup login). `NEXT_PUBLIC_*_CALLBACK_URL` values must remain `<origin>/auth/discord/callback` and `<origin>/auth/x/callback` — not locale-prefixed.
+- Keep `src/proxy.ts` in place. Its matcher excludes every path containing a dot, so `/robots.txt` and `/sitemap.xml` (served by `src/app/robots.ts` and `src/app/sitemap.ts`) bypass it, and it excludes the locale-less OAuth callbacks `/auth/discord/callback` and `/auth/x/callback` (otherwise next-intl rewrites them to `/vi/auth/...`, which 404s and breaks Discord/X popup login).
+- `NEXT_PUBLIC_DISCORD_CALLBACK_URL` and `NEXT_PUBLIC_X_CALLBACK_URL` must stay `<origin>/auth/discord/callback` and `<origin>/auth/x/callback`, never locale-prefixed.
 
 **Caching:** nginx has no page cache (`location /` sets `proxy_cache off`; only `/_next/static/` is cached), so no nginx change is needed for the redirect. Cloudflare / CDN cache rules live outside this repo — check manually that `/`, `/vi` and `/en` are not cached (no "Cache Everything"), otherwise one visitor's redirect can be served to others.
 
@@ -1003,7 +966,7 @@ sudo nginx -t                  # valid config after certbot edits?
 
 | Area | Path | Notes |
 |------|------|-------|
-| Next.js config + i18n plugin | `next.config.ts` | next-intl plugin; `turbopack.root`, dev memory/cache/logging — see `docs/architecture.md#development-server` |
+| Next.js config + i18n plugin | `next.config.ts` | next-intl plugin; `turbopack.root`, dev memory/cache/logging — see `docs/ARCHITECTURE.md#development-server` |
 | Middleware (locale routing + signed-in redirect) | `src/proxy.ts` | next-intl proxy plus `/{locale}` to `/{locale}/home` redirect for requests with both auth cookies; cookie names in `src/constants/auth-cookie.ts` — see Appendix C |
 | Site origin config | `src/lib/seo/site-config.ts` | `resolveSiteConfig` reads runtime `SITE_URL` and throws `SiteConfigError` on an invalid value — see [`SITE_URL`](#site_url) |
 | Startup validation | `src/instrumentation.ts` | `register()` validates `SITE_URL` at server start (nodejs runtime, `NODE_ENV=production`, skipped during `next build`); on failure logs the error and exits with code 1 |
@@ -1055,4 +1018,4 @@ Full reference: **[`docs/docker.md`](docker.md)** — `NEXT_PUBLIC_*` build-args
 - **Start-up validation:** `src/instrumentation.ts` `register()` validates it when the server starts (nodejs runtime, `NODE_ENV=production`, skipped during `next build`). A missing or invalid value makes the process log `SITE_URL must be a pure public https:// origin in production ...` and exit with code 1 (PM2 / the container runtime reports it) instead of leaving a server that answers every request with HTTP 500.
 - **Which host:** the same host (www or apex) as the OAuth callback origins. Dev and staging use their own domain, never the production one. The e2e server uses the fake origin `https://e2e.example.test`.
 - Do **not** treat `NEXT_PUBLIC_API_URL` or `NEXT_PUBLIC_SITE_URL` as the site canonical origin.
-- nginx is unchanged (no page cache, no static robots/sitemap). Existing nginx security headers (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`) remain the deploy baseline; FE `security-headers-presets.ts` is an inactive draft aligned with them. Cloudflare / CDN cache rules are outside the repo and must not cache `/`, `/vi`, `/en`. See [`seo-ranking-setup.md`](./seo-ranking-setup.md) and [`security-hardening-notes.md`](./security-hardening-notes.md).
+- nginx is unchanged (no page cache, no static robots/sitemap). Existing nginx security headers (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`) remain the deploy baseline; FE `security-headers-presets.ts` is an inactive draft aligned with them. Cloudflare / CDN cache rules are outside the repo and must not cache `/`, `/vi`, `/en`. See [`FEATURES.md`](./FEATURES.md) (`seo-web`) and [`FEATURES.md`](./FEATURES.md) (`seo-web`).

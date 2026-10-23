@@ -2,7 +2,7 @@
 
 Next.js **16.2** (App Router) client for **MyCourse**: React **19**, **Tailwind CSS 4**, **next-intl** (`en` / `vi`), **SWR**, **Xior 0.8.3** over the Next.js Fetch runtime (`ApiTransport`), **Zustand**, **react-hook-form** + **Zod**. The UI communicates with the Go API via `NEXT_PUBLIC_API_URL`.
 
-> **Locale routing and signed-in redirect:** Next.js **16** uses **`src/proxy.ts`** (not `middleware.ts`) for the `next-intl` locale proxy. The same proxy redirects a signed-in visitor (both `refresh_token` and `session_id` cookies) from `/vi` or `/en` to `/{locale}/home`. Keep that file in place — see [`docs/deploy.md` Appendix C](docs/deploy.md#appendix-c--middleware-locale-routing).
+> **Locale routing and signed-in redirect:** Next.js **16** uses **`src/proxy.ts`** (not `middleware.ts`) for the `next-intl` locale proxy. The same proxy redirects a signed-in visitor (both `refresh_token` and `session_id` cookies) from `/vi` or `/en` to `/{locale}/home`. Keep that file in place — see [`docs/PAGES.md`](docs/PAGES.md#middleware-locale-enforcement-and-home-redirects).
 
 ## Getting started
 
@@ -25,7 +25,7 @@ Next.js 16 dev uses **Turbopack** (`next dev`). If the machine feels slow:
 | Dev server watches sibling repos | Multi-root workspace / monorepo parent | `next.config.ts` sets `turbopack.root` to this app directory |
 | Slow locale validation every request | Dev-only `preloadAllMessages()` | Cached once per process in `src/lib/i18n/load-messages.ts` |
 
-Project defaults in `next.config.ts`: **4 GB** Turbopack memory cap, **filesystem dev cache off** (trade-off: slightly slower cold start, no runaway disk), **`logging.browserToTerminal: false`** (less terminal overhead). Details: [`docs/architecture.md`](docs/architecture.md#development-server).
+Project defaults in `next.config.ts`: **4 GB** Turbopack memory cap, **filesystem dev cache off** (trade-off: slightly slower cold start, no runaway disk), **`logging.browserToTerminal: false`** (less terminal overhead). Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#development-server).
 
 **Docker (optional):** `./scripts/docker/compose-up.sh local` — **Windows:** `scripts\docker\compose-up.cmd local` — see [`docs/docker.md`](docs/docker.md). CI still deploys via PM2 on the VPS.
 
@@ -53,37 +53,28 @@ Project defaults in `next.config.ts`: **4 GB** Turbopack memory cap, **filesyste
 
 ## Documentation Convention (Mandatory)
 
-The `docs/` folder is the **primary and authoritative documentation source** for this project.
+The `docs/` folder is the **primary and authoritative documentation source** for this project. It is a fixed set of files: add or edit entries in them, never add a new docs file.
 
-- **Before starting any task** (coding, planning, debugging, refactoring), read the relevant files in `docs/` first.
-- If `docs/` already contains sufficient and up-to-date information → **reuse it directly** without re-running full discovery.
-- If `docs/` is missing information or outdated → re-run discovery and **update `docs/` before proceeding**.
-- Always sync `docs/` after completing any task that changes architecture, APIs, data flow, components, patterns, or reusable assets.
-- `docs/reusable-assets.md` must be checked before proposing any new utility, hook, type, or helper to avoid duplication.
+- **Before starting any task**, find the relevant feature with `grep -n "^## " docs/FEATURES.md` and read only the matching entry plus the slugs in its `Related:` line. Read `docs/PAGES.md` (routes, layouts, locale) or `docs/ARCHITECTURE.md` (stack, conventions, API layer) only when the task crosses features or routes. Do not read the whole `docs/` folder.
+- **Check `docs/SHARED.md` before proposing any new utility, hook, type, schema, constant or component** to avoid duplication.
+- If an entry is missing or outdated, re-run discovery and **update that entry before proceeding**.
+- After a task that changes behavior, routes, shared code or architecture, update only the touched entries (replace outdated text, do not append a changelog). `docs/ALL-SPRINTS.md` is a log of to-do / in-progress / done work and is not part of that sync.
 - `AGENTS.md`, `CLAUDE.md`, and `.claude/` are version-controlled agent guidance. `CLAUDE.md` imports the complete canonical rules from `AGENTS.md` through `@AGENTS.md`; `.claude/` contains the shared commands and skills used by Claude-compatible agents.
 
 ## Documentation in this repo
 
 | Doc | Contents |
 |-----|----------|
-| [`docs/architecture.md`](docs/architecture.md) | Full tech stack, directory map, functional clusters (Ui / Api / Auth), design decisions, env vars, i18n, caching layer |
-| [`docs/folder-structure.md`](docs/folder-structure.md) | Full directory tree with purpose of every folder and subfolder |
-| [`docs/flow.md`](docs/flow.md) | Auth and API execution flows — login, signup (placeholder), `/me`, token refresh, cookie strategy, error handling, Zustand store interactions |
-| [`docs/screens.md`](docs/screens.md) | App Router routes, layout hierarchy (header / main / footer), guest home sections, signed-in `/home` sections (hero carousel, Complete your Course, Trending Course, Popular Instructor), the `/courses/[slug]` placeholder, auth shell, footer i18n (`commonFooter`), UI primitives, route constants |
-| [`docs/api-using.md`](docs/api-using.md) | Frontend API usage patterns — `apiFetch`/`apiPost`, SWR hooks, Server Actions, auth token handling, error handling, pagination |
-| [`docs/components.md`](docs/components.md) | Component inventory by directory — responsibilities, client/server boundary, naming conventions |
-| [`docs/router.md`](docs/router.md) | App Router tree, locale routing, layout hierarchy, navigation helpers, route constants |
-| [`docs/patterns.md`](docs/patterns.md) | Coding conventions — naming, styling (`cn()`), state management rules, form patterns, i18n, TypeScript patterns |
-| [`docs/logic-flow.md`](docs/logic-flow.md) | Execution flows — login, token refresh, Me fetch, form submission, auth modal state, permission checks, i18n, API error capture |
-| [`docs/dependencies.md`](docs/dependencies.md) | All runtime and dev dependencies — versions, roles, and usage rules |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Tech stack, directory map and conventions, design decisions, environment variables, i18n, development server, API layer |
+| [`docs/PAGES.md`](docs/PAGES.md) | Routes (single route table), layouts, locale configuration and `src/proxy.ts`, route-based login/signup modal, error boundaries and 404, screen barrels, global chrome, adding a new page |
+| [`docs/FEATURES.md`](docs/FEATURES.md) | One entry per feature area: `auth`, `home-and-catalog`, `seo-web`, `instructor-application`, `instructor-admin`, `taxonomy-admin`, `course-editor`, `course-review-admin`, `media`, `dashboards-and-access`, `realtime-streams` (rules, flows, API, code paths) |
+| [`docs/SHARED.md`](docs/SHARED.md) | Reusable utilities, hooks, types, schemas, stores, constants, API callers, Server Actions and components |
+| [`docs/ALL-SPRINTS.md`](docs/ALL-SPRINTS.md) | To do / in progress / done log with owners and OpenSpec change names |
 | [`docs/quality.md`](docs/quality.md) | ESLint, Biome, Knip / Madge / jscpd gates; `test-all` (CI) and `check-all` (local pre-PR); browser CI (`e2e-browser.yml`) |
 | [`docs/testing.md`](docs/testing.md) | Jest (Node/jsdom) + Playwright harness — behavior matrix, fixtures/MSW, `test:e2e` lifecycle, known Jest/SWC and jsdom limitations and their fixes |
-| [`docs/seo-ranking-setup.md`](docs/seo-ranking-setup.md) | **SEO / ranking / performance / security foundation** — home metadata, `robots.txt`/`sitemap.xml`, `noindex` on `/home` and the runtime `SITE_URL` contract in `src/lib/seo`; helpers under `src/lib/performance|security/web`; A/B/C reuse tables; `/` (guest mock home) vs `/home` (signed-in home fed by the catalog and learner-courses APIs) notes |
-| [`docs/security-hardening-notes.md`](docs/security-hardening-notes.md) | FE crawl/redact/JSON-LD sanitize/header draft helpers + link to BE public-SEO notes |
-| [`docs/reusable-assets.md`](docs/reusable-assets.md) | All reusable utilities, hooks, types, schemas, stores, constants, API callers, and Server Actions |
-| [`docs/delivery.md`](docs/delivery.md) | **Realtime channels** — BroadcastChannel, WebSocket, SSE, NDJSON gRPC; envelope model, env vars, links to per-channel docs |
 | [`docs/deploy.md`](docs/deploy.md) | **Production deploy** on Ubuntu 24.04 — Nginx, Certbot, PM2, env vars (`NEXT_PUBLIC_API_URL`, runtime-only `SITE_URL`, `AUTH_COOKIE_DOMAIN`, stream URLs), go-live checklist, rollback, troubleshooting, CI/CD |
 | [`docs/docker.md`](docs/docker.md) | Docker Compose alternative (local/VPS manual; PM2/CI unchanged; `SITE_URL` is a runtime `env_file` value, not a build-arg) |
+| [`docs/course-collaboration-handoff-2026-06-04.md`](docs/course-collaboration-handoff-2026-06-04.md) | Dated handoff note for the course collaborators work (history) |
 
 After large refactors, run **`npx gitnexus analyze --force`** in this repo so the local graph (`.gitnexus/`, ignored by git) and the generated **`CLAUDE.md` / `AGENTS.md`** header stats stay aligned with the code; use **`npx gitnexus query -r fe-mycourse "…"`** / **`npx gitnexus context -r fe-mycourse SymbolName`** when updating `docs/*.md`.
 
@@ -178,7 +169,7 @@ Create a `.env` file at the project root (gitignored). In production use `.env.p
 
 `SITE_URL` is resolved by `resolveSiteConfig` (`src/lib/seo/site-config.ts`) and validated at server start by `src/instrumentation.ts`. It is supplied through the per-environment env file (`.env.local`, `.env.staging`, `.env.prod`; PM2 `env_file`, Docker `env_file`) — never `NEXT_PUBLIC_`, a build-arg or a CI secret. See [`docs/deploy.md`](docs/deploy.md#site_url).
 
-**Stream events (v1):** `EventsStreamProvider` in `AppProviders` starts BroadcastChannel (always) plus SSE/WS/gRPC when the env vars above are set. See [`docs/delivery.md`](docs/delivery.md).
+**Stream events (v1):** `EventsStreamProvider` in `AppProviders` starts BroadcastChannel (always) plus SSE/WS/gRPC when the env vars above are set. See [`docs/FEATURES.md`](docs/FEATURES.md#realtime-streams).
 
 ---
 

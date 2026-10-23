@@ -1,5 +1,7 @@
 # Course Collaboration Handoff
 
+> Dated history note. Current collaborator-tab rules live in [`FEATURES.md`](FEATURES.md) (`course-editor`); this file is kept as written and is exempt from doc-sync replacement.
+
 _Last updated: 2026-06-25 (collaborators tab: paginated list + P67 picker + bulk review v2). Prior: 2026-06-17 version numbering; 2026-06-05 course i18n pass._
 
 ## 2026-06-25 addendum (collaborators tab)

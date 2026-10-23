@@ -133,7 +133,7 @@ docker compose -f docker/compose.dev.yml up -d
 
 ---
 
-## Related docs
+## See also
 
 - [`docs/deploy.md`](deploy.md) — PM2 + GitHub Actions runbook
 - [`docs/quality.md`](quality.md) — `test-all`, `check-all`, `deadcode` (Knip), lint/build gates

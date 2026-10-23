@@ -1,6 +1,6 @@
 # Code quality tools (`fe-mycourse`)
 
-_Last audited: 2026-10-19 (home SEO: metadata, robots.txt and sitemap.xml for /{locale}; noindex /{locale}/home; signed-in /{locale} to /{locale}/home redirect in src/proxy.ts; runtime-only SITE_URL). Prior: 2026-10-15 (jscpd dedup table: shared tree / payload / slug / form-field / slug-conflict modules). Prior: 2026-09-16 (`test` now runs the real Jest suite — see [`docs/testing.md`](./testing.md); `deadcode`/Knip in `test-all` / `check-all`; CI `test` job uses `test-all`)._
+_Last updated: 2026-10-22._
 
 Checks for **dead code** (Knip), **circular imports** (Madge), **duplicate code** (jscpd), **ESLint**, and **Biome** under `src/`. jscpd **skips** [`src/components/ui/`](../src/components/ui/) (shadcn upstream primitives — shared design system, not feature duplication). On push to **`dev`**, CI runs **`npm run test-all`** in the **`test`** job (`lint` → `biome` → `test` → `deadcode` → `quality:deps`), then **`npm run build`** in a separate **`build`** job (see [`.github/workflows/deploy-dev.yml`](../.github/workflows/deploy-dev.yml)).
 
@@ -260,13 +260,11 @@ Do **not** use backend `make check-dupl` or `make check-architecture` in this fr
 
 | Doc | Contents |
 |-----|----------|
-| [`dependencies.md`](./dependencies.md) | `knip.json`, `knip`, `madge`, `jscpd` devDependencies; Testing subsection (Jest/RTL/MSW/Playwright, all exact-pinned) |
-| [`folder-structure.md`](./folder-structure.md) | `knip.json` at repo root |
-| [`folder-structure.md`](./folder-structure.md) | `.jscpd.json`, `.jscpd-report/` |
-| [`architecture.md`](./architecture.md) | Stack row for dependency / clone tools, plus Testing/Browser tests rows |
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Technology Stack rows for `knip`, `madge`, `jscpd`, the Jest/RTL/MSW/Playwright stack (all exact-pinned) and the dependency rules |
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Directory Map: `knip.json`, `.jscpd.json`, `.jscpd-report/` at the repo root; Technology Stack rows for dependency / clone tools and the test stack |
 | [`testing.md`](./testing.md) | Full Jest + Playwright harness — behavior matrix, fixtures, `test:e2e` lifecycle |
 
 
 ## SEO foundation and Knip
 
-The home metadata, `src/app/robots.ts`, `src/app/sitemap.ts`, `src/instrumentation.ts` and `src/proxy.ts` use the SEO and crawl helpers under `src/lib/seo/**` and `src/lib/security/web/**`. The other helpers there and under `src/lib/performance/**` (for example `seoFetch`, the non-Organization JSON-LD builders, the resource hints) are still not imported by any page. Knip ignores `files` under `src/lib/**` and ignores `types` / `nsTypes` / `files` under all of `src/types/**` (including SEO contracts). **Do not** place unused orphans under `src/components/**` (`JsonLd` lives in `src/lib/seo/json-ld.tsx`). Gate remains `npm run check-all`. See [`seo-ranking-setup.md`](./seo-ranking-setup.md).
+The home metadata, `src/app/robots.ts`, `src/app/sitemap.ts`, `src/instrumentation.ts` and `src/proxy.ts` use the SEO and crawl helpers under `src/lib/seo/**` and `src/lib/security/web/**`. The other helpers there and under `src/lib/performance/**` (for example `seoFetch`, the non-Organization JSON-LD builders, the resource hints) are still not imported by any page. Knip ignores `files` under `src/lib/**` and ignores `types` / `nsTypes` / `files` under all of `src/types/**` (including SEO contracts). **Do not** place unused orphans under `src/components/**` (`JsonLd` lives in `src/lib/seo/json-ld.tsx`). Gate remains `npm run check-all`. See [`FEATURES.md`](./FEATURES.md) (`seo-web`).
