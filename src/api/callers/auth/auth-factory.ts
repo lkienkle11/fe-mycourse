@@ -3,7 +3,10 @@
  * Server Actions MUST import from this file (not auth-browser / barrel evaluation of Zustand).
  */
 
-import { isApiHttpError } from "@/api/core/fetch-error";
+import {
+  ApiSessionUnverifiedError,
+  isApiHttpError,
+} from "@/api/core/fetch-error";
 import type { ApiMethods } from "@/api/core/methods";
 import { API_PRIVATE_ROUTES, API_PUBLIC_ROUTES } from "@/constants/api-route";
 import { buildQueryParams } from "@/lib/utils";
@@ -78,7 +81,14 @@ export function createAuthCallers(methods: ApiMethods) {
           await methods.apiFetch<ApiResponse<MeResponse>>(endpointKey);
         return data.data;
       } catch (err) {
-        if (isApiHttpError(err) && err.response.status === 401) return null;
+        // A 401 whose refresh did not conclude is an outage, not a guest.
+        if (
+          isApiHttpError(err) &&
+          err.response.status === 401 &&
+          !(err instanceof ApiSessionUnverifiedError)
+        ) {
+          return null;
+        }
         throw err;
       }
     },

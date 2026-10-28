@@ -6,6 +6,7 @@ export * from "./use-auth-store";
 export * from "./use-discord-login";
 export * from "./use-google-login";
 export * from "./use-google-one-tap";
+export * from "./use-me-outage";
 export * from "./use-oauth-popup-login";
 export * from "./use-oauth-post-auth";
 export * from "./use-permissions";

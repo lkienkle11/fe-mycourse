@@ -1,0 +1,159 @@
+## Context
+
+See `proposal.md` (Why / What Changes) and `specs/auth-session-recovery/spec.md` for the contract. Facts established by reading the code (file and symbol, not assumptions):
+
+- `src/proxy.ts` decides "signed in" with `hasAuthSessionCookies` (`src/lib/navigation/signed-in-home-redirect.ts`): both `refresh_token` and `session_id` present. It never validates them.
+- Browser refresh path: `GET /api/v1/me` 401 -> `createApiTransport().request` -> `isRefreshEligible` (`src/api/auth/auth-refresh.ts`) -> `attemptRefresh` (`src/api/transport/api-transport.ts`, browser-proxy branch) -> `runtime.refresh()` = `refreshBrowserSession` (`src/api/auth/browser-auth.ts`, module-scoped `inflightRefresh`) -> `performBrowserRefresh` -> `POST /api/auth/refresh` -> `POST()` in `src/app/api/auth/refresh/route.ts` -> `rawPostRefreshUpstream` (`src/api/auth/refresh-upstream-raw.ts`) -> backend.
+- On backend rejection the route's `catch` (`route.ts` lines 153-168) calls `errorDto(status, parsed.code)` and returns. No cookie is touched. `performBrowserRefresh` then maps every non-2xx to an `ApiRefreshValidationError` (`reason: "invalid-envelope"`) and drops the status.
+- Server-writable path (only used by Server Actions: `src/actions/auth/{auth,google-oauth,discord-oauth,x-oauth}.ts` through `createWritableServerApiTransportFromRequest`): `attemptRefresh` server-writable branch (`api-transport.ts` lines 280-297) calls `runtime.refresh` = `refreshUpstreamSession` (`src/api/auth/server-auth.ts` line 69), which converts any `ApiHttpError` into `ApiRefreshValidationError` and discards the HTTP status (`server-auth.ts` line 95). `attemptRefresh` then returns `{ ok: false, cause: sanitizeApiErrorCause(error) }`; `sanitizeApiErrorCause` also drops everything but `kind`/`reason`.
+- The only cookie clearer is `clearAuthSessionCookies` (`src/lib/utils/auth-session.ts` line 228, server-only): it deletes `access_token`, `refresh_token`, `session_id`, `auth_session_expires_at` and the legacy `auth_session_max_age`. Callers today: `logoutAction` (`src/actions/auth/auth.ts` lines 83 and 90) and the failure path inside `setAuthSessionCookies` (lines 165 and 213).
+- Cross-tab logout already exists: `LogoutContent` sends `logout` with `reason: "user"` through `useSendBroadcastOutbound`; every tab mounts `AuthLogoutTabSync` -> `useAuthLogoutTabSync` (revalidate `/me`, `window.location.reload()`); `BroadcastLogoutPayload.reason` is an optional string and its Zod schema (`src/events/core/normalize-inbound.ts` lines 34-36, 60-63) accepts any string; nothing reads `reason`.
+- Backend (read-only reference, unchanged): `RefreshToken` handler answers 401 `RefreshTokenExpired`/`InvalidSession`, 403 `UserDisabled`/`UserBanned`, 400 for missing credentials, 500 otherwise; `RefreshSession` rotates with a strict `RefreshTokenUUID` match and no grace window; `MaxActiveSessions = 5` sessions per user (one per login, not per tab).
+- Baseline build (`npm run build`, exit 0): every route is `ƒ` (dynamic) including `/[locale]`. Production headers measured on a production build of `HEAD` with `SITE_URL=https://example.com` (the checkout's `.env.local` `SITE_URL` fails the production start check, so a plain `npm run start` does not start): `curl -sI /vi` and `/en` without cookies give `200` with `Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate` (no `s-maxage`); with stale cookies `/vi` gives `307 /vi/home` with `private, no-store` and `Vary: Cookie`. (The first exploration report quoted `no-cache, must-revalidate`; that value came from a `next dev` server already running on port 3000, not from a production build.)
+- `jest.mock()` does not hoist under this repo's `next/jest` SWC transform (`docs/testing.md`), so route-level cookie behaviour must be tested through injected collaborators and MSW, not module mocks. `next/headers` `cookies()` throws outside a Next request scope.
+- No rule in `eslint.config.mjs`, Madge or Knip forbids `src/api/**` -> `src/events/**`; `browser-api-methods.ts` already imports a Zustand store, so it is the existing browser-only wiring point.
+- Phase 2 facts (read 2026-10-26): `getMeService` (`src/api/callers/auth/auth-factory.ts`) returns `null` for any `ApiHttpError` with status 401 and rethrows everything else; its only runtime consumer is `useAuth`. `useAuth` passes SWR `error` to `useSyncMeFromAuth`, which stores it as `useMeStore.isError`; no component reads `isError`. In `createApiTransport().request`, when `attemptRefresh` returns `{ ok: false }` the code throws the original 401 through `throwReportedHttp(failed, false, refreshResult.cause)`; `buildHttpError` then calls `sanitizeApiErrorCause(cause)` on a cause that `attemptRefresh` already sanitised, which flattens it to `{ kind: "unknown" }`. `DashboardLayout` computes `isUnauthorized = !isLoading && !canAccessDashboard && !me`, shows `StatusErrorPage` `forbidden`/`unauthorized` and auto-pushes `loginHref` after 500 ms. `SignedInHomePage` and `BecomeInstructorPage` (via `useMyInstructorApplication` -> `getPageState`) treat `me === null` as "sign in". `meCacheProvider` persists the `/me` SWR state in `sessionStorage` on `beforeunload` and restores it on the next load of the same tab. `StatusErrorPage` already offers `server-error` and `network` variants with `action={{ label, onClick }}`; `errors.boundary.retry` exists in `en.ts` and `vi.ts`.
+
+## Goals / Non-Goals
+
+**Goals:**
+- Clear the dead session cookies exactly when the backend proves the session is dead (401/403 on refresh), in both refresh paths, using one shared decision.
+- Keep the failure responses free of backend text; add only a non-sensitive "session cleared" marker.
+- Tell other tabs once, with the existing cross-tab channel, only when cookies were really cleared.
+- Prevent two tabs of one browser from rotating the same refresh token at the same time.
+- Create no second implementation of: cookie clearing, session-dead classification, cross-tab logout sending, refresh upstream calls, cookie reading.
+- (Phase 2) Tell a guest apart from a failed current-user lookup, in the data layer, without breaking any existing 401 handling.
+- (Phase 2) Show a retryable status-aware state, built from the existing `StatusErrorPage`, when the current user could not be loaded because of an outage; never auto-open the login modal for it.
+- (Phase 2) Render every sign-in gate the same way (`StatusErrorPage` `unauthorized`), keeping each screen's existing copy.
+
+**Non-Goals:**
+- No change to `src/proxy.ts`, `signed-in-home-redirect.ts`, redirects, `Cache-Control`/`Vary`, ISR, `generateStaticParams`, `setRequestLocale`, `SEO_TEMPORARY_ENV_CACHE_POLICY` (stays `enabled: false`, comment "KEEP" untouched). The guest home stays dynamic (`ƒ`); finding why is the next session's job. `SignedInHomePage` was a non-goal in Phase 1; in Phase 2 the user approved editing it for the sign-in gate and the outage state only (D15), it still never redirects.
+- (Phase 2) No change to the guest-looking chrome during an outage (header `AuthLayout`, `SidebarAuthFooter`, Google One Tap, `BecomeInstructorPromoBanner`), to Server Action refresh outage marking, to 403/404 handling of `/me`, to `useAuth`/`useMeStore`/`meCacheProvider`, or to the double sanitisation in `buildHttpError`; all recorded as follow-ups.
+- No backend change. Atomic compare-and-swap in `rotateSession` is a backend follow-up.
+- No cross-tab lock for Server Action refreshes and no broadcast from them (no browser context there).
+- No second refresh skip optimisation for the waiting tab (it refreshes again with the new cookie; harmless).
+- No change to lint, test, build or quality tooling.
+
+## Decisions
+
+### D1. One shared status decision: `isDeadSessionRefreshStatus(status)` in `src/api/auth/auth-refresh.ts`
+Returns `true` only for `401` and `403`; `false` for any other number and for `undefined`. Lives next to `isRefreshEligible` (same domain: refresh decisions, isomorphic, already imported by the route, `server-auth.ts` and the transport). Used by the refresh proxy (D3) and by `attemptRefresh` (D4).
+- Alternative: compare `ApiErrorCode` (`InvalidSession`, `RefreshTokenExpired`, ...). Rejected: `UserDisabled`/`UserBanned` are not in `REFRESH_PROXY_ALLOWED_CODES` and are sanitised to `Unknown` at the proxy, and the backend contract is already "401/403 means the session is gone". Status is the stable signal.
+- Alternative: reuse `classifyApiError` (`src/lib/utils/api-error.ts`). Rejected: different semantics (page error presentation, 401 = unauthorized screen), different layer (screen), would couple the API layer to UI code.
+
+### D2. Preserve the upstream status instead of losing it
+Add an optional `upstreamStatus?: number` to `ApiRefreshValidationError` (`src/api/core/fetch-error.ts`, constructor input and `readonly upstreamStatus`). `refreshUpstreamSession` (`server-auth.ts` line 95 branch) sets it from `error.response.status`. `sanitizeApiErrorCause` is **not** changed (it must keep dropping everything but `kind`/`reason`, so nothing new reaches logs). `attemptRefresh` reads the field from the raw error in its `catch`, before sanitising.
+- Alternative: new error class. Rejected: `ApiRefreshValidationError` is already the single typed refresh failure; adding a field is smaller than a second class and `instanceof` checks stay valid.
+
+### D3. Refresh proxy is extracted into an injectable module so cookie behaviour is testable
+`src/app/api/auth/refresh/route.ts` may only export HTTP handlers (Next validates route exports), and `cookies()` cannot be mocked (`jest.mock` limitation). Move the existing handler body, `REFRESH_PROXY_ALLOWED_CODES`, `REFRESH_PROXY_SAFE_MESSAGES`, `sanitizeRefreshProxyCode/Message`, `errorDto` and the two DTO types **unchanged** into new `src/api/auth/refresh-proxy.ts` as `handleRefreshProxy(deps)`; `route.ts` becomes a thin `POST()` that builds the real deps. This is a pure move plus the new behaviour; no logic is rewritten.
+
+```ts
+type RefreshProxyDeps = {
+  readAuthCookies: ReadAuthCookiesFn;            // real: readAuthCookiesFromRequest (server-auth.ts)
+  persistSession: PersistRotatedAuthSessionFn;   // real: createPersistRotatedSessionFromRequest() (wraps setAuthSessionCookies)
+  clearSession: ClearAuthSessionFn;              // real: createClearSessionFromRequest() (wraps clearAuthSessionCookies)
+  baseURL: string;                               // real: resolvedBaseURL from route.ts env logic
+  timeoutMs: number;                             // real: 10_000
+};
+export async function handleRefreshProxy(deps: RefreshProxyDeps): Promise<RefreshProxyResponse>;
+```
+
+Behaviour added in the `catch (error)` branch for `isApiHttpError(error)`: when `isDeadSessionRefreshStatus(status)`, `await deps.clearSession()` inside its own `try`/`catch` (a failing clear must not hide the original failure; in that case no marker is sent), then return the same `errorDto(status, parsed.code)` plus `session_cleared: true`. All other statuses, `ApiTimeoutError`, parse failures (502) and persist failures (500) are untouched and carry no marker. The missing-credentials 401 (line 107) is untouched and carries no marker.
+- Why the real deps reuse existing code: `readAuthCookiesFromRequest` already reads the three cookies (the route currently duplicates it with a direct `cookies()` call, which this move removes); `createPersistRotatedSessionFromRequest` already wraps `setAuthSessionCookies` for the server-writable path and `createClearSessionFromRequest` (new, D4) wraps `clearAuthSessionCookies` for both paths, so route and transport share one clearer factory. The Max-Age is derived with `parseMaxAgeForCookie(setCookieHeaders, REFRESH_TOKEN_COOKIE)`, which is what `refreshMaxAgeFromBeSetCookie` does, so the new module needs neither `server-only` nor `next/headers`.
+- Alternative: keep the logic in `route.ts` and test with a fabricated request scope. Rejected: not possible without `jest.mock` or an extra dependency.
+- Alternative: place the module under `src/app/api/auth/refresh/`. Rejected: `src/api/auth/` already owns `refresh-upstream-raw.ts`, `server-auth.ts`, `auth-refresh.ts`; the Node Jest project already matches `src/api/auth/**/*.test.ts`.
+
+### D4. Server-writable branch clears through a runtime-adapter callback
+`AuthRuntimeAdapter` (`src/api/auth/auth-runtime.ts`) `server-writable` variant gains optional `clearSession?: ClearAuthSessionFn` (`() => Promise<void>`), exactly parallel to `persistRotatedSession`. `server-auth.ts` adds `createClearSessionFromRequest()` which dynamically imports `@/lib/utils/auth-session` (same pattern and same reason as `createPersistRotatedSessionFromRequest`: keep the transport import graph free of `next/headers`) and calls `clearAuthSessionCookies()`; `createWritableServerApiTransportFromRequest` passes it. In `attemptRefresh` (server-writable `catch`): if `error instanceof ApiRefreshValidationError && isDeadSessionRefreshStatus(error.upstreamStatus)`, run `await runtime.clearSession?.()` inside `try`/`catch` (swallow, the original failure is returned), then return `{ ok: false, cause: sanitizeApiErrorCause(error) }` as today. `src/api/transport/api-transport.ts` stays isomorphic (no Next import).
+- Optional callback keeps other adapter constructors and existing tests valid (browser-proxy, read-only and no-context variants are unchanged).
+
+### D5. The browser learns "cleared" from a body marker, the tab publishes once
+The error DTO gains optional `session_cleared: true` (top level, next to `code`/`message`/`data: null`). `performBrowserRefresh` (`browser-auth.ts`) in its `isApiHttpError` branch derives `sessionCleared` with a new guard `isSessionClearedRefreshResponse(data: unknown): boolean` placed in `src/api/auth/auth-refresh.ts` beside `parseExactBrowserRefreshProxySuccess`, and returns it on `BrowserRefreshResult` (failure variant gains `sessionCleared?: true`). `refreshBrowserSession(onSessionCleared?)` runs the callback inside the single-flight chain (`.then`) so N waiting requests produce one call. `createBrowserProxyRuntimeAdapter(options?: { onSessionCleared?: () => void })` forwards it; `createBrowserApiTransport(pushApiError, onSessionCleared?)` (`api-transport.ts` line 459) passes it to the adapter. `src/api/transport/browser-api-methods.ts` (the existing browser-only wiring file, which already injects the Zustand reporter) supplies:
+
+```ts
+const browserSessionCleared = () =>
+  sendBroadcastOutbound({ source: "broadcast", type: "logout",
+    payload: { reason: BROADCAST_LOGOUT_REASON.sessionExpired } });
+```
+- Alternative: header marker (`X-Session-Cleared`). Rejected: `rawPost` surfaces `response.data` on `ApiHttpError`; the body is already parsed there, a header would need new plumbing.
+- Alternative: infer "cleared" from status 401/403 on the client. Rejected: the missing-credentials 401 would then loop (reload -> /me 401 -> refresh 401 -> broadcast -> reload). The marker is the loop guard.
+- Alternative: publish from `attemptRefresh`. Rejected: runs once per waiting request, violating "once per refresh outcome".
+
+### D6. Reuse the existing sender; no second broadcast implementation
+`useSendBroadcastOutbound` (`src/hooks/events/broadcast/use-send-broadcast-outbound.ts`) holds the only "attach metadata and post" logic, but as a React hook. Extract its callback body unchanged into a plain function `sendBroadcastOutbound(message: BroadcastOutboundSendInput)` in new `src/events/broadcast/send-broadcast-outbound.ts` (with the `BroadcastOutboundSendInput` type; imported by path like the existing sender, so `src/events/index.ts` is not changed and no unused barrel export appears), and make the hook `useCallback((message) => sendBroadcastOutbound(message), [])`. `LogoutContent` and `ConfirmEmailContent` keep using the hook and behave identically. Reason strings become constants `BROADCAST_LOGOUT_REASON = { user: "user", sessionExpired: "session_expired" } as const` in `src/constants/events/index.ts`; `LogoutContent` switches its `"user"` literal to it. The Zod schema and `BroadcastLogoutPayload` type already accept any string and are **not** changed. `useAuthLogoutTabSync` is **not** changed (reload on any `logout`, as the spec requires).
+- The channel never echoes to the posting tab (one `BroadcastChannel` instance per tab sends and receives; per the spec a channel does not deliver its own messages). The tab that detected the dead session therefore does not reload itself; it keeps its prompt, as the spec states.
+
+### D7. Cross-tab lock inside the existing single-flight
+`refreshBrowserSession` keeps `inflightRefresh` (within-tab sharing) and wraps `performBrowserRefresh()` in `navigator.locks.request("mycourse:auth-refresh", task)` through a small private helper `runWithCrossTabRefreshLock(task)` in `browser-auth.ts` (constant next to the existing private `CLIENT_REFRESH_PROXY_PATH`). Fallback: if `navigator.locks?.request` is missing (older browsers, SSR, jsdom), run the task directly. The lock is released automatically when the task promise settles (including rejection). No `ifAvailable`/`steal`: waiters queue behind the holder; a holder is bounded by the existing 10 s refresh timeout (`DEFAULT_TIMEOUT_MS`) and the browser frees the lock if the holder tab closes.
+- Alternative: `localStorage` mutex. Rejected: no atomicity, stale locks after a crash.
+- Alternative: skip the second refresh when the first succeeded. Deferred: needs a shared "last refreshed at" signal; the unnecessary rotation is harmless.
+
+### D8. No duplicate logic; what is explicitly kept separate
+Reused unchanged: `clearAuthSessionCookies`, `createCookieRemover`, `setAuthSessionCookies`, `readAuthCookiesFromRequest`, `rawPostRefreshUpstream`, `validateRotatedTokens`, `parseExactRefreshSuccessEnvelope`, `parseApiErrorEnvelope`, `isApiHttpError`, `sanitizeApiErrorCause`, `isRefreshEligible`, `postBroadcastOutbound`, `nextStreamOutboundMetadata`, `useBroadcastStreamEvent`, `useAuthLogoutTabSync`, `AuthLogoutTabSync`, the Zod `broadcastLogoutPayload`, `ApiErrorCode`, `AUTH_COOKIE_NAMES` (not used: it lists three cookies, the clearer needs five and already owns that list).
+Kept separate on purpose (different semantics): `clearOAuthFlowCookies` (`src/lib/utils/oauth-popup-cookies.ts`, temporary OAuth state cookies), `clearAuthCookiesClient` (`src/lib/utils/cookie.ts`, deprecated no-op), `classifyApiError`/`mapAuthApiError`/`getMeService` (UI/auth-state presentation), SWR dedupe, course edit leases (`useCourseLeaseState`, backend resource leases), `dedupeByLabel`. No other implementation of session clearing, refresh-status classification or cross-tab locking exists (searched: whole `src/`).
+
+### D9. Duplicate-code gate
+After implementation run `npm run quality:deps` (Madge circular check and `jscpd`), `npm run deadcode` (Knip) and `npm run lint`; no new export may be unused, and `handleRefreshProxy`'s moved code must not remain in `route.ts`.
+
+### D10. (Phase 2) The outage travels on a typed channel, not in the error cause
+`ApiRefreshOutage = "network" | "server-error"` lives in `src/api/core/fetch-error.ts`. `BrowserRefreshResult`'s failure variant gains `outage?: ApiRefreshOutage`; `attemptRefresh` forwards it; `buildHttpError`/`throwReportedHttp` take it as an optional fourth argument and, when present, build `ApiSessionUnverifiedError` (a subclass of `ApiHttpError`, status 401, `outage` field) instead of the plain `ApiHttpError`.
+- Why a subclass: every existing `isApiHttpError(e) && e.response.status === 401` test (`getMeService`, `performBrowserRefresh`, `reportApiError`, `classifyApiError`, many actions) keeps matching, so no caller changes behaviour unless it opts in with `instanceof`.
+- Alternative: put the outage in `error.cause`. Rejected: `buildHttpError` re-sanitises an already sanitised cause and `sanitizeApiErrorCause` maps a plain object to `{ kind: "unknown" }`, so the signal is destroyed (recorded as a follow-up; fixing it would change logged data).
+- Alternative: throw the refresh error instead of the 401 for every caller. Rejected: changes the contract for all callers and Server Actions.
+- Alternative: a new field on `ApiHttpError`. Rejected: widens a base class used everywhere for one consumer.
+
+### D11. (Phase 2) Which refresh outcomes are an outage
+Decided only in the browser refresh (`performBrowserRefresh`), the single producer of `BrowserRefreshResult`: an HTTP failure from the proxy with `isTransientRefreshStatus(status)` (429 or 500-599; the proxy passes upstream 5xx/429 through and maps network failure to 502, timeout to 504, persist failure to 500) gives `outage: "server-error"`; `ApiNetworkError` or `ApiTimeoutError` while calling the proxy gives `outage: "network"`. Not an outage: 400, 401, 403 (dead or absent session), a malformed success body, a missing window origin. `isTransientRefreshStatus` sits in `src/api/auth/auth-refresh.ts` beside `isDeadSessionRefreshStatus`; the two statuses sets are disjoint. The server-writable branch is unchanged (`/me` is fetched by the browser only).
+
+### D12. (Phase 2) The three readers of a 401
+`getMeService` returns `null` for a plain 401 and rethrows `ApiSessionUnverifiedError` (so SWR sets `error`, `data` stays `undefined` or the previous user). `classifyApiError` checks `error instanceof ApiSessionUnverifiedError` first and returns `error.outage`, then falls through to the unchanged status table (the table-driven requirement of `frontend-error-handling` is kept: HTTP statuses stay in `HTTP_STATUS_RULES`). `isGuestMeUnauthorized` (the reporter's noise filter) returns `false` for the subclass, so the incident is logged once like any other failure (store only in the browser, never the BE message).
+
+### D13. (Phase 2) `useMeOutage()` is derived, not stored
+`src/hooks/auth/use-me-outage.ts` reads `useGetMe()` (`me`, `isLoading`, `isError`, `mutateMe`) and returns `{ variant, retry: mutateMe }` only when there is no `me`, `isLoading` is false, `isError` is set and `classifyApiError(isError)` is `server-error` or `network`; otherwise `null`. 403 (`forbidden`) and 404 (`unknown`) therefore keep today's guest-like handling. No new store field, no change to `useAuth`, `useMeStore` or `useSyncMeFromAuth`. The `me` condition means a visitor with a cached user never sees the outage state: SWR keeps the previous `data` when a revalidation throws and `meCacheProvider` restores the persisted `/me` for a reload in the same tab. That is the wanted behaviour (the session is known to be good); the state appears on a first load or in a new tab.
+- Alternative: store `isOutage` in `useMeStore`. Rejected: duplicates information derivable from `isError`, widens the store and its reset fixtures.
+
+### D14. (Phase 2) `MeOutagePage` is one thin component
+`src/components/shared/me-outage-page.tsx` renders `StatusErrorPage` with `variant={outage.variant}`, `action={{ label: t("retry"), onClick: outage.retry }}` (`t` = `errors.boundary`, existing en/vi keys) and an optional `fillViewport`. Three screens need exactly this, so it exists once instead of three copies (duplicate-code gate). The click handler must be `() => outage.retry()`, never `outage.retry` itself: `retry` is SWR's bound `mutate`, and a first argument (the click event) is stored as the new current user (found by the e2e case, see `code-change-inventory.md` 6.1 item 11). Exported through `src/components/shared/index.ts`; `useMeOutage` through `src/hooks/auth/index.ts`.
+
+### D15. (Phase 2) The three gated screens
+- `DashboardLayout`: `isUnauthorized` gains `&& !meOutage`, so the auto-prompt effect and `frozenDenial` never arm during an outage; the denial branch renders `MeOutagePage` (`fillViewport`) when `meOutage` is set, else the unchanged `StatusErrorPage` `forbidden`/`unauthorized`. The header stays as today.
+- `SignedInHomePage` (user-approved exception, limited to this edit): after the loading spinner, `meOutage` renders `MeOutagePage fillViewport`; `!me` renders `StatusErrorPage variant="unauthorized"` with `title`/`description`/`action` from the existing `home.signedIn.loginRequired.*` keys and `href: loginHref(signedInHomeHref)`, `fillViewport`. Same words, same link (`name: "Sign in"`, `next=%2Fhome`), so the four assertions on "Sign in to continue" and the `/home` route test stay valid; it still never redirects and requests no home data.
+- `BecomeInstructorPage`: `meOutage` renders `MeOutagePage` in the slot of state A; state A renders `StatusErrorPage variant="unauthorized"` with `stateA.*` copy and `loginHref(PUBLIC_ROUTES.becomeInstructor)`; `StateCard` stays for states B and G. `getPageState`/`useMyInstructorApplication` untouched (during an outage `me` is `null`, so the page state is `unauthenticated`, which the outage branch overrides).
+- Alternative: leave `/home` and `become-instructor` alone. Rejected by the user (consistent gates and no wrong sign-in prompt).
+- No auto-prompt for `/home` or `become-instructor` is added (not requested).
+
+### D16. (Phase 2) Verification approach and the duplicate gate
+The AFTER code in `code-change-inventory.md` section 6 was applied to a throw-away copy of the working tree outside the repository and passed `tsc`, Biome, ESLint, both Jest projects and `playwright test --list` there (the e2e case was **not executed**). The real apply repeats the work test-first in the repository. Duplicate gate: `npm run quality:deps` and `npm run deadcode` must stay green; `StatusErrorPage`, `classifyApiError`, `useGetMe`, `mutateMe`, `errors.boundary.retry` and `loginHref` are reused; no second retry component, status classifier or sign-in gate layout is created.
+
+## Code, test and documentation inventories (exact, in companion files)
+
+- `code-change-inventory.md`: capability audit (CAP-1..13, what is reused vs new), reuse ledger, findings that constrain the design, then per file C1-C14 the CURRENT code, the exact AFTER code, call sites and verification; test inventory T1-T9; caller map for `gitnexus_impact`. Files: `src/api/auth/auth-refresh.ts` (C1), `src/api/core/fetch-error.ts` (C2), `src/api/auth/auth-runtime.ts` (C3), `src/api/auth/server-auth.ts` (C4), `src/api/transport/api-transport.ts` (C5), `src/api/auth/refresh-proxy.ts` new (C6), `src/app/api/auth/refresh/route.ts` (C7), `src/api/auth/browser-auth.ts` (C8), `src/api/transport/browser-api-methods.ts` (C9), `src/events/broadcast/send-broadcast-outbound.ts` new (C10), `src/hooks/events/broadcast/use-send-broadcast-outbound.ts` (C11), `src/constants/events/index.ts` (C12), `src/components/common/auth-menu/auth/logout-content.tsx` (C13); C14 lists the files deliberately not changed. Phase 2 (section 6 of the same file): capability audit CAP-14..22, findings, C15-C28 as `diff -u` against the working tree, C29 files not changed, tests T10-T20 (full code), caller map.
+- `docs-update-inventory.md`: DOC-1..DOC-36 (Phase 1) and DOC-37..DOC-67 (Phase 2, verified to occur exactly once in the working tree) with file, line, CURRENT text and REPLACEMENT for `docs/FEATURES.md`, `docs/SHARED.md`, `docs/architecture.md`, `docs/pages.md`, `docs/testing.md`, `docs/deploy.md`, `README.md`, `docs/ALL-SPRINTS.md`, plus the table of scanned files that need no change and why.
+- Jest routing used by the tests: Node project for `src/api/auth/**` (except `browser-*`), `src/api/transport/**`, `src/app/api/auth/**`; jsdom for `browser-*.test.ts` and `src/events/**`. Existing tests that must stay green unchanged are listed in the code inventory.
+
+## Risks / Trade-offs
+
+- [Clearing on 403 for a non-session reason] -> The backend returns 403 on refresh only for `UserDisabled`/`UserBanned`; both mean the session is unusable. Revisit if the backend adds other 403 causes.
+- [Two refreshes overlap despite the lock (Server Action refresh, unsupported browser)] -> Falls back to today's behaviour; a strict-rotation 401 then clears the cookies and the user signs in again. Backend compare-and-swap follow-up reduces cookie/DB mismatch; documented as a known gap.
+- [Lock holder hangs] -> Bounded by the 10 s refresh timeout; the lock is released when the task settles or the tab closes.
+- [Reload loop after the event] -> Guarded by the marker: the reloaded tab has no cookies, so its refresh gets the missing-credentials 401 without a marker and sends nothing (covered by spec scenario "Waiting tab after the other tab's session was cleared").
+- [Route extraction changes behaviour by accident] -> The move is done first as a pure move with characterization tests in `refresh-proxy.test.ts` for the existing paths (success, missing credentials, 502 malformed upstream, 504 timeout, 500 persist failure, upstream 4xx/5xx passthrough); they must be green before any behaviour change, then the failing clearing tests are added.
+- [Cookie deletion in a Route Handler response] -> Verified in a real production build (`npm run start`) with a stale-cookie request after implementation, besides the injected-deps unit tests; the e2e case covers it end to end when the fixture backend can run.
+- [`import "server-only"` in Jest] -> The new `refresh-proxy.ts` does not import `next/headers` or `server-only` (everything environment-specific is injected), so the Node project can load it; `server-auth.test.ts` is conditional for that reason.
+- [Guest home is still dynamic] -> Out of scope, recorded as a follow-up; re-run `npm run build` and the `curl -sI` checks after implementation and record any difference (none expected).
+
+- (Phase 2) [Outage hidden by a cached user] -> By design; the retryable state shows only without a cached user. Documented in `auth` Gotchas and tested (T15: cached user gives `null`).
+- (Phase 2) [A 401 for another reason looks like an outage] -> Only a 401 whose refresh actually failed with 429/5xx/network/timeout is marked; a plain 401, 400, 403 refresh or missing credentials stay guests (T11, T12, T14).
+- (Phase 2) [A permanent 5xx traps the user on the retry state] -> The retry only revalidates `/me`; the header still offers sign-in/sign-up and the proxy redirects are untouched. A dashboard is not reachable anyway without a user.
+- (Phase 2) [The subclass changes a caller's `instanceof ApiHttpError` branch] -> It is a subclass; `isApiHttpError` and `status === 401` still match (T12). Only `getMeService` and `classifyApiError` opt in.
+- (Phase 2) [Reporter noise or toast] -> `pushApiError` writes to a store with no visible UI today; the unverified 401 is now reported once like a 5xx. Verified by reading the consumers of `useApiErrorStore`/`pushApiError` (none renders it).
+- (Phase 2) [`SignedInHomePage` is edited despite the earlier rule] -> Explicit user approval on 2026-10-26; the edit is render-only and keeps copy and link.
+
+## Migration Plan
+
+No data or contract migration. Deploy as a normal frontend release. The new `session_cleared` field is additive on an internal same-origin proxy response; older cached clients ignore it. Rollback: revert the change; no persisted state is introduced.
+
+## Open Questions
+
+None that would change the specs, the approach or the tasks. One interpretation to confirm at review: the user asked to change "the modal" of "require login"; this proposal reads that as the sign-in gates of `/home` and `become-instructor` (moved to the shared `unauthorized` state), not the login/signup dialog (`LoginSignupPopup`), which is untouched. Deferred and recorded as follow-ups: backend `rotateSession` compare-and-swap; lock/broadcast and outage marking for Server Action refreshes; why the guest home is dynamic and how to cache it; correcting the upper-case doc names in the `AGENTS.md` documentation map; guest-looking chrome during a `/me` outage; the double sanitisation of the refresh cause.

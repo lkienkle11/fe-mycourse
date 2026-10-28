@@ -40,6 +40,28 @@ export function isRefreshEligible(input: {
   return false;
 }
 
+/**
+ * A refresh the backend rejects with 401 or 403 (RefreshTokenExpired,
+ * InvalidSession, UserDisabled, UserBanned) proves the session is dead.
+ * Anything else (400, 429, 5xx, timeout, unknown) is transient or unrelated.
+ */
+export function isDeadSessionRefreshStatus(
+  status: number | undefined,
+): boolean {
+  return status === 401 || status === 403;
+}
+
+/**
+ * A refresh answered 429 or 5xx did not conclude about the session: the
+ * backend is rate limiting or failing, so the cookies and the 401 stay as they
+ * are. Distinct from `isDeadSessionRefreshStatus` (401/403, session gone).
+ */
+export function isTransientRefreshStatus(status: number | undefined): boolean {
+  return (
+    status === 429 || (status !== undefined && status >= 500 && status <= 599)
+  );
+}
+
 export function validateRotatedTokens(
   payload: unknown,
 ): RotatedAuthSessionTokens {
@@ -174,4 +196,14 @@ export function parseExactBrowserRefreshProxySuccess(data: unknown): {
     message: envelope.message,
     accessToken: payload.access_token.trim(),
   };
+}
+
+/** True when the refresh proxy error body says it cleared the session cookies. */
+export function isSessionClearedRefreshResponse(data: unknown): boolean {
+  return (
+    !!data &&
+    typeof data === "object" &&
+    !Array.isArray(data) &&
+    (data as Record<string, unknown>).session_cleared === true
+  );
 }

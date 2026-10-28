@@ -6,9 +6,9 @@ import { HeroCarousel } from "@/components/home/signed-in/hero-carousel";
 import { HomeContinueLearningSection } from "@/components/home/signed-in/home-continue-learning-section";
 import { HomePopularInstructorsSection } from "@/components/home/signed-in/home-popular-instructors-section";
 import { HomeTrendingSection } from "@/components/home/signed-in/home-trending-section";
-import { Button } from "@/components/ui/button";
-import { useGetMe } from "@/hooks/auth";
-import { Link } from "@/i18n/navigation";
+import { MeOutagePage } from "@/components/shared/me-outage-page";
+import { StatusErrorPage } from "@/components/shared/status-error-page";
+import { useGetMe, useMeOutage } from "@/hooks/auth";
 import { loginHref, signedInHomeHref } from "@/lib/navigation/routes";
 
 /**
@@ -19,6 +19,7 @@ import { loginHref, signedInHomeHref } from "@/lib/navigation/routes";
 export function SignedInHomePage() {
   const t = useTranslations("home.signedIn");
   const { me, isLoading } = useGetMe();
+  const meOutage = useMeOutage();
 
   if (isLoading) {
     return (
@@ -28,21 +29,20 @@ export function SignedInHomePage() {
     );
   }
 
+  if (meOutage) return <MeOutagePage outage={meOutage} fillViewport />;
+
   if (!me) {
     return (
-      <section className="container mx-auto flex max-w-lg flex-col items-center px-4 py-16 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {t("loginRequired.title")}
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t("loginRequired.description")}
-        </p>
-        <Button asChild className="mt-6">
-          <Link href={loginHref(signedInHomeHref)}>
-            {t("loginRequired.login")}
-          </Link>
-        </Button>
-      </section>
+      <StatusErrorPage
+        variant="unauthorized"
+        title={t("loginRequired.title")}
+        description={t("loginRequired.description")}
+        action={{
+          label: t("loginRequired.login"),
+          href: loginHref(signedInHomeHref),
+        }}
+        fillViewport
+      />
     );
   }
 

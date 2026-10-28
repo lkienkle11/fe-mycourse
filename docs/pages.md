@@ -30,7 +30,8 @@ Paths are always prefixed with the locale (`/vi`, `/en`) because `localePrefix` 
 
 - **Locale root with a session:** pathname exactly `/vi` or `/en` (optional trailing slash) and **both** `refresh_token` and `session_id` cookies present (presence only, the token is not validated) => `307` to `/{locale}/home` with `Cache-Control: private, no-store` and `Vary: Cookie` set on the redirect only (next-intl `Set-Cookie` copied). `/en/login` and every other path are untouched. Crawlers send no cookies, so they always receive the public home. `/` takes two hops.
 - **Guests on `/{locale}/home`:** exactly `/vi/home` or `/en/home` (optional trailing slash) that lacks either cookie => `307` to `/{locale}` with the same headers, so a guest never sees a sign-in prompt at `/home` (`resolveGuestHomeRedirectPath({ pathname, hasSession })`).
-- **No loop:** the rules are mutually exclusive (one needs both cookies, the other lacks one). A stale cookie pair still counts as a session, reaches `/{locale}/home`, which keeps its client-side sign-in prompt and never redirects back to `/`.
+- **No loop:** the rules are mutually exclusive (one needs both cookies, the other lacks one). A stale cookie pair still counts as a session, reaches `/{locale}/home`, which shows the shared `unauthorized` sign-in state (or a retryable `server-error`/`network` state while `/me` is failing) and never redirects back to `/`.
+- **Dead session:** the presence check cannot tell a live cookie pair from a dead one. When the BE rejects a refresh with `401`/`403`, `POST /api/auth/refresh` (or the Server Action that refreshed) removes the cookies, so the next request for `/{locale}` is served the public home instead of being redirected. `src/proxy.ts` and the two redirect rules above are unchanged.
 
 ```ts
 // src/proxy.ts (shape)
@@ -60,11 +61,11 @@ Route files are relative to `src/app/[locale]/` unless they start with `src/`. `
 | `/auth/discord/callback` | `src/app/auth/discord/callback/page.tsx` | `DiscordOAuthCallbackPage` (locale-less, English-only): posts `code`/`state`/`error` to `window.opener` (origin-scoped) then `window.close()`; fallback copy + Back-to-home link without an opener |
 | `/auth/x/callback` | `src/app/auth/x/callback/page.tsx` | `XOAuthCallbackPage` (locale-less, English-only, retained, not wired to the popup) |
 | `/{locale}` | `(web)/page.tsx` | `HomePage` guest home, indexable (see `home-and-catalog`) |
-| `/{locale}/home` | `(web)/home/page.tsx` | `SignedInHomePage`, login-gated, `noindex,nofollow` |
+| `/{locale}/home` | `(web)/home/page.tsx` | `SignedInHomePage`, login-gated (`StatusErrorPage` `unauthorized`; `MeOutagePage` on a `/me` outage), `noindex,nofollow` |
 | `/{locale}/courses/{slug}` | `(web)/courses/[slug]/page.tsx` | `CourseDetailPlaceholderPage` (temporary public "coming soon", no-index) - Placeholder |
 | `/{locale}/login?next=...` | `(web)/login/page.tsx` | `LoginPageContent` full-page fallback; intercepted as a modal (`@modal/(.)login`) when navigated to in-app |
 | `/{locale}/signup?next=...` | `(web)/signup/page.tsx` | `SignupPageContent` full-page fallback; intercepted as a modal (`@modal/(.)signup`) |
-| `/{locale}/become-instructor` | `(web)/become-instructor/page.tsx` | `BecomeInstructorPage` (states A-H; see `instructor-application`) |
+| `/{locale}/become-instructor` | `(web)/become-instructor/page.tsx` | `BecomeInstructorPage` (states A-H; state A is the shared `unauthorized` state, a `/me` outage shows `MeOutagePage`; see `instructor-application`) |
 | `/{locale}/confirm-email?token=...` | `(web)/confirm-email/page.tsx` | `ConfirmEmailContent` -> `confirmAction` |
 | `/{locale}/logout` | `(web)/logout/page.tsx` | `LogoutContent` -> `logoutAction` (+ cross-tab `broadcast:logout`) |
 | (parallel slot, no URL) | `@modal/{default,page}.tsx`, `@modal/[...catchAll]/page.tsx`, `@modal/(.)login/page.tsx`, `@modal/(.)signup/page.tsx` | Modal slot, see "`@modal` parallel slot" |
@@ -155,7 +156,7 @@ Because `@modal` sits at the `[locale]` segment and `(web)` is transparent to se
 |---------|------|
 | `AuthButton` (header CTA) on any page other than `/login`/`/signup` | `<Link href={loginHref(pathname)}>` / `signupHref(pathname)` (current page via `usePathname()` as `next`; soft nav, intercepted) |
 | `AuthButton` while already on `/login`/`/signup` (`isAuthRoutePath(pathname)`) | Plain `<a href={loginHref()}>` / `signupHref()` (hard nav, no `next`): a soft `Link` would self-reference and stack a modal on the page it targets |
-| `DashboardLayout` auto-redirect on `unauthorized` denial | `loginHref(<denied path>)` after 500 ms (once per denied path per page load) |
+| `DashboardLayout` auto-redirect on `unauthorized` denial | `loginHref(<denied path>)` after 500 ms (once per denied path per page load; never during a `/me` outage, which renders `MeOutagePage`) |
 | Switching forms inside the modal (`variant="modal"`, default) | `<Link replace href={signupHref(nextPath)}>` / `loginHref(nextPath)` (`replace`, so the back button exits the modal in one step) |
 | Switching forms on the full-page fallback (`variant="page"`) | Plain `<a href>` (a soft nav would stack a modal on the full page it targets) |
 

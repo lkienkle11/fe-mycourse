@@ -942,6 +942,8 @@ npm run build && npm prune --omit=dev && pm2 reload mycourse-web
 
 The token refresh path (`refreshBrowserSession` / server writable refresh → `rawPost` in `src/api/core/raw-http.ts`) requires the `refresh_token` and `session_id` cookies. Verify they are present in the browser after login. Also ensure the backend's `/api/v1/auth/refresh` endpoint is reachable at `NEXT_PUBLIC_API_URL`. Silent refresh runs on `X-Token-Expired: true` **or** on `401` when no Bearer was sent but those two cookies exist.
 
+A refresh the backend rejects with `401`/`403` (session revoked, user disabled or banned, refresh token expired) is expected to remove the `refresh_token`, `session_id`, `access_token`, `auth_session_expires_at` cookies in the same response; after it, `/{locale}` serves the public home again. If the cookies stay after a rejected refresh, check that `POST /api/auth/refresh` returns `401`/`403` with `session_cleared: true` in the body and `Set-Cookie` deletions, and that `AUTH_COOKIE_DOMAIN` equals the BE value (a mismatching domain cannot delete the cookie). `5xx`, timeout and network failures keep the cookies on purpose.
+
 ### `NEXT_PUBLIC_API_URL` is wrong after deploy
 
 This variable is **baked in at build time**. Changing it in PM2 `env` does not update the client bundle. You must:

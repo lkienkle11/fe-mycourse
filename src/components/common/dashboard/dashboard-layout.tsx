@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { BrandLogoLink } from "@/components/common/header/brand-logo-link";
 import { HeaderDashboard } from "@/components/common/header/header-dashboard";
 import { LocaleSwitcher } from "@/components/common/header/locale-switcher";
+import { MeOutagePage } from "@/components/shared/me-outage-page";
 import { StatusErrorPage } from "@/components/shared/status-error-page";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ import {
 import {
   useFilteredDashboardItems,
   useGetMe,
+  useMeOutage,
   useSatisfiesPermissions,
 } from "@/hooks/auth";
 import { useDashboardPageHeaderOverride } from "@/hooks/dashboard";
@@ -212,6 +214,7 @@ export function DashboardLayout({
   onKeyUp,
 }: DashboardLayoutProps) {
   const { me, isLoading: meLoading } = useGetMe();
+  const meOutage = useMeOutage();
   const isLoading = isLoadingProp ?? meLoading;
   const satisfiesLayout = useSatisfiesPermissions({
     permissions,
@@ -245,7 +248,7 @@ export function DashboardLayout({
    * per denied path per page load, while a genuine browser refresh clears
    * it and re-arms the prompt (see that record's own comment).
    */
-  const isUnauthorized = !isLoading && !canAccessDashboard && !me;
+  const isUnauthorized = !isLoading && !canAccessDashboard && !me && !meOutage;
   const [frozenDenial, setFrozenDenial] = useState<{
     active: boolean;
     path: string | null;
@@ -286,10 +289,14 @@ export function DashboardLayout({
           leading={<BrandLogoLink className="md:hidden" />}
           trailing={<DashboardHeaderLocale />}
         />
-        <StatusErrorPage
-          variant={me ? "forbidden" : "unauthorized"}
-          fillViewport
-        />
+        {meOutage ? (
+          <MeOutagePage outage={meOutage} fillViewport />
+        ) : (
+          <StatusErrorPage
+            variant={me ? "forbidden" : "unauthorized"}
+            fillViewport
+          />
+        )}
       </div>
     );
   }
