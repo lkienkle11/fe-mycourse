@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { logoutAction } from "@/actions/auth";
+import { BROADCAST_LOGOUT_REASON } from "@/constants/events";
 import { useGetMe } from "@/hooks";
 import { useSendBroadcastOutbound } from "@/hooks/events/broadcast/use-send-broadcast-outbound";
 import { useRouter } from "@/i18n/navigation";
@@ -33,7 +34,7 @@ export function LogoutContent() {
         sendBroadcast({
           source: "broadcast",
           type: "logout",
-          payload: { reason: "user" },
+          payload: { reason: BROADCAST_LOGOUT_REASON.user },
         });
         router.replace(homeHref);
         return;

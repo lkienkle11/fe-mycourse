@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import { HttpResponse, http } from "msw";
+import { createBrowserApiTransport } from "@/api/transport/api-transport";
 import { apiFetch } from "@/api/transport/browser-api-methods";
 import { server } from "@/test-support/msw/server";
 
@@ -101,5 +102,123 @@ describe("browser apiFetch — 401 refresh-and-retry (bounded)", () => {
 
     expect(protectedCallCount).toBe(1);
     expect(refreshCallCount).toBe(0);
+  });
+
+  it("notifies once when the refresh proxy confirms the session was cleared", async () => {
+    let protectedCallCount = 0;
+    let callbackCount = 0;
+    server.use(
+      http.post(REFRESH_URL, () =>
+        HttpResponse.json(
+          {
+            code: 401,
+            message: "Refresh session unauthorized",
+            data: null,
+            session_cleared: true,
+          },
+          { status: 401 },
+        ),
+      ),
+      http.get(`*${PROTECTED_PATH}-cleared`, () => {
+        protectedCallCount += 1;
+        return HttpResponse.json(
+          { code: 401, message: "unauthorized", data: null },
+          { status: 401 },
+        );
+      }),
+    );
+    const transport = createBrowserApiTransport(
+      () => {},
+      () => {
+        callbackCount += 1;
+      },
+    );
+
+    await expect(
+      transport.request({
+        method: "GET",
+        url: `${PROTECTED_PATH}-cleared`,
+      }),
+    ).rejects.toBeDefined();
+
+    expect(protectedCallCount).toBe(1);
+    expect(callbackCount).toBe(1);
+  });
+
+  it("does not notify when the refresh proxy returns a server error", async () => {
+    let callbackCount = 0;
+    server.use(
+      http.post(REFRESH_URL, () =>
+        HttpResponse.json(
+          { code: 9999, message: "Refresh request failed", data: null },
+          { status: 500 },
+        ),
+      ),
+      http.get(`*${PROTECTED_PATH}-refresh-error`, () =>
+        HttpResponse.json(
+          { code: 401, message: "unauthorized", data: null },
+          { status: 401 },
+        ),
+      ),
+    );
+    const transport = createBrowserApiTransport(
+      () => {},
+      () => {
+        callbackCount += 1;
+      },
+    );
+
+    await expect(
+      transport.request({
+        method: "GET",
+        url: `${PROTECTED_PATH}-refresh-error`,
+      }),
+    ).rejects.toBeDefined();
+
+    expect(callbackCount).toBe(0);
+  });
+
+  it("does not notify after a successful refresh and retry", async () => {
+    let protectedCallCount = 0;
+    let callbackCount = 0;
+    server.use(
+      http.post(REFRESH_URL, () =>
+        HttpResponse.json({
+          code: 0,
+          message: "ok",
+          data: { access_token: "rotated-token" },
+        }),
+      ),
+      http.get(`*${PROTECTED_PATH}-refresh-success`, () => {
+        protectedCallCount += 1;
+        if (protectedCallCount === 1) {
+          return HttpResponse.json(
+            { code: 401, message: "unauthorized", data: null },
+            { status: 401 },
+          );
+        }
+        return HttpResponse.json({
+          code: 0,
+          message: "ok",
+          data: { value: "ok" },
+        });
+      }),
+    );
+    const transport = createBrowserApiTransport(
+      () => {},
+      () => {
+        callbackCount += 1;
+      },
+    );
+
+    await expect(
+      transport.request({
+        method: "GET",
+        url: `${PROTECTED_PATH}-refresh-success`,
+      }),
+    ).resolves.toMatchObject({ data: { data: { value: "ok" } } });
+
+    expect(protectedCallCount).toBe(2);
+    expect(callbackCount).toBe(0);
   });
 });

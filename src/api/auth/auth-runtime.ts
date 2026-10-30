@@ -3,9 +3,16 @@
  * Isomorphic / client-safe — must not import Next cookie APIs or Node-only request adapters.
  */
 
+import type { ApiRefreshOutage } from "../core/fetch-error";
+
 export type BrowserRefreshResult =
   | { ok: true; accessToken: string }
-  | { ok: false; cause?: unknown };
+  | {
+      ok: false;
+      cause?: unknown;
+      sessionCleared?: true;
+      outage?: ApiRefreshOutage;
+    };
 
 export type AuthCookieBag = {
   accessToken?: string;
@@ -26,6 +33,8 @@ export type PersistRotatedAuthSessionFn = (
   refreshMaxAge?: number,
 ) => Promise<void>;
 
+export type ClearAuthSessionFn = () => Promise<void>;
+
 export type RefreshSessionInput = {
   refreshToken: string;
   sessionId: string;
@@ -43,6 +52,8 @@ export type AuthRuntimeAdapter =
       readAuthCookies: ReadAuthCookiesFn;
       refresh: (input: RefreshSessionInput) => Promise<RefreshSessionResult>;
       persistRotatedSession: PersistRotatedAuthSessionFn;
+      /** Removes the session cookies when the BE proves the session is dead. */
+      clearSession?: ClearAuthSessionFn;
     }
   | { kind: "server-readonly"; readAuthCookies: ReadAuthCookiesFn }
   | { kind: "server-no-request-context" };

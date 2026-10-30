@@ -13,6 +13,7 @@ export {
 } from "./delta-editor";
 export * from "./form-field";
 export * from "./image-file-field";
+export * from "./me-outage-page";
 export * from "./permission-gate";
 export * from "./search-bar";
 export * from "./slug-conflict-confirm-dialog";

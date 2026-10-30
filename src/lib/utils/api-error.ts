@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import {
   ApiNetworkError,
+  ApiSessionUnverifiedError,
   ApiTimeoutError,
   isApiHttpError,
   parseApiErrorEnvelope,
@@ -121,6 +122,7 @@ export function classifyApiError(
   if (error instanceof ApiNetworkError || error instanceof ApiTimeoutError) {
     return "network";
   }
+  if (error instanceof ApiSessionUnverifiedError) return error.outage;
   if (isApiHttpError(error)) {
     return matchHttpStatusRule(error.response.status) ?? "unknown";
   }

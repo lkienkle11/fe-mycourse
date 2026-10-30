@@ -6,7 +6,9 @@ import {
   it,
   jest,
 } from "@jest/globals";
-import { act } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
+import { ApiHttpError } from "@/api/core/fetch-error";
+import messages from "@/messages/en";
 import { useMeStore } from "@/store/auth";
 import { buildMeResponse } from "@/test-support/fixtures/auth";
 import {
@@ -142,5 +144,65 @@ describe("DashboardLayout — unauthorized auto-prompt", () => {
       jest.advanceTimersByTime(500);
     });
     expect(router.push).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("DashboardLayout — current-user outage", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    resetDashboardAutoPromptTracking();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  function outageError(status: number) {
+    return new ApiHttpError({
+      message: `HTTP ${status}`,
+      response: { status, data: {}, headers: {} },
+      request: { url: "/api/v1/me", method: "GET", retried: false },
+    });
+  }
+
+  it("shows the server-error state with a retry and never prompts login", () => {
+    const mutateMe = jest.fn();
+    useMeStore.setState({
+      me: null,
+      isLoading: false,
+      isError: outageError(503),
+      mutateMe,
+    });
+    const { router } = renderDenied(false);
+
+    expect(
+      screen.getByRole("heading", {
+        name: messages.errors.statusPage["server-error"].title,
+      }),
+    ).toBeInTheDocument();
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+    expect(router.push).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: messages.errors.boundary.retry }),
+    );
+    expect(mutateMe).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the unauthorized state and the auto-prompt for a 404 /me error", () => {
+    useMeStore.setState({
+      me: null,
+      isLoading: false,
+      isError: outageError(404),
+    });
+    const { router } = renderDenied(false);
+
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+
+    expect(router.push).toHaveBeenCalledTimes(1);
   });
 });

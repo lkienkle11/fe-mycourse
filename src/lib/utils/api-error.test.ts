@@ -2,6 +2,7 @@ import { describe, expect, it } from "@jest/globals";
 import {
   ApiHttpError,
   ApiNetworkError,
+  ApiSessionUnverifiedError,
   ApiTimeoutError,
 } from "@/api/core/fetch-error";
 import {
@@ -58,6 +59,28 @@ describe("classifyApiError", () => {
   it("falls back to unknown for a non-transport error", () => {
     expect(classifyApiError(new Error("boom"))).toBe("unknown");
     expect(classifyApiError(undefined)).toBe("unknown");
+  });
+});
+
+describe("classifyApiError for an unverified session", () => {
+  function unverified(outage: "network" | "server-error") {
+    return new ApiSessionUnverifiedError({
+      message: "HTTP 401",
+      response: { status: 401, data: {}, headers: {} },
+      request,
+      outage,
+    });
+  }
+
+  it.each([
+    "network",
+    "server-error",
+  ] as const)("maps a 401 with a %s outage to that variant", (outage) => {
+    expect(classifyApiError(unverified(outage))).toBe(outage);
+  });
+
+  it("keeps a plain 401 as unauthorized", () => {
+    expect(classifyApiError(httpError(401))).toBe("unauthorized");
   });
 });
 
