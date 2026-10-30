@@ -26,6 +26,7 @@ const REFRESH_LOCK_NAME = "mycourse:auth-refresh";
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 let inflightRefresh: Promise<BrowserRefreshResult> | null = null;
+let inflightOnSessionCleared: (() => void) | undefined;
 
 /**
  * Tabs of one browser refresh one at a time so two tabs never rotate the same
@@ -125,12 +126,15 @@ async function performBrowserRefresh(): Promise<BrowserRefreshResult> {
 export function refreshBrowserSession(
   onSessionCleared?: () => void,
 ): Promise<BrowserRefreshResult> {
+  // The first caller that provides a callback owns the notification, even when
+  // it joins a refresh another caller started.
+  inflightOnSessionCleared ??= onSessionCleared;
   if (!inflightRefresh) {
     inflightRefresh = runWithCrossTabRefreshLock(performBrowserRefresh)
       .then((result) => {
         if (!result.ok && result.sessionCleared) {
           try {
-            onSessionCleared?.();
+            inflightOnSessionCleared?.();
           } catch {
             // Notification is best effort; the refresh outcome is unchanged.
           }
@@ -139,6 +143,7 @@ export function refreshBrowserSession(
       })
       .finally(() => {
         inflightRefresh = null;
+        inflightOnSessionCleared = undefined;
       });
   }
   return inflightRefresh;

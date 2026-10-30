@@ -18,9 +18,9 @@ export type MeOutage = {
  * stay `null` here, so they keep their existing sign-in or denial handling.
  */
 export function useMeOutage(): MeOutage | null {
-  const { me, isLoading, isError, mutateMe } = useGetMe();
-  if (me || isLoading || !isError) return null;
-  const variant = classifyApiError(isError);
+  const { me, isLoading, isError: meError, mutateMe } = useGetMe();
+  if (me || isLoading || !meError) return null;
+  const variant = classifyApiError(meError);
   return variant === "server-error" || variant === "network"
     ? { variant, retry: mutateMe }
     : null;

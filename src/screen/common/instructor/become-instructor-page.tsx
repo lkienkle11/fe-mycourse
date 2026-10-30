@@ -203,11 +203,19 @@ export function BecomeInstructorPage() {
     );
   }
 
+  if (meOutage) {
+    return (
+      <div className="flex min-h-[calc(100svh-4rem)] flex-col bg-background">
+        <BecomeInstructorHero />
+        <MeOutagePage outage={meOutage} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-[calc(100svh-4rem)] flex-col bg-background">
       <BecomeInstructorHero />
-      {meOutage ? <MeOutagePage outage={meOutage} /> : null}
-      {!meOutage && pageState === INSTRUCTOR_PAGE_STATE.unauthenticated ? (
+      {pageState === INSTRUCTOR_PAGE_STATE.unauthenticated ? (
         <StatusErrorPage
           variant="unauthorized"
           title={t("stateA.title")}

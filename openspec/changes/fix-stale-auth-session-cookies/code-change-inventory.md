@@ -514,12 +514,15 @@ AFTER:
 export function refreshBrowserSession(
   onSessionCleared?: () => void,
 ): Promise<BrowserRefreshResult> {
+  // The first caller that provides a callback owns the notification, even when
+  // it joins a refresh another caller started.
+  inflightOnSessionCleared ??= onSessionCleared;
   if (!inflightRefresh) {
     inflightRefresh = runWithCrossTabRefreshLock(performBrowserRefresh)
       .then((result) => {
         if (!result.ok && result.sessionCleared) {
           try {
-            onSessionCleared?.();
+            inflightOnSessionCleared?.();
           } catch {
             // Notification is best effort; the refresh outcome is unchanged.
           }
@@ -528,11 +531,14 @@ export function refreshBrowserSession(
       })
       .finally(() => {
         inflightRefresh = null;
+        inflightOnSessionCleared = undefined;
       });
   }
   return inflightRefresh;
 }
 ```
+
+(A module-level `let inflightOnSessionCleared: (() => void) | undefined;` sits next to `inflightRefresh`. Added after the code review of the committed change: the first version used the callback of the caller that created the promise, so a later caller's callback was dropped; test "notifies the first provided callback when the caller that started the refresh gave none".)
 
 MODIFY `createBrowserProxyRuntimeAdapter` (L101-110). CURRENT takes no argument and returns `{ kind: "browser-proxy"; refresh: () => refreshBrowserSession() }`. AFTER:
 
@@ -706,7 +712,7 @@ Jest routing (`jest.config.ts` L23-55): Node project: `src/api/auth/**/*.test.ts
 | T3 | `src/api/transport/api-transport-refresh.test.ts` (NEW) | Node | `createApiTransport({ baseURL: "http://be.test", runtime })` with a plain-object `server-writable` runtime (`readAuthCookies` returns both cookies, `refresh` rejects with `new ApiRefreshValidationError({ reason: "invalid-envelope", message: "x", upstreamStatus })`, `persistRotatedSession` unused, `clearSession` counting); protected `GET /x` answered `401` by MSW without bearer so the refresh is eligible; `upstreamStatus` 401 and 403 call `clearSession` once and the original `ApiHttpError` is thrown; 500 and `undefined` do not; `clearSession` throwing still throws the original error; a runtime without `clearSession` throws the original error; a refresh that succeeds never clears |
 | T4 | `src/api/auth/server-auth.test.ts` (NEW, conditional) | Node | Only if `import "server-only"` and `next/headers` load under Jest (decided in task 5.4 by one probing run); otherwise T3 covers `upstreamStatus` propagation by construction and the limitation is recorded. Cases: `refreshUpstreamSession` rejects with `upstreamStatus` 401/403/500 for the matching MSW upstream status; `validateRotatedTokens` failures carry no `upstreamStatus` |
 | T5 | `src/api/auth/browser-transport-retry.test.ts` (extend) | jsdom | `apiFetch` through `createBrowserApiTransport(push, onSessionCleared)` with MSW: protected 401 then refresh 401 with `session_cleared: true` calls the callback once; refresh 500 does not; successful refresh retry does not |
-| T6 | `src/api/auth/browser-auth.test.ts` (extend) | jsdom | refresh 401 with marker returns `{ ok: false, sessionCleared: true, cause }`; without marker no `sessionCleared`; three concurrent callers with the marker call `onSessionCleared` once; success never calls it; a throwing `onSessionCleared` does not change the result |
+| T6 | `src/api/auth/browser-auth.test.ts` (extend) | jsdom | refresh 401 with marker returns `{ ok: false, sessionCleared: true, cause }`; without marker no `sessionCleared`; three concurrent callers with the marker call `onSessionCleared` once; success never calls it; a throwing `onSessionCleared` does not change the result; when the caller that started the refresh gave no callback, the callback of a later joining caller is called once |
 | T7 | same file | jsdom | Web Locks: install a fake `navigator.locks` with `Object.defineProperty(navigator, "locks", { configurable: true, value })` and restore in `afterEach`; `request` called once with `"mycourse:auth-refresh"`; the POST handler runs only after the fake grants the lock; a held lock (unresolved promise) delays the POST; task rejection releases the lock and the next call proceeds; `navigator.locks` undefined falls back to a direct call and still shares one in-flight request |
 | T8 | `src/events/broadcast/send-broadcast-outbound.test.ts` (NEW) | jsdom | second `BroadcastChannel(broadcastEventsConfig.channelName)` receives a JSON string equal to `{ source: "broadcast", type: "logout", payload: { reason: BROADCAST_LOGOUT_REASON.sessionExpired }, metadata: { seq: <number>, timestamp: <number> } }`; explicit `metadata` is preserved; `confirm_success` payload `{ messageId }` is posted; the channel is closed in `afterEach` |
 | T9 | `e2e/tests/auth.spec.ts` (extend) | Playwright | New `test("a revoked session leaves the public home reachable", ...)`: login with `FIXTURE_USERS.learner`, read `session_id`, `revokeSession`, `page.goto("/en/home")`, expect the sign-in prompt (`loginRequired` copy), `await expect.poll(async () => (await page.context().cookies()).filter(c => ["refresh_token","session_id"].includes(c.name)).length).toBe(0)`, `page.goto("/en")`, expect URL `/en` (no `/en/home`) and the public homepage heading. Needs the fixture backend; run with `npm run test:e2e` outside the sandbox |

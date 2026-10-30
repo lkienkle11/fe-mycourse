@@ -195,6 +195,33 @@ describe("refreshBrowserSession", () => {
     expect(third).toEqual(first);
   });
 
+  it("notifies the first provided callback when the caller that started the refresh gave none", async () => {
+    let callbackCount = 0;
+    server.use(
+      http.post(REFRESH_URL, async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return HttpResponse.json(
+          {
+            code: 401,
+            message: "Refresh session unauthorized",
+            data: null,
+            session_cleared: true,
+          },
+          { status: 401 },
+        );
+      }),
+    );
+
+    await Promise.all([
+      refreshBrowserSession(),
+      refreshBrowserSession(() => {
+        callbackCount += 1;
+      }),
+    ]);
+
+    expect(callbackCount).toBe(1);
+  });
+
   it("does not notify after a successful refresh", async () => {
     let callbackCount = 0;
     server.use(

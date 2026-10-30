@@ -86,6 +86,7 @@ const browserSessionCleared = () =>
 
 ### D7. Cross-tab lock inside the existing single-flight
 `refreshBrowserSession` keeps `inflightRefresh` (within-tab sharing) and wraps `performBrowserRefresh()` in `navigator.locks.request("mycourse:auth-refresh", task)` through a small private helper `runWithCrossTabRefreshLock(task)` in `browser-auth.ts` (constant next to the existing private `CLIENT_REFRESH_PROXY_PATH`). Fallback: if `navigator.locks?.request` is missing (older browsers, SSR, jsdom), run the task directly. The lock is released automatically when the task promise settles (including rejection). No `ifAvailable`/`steal`: waiters queue behind the holder; a holder is bounded by the existing 10 s refresh timeout (`DEFAULT_TIMEOUT_MS`) and the browser frees the lock if the holder tab closes.
+- The session-cleared callback is not tied to the caller that created the promise: the first caller that provides one owns the notification (`inflightOnSessionCleared`, reset when the refresh settles), so one notification still reaches the other tabs when the creating caller passed none.
 - Alternative: `localStorage` mutex. Rejected: no atomicity, stale locks after a crash.
 - Alternative: skip the second refresh when the first succeeded. Deferred: needs a shared "last refreshed at" signal; the unnecessary rotation is harmless.
 
