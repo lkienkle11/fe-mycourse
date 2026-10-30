@@ -1,7 +1,10 @@
 import { describe, expect, it } from "@jest/globals";
 import { ApiRefreshValidationError } from "../core/fetch-error";
 import {
+  isDeadSessionRefreshStatus,
   isRefreshEligible,
+  isSessionClearedRefreshResponse,
+  isTransientRefreshStatus,
   parseExactBrowserRefreshProxySuccess,
   parseExactRefreshSuccessEnvelope,
   requestSentNonEmptyBearer,
@@ -178,6 +181,61 @@ describe("parseExactBrowserRefreshProxySuccess", () => {
   ])("rejects %s", (_label, payload) => {
     expect(() => parseExactBrowserRefreshProxySuccess(payload)).toThrow(
       ApiRefreshValidationError,
+    );
+  });
+});
+
+describe("isDeadSessionRefreshStatus", () => {
+  it.each([
+    [401, true],
+    [403, true],
+    [200, false],
+    [400, false],
+    [404, false],
+    [429, false],
+    [500, false],
+    [502, false],
+    [504, false],
+    [undefined, false],
+  ] as const)("classifies status %p as %p", (status, expected) => {
+    expect(isDeadSessionRefreshStatus(status)).toBe(expected);
+  });
+});
+
+describe("isSessionClearedRefreshResponse", () => {
+  it.each([
+    [
+      { code: 401, message: "safe message", data: null, session_cleared: true },
+      true,
+    ],
+    [{ session_cleared: false }, false],
+    [{}, false],
+    [null, false],
+    ["x", false],
+    [[], false],
+  ] as const)("classifies response body %p", (data, expected) => {
+    expect(isSessionClearedRefreshResponse(data)).toBe(expected);
+  });
+});
+
+describe("isTransientRefreshStatus", () => {
+  it.each([
+    [429, true],
+    [500, true],
+    [502, true],
+    [503, true],
+    [504, true],
+    [599, true],
+    [400, false],
+    [401, false],
+    [403, false],
+    [404, false],
+    [200, false],
+    [600, false],
+    [undefined, false],
+  ])("returns %p for status %p", (status, expected) => {
+    expect(isTransientRefreshStatus(status as number | undefined)).toBe(
+      expected,
     );
   });
 });

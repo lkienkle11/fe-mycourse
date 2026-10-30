@@ -81,6 +81,27 @@ export class ApiHttpError<T = unknown> extends ApiRequestErrorBase {
   }
 }
 
+/** Why a refresh did not conclude: the backend failed or could not be reached. */
+export type ApiRefreshOutage = "network" | "server-error";
+
+/**
+ * A 401 whose refresh attempt did not conclude (backend failure or no
+ * connection). Still an `ApiHttpError` with status 401, so every existing 401
+ * check keeps working; `getMeService` and `classifyApiError` read `outage`.
+ */
+export class ApiSessionUnverifiedError extends ApiHttpError {
+  readonly outage: ApiRefreshOutage;
+
+  constructor(
+    input: ConstructorParameters<typeof ApiHttpError>[0] & {
+      outage: ApiRefreshOutage;
+    },
+  ) {
+    super(input);
+    this.outage = input.outage;
+  }
+}
+
 export class ApiTimeoutError extends ApiRequestErrorBase {
   readonly kind = "timeout" as const;
 }
@@ -145,16 +166,20 @@ export type ApiRefreshValidationReason =
 export class ApiRefreshValidationError extends Error {
   readonly kind = "refresh-validation" as const;
   readonly reason: ApiRefreshValidationReason;
+  /** HTTP status of the upstream refresh response when the failure came from one. */
+  readonly upstreamStatus?: number;
   readonly cause?: unknown;
 
   constructor(input: {
     reason: ApiRefreshValidationReason;
     message: string;
     cause?: unknown;
+    upstreamStatus?: number;
   }) {
     super(input.message);
     this.name = "ApiRefreshValidationError";
     this.reason = input.reason;
+    this.upstreamStatus = input.upstreamStatus;
     this.cause = input.cause;
     Object.setPrototypeOf(this, new.target.prototype);
   }

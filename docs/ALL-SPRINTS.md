@@ -46,12 +46,20 @@ Rules:
 | Add functional UI skills (layout, responsive, shadcn) for the skill-selection rule | developer | Candidate. The dry run of the SKILLS rule for a frontend layout task found no functional skill in the project or agent folders (only non-functional `nextjs-optimization` / `logic-n-1-optimize` and workflow skills); BE has not been inventoried yet |
 | Decide `skills-lock.json` | developer | Candidate. Lists `shadcn` and `supabase-postgres-best-practices`, while `.ai/skills` holds other skills |
 | `be-mycourse` follow-up change | developer | Candidate. Apply the shared `AGENTS.md` (< 32 KiB), skills and Commit rule to BE; hand-off in `temporary-docs/claude-doanchat` |
+| Backend `rotateSession` compare-and-swap | developer | Candidate. `RefreshSession` reads, checks and then overwrites the session UUID without a conditional update, so two overlapping refreshes with the same refresh token can leave cookie and stored UUID different (`be-mycourse`) |
+| Lock and `session_expired` broadcast for Server Action refreshes | unassigned | Candidate. The cross-tab lock and the broadcast exist for the browser path only |
+| Guest-looking chrome during a `/me` outage (header `AuthLayout`, `SidebarAuthFooter`, Google One Tap, `BecomeInstructorPromoBanner`) | unassigned | Candidate. They read only `me`/`isLoading`, so an outage looks signed out there; the outage state exists in `useMeOutage` |
+| `buildHttpError` re-sanitises an already sanitised refresh cause | unassigned | Candidate. `attemptRefresh` returns `sanitizeApiErrorCause(error)` and `throwReportedHttp` sanitises it again, turning the cause into `{ kind: "unknown" }` |
+| Server Action refresh outage is not marked as an unverified session | unassigned | Candidate. Only the browser-proxy refresh sets `outage`; the `server-writable` branch of `attemptRefresh` keeps the plain 401 |
+| Why the guest home `/{locale}` is dynamic (`ƒ`) and how to cache it | unassigned | Candidate. Baseline build: every route `ƒ`; suspects: `getLocale()` in the root layout, no `generateStaticParams`/`setRequestLocale`, `await params`; `SEO_TEMPORARY_ENV_CACHE_POLICY` stays disabled until then |
+| Align doc file names in the `AGENTS.md` documentation map with git (`docs/architecture.md`, `docs/pages.md`) | developer | Candidate |
 
 ## In progress
 
 | Item | Owner | OpenSpec change |
 |------|-------|-----------------|
 | Restructure docs and agent instructions (4-file docs set, sprints log, `AGENTS.md` < 32 KiB, skills) | agent | `restructure-docs-and-agents` |
+| Clear stale auth session cookies when a refresh is rejected (cross-tab refresh lock, `session_expired` logout broadcast, retryable `/me` outage state, shared `unauthorized` sign-in gates) | agent | `fix-stale-auth-session-cookies` |
 
 ## Done
 

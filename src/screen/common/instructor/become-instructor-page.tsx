@@ -18,6 +18,8 @@ import {
 } from "@/components/features/instructor/become-instructor-application/sections";
 import { MediaCollectionDialog } from "@/components/features/media";
 import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
+import { MeOutagePage } from "@/components/shared/me-outage-page";
+import { StatusErrorPage } from "@/components/shared/status-error-page";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -26,6 +28,7 @@ import {
 } from "@/components/ui/collapsible";
 import { MEDIA_PDF_EXTENSIONS } from "@/constants/media/file-rules";
 import { PRIVATE_ROUTES, PUBLIC_ROUTES } from "@/constants/route";
+import { useMeOutage } from "@/hooks/auth";
 import { useMyInstructorApplication } from "@/hooks/instructor/use-my-instructor-application";
 import { Link } from "@/i18n/navigation";
 import {
@@ -67,6 +70,7 @@ export function BecomeInstructorPage() {
     contactAdmin,
     mutate,
   } = useMyInstructorApplication();
+  const meOutage = useMeOutage();
 
   const [activeTab, setActiveTab] =
     useState<InstructorApplicationActiveTab>("info");
@@ -199,21 +203,27 @@ export function BecomeInstructorPage() {
     );
   }
 
+  if (meOutage) {
+    return (
+      <div className="flex min-h-[calc(100svh-4rem)] flex-col bg-background">
+        <BecomeInstructorHero />
+        <MeOutagePage outage={meOutage} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-[calc(100svh-4rem)] flex-col bg-background">
       <BecomeInstructorHero />
       {pageState === INSTRUCTOR_PAGE_STATE.unauthenticated ? (
-        <StateCard
-          icon="🔒"
+        <StatusErrorPage
+          variant="unauthorized"
           title={t("stateA.title")}
           description={t("stateA.description")}
-          action={
-            <Button asChild className="bg-[#3dcbb1] hover:bg-[#35b39c]">
-              <Link href={loginHref(PUBLIC_ROUTES.becomeInstructor)}>
-                {t("stateA.login")}
-              </Link>
-            </Button>
-          }
+          action={{
+            label: t("stateA.login"),
+            href: loginHref(PUBLIC_ROUTES.becomeInstructor),
+          }}
         />
       ) : null}
       {pageState === INSTRUCTOR_PAGE_STATE.submit_blocked ? (

@@ -8,6 +8,7 @@ import { API_PRIVATE_ROUTES } from "@/constants/api-route";
 import { isServer } from "@/lib/utils/runtime";
 import type { ApiResult } from "@/types/api";
 import {
+  isDeadSessionRefreshStatus,
   isRefreshEligible,
   requestSentNonEmptyBearer,
 } from "../auth/auth-refresh";
@@ -29,9 +30,12 @@ import {
   ApiHttpError,
   ApiNetworkError,
   ApiPolicyError,
+  type ApiRefreshOutage,
   ApiRefreshRequiredError,
+  ApiRefreshValidationError,
   ApiRequestReplayError,
   ApiResponseParseError,
+  ApiSessionUnverifiedError,
   ApiTimeoutError,
   isApiHttpError,
   parseApiErrorEnvelope,
@@ -103,10 +107,11 @@ function buildHttpError(
   failed: FailedHttpResponse,
   retried: boolean,
   cause?: unknown,
+  outage?: ApiRefreshOutage,
 ): ApiHttpError {
   // FE-owned message only — never copy BE body.message into error.message.
   // Raw body remains on response.data for code-based mappers.
-  return new ApiHttpError({
+  const input = {
     message: `HTTP ${failed.status}`,
     response: {
       status: failed.status,
@@ -119,7 +124,10 @@ function buildHttpError(
       retried,
     },
     cause: sanitizeApiErrorCause(cause),
-  });
+  };
+  return outage
+    ? new ApiSessionUnverifiedError({ ...input, outage })
+    : new ApiHttpError(input);
 }
 
 /** True when a browser extension blocked the request (adblock — expected). */
@@ -155,6 +163,8 @@ function apiErrorPathname(rawUrl: string): string {
 /** Anonymous probe: GET /api/v1/me → 401 — expected (getMeService → null). */
 function isGuestMeUnauthorized(error: unknown): boolean {
   if (!isApiHttpError(error)) return false;
+  // A 401 whose refresh did not conclude is an incident, not a guest probe.
+  if (error instanceof ApiSessionUnverifiedError) return false;
   if (error.response.status !== 401) return false;
   if (error.request.method.toUpperCase() !== "GET") return false;
   return apiErrorPathname(error.request.url) === API_PRIVATE_ROUTES.user.getMe;
@@ -251,7 +261,10 @@ async function attachServerAuthorization(
 async function attemptRefresh(
   runtime: AuthRuntimeAdapter,
   failed: FailedHttpResponse,
-): Promise<{ ok: true; accessToken: string } | { ok: false; cause?: unknown }> {
+): Promise<
+  | { ok: true; accessToken: string }
+  | { ok: false; cause?: unknown; outage?: ApiRefreshOutage }
+> {
   if (
     runtime.kind === "server-readonly" ||
     runtime.kind === "server-no-request-context"
@@ -272,6 +285,9 @@ async function attemptRefresh(
       return {
         ok: false,
         cause: result.ok === false ? result.cause : undefined,
+        ...(result.ok === false && result.outage
+          ? { outage: result.outage }
+          : {}),
       };
     }
     return { ok: true, accessToken: result.accessToken };
@@ -293,6 +309,16 @@ async function attemptRefresh(
     );
     return { ok: true, accessToken: refreshed.tokens.access_token };
   } catch (error) {
+    if (
+      error instanceof ApiRefreshValidationError &&
+      isDeadSessionRefreshStatus(error.upstreamStatus)
+    ) {
+      try {
+        await runtime.clearSession?.();
+      } catch {
+        // Best effort: the caller must still see the original refresh failure.
+      }
+    }
     return { ok: false, cause: sanitizeApiErrorCause(error) };
   }
 }
@@ -302,8 +328,9 @@ function createThrowReportedHttp(pushApiError?: ApiErrorStorePush) {
     failed: FailedHttpResponse,
     retried: boolean,
     cause?: unknown,
+    outage?: ApiRefreshOutage,
   ): never {
-    const error = buildHttpError(failed, retried, cause);
+    const error = buildHttpError(failed, retried, cause, outage);
     reportApiError(
       error,
       { url: failed.url, method: failed.method },
@@ -426,7 +453,12 @@ export function createApiTransport(config: ApiTransportConfig): ApiTransport {
       }
 
       if (!refreshResult.ok) {
-        return throwReportedHttp(failed, false, refreshResult.cause);
+        return throwReportedHttp(
+          failed,
+          false,
+          refreshResult.cause,
+          refreshResult.outage,
+        );
       }
 
       const retryHeaders = mergeHeadersCaseInsensitive(headers, {
@@ -458,9 +490,10 @@ export function createReadonlyServerApiTransport(
 /** Browser singleton transport. */
 export function createBrowserApiTransport(
   pushApiError: ApiErrorStorePush,
+  onSessionCleared?: () => void,
 ): ApiTransport {
   return createApiTransport({
-    runtime: createBrowserProxyRuntimeAdapter(),
+    runtime: createBrowserProxyRuntimeAdapter({ onSessionCleared }),
     pushApiError,
   });
 }

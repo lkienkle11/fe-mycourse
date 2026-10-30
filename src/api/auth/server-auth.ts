@@ -32,6 +32,7 @@ import {
 import { validateRotatedTokens } from "./auth-refresh";
 import type {
   AuthCookieBag,
+  ClearAuthSessionFn,
   PersistRotatedAuthSessionFn,
   RefreshSessionInput,
   RefreshSessionResult,
@@ -66,6 +67,15 @@ export function createPersistRotatedSessionFromRequest(): PersistRotatedAuthSess
   };
 }
 
+export function createClearSessionFromRequest(): ClearAuthSessionFn {
+  return async () => {
+    const { clearAuthSessionCookies } = await import(
+      "@/lib/utils/auth-session"
+    );
+    await clearAuthSessionCookies();
+  };
+}
+
 export async function refreshUpstreamSession(
   input: RefreshSessionInput,
   baseURL?: string,
@@ -97,6 +107,7 @@ export async function refreshUpstreamSession(
         reason: "invalid-envelope",
         message: `Upstream refresh HTTP ${error.response.status}`,
         cause: sanitizeApiErrorCause(error),
+        upstreamStatus: error.response.status,
       });
     }
     throw new ApiRefreshValidationError({
@@ -119,6 +130,7 @@ export async function createWritableServerApiTransportFromRequest(
       readAuthCookies: readAuthCookiesFromRequest,
       refresh: (input) => refreshUpstreamSession(input, baseURL),
       persistRotatedSession: createPersistRotatedSessionFromRequest(),
+      clearSession: createClearSessionFromRequest(),
     },
   });
 }

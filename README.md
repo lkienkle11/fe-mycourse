@@ -276,7 +276,7 @@ AuthLayout (client)
 Optional: `useGetMe()` / `useSyncMeFromAuth()` in [`src/hooks/auth/use-auth-store.ts`](src/hooks/auth/use-auth-store.ts) — shallow `useMeStore` slice and SWR → store sync; `AppProviders` mounts `MeSwrSync` under `SWRConfig` to run the sync (see [`src/components/providers/app-providers.tsx`](src/components/providers/app-providers.tsx)).
 
 - **Header-based auth**: server-side requests (RSC/Server Action) read `access_token` via `next/headers` and set `Authorization: Bearer <token>`. Browser requests rely on `credentials: "include"` so BE reads HttpOnly cookies directly.
-- **Automatic token refresh**: the authenticated Fetch transport retries eligible `401`/`403` failures once. Browser path calls FE proxy `POST /api/auth/refresh` (access_token-only DTO). Writable server path refreshes upstream via `rawPost` and persists cookies with `setAuthSessionCookies`. Readonly RSC fails closed with `ApiRefreshRequiredError`.
+- **Automatic token refresh**: the authenticated Fetch transport retries eligible `401`/`403` failures once. Browser path calls FE proxy `POST /api/auth/refresh` (access_token-only DTO). Writable server path refreshes upstream via `rawPost` and persists cookies with `setAuthSessionCookies`. Readonly RSC fails closed with `ApiRefreshRequiredError`. A backend `401`/`403` on refresh clears the session cookies (proxy and writable server path); every other failure keeps them.
 - **401 = not authenticated**: `getMeService` catches 401 and returns `null` instead of throwing, so SWR does not treat it as an error.
 
 ### Conditional Rendering in `AuthLayout`
@@ -388,11 +388,12 @@ An automatic rotation runs **before** the error is surfaced if **all** of the fo
 Request → BE → 401 (or 403 with X-Token-Expired)
   │
   ├─ [eligible, not retried]
-  │     Browser: POST /api/auth/refresh (single-flight promise)
+  │     Browser: POST /api/auth/refresh (single-flight promise, cross-tab Web Lock)
   │     Writable server: raw upstream refresh + setAuthSessionCookies
   │     Readonly / no-context: ApiRefreshRequiredError (no refresh)
   │     ├─ [success] Retry original request once with rotated access token
   │     └─ [failure] Report original protected-request error → reject
+  │          (BE 401/403 on refresh: session cookies cleared first; other failures keep them)
   │
   └─ [second attempt already retried] → Report error → reject
 
@@ -405,7 +406,7 @@ Otherwise (wrong kind of 401/403, other status) → report + reject immediately
 
 ### Browser refresh single-flight
 
-If multiple browser requests expire simultaneously, only **one** refresh call is made (`src/api/auth/browser-auth.ts`). All waiters join the same module-scoped promise. Public authenticated options intentionally omit `AbortSignal`, so `refreshBrowserSession` has no signal parameter. BFF `POST /api/auth/refresh` maps upstream timeout to **504** (`instanceof ApiTimeoutError`) and other network failures to **502**.
+If multiple browser requests expire simultaneously, only **one** refresh call is made (`src/api/auth/browser-auth.ts`). All waiters join the same module-scoped promise. Public authenticated options intentionally omit `AbortSignal`, so `refreshBrowserSession` has no signal parameter. BFF `POST /api/auth/refresh` maps upstream timeout to **504** (`instanceof ApiTimeoutError`) and other network failures to **502**. The POST runs under the Web Lock `mycourse:auth-refresh` (`navigator.locks`) so tabs of one browser refresh one at a time; browsers without the API refresh unlocked. When the BE answered `401`/`403` the proxy removes the session cookies and adds `session_cleared: true` to its error body, which makes the tab broadcast `logout` with reason `session_expired` once.
 
 Server Actions must use `createWritableServerApiTransportFromRequest` + `createApiMethods` + domain caller factories (for example `createAuthCallers`) — there is no server-global refresh mutex.
 
@@ -419,7 +420,7 @@ Server Actions must use `createWritableServerApiTransportFromRequest` + `createA
 
 ### Production refresh ownership
 
-Refresh never recurses through the authenticated transport. Browser refresh goes through Route Handler `POST /api/auth/refresh` (access_token-only DTO). Writable server refresh uses `rawPost` to the BE refresh route, validates all three rotated tokens, then persists via `setAuthSessionCookies`.
+Refresh never recurses through the authenticated transport. Browser refresh goes through Route Handler `POST /api/auth/refresh` (access_token-only DTO). Writable server refresh uses `rawPost` to the BE refresh route, validates all three rotated tokens, then persists via `setAuthSessionCookies`; on a backend `401`/`403` it clears the session cookies instead (`handleRefreshProxy` for the browser path, the `clearSession` runtime callback for the writable server path).
 
 ### API route constants
 

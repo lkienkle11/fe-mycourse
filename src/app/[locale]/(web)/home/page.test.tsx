@@ -1,7 +1,9 @@
 import { describe, expect, it, jest } from "@jest/globals";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { http } from "msw";
+import { ApiHttpError } from "@/api/core/fetch-error";
 import { PERMISSIONS } from "@/constants/permissions";
+import messages from "@/messages/en";
 import { useMeStore } from "@/store/auth";
 import { seedSignedInMe } from "@/test-support/fixtures/auth";
 import { okEnvelope } from "@/test-support/msw/envelope";
@@ -42,6 +44,34 @@ describe("/home route", () => {
     expect(handlers.trending).not.toHaveBeenCalled();
     expect(handlers.popular).not.toHaveBeenCalled();
     expect(handlers.continueLearning).not.toHaveBeenCalled();
+  });
+
+  it("shows the retryable server-error state, not the sign-in prompt, when the current user failed to load", () => {
+    const handlers = mockHomeEndpoints();
+    const mutateMe = jest.fn();
+    useMeStore.setState({
+      me: null,
+      isLoading: false,
+      isError: new ApiHttpError({
+        message: "HTTP 503",
+        response: { status: 503, data: {}, headers: {} },
+        request: { url: "/api/v1/me", method: "GET", retried: false },
+      }),
+      mutateMe,
+    });
+    renderWithProviders(<SignedInHomeRoutePage />);
+
+    expect(screen.queryByText("Sign in to continue")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: messages.errors.statusPage["server-error"].title,
+      }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: messages.errors.boundary.retry }),
+    );
+    expect(mutateMe).toHaveBeenCalledTimes(1);
+    expect(handlers.trending).not.toHaveBeenCalled();
   });
 
   it("renders the hero and all three sections for a user who can read courses", async () => {

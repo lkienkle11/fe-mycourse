@@ -8,3 +8,9 @@ export const STREAM_ENV_KEYS = {
   /** Base URL (không có slash cuối) cho luồng NDJSON gRPC / gateway. */
   grpcBase: "NEXT_PUBLIC_STREAM_GRPC_BASE_URL",
 } as const;
+
+/** `reason` values of the broadcast `logout` event (`BroadcastLogoutPayload.reason`). */
+export const BROADCAST_LOGOUT_REASON = {
+  user: "user",
+  sessionExpired: "session_expired",
+} as const;
